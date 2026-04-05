@@ -128,7 +128,7 @@
     display: flex;
     align-items: flex-end;
     gap: 2px;
-    height: 60px;
+    height: 120px;
     margin-top: auto;
   }
   .cat-burndown .bar-group {
@@ -382,7 +382,7 @@ function progressColor(ratio) {
   return "var(--orange)";
 }
 
-function renderBurndownBars(ideal, actual, cssClass) {
+function renderBurndownBars(ideal, actual, color) {
   const max = Math.max(...ideal);
   return ideal.map((iv, i) => {
     const av = actual[i];
@@ -390,13 +390,13 @@ function renderBurndownBars(ideal, actual, cssClass) {
     const aPct = (av / max) * 100;
     let html = `<div class="bar-group">`;
     if (iv > av) {
-      html += `<div class="${cssClass}-ideal" style="height:${iPct - aPct}%"></div>`;
-      html += `<div class="${cssClass}-actual" style="height:${aPct}%"></div>`;
+      html += `<div style="height:${iPct - aPct}%;background:${color};opacity:0.2;border-radius:1px 1px 0 0"></div>`;
+      html += `<div style="height:${aPct}%;background:${color};opacity:0.5;border-radius:1px"></div>`;
     } else if (av > iv) {
-      html += `<div class="${cssClass}-behind" style="height:${aPct - iPct}%"></div>`;
-      html += `<div class="${cssClass}-actual" style="height:${iPct}%"></div>`;
+      html += `<div style="height:${aPct - iPct}%;background:var(--red);opacity:0.4;border-radius:0 0 1px 1px"></div>`;
+      html += `<div style="height:${iPct}%;background:${color};opacity:0.5;border-radius:1px"></div>`;
     } else {
-      html += `<div class="${cssClass}-actual" style="height:${iPct}%"></div>`;
+      html += `<div style="height:${iPct}%;background:${color};opacity:0.5;border-radius:1px"></div>`;
     }
     html += '</div>';
     return html;
@@ -439,35 +439,13 @@ categories.forEach(cat => {
       <span class="cat-name">${cat.name}</span>
       <div class="cat-kpis">
         <div class="cat-kpi">
-          <div class="value" style="color:var(--text)">${totalTasks}</div>
-          <div class="label">Taches</div>
-        </div>
-        <div class="cat-kpi">
-          <div class="value" style="color:var(--green)">${totalDone}</div>
-          <div class="label">Faites</div>
-        </div>
-        <div class="cat-kpi">
-          <div class="value" style="color:${onTrack > 0 ? 'var(--green)' : 'var(--dimmed)'}">${onTrack}</div>
-          <div class="label">On track</div>
-        </div>
-        <div class="cat-kpi">
-          <div class="value" style="color:${atRisk > 0 ? 'var(--orange)' : 'var(--dimmed)'}">${atRisk}</div>
-          <div class="label">At risk</div>
-        </div>
-        <div class="cat-kpi">
-          <div class="value" style="color:${behind > 0 ? 'var(--red)' : 'var(--dimmed)'}">${behind}</div>
-          <div class="label">Behind</div>
+          <div class="value" style="color:var(--text)">${totalTasks - totalDone}</div>
+          <div class="label">Ouvertes</div>
         </div>
       </div>
-    </div>
-    <div class="cat-progress">
-      <div class="bar">
-        <div class="fill" style="width:${ratio*100}%;background:${cat.color}"></div>
-      </div>
-      <span class="pct" style="color:${cat.color}">${Math.round(ratio*100)}%</span>
     </div>
     <div class="cat-burndown">
-      ${renderBurndownBars(ideal, actual, 'bar')}
+      ${renderBurndownBars(ideal, actual, cat.color)}
     </div>
   `;
   catGrid.appendChild(el);
@@ -476,6 +454,9 @@ categories.forEach(cat => {
 // =============================================================
 // SECTION 2: Individual project cards (4 columns)
 // =============================================================
+const catColorMap = {};
+categories.forEach(c => catColorMap[c.id] = c.color);
+
 const grid = document.getElementById('grid');
 
 projects.forEach(p => {
@@ -491,7 +472,7 @@ projects.forEach(p => {
       <span class="due">${timeAgo(p.due)}</span>
     </div>
     <div class="burndown">
-      ${renderBurndownBars(p.ideal, p.actual, 'bar')}
+      ${renderBurndownBars(p.ideal, p.actual, catColorMap[p.cat])}
     </div>
   `;
   grid.appendChild(card);
