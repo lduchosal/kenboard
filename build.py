@@ -40,7 +40,7 @@ def time_ago(due_str: str) -> str:
 
 
 def burndown_bars(actual: list, color: str) -> str:
-    mx = max(actual) if actual else 1
+    mx = max(actual) if actual and max(actual) > 0 else 1
     bars = []
     for v in actual:
         pct = v / mx * 100
@@ -75,7 +75,7 @@ def page(title: str, body: str, css_path: str = "style.css") -> str:
 
 
 def kanban_html(tasks: list, project_names: dict = None) -> str:
-    html = '<div class="section" style="padding-bottom:0"><div class="kanban">'
+    html = '<div class="kanban">'
     for col_id, col_name, col_color in COLUMNS:
         col_tasks = [t for t in tasks if t["status"] == col_id]
         html += f'<div class="kanban-col"><div class="kanban-col-header">'
@@ -88,7 +88,7 @@ def kanban_html(tasks: list, project_names: dict = None) -> str:
                 html += f'<div class="task-meta"><span class="task-tag" style="background:{pcolor}">{escape(pname)}</span></div>'
             html += '</div>'
         html += '</div>'
-    html += '</div></div>'
+    html += '</div>'
     return html
 
 
@@ -122,8 +122,11 @@ def build_index():
         total_done = sum(p["done"] for p in cat_projects)
         total_tasks = sum(p["total"] for p in cat_projects)
         # Aggregate actual burndown
-        length = len(cat_projects[0]["actual"])
-        agg_actual = [sum(p["actual"][i] for p in cat_projects) for i in range(length)]
+        if cat_projects:
+            length = len(cat_projects[0]["actual"])
+            agg_actual = [sum(p["actual"][i] for p in cat_projects) for i in range(length)]
+        else:
+            agg_actual = [0]
 
         cat_section += f'''<a class="cat-card" href="cat/{c["id"]}.html">
   <div class="cat-header">
@@ -139,23 +142,7 @@ def build_index():
 
     cat_section += '</div></div>'
 
-    # Project cards
-    proj_section = '<hr class="divider"><div class="section"><div class="section-title">Tous les projets</div><div class="grid">'
-    for p in projects:
-        c = cat_map[p["cat"]]
-        arrow, acolor = health_arrow(p)
-        proj_section += f'''<a class="card" data-cat="{p["cat"]}" href="project/{p["id"]}.html">
-  <div class="card-header">
-    <span class="name">{escape(p["name"])}</span>
-    <span class="health" style="color:{acolor}">{arrow}</span>
-    <span class="due">{time_ago(p["due"])}</span>
-  </div>
-  <div class="burndown">{burndown_bars(p["actual"], c["color"])}</div>
-</a>'''
-
-    proj_section += '</div></div>'
-
-    return page("Dashboard", header + cat_section + proj_section)
+    return page("Dashboard", header + cat_section)
 
 
 # =====================================================================
@@ -173,25 +160,13 @@ def build_cat(cat: dict):
         arrow, acolor = health_arrow(p)
         open_count = p["total"] - p["done"]
         body += f'''<div class="section">
-  <div class="section-title" style="display:flex;align-items:center;gap:8px">
-    <a href="../project/{p["id"]}.html" style="color:var(--text);text-decoration:none;font-size:13px;font-weight:700">{escape(p["name"])}</a>
-    <span style="color:{acolor};font-size:12px">{arrow}</span>
-    <span style="color:var(--dimmed);font-size:11px;font-weight:400">{open_count} ouvertes — {time_ago(p["due"])}</span>
-  </div>
+  <div class="section-title">{escape(p["name"])}</div>
 {kanban_html(p["tasks"])}
 </div>'''
 
     return page(cat["name"], header + body, css_path="../style.css")
 
 
-# =====================================================================
-# project/{id}.html — Project kanban
-# =====================================================================
-def build_project(p: dict):
-    c = cat_map[p["cat"]]
-    header = build_header("../")
-
-    return page(p["name"], header + kanban_html(p["tasks"]), css_path="../style.css")
 
 
 # =====================================================================
@@ -211,15 +186,7 @@ def main():
             f.write(build_cat(c))
         print(f'cat/{c["id"]}.html')
 
-    # projects
-    os.makedirs(os.path.join(HERE, "project"), exist_ok=True)
-    for p in projects:
-        path = os.path.join(HERE, "project", f'{p["id"]}.html')
-        with open(path, "w") as f:
-            f.write(build_project(p))
-        print(f'project/{p["id"]}.html')
-
-    print(f"\nDone: 1 index + {len(categories)} categories + {len(projects)} projects")
+    print(f"\nDone: 1 index + {len(categories)} categories")
 
 
 if __name__ == "__main__":

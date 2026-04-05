@@ -3,7 +3,9 @@
     { "id": "immobilier", "name": "Immobilier", "color": "var(--orange)" },
     { "id": "sante",      "name": "Sante",      "color": "var(--green)" },
     { "id": "technique",  "name": "Technique",  "color": "var(--accent)" },
-    { "id": "famille",    "name": "Famille",    "color": "var(--purple)" }
+    { "id": "famille",    "name": "Famille",    "color": "var(--purple)" },
+    { "id": "finance",    "name": "Finance",    "color": "var(--cyan)" },
+    { "id": "education",  "name": "Education",  "color": "var(--red)" }
   ],
   "projects": [
     { "id": "renovation-appart", "name": "Renovation appart", "cat": "immobilier", "done": 13, "total": 20, "due": "2026-06-15",
