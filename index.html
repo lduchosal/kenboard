@@ -357,6 +357,25 @@ function health(p) {
   return { arrow:"↓", color:"var(--red)", label:"behind" };
 }
 
+function timeAgo(dateStr) {
+  const now = new Date('2026-04-05');
+  const d = new Date(dateStr);
+  const diffMs = now - d;
+  const diffDays = Math.round(diffMs / 86400000);
+  if (diffDays > 0) {
+    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays < 30) return `${Math.round(diffDays / 7)}w ago`;
+    if (diffDays < 365) return `${Math.round(diffDays / 30)}mo ago`;
+    return `${Math.round(diffDays / 365)}y ago`;
+  } else {
+    const left = -diffDays;
+    if (left < 7) return `in ${left}d`;
+    if (left < 30) return `in ${Math.round(left / 7)}w`;
+    if (left < 365) return `in ${Math.round(left / 30)}mo`;
+    return `in ${Math.round(left / 365)}y`;
+  }
+}
+
 function progressColor(ratio) {
   if (ratio > 0.7) return "var(--green)";
   if (ratio > 0.4) return "var(--accent)";
@@ -463,8 +482,6 @@ const grid = document.getElementById('grid');
 projects.forEach(p => {
   const h = health(p);
   const ratio = p.done / p.total;
-  const urgent = p.due < "2026-05-01";
-
   const card = document.createElement('div');
   card.className = 'card';
   card.dataset.cat = p.cat;
@@ -472,7 +489,7 @@ projects.forEach(p => {
     <div class="card-header">
       <span class="name">${p.name}</span>
       <span class="health" style="color:${h.color}">${h.arrow}</span>
-      <span class="due ${urgent ? 'urgent' : ''}">${p.due}</span>
+      <span class="due">${timeAgo(p.due)}</span>
     </div>
     <div class="burndown">
       ${renderBurndownBars(p.ideal, p.actual, 'bar')}
