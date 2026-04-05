@@ -117,6 +117,32 @@ body {
 .cat-kpi .value { font-size: 20px; font-weight: 700; }
 .cat-kpi .label { font-size: 9px; color: var(--dimmed); text-transform: uppercase; }
 
+.cat-projects {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px 8px;
+  margin-top: 8px;
+}
+.cat-project {
+  font-size: 13px;
+  color: var(--dimmed);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cat-project-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 .cat-burndown {
   display: flex;
   align-items: flex-end;

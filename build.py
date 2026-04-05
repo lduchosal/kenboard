@@ -172,6 +172,12 @@ def build_index():
         else:
             agg_actual = [0]
 
+        project_list = ""
+        for p in cat_projects:
+            arrow, acolor = health_arrow(p)
+            open_count = p["total"] - p["done"]
+            project_list += f'<div class="cat-project" onclick="window.location=\'cat/{c["id"]}.html#{p["id"]}\'"><span class="cat-project-dot" style="background:{c["color"]}"></span>{escape(p["name"])}</div>'
+
         cat_section += f'''<a class="cat-card" href="cat/{c["id"]}.html">
   <div class="cat-header">
     <div class="cat-dot" style="background:{c["color"]}"></div>
@@ -182,6 +188,7 @@ def build_index():
     </div></div>
   </div>
   <div class="cat-burndown">{burndown_bars(agg_actual, c["color"])}</div>
+  <div class="cat-projects">{project_list}</div>
 </a>'''
 
     cat_section += '</div></div>'
@@ -203,7 +210,7 @@ def build_cat(cat: dict):
     for i, p in enumerate(cat_projects):
         arrow, acolor = health_arrow(p)
         open_count = p["total"] - p["done"]
-        body += f'''<div class="section">
+        body += f'''<div class="section" id="{p["id"]}">
   <div class="section-title">{escape(p["name"])}</div>
 {kanban_html(p["tasks"], show_edit=(i == 0))}
 </div>'''
