@@ -474,12 +474,6 @@ projects.forEach(p => {
       <span class="health" style="color:${h.color}">${h.arrow}</span>
       <span class="due ${urgent ? 'urgent' : ''}">${p.due}</span>
     </div>
-    <div class="progress-row">
-      <div class="progress-bar">
-        <div class="fill" style="width:${ratio*100}%;background:${progressColor(ratio)}"></div>
-      </div>
-      <span class="progress-label">${p.done}/${p.total}</span>
-    </div>
     <div class="burndown">
       ${renderBurndownBars(p.ideal, p.actual, 'bar')}
     </div>
