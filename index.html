@@ -108,7 +108,7 @@
   .cat-kpis {
     display: flex;
     gap: 16px;
-    margin-bottom: 10px;
+    margin-left: auto;
   }
   .cat-kpi {
     text-align: center;
@@ -437,28 +437,27 @@ categories.forEach(cat => {
     <div class="cat-header">
       <div class="cat-dot" style="background:${cat.color}"></div>
       <span class="cat-name">${cat.name}</span>
-      <span class="cat-stats">${catProjects.length} projet${catProjects.length > 1 ? 's' : ''}</span>
-    </div>
-    <div class="cat-kpis">
-      <div class="cat-kpi">
-        <div class="value" style="color:var(--text)">${totalTasks}</div>
-        <div class="label">Taches</div>
-      </div>
-      <div class="cat-kpi">
-        <div class="value" style="color:var(--green)">${totalDone}</div>
-        <div class="label">Faites</div>
-      </div>
-      <div class="cat-kpi">
-        <div class="value" style="color:${onTrack > 0 ? 'var(--green)' : 'var(--dimmed)'}">${onTrack}</div>
-        <div class="label">On track</div>
-      </div>
-      <div class="cat-kpi">
-        <div class="value" style="color:${atRisk > 0 ? 'var(--orange)' : 'var(--dimmed)'}">${atRisk}</div>
-        <div class="label">At risk</div>
-      </div>
-      <div class="cat-kpi">
-        <div class="value" style="color:${behind > 0 ? 'var(--red)' : 'var(--dimmed)'}">${behind}</div>
-        <div class="label">Behind</div>
+      <div class="cat-kpis">
+        <div class="cat-kpi">
+          <div class="value" style="color:var(--text)">${totalTasks}</div>
+          <div class="label">Taches</div>
+        </div>
+        <div class="cat-kpi">
+          <div class="value" style="color:var(--green)">${totalDone}</div>
+          <div class="label">Faites</div>
+        </div>
+        <div class="cat-kpi">
+          <div class="value" style="color:${onTrack > 0 ? 'var(--green)' : 'var(--dimmed)'}">${onTrack}</div>
+          <div class="label">On track</div>
+        </div>
+        <div class="cat-kpi">
+          <div class="value" style="color:${atRisk > 0 ? 'var(--orange)' : 'var(--dimmed)'}">${atRisk}</div>
+          <div class="label">At risk</div>
+        </div>
+        <div class="cat-kpi">
+          <div class="value" style="color:${behind > 0 ? 'var(--red)' : 'var(--dimmed)'}">${behind}</div>
+          <div class="label">Behind</div>
+        </div>
       </div>
     </div>
     <div class="cat-progress">
