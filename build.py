@@ -95,22 +95,25 @@ def kanban_html(tasks: list, project_names: dict = None) -> str:
 # =====================================================================
 # index.html — Dashboard
 # =====================================================================
-def build_index():
-    header = """<div class="header">
-  <h1>DASHBOARD</h1>
-  <span class="meta">{n} projets</span>
-  {badges}
-  <span style="flex:1"></span>
-  <span class="meta">2026-04-05 15:42 CET</span>
-  <span class="badge" style="background:rgba(26,127,55,0.12);color:var(--green)">LIVE</span>
-</div>"""
-
+def build_header(prefix: str = ""):
+    """Shared header for all pages. prefix is the path to root ('' or '../')."""
     badge_html = ""
     for c in categories:
         count = len([p for p in projects if p["cat"] == c["id"]])
-        badge_html += f'<span class="badge" style="background:color-mix(in srgb, {c["color"]} 12%, transparent);color:{c["color"]}">{escape(c["name"])} {count}</span>\n  '
+        badge_html += f'<a href="{prefix}cat/{c["id"]}.html" class="badge" style="background:color-mix(in srgb, {c["color"]} 12%, transparent);color:{c["color"]};text-decoration:none">{escape(c["name"])} {count}</a>\n  '
 
-    header = header.format(n=len(projects), badges=badge_html)
+    return f'''<div class="header">
+  <a href="{prefix}index.html" style="text-decoration:none"><h1>DASHBOARD</h1></a>
+  <span class="meta">{len(projects)} projets</span>
+  {badge_html}
+  <span style="flex:1"></span>
+  <span class="meta">2026-04-05 15:42 CET</span>
+  <span class="badge" style="background:rgba(26,127,55,0.12);color:var(--green)">LIVE</span>
+</div>'''
+
+
+def build_index():
+    header = build_header()
 
     # Category cards
     cat_section = '<div class="section"><div class="section-title">Vue par categorie</div><div class="cat-grid">'
@@ -163,11 +166,7 @@ def build_cat(cat: dict):
     total_done = sum(p["done"] for p in cat_projects)
     total_tasks = sum(p["total"] for p in cat_projects)
 
-    header = f'''<div class="header">
-  <a class="back-btn" href="../index.html">← Retour</a>
-  <h1>{escape(cat["name"])}</h1>
-  <span class="meta">{len(cat_projects)} projets — {total_tasks - total_done} taches ouvertes</span>
-</div>'''
+    header = build_header("../")
 
     body = ""
     for p in cat_projects:
@@ -190,12 +189,7 @@ def build_cat(cat: dict):
 # =====================================================================
 def build_project(p: dict):
     c = cat_map[p["cat"]]
-    header = f'''<div class="header">
-  <a class="back-btn" href="../index.html">← Retour</a>
-  <h1>{escape(p["name"])}</h1>
-  <span class="badge" style="background:color-mix(in srgb, {c["color"]} 12%, transparent);color:{c["color"]}">{escape(c["name"])}</span>
-  <span class="meta">{p["done"]}/{p["total"]} taches — {time_ago(p["due"])}</span>
-</div>'''
+    header = build_header("../")
 
     return page(p["name"], header + kanban_html(p["tasks"]), css_path="../style.css")
 
