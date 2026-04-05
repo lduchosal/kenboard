@@ -1,0 +1,234 @@
+:root {
+  --bg:      #f0f2f5;
+  --card:    #ffffff;
+  --border:  #d0d7de;
+  --accent:  #0969da;
+  --green:   #1a7f37;
+  --orange:  #bf8700;
+  --red:     #cf222e;
+  --purple:  #8250df;
+  --cyan:    #0550ae;
+  --dimmed:  #656d76;
+  --text:    #1f2328;
+  --gap:     8px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* -- Header -- */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.header h1 { font-size: 16px; font-weight: 700; }
+.header .meta { color: var(--dimmed); font-size: 11px; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.back-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+}
+.back-btn:hover { background: var(--card); }
+
+/* -- Sections -- */
+.section { padding: 12px 16px; }
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--dimmed);
+  margin-bottom: 8px;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0 16px;
+}
+
+/* -- Category grid (2 columns) -- */
+.cat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+}
+
+.cat-card {
+  background: var(--card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+  text-decoration: none;
+  color: inherit;
+}
+.cat-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+.cat-card .cat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.cat-card .cat-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cat-card .cat-name { font-weight: 700; font-size: 14px; flex: 1; }
+
+.cat-kpis { display: flex; gap: 16px; margin-left: auto; }
+.cat-kpi { text-align: center; }
+.cat-kpi .value { font-size: 20px; font-weight: 700; }
+.cat-kpi .label { font-size: 9px; color: var(--dimmed); text-transform: uppercase; }
+
+.cat-burndown {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 120px;
+  margin-top: auto;
+}
+.cat-burndown .bar-group,
+.burndown .bar-group {
+  flex: 1; display: flex; flex-direction: column;
+  justify-content: flex-end; height: 100%;
+}
+
+/* -- Project cards grid (4 columns) -- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+}
+
+.card {
+  background: var(--card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  padding: 10px 12px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  min-height: 120px;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+  text-decoration: none;
+  color: inherit;
+}
+.card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+
+.card[data-cat="immobilier"] { border-left-color: var(--orange); }
+.card[data-cat="sante"]      { border-left-color: var(--green); }
+.card[data-cat="technique"]   { border-left-color: var(--accent); }
+.card[data-cat="famille"]     { border-left-color: var(--purple); }
+
+.card-header { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.card-header .name {
+  flex: 1; font-weight: 600; font-size: 12px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-header .health { font-size: 13px; flex-shrink: 0; }
+.card-header .due { color: var(--dimmed); font-size: 10px; flex-shrink: 0; }
+
+.burndown {
+  flex: 1; display: flex; align-items: flex-end;
+  gap: 1px; min-height: 40px; padding-top: 4px;
+}
+
+/* -- Kanban -- */
+.kanban {
+  display: flex;
+  gap: 10px;
+  padding: 0 16px 16px;
+  min-height: calc(100vh - 100px);
+}
+
+.kanban-col {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.kanban-col-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+.kanban-col-header .col-name {
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.kanban-col-header .col-count {
+  background: var(--border);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.kanban-task {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  font-size: 12px;
+}
+.kanban-task .task-title { font-weight: 600; margin-bottom: 2px; }
+.kanban-task .task-meta { font-size: 10px; color: var(--dimmed); }
+.kanban-task .task-tag {
+  display: inline-block;
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+  margin-right: 3px;
+  color: white;
+}
