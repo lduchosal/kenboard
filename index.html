@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Dashboard</title>
+<style>
+  :root {
+    --bg:      #f0f2f5;
+    --card:    #ffffff;
+    --border:  #d0d7de;
+    --accent:  #0969da;
+    --green:   #1a7f37;
+    --orange:  #bf8700;
+    --red:     #cf222e;
+    --purple:  #8250df;
+    --cyan:    #0550ae;
+    --dimmed:  #656d76;
+    --white:   #1f2328;
+    --gap:     6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: var(--gap);
+    gap: var(--gap);
+  }
+
+  /* -- Header -- */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    padding: 4px 8px;
+  }
+  .header h1 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+  }
+  .header .meta { color: var(--dimmed); font-size: 11px; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  /* -- Cards grid -- */
+  .grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: var(--gap);
+    min-height: 0;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 10px 12px 8px 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .card[data-cat="immobilier"] { border-left-color: var(--orange); }
+  .card[data-cat="sante"]      { border-left-color: var(--green); }
+  .card[data-cat="technique"]   { border-left-color: var(--accent); }
+  .card[data-cat="famille"]     { border-left-color: var(--purple); }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .card-header .name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-header .health {
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .card-header .due {
+    color: var(--dimmed);
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+  .card-header .due.urgent { color: var(--red); font-weight: 600; }
+
+  /* Progress bar */
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0;
+    flex-shrink: 0;
+  }
+  .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: #e1e4e8;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar .fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+  .progress-label {
+    font-size: 10px;
+    color: var(--dimmed);
+    flex-shrink: 0;
+  }
+
+  /* Burndown chart */
+  .burndown {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    min-height: 0;
+    padding-top: 4px;
+  }
+  .burndown .bar-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100%;
+    position: relative;
+  }
+  .burndown .bar-ideal {
+    background: rgba(26, 127, 55, 0.25);
+    border-radius: 1px 1px 0 0;
+  }
+  .burndown .bar-actual {
+    background: rgba(9, 105, 218, 0.35);
+    border-radius: 1px;
+  }
+  .burndown .bar-behind {
+    background: rgba(207, 34, 46, 0.35);
+    border-radius: 0 0 1px 1px;
+  }
+
+  /* Empty card */
+  .card.empty {
+    border-left-color: var(--border);
+    opacity: 0.2;
+  }
+
+  .card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>DASHBOARD</h1>
+  <span class="meta">15 projets</span>
+  <span class="badge" style="background:rgba(210,153,34,0.15);color:var(--orange)">Immobilier 3</span>
+  <span class="badge" style="background:rgba(63,185,80,0.15);color:var(--green)">Sante 1</span>
+  <span class="badge" style="background:rgba(88,166,255,0.15);color:var(--accent)">Technique 10</span>
+  <span class="badge" style="background:rgba(188,140,255,0.15);color:var(--purple)">Famille 1</span>
+  <span style="flex:1"></span>
+  <span class="meta">2026-04-05 15:42 CET</span>
+  <span class="badge" style="background:rgba(63,185,80,0.15);color:var(--green)">LIVE</span>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<script>
+const projects = [
+  // Immobilier
+  { name:"Renovation appart",  cat:"immobilier", done:13, total:20, due:"2026-06-15",
+    ideal:[20,18,16,14,12,10,8,6,4,2,0], actual:[20,19,17,15,14,12,10,9,8,7,7] },
+  { name:"Recherche terrain",  cat:"immobilier", done:3,  total:10, due:"2026-09-01",
+    ideal:[10,9,8,7,6,5,4,3,2,1,0], actual:[10,10,9,9,8,8,7,7,7,7,7] },
+  { name:"Dossier hypotheque", cat:"immobilier", done:8,  total:10, due:"2026-05-01",
+    ideal:[10,9,8,7,6,5,4,3,2,1,0], actual:[10,9,7,6,5,4,3,3,2,2,2] },
+  // Sante
+  { name:"Bilan annuel",       cat:"sante",      done:3,  total:6,  due:"2026-04-30",
+    ideal:[6,5,4,4,3,2,1,1,0,0,0], actual:[6,6,5,5,4,4,3,3,3,3,3] },
+  // Technique
+  { name:"2113.ch Website",    cat:"technique",  done:18, total:25, due:"2026-05-15",
+    ideal:[25,23,20,18,15,13,10,8,5,3,0], actual:[25,24,22,20,18,15,13,10,9,7,7] },
+  { name:"Infra Ansible",      cat:"technique",  done:9,  total:20, due:"2026-06-30",
+    ideal:[20,18,16,14,12,10,8,6,4,2,0], actual:[20,19,18,17,16,14,13,12,11,11,11] },
+  { name:"Monitoring Stack",   cat:"technique",  done:6,  total:20, due:"2026-04-30",
+    ideal:[20,18,16,14,12,10,8,6,4,2,0], actual:[20,20,19,18,17,16,15,15,14,14,14] },
+  { name:"SSL/PKI Renewal",    cat:"technique",  done:17, total:20, due:"2026-04-20",
+    ideal:[20,18,16,14,12,10,8,6,4,2,0], actual:[20,18,15,12,10,8,6,5,4,3,3] },
+  { name:"Kanban Dashboard",   cat:"technique",  done:1,  total:20, due:"2026-07-01",
+    ideal:[20,18,16,14,12,10,8,6,4,2,0], actual:[20,20,20,20,20,20,20,20,20,19,19] },
+  { name:"Backup Strategy",    cat:"technique",  done:11, total:20, due:"2026-08-01",
+    ideal:[20,18,16,14,12,10,8,6,4,2,0], actual:[20,18,16,14,12,11,10,10,9,9,9] },
+  { name:"Migration FreeBSD",  cat:"technique",  done:4,  total:20, due:"2026-07-15",
+    ideal:[20,18,16,14,12,10,8,6,4,2,0], actual:[20,20,19,19,18,18,17,17,16,16,16] },
+  { name:"CI/CD Pipeline",     cat:"technique",  done:2,  total:20, due:"2026-08-15",
+    ideal:[20,18,16,14,12,10,8,6,4,2,0], actual:[20,20,20,20,19,19,19,18,18,18,18] },
+  { name:"API v2",             cat:"technique",  done:12, total:20, due:"2026-05-30",
+    ideal:[20,18,16,14,12,10,8,6,4,2,0], actual:[20,19,17,15,13,11,10,9,8,8,8] },
+  { name:"Docs techniques",    cat:"technique",  done:8,  total:20, due:"2026-06-15",
+    ideal:[20,18,16,14,12,10,8,6,4,2,0], actual:[20,19,18,17,16,14,13,13,12,12,12] },
+  // Famille
+  { name:"Vacances ete",       cat:"famille",    done:7,  total:20, due:"2026-07-01",
+    ideal:[20,18,16,14,12,10,8,6,4,2,0], actual:[20,19,18,17,16,15,14,13,13,13,13] },
+];
+
+function health(p) {
+  const li = p.ideal[p.ideal.length - 1];
+  const la = p.actual[p.actual.length - 1];
+  const threshold = Math.round(p.total * 0.2);
+  if (la <= li + 1) return { arrow:"↑", color:"var(--green)", label:"on track" };
+  if (la <= li + threshold) return { arrow:"↗", color:"var(--orange)", label:"at risk" };
+  return { arrow:"↓", color:"var(--red)", label:"behind" };
+}
+
+function progressColor(ratio) {
+  if (ratio > 0.7) return "var(--green)";
+  if (ratio > 0.4) return "var(--accent)";
+  return "var(--orange)";
+}
+
+function renderBurndown(ideal, actual) {
+  const max = Math.max(...ideal);
+  return ideal.map((iv, i) => {
+    const av = actual[i];
+    const iPct = (iv / max) * 100;
+    const aPct = (av / max) * 100;
+    let html = '<div class="bar-group">';
+    if (iv > av) {
+      html += `<div class="bar-ideal" style="height:${iPct - aPct}%"></div>`;
+      html += `<div class="bar-actual" style="height:${aPct}%"></div>`;
+    } else if (av > iv) {
+      html += `<div class="bar-behind" style="height:${aPct - iPct}%"></div>`;
+      html += `<div class="bar-actual" style="height:${iPct}%"></div>`;
+    } else {
+      html += `<div class="bar-actual" style="height:${iPct}%"></div>`;
+    }
+    html += '</div>';
+    return html;
+  }).join('');
+}
+
+const grid = document.getElementById('grid');
+
+projects.forEach(p => {
+  const h = health(p);
+  const ratio = p.done / p.total;
+  const urgent = p.due < "2026-05-01";
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.cat = p.cat;
+  card.innerHTML = `
+    <div class="card-header">
+      <span class="name">${p.name}</span>
+      <span class="health" style="color:${h.color}">${h.arrow}</span>
+      <span class="due ${urgent ? 'urgent' : ''}">${p.due}</span>
+    </div>
+    <div class="progress-row">
+      <div class="progress-bar">
+        <div class="fill" style="width:${ratio*100}%;background:${progressColor(ratio)}"></div>
+      </div>
+      <span class="progress-label">${p.done}/${p.total}</span>
+    </div>
+    <div class="burndown">
+      ${renderBurndown(p.ideal, p.actual)}
+    </div>
+  `;
+  grid.appendChild(card);
+});
+
+// Fill remaining slots to reach 16
+for (let i = projects.length; i < 16; i++) {
+  const card = document.createElement('div');
+  card.className = 'card empty';
+  grid.appendChild(card);
+}
+</script>
+</body>
+</html>
