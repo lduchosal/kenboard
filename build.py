@@ -17,11 +17,18 @@ projects = data["projects"]
 
 cat_map = {c["id"]: c for c in categories}
 COLUMNS = [
-    ("todo", "A faire", "var(--dimmed)"),
+    ("todo", "A faire", "#d63384"),
     ("doing", "En cours", "var(--cyan)"),
-    ("review", "Revue", "var(--purple)"),
     ("done", "Fait", "var(--green)"),
 ]
+
+
+AVATAR_COLORS = {
+    "Q": "#0969da",
+    "Alice": "#8250df",
+    "Bob": "#bf8700",
+    "Claire": "#1a7f37",
+}
 
 
 def time_ago(due_str: str) -> str:
@@ -74,19 +81,56 @@ def page(title: str, body: str, css_path: str = "style.css") -> str:
 </html>"""
 
 
-def kanban_html(tasks: list, project_names: dict = None) -> str:
+def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False) -> str:
+    is_first_todo_rendered = [not show_edit]  # mutable flag
     html = '<div class="kanban">'
     for col_id, col_name, col_color in COLUMNS:
         col_tasks = [t for t in tasks if t["status"] == col_id]
-        html += f'<div class="kanban-col"><div class="kanban-col-header">'
-        html += f'<span class="col-name" style="color:{col_color}">{col_name}</span>'
-        html += f'<span class="col-count">{len(col_tasks)}</span></div>'
-        for t in col_tasks:
-            html += f'<div class="kanban-task"><div class="task-title">{escape(t["title"])}</div>'
-            if project_names and "_project" in t:
-                pname, pcolor = t["_project"], t["_color"]
-                html += f'<div class="task-meta"><span class="task-tag" style="background:{pcolor}">{escape(pname)}</span></div>'
-            html += '</div>'
+        html += f'<div class="kanban-col" style="background:color-mix(in srgb, {col_color} 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, {col_color} 25%, transparent)">'
+        html += f'<span class="col-name" style="color:{col_color}">{col_name}</span></div>'
+        max_visible = 5 if col_id == "done" else None
+        visible_tasks = col_tasks[:max_visible] if max_visible else col_tasks
+        hidden_count = len(col_tasks) - len(visible_tasks)
+        first_todo_shown = False
+        for t in visible_tasks:
+            who = t.get("who", "?")
+            initials = who[0].upper()
+            avatar_color = AVATAR_COLORS.get(who, "var(--dimmed)")
+            when_str = ""
+            if t.get("when"):
+                d = date.fromisoformat(t["when"])
+                when_str = f'{d.day:02d}.{d.month:02d}'
+            desc = escape(t.get("desc", ""))
+            # First TODO task on the page: render in edit mode
+            if col_id == "todo" and not first_todo_shown and not is_first_todo_rendered[0]:
+                first_todo_shown = True
+                is_first_todo_rendered[0] = True
+                people_options = "".join(f'<option{"" if p != who else " selected"}>{escape(p)}</option>' for p in AVATAR_COLORS.keys())
+                status_options = "".join(f'<option value="{s}"{"" if s != col_id else " selected"}>{n}</option>' for s, n, _ in COLUMNS)
+                html += f'<div class="kanban-task edit-mode">'
+                html += f'<div class="edit-row"><input type="text" value="{escape(t["title"])}" placeholder="Titre" style="font-weight:600"></div>'
+                html += f'<div class="edit-row"><textarea placeholder="Detail">{escape(desc)}</textarea></div>'
+                html += f'<div class="edit-row"><select>{people_options}</select><input type="text" value="{when_str}" placeholder="dd.mm" style="width:60px;flex:none"></div>'
+                html += f'<div class="edit-actions"><button class="btn btn-cancel">Annuler</button><button class="btn btn-save">Enregistrer</button></div>'
+                html += f'</div>'
+            else:
+                html += f'<a class="kanban-task" href="#" style="text-decoration:none;color:inherit">'
+                html += f'<div class="task-body">'
+                html += f'<div class="task-title">{escape(t["title"])}</div>'
+                if desc:
+                    html += f'<div class="task-desc">{desc}</div>'
+                if project_names and "_project" in t:
+                    pname, pcolor = t["_project"], t["_color"]
+                    html += f'<div style="margin-top:2px"><span class="task-tag" style="background:{pcolor}">{escape(pname)}</span></div>'
+                html += f'</div>'
+                html += f'<div class="task-right">'
+                html += f'<div class="task-avatar" style="background:{avatar_color}" title="{escape(who)}">{initials}</div>'
+                if when_str:
+                    html += f'<div class="task-when">{when_str}</div>'
+                html += f'</div>'
+            html += f'</a>'
+        if hidden_count > 0:
+            html += f'<div style="text-align:center;padding:6px;font-size:11px;color:var(--dimmed);cursor:pointer">+ {hidden_count} autres</div>'
         html += '</div>'
     html += '</div>'
     return html
@@ -156,12 +200,12 @@ def build_cat(cat: dict):
     header = build_header("../")
 
     body = ""
-    for p in cat_projects:
+    for i, p in enumerate(cat_projects):
         arrow, acolor = health_arrow(p)
         open_count = p["total"] - p["done"]
         body += f'''<div class="section">
   <div class="section-title">{escape(p["name"])}</div>
-{kanban_html(p["tasks"])}
+{kanban_html(p["tasks"], show_edit=(i == 0))}
 </div>'''
 
     return page(cat["name"], header + body, css_path="../style.css")
