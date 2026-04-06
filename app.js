@@ -32,7 +32,7 @@ function editCat(id, name, color) {
   if (!modal) return;
   document.getElementById('cat-modal-id').value = id;
   document.getElementById('cat-modal-name').value = name;
-  document.querySelector('#cat-modal h3').textContent = id ? 'Editer categorie' : 'Nouvelle categorie';
+  document.querySelector('#cat-modal h3').textContent = id ? 'Editer la cat\u00e9gorie' : 'Nouvelle cat\u00e9gorie';
   const delBtn = document.getElementById('cat-modal-delete');
   if (delBtn) delBtn.style.display = id ? '' : 'none';
   const colors = document.getElementById('cat-modal-colors');
@@ -100,7 +100,7 @@ function addProjectInCatModal() {
 function editProject(id, name, acronym, cat, status) {
   const modal = document.getElementById('project-modal');
   if (!modal) return;
-  document.getElementById('proj-modal-title').textContent = id ? 'Editer projet' : 'Nouveau projet';
+  document.getElementById('proj-modal-title').textContent = id ? 'Editer le projet' : 'Nouveau projet';
   document.querySelectorAll('#proj-modal-delete').forEach(b => b.style.display = id ? '' : 'none');
   document.getElementById('new-proj-id').value = id || '';
   document.getElementById('new-proj-cat').value = cat || '';
@@ -165,7 +165,7 @@ function toggleDetail(el) {
 
 function openEditTask(id, title, desc, who, when, status) {
   _taskTargetList = null;
-  document.getElementById('task-modal-heading').textContent = 'Editer t\u00e2che';
+  document.getElementById('task-modal-heading').textContent = 'Editer la t\u00e2che';
   document.getElementById('task-modal-title').value = title;
   document.getElementById('task-modal-desc').value = desc;
   document.getElementById('task-modal-who').value = who;
@@ -216,30 +216,31 @@ function deleteTask() {
 
 // -- Delete confirmation -----------------------------------------------------
 
-let _deleteInterval = null;
 function confirmDelete(btn, callback) {
-  if (btn.dataset.confirmed === 'ready') { btn.dataset.confirmed = 'done'; callback(); return; }
-  if (btn.dataset.confirmed) return;
-  btn.dataset.confirmed = 'pending';
-  let countdown = 2;
-  btn.textContent = `Confirmer (${countdown})`;
-  btn.style.background = 'color-mix(in srgb, var(--red) 15%, white)';
-  _deleteInterval = setInterval(() => {
-    countdown--;
-    if (countdown > 0) { btn.textContent = `Confirmer (${countdown})`; }
-    else { clearInterval(_deleteInterval); _deleteInterval = null; btn.textContent = 'Confirmer'; btn.dataset.confirmed = 'ready'; }
-  }, 1000);
-}
+  // Hide parent edit modal first
+  const parentModal = btn.closest('.project-add-modal');
+  if (parentModal) parentModal.style.display = 'none';
 
-function resetDeleteBtns() {
-  if (_deleteInterval) { clearInterval(_deleteInterval); _deleteInterval = null; }
-  document.querySelectorAll('.btn-delete').forEach(btn => { btn.textContent = 'Supprimer'; btn.style.background = ''; delete btn.dataset.confirmed; });
+  const modal = document.getElementById('confirm-modal');
+  const msg = document.getElementById('confirm-modal-msg');
+  msg.textContent = '\u00cates-vous s\u00fbr de vouloir supprimer cet \u00e9l\u00e9ment ?';
+  const okBtn = document.getElementById('confirm-modal-ok');
+  okBtn.onclick = () => {
+    modal.style.display = 'none';
+    callback();
+  };
+  // Cancel reopens parent modal
+  const cancelBtn = modal.querySelector('.btn-cancel');
+  cancelBtn.onclick = () => {
+    modal.style.display = 'none';
+    if (parentModal) parentModal.style.display = 'flex';
+  };
+  modal.onclick = () => {
+    modal.style.display = 'none';
+    if (parentModal) parentModal.style.display = 'flex';
+  };
+  modal.style.display = 'flex';
 }
-
-document.querySelectorAll('.project-add-modal').forEach(modal => {
-  const observer = new MutationObserver(() => { if (modal.style.display === 'none') resetDeleteBtns(); });
-  observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
-});
 
 // -- Drag & drop -------------------------------------------------------------
 

@@ -421,6 +421,24 @@ body {
   padding: 20px;
   width: 320px;
 }
+.project-add-card {
+  position: relative;
+}
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--dimmed);
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+}
+.modal-close:hover {
+  color: var(--text);
+}
 .project-add-card h3 {
   font-size: 14px;
   margin-bottom: 18px;

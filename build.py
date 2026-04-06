@@ -77,11 +77,12 @@ def task_modal_html() -> str:
     who_options = "".join(f'<option>{escape(p)}</option>' for p in AVATAR_COLORS)
     return f'''<div class="project-add-modal" id="task-modal" style="display:none" onclick="this.style.display='none'">
   <div class="project-add-card" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="this.closest('.project-add-modal').style.display='none'">&times;</button>
     <h3 id="task-modal-heading">Nouvelle t\u00e2che</h3>
     <div class="edit-row"><input type="text" id="task-modal-title" placeholder="Titre" style="font-weight:600"></div>
     <div class="edit-row"><textarea id="task-modal-desc" placeholder="Detail"></textarea></div>
     <div class="edit-row"><select id="task-modal-who">{who_options}</select><input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none"><select id="task-modal-status"><option value="todo">A faire</option><option value="doing">En cours</option><option value="review">Revue</option><option value="done">Fait</option></select></div>
-    <div class="edit-actions"><button class="btn btn-save" onclick="saveTaskModal()">Enregistrer</button><button class="btn btn-delete" id="task-modal-delete" style="display:none" onclick="confirmDelete(this, deleteTask)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('task-modal').style.display='none'">Annuler</button></div>
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveTaskModal()">Enregistrer</button><button class="btn btn-delete" id="task-modal-delete" style="display:none" onclick="confirmDelete(this, deleteTask)">Supprimer</button></div>
   </div>
 </div>'''
 
@@ -90,6 +91,7 @@ def project_modal_html(cat_id: str = "") -> str:
     cat_val = f' value="{cat_id}"' if cat_id else ""
     return f'''<div class="project-add-modal" id="project-modal" style="display:none" onclick="this.style.display='none'">
   <div class="project-add-card" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="this.closest('.project-add-modal').style.display='none'">&times;</button>
     <h3 id="proj-modal-title">Projet</h3>
     <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" style="font-weight:600"></div>
     <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><select id="new-proj-status"><option value="active">Actif</option><option value="archived">Archiv\u00e9</option></select></div>
@@ -97,7 +99,7 @@ def project_modal_html(cat_id: str = "") -> str:
     <input type="hidden" id="new-proj-id">
     <div style="font-size:10px;font-weight:600;color:var(--dimmed);text-transform:uppercase;margin:8px 0 4px" id="proj-modal-projects-label">Projets</div>
     <div class="cat-modal-projects" id="proj-modal-projects"></div>
-    <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-delete" id="proj-modal-delete" style="display:none" onclick="confirmDelete(this, deleteProject)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('project-modal').style.display='none'">Annuler</button></div>
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-delete" id="proj-modal-delete" style="display:none" onclick="confirmDelete(this, deleteProject)">Supprimer</button></div>
   </div>
 </div>'''
 
@@ -116,6 +118,19 @@ def page(title: str, body: str, css_path: str = "style.css") -> str:
 <body>
 {body}
 {task_modal_html()}
+<div class="project-add-modal" id="confirm-modal" style="display:none" onclick="this.style.display='none'">
+  <div class="project-add-card" onclick="event.stopPropagation()" style="width:280px">
+    <h3 id="confirm-modal-title">Confirmer la suppression</h3>
+    <div style="text-align:center;margin:16px 0">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none"><path d="M12 2L1 21h22L12 2z" fill="color-mix(in srgb, var(--red) 15%, white)" stroke="var(--red)" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 9v5" stroke="var(--red)" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="var(--red)"/></svg>
+    </div>
+    <p id="confirm-modal-msg" style="font-size:12px;color:var(--dimmed);margin-bottom:18px;text-align:center"></p>
+    <div class="edit-actions" style="flex-direction:row;justify-content:flex-end">
+      <button class="btn btn-cancel" onclick="document.getElementById('confirm-modal').style.display='none'">Annuler</button>
+      <button class="btn btn-delete" id="confirm-modal-ok" onclick="">Supprimer</button>
+    </div>
+  </div>
+</div>
 <script defer src="{js_path}"></script>
 </body>
 </html>"""
@@ -255,7 +270,7 @@ def build_index():
 </a>'''
 
     cat_section += f'''<div class="cat-card cat-card-add" onclick="editCat('','','')">
-  <span class="cat-add-plus"><span style="font-size:18px">+</span> Ajouter une categorie</span>
+  <span class="cat-add-plus"><span style="font-size:18px">+</span> Ajouter une cat\u00e9gorie</span>
 </div>'''
     cat_section += '</div></div>'
 
@@ -263,13 +278,14 @@ def build_index():
     color_dots = "".join(f'<span class="color-dot" data-color="{cv}" style="background:{cv}" onclick="event.stopPropagation();selectCatColor(this)"></span>' for cn, cv in COLOR_LIST)
     cat_modal = f'''<div class="project-add-modal" id="cat-modal" style="display:none" onclick="this.style.display='none'">
   <div class="project-add-card" onclick="event.stopPropagation()">
-    <h3>Editer categorie</h3>
+    <button class="modal-close" onclick="this.closest('.project-add-modal').style.display='none'">&times;</button>
+    <h3>Editer la cat\u00e9gorie</h3>
     <div class="edit-row"><input type="text" id="cat-modal-name" placeholder="Nom de la categorie" style="font-weight:600;font-size:14px"></div>
     <div class="edit-row"><div class="color-field cat-modal-colors" id="cat-modal-colors">{color_dots}</div></div>
     <div style="font-size:10px;font-weight:600;color:var(--dimmed);text-transform:uppercase;margin:8px 0 4px">Projets</div>
     <div class="cat-modal-projects" id="cat-modal-projects"></div>
     <input type="hidden" id="cat-modal-id">
-    <div class="edit-actions"><button class="btn btn-save" onclick="saveCat()">Enregistrer</button><button class="btn btn-delete" id="cat-modal-delete" style="display:none" onclick="confirmDelete(this, deleteCat)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('cat-modal').style.display='none'">Annuler</button></div>
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveCat()">Enregistrer</button><button class="btn btn-delete" id="cat-modal-delete" style="display:none" onclick="confirmDelete(this, deleteCat)">Supprimer</button></div>
   </div>
 </div>'''
 
