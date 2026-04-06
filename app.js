@@ -180,9 +180,9 @@ function openEditTask(id, title, desc, who, when, status) {
 let _taskTargetList = null;
 let _taskProjectId = null;
 let _taskEditId = null;
-function openTaskModal(taskList) {
+function openTaskModal(taskList, projectId) {
   _taskTargetList = taskList;
-  _taskProjectId = taskList.closest('.kanban').dataset.projectId || '';
+  _taskProjectId = projectId || taskList.closest('.kanban')?.dataset?.projectId || '';
   _taskEditId = null;
   document.getElementById('task-modal-heading').textContent = 'Nouvelle t\u00e2che';
   document.getElementById('task-modal-title').value = '';

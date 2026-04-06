@@ -5,13 +5,13 @@
 <div class="kanban-col" style="background:color-mix(in srgb, {{ col.color }} 5%, white)">
   <div class="kanban-col-header" style="background:color-mix(in srgb, {{ col.color }} 25%, transparent)">
     <span class="col-name" style="color:{{ col.color }}">{{ col.name }}</span>
-    <button class="kanban-add-btn" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'))">+</button>
+    <button class="kanban-add-btn" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'), '{{ project_id | default('', true) }}')">+</button>
   </div>
   <div class="kanban-tasks" data-status="{{ col.id }}">
     {% for t in col_tasks %}
     {% include "partials/task_card.html" %}
     {% endfor %}
-    <div class="kanban-add-task" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'))"><span style="font-size:18px">+</span> Ajouter une t&acirc;che</div>
+    <div class="kanban-add-task" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'), '{{ project_id | default('', true) }}')"><span style="font-size:18px">+</span> Ajouter une t&acirc;che</div>
   </div>
 </div>
 
