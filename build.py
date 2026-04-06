@@ -19,6 +19,7 @@ cat_map = {c["id"]: c for c in categories}
 COLUMNS = [
     ("todo", "A faire", "#d63384"),
     ("doing", "En cours", "var(--cyan)"),
+    ("review", "Revue", "var(--purple)"),
     ("done", "Fait", "var(--green)"),
 ]
 
@@ -164,11 +165,10 @@ def build_header(prefix: str = ""):
 
     return f'''<div class="header">
   <a href="{prefix}index.html" style="text-decoration:none"><h1>DASHBOARD</h1></a>
-  <span class="meta">{len(projects)} projets</span>
   {badge_html}
   <span style="flex:1"></span>
-  <span class="meta">2026-04-05 15:42 CET</span>
-  <span class="badge" style="background:rgba(26,127,55,0.12);color:var(--green)">LIVE</span>
+  <a href="#" style="font-size:11px;color:var(--dimmed);text-decoration:none">DECONNEXION</a>
+  <div style="width:28px;height:28px;border-radius:50%;background:#0969da;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white" title="Q">Q</div>
 </div>'''
 
 
@@ -192,7 +192,12 @@ def build_index():
         for p in cat_projects:
             arrow, acolor = health_arrow(p)
             open_count = p["total"] - p["done"]
-            project_list += f'<div class="cat-project" onclick="window.location=\'cat/{c["id"]}.html#{p["id"]}\'"><span class="cat-project-dot" style="background:{c["color"]}"></span>{escape(p["name"])}</div>'
+            doing_count = len([t for t in p["tasks"] if t["status"] == "doing"])
+            if doing_count == 0:
+                dot_color = "#d0d7de"
+            else:
+                dot_color = f'color-mix(in srgb, {c["color"]} {min(30 + doing_count * 20, 100)}%, white)'
+            project_list += f'<div class="cat-project" onclick="window.location=\'cat/{c["id"]}.html#{p["id"]}\'"><span class="cat-project-dot" style="background:{dot_color}"></span>{escape(p["name"])}</div>'
 
         cat_section += f'''<a class="cat-card" href="cat/{c["id"]}.html">
   <div class="cat-header">
