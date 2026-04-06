@@ -272,7 +272,9 @@ def build_header(prefix: str = "", current_cat: dict = None):
     badge_html = ""
     for c in categories:
         count = len([p for p in projects if p["cat"] == c["id"]])
-        badge_html += f'<a href="{prefix}cat/{c["id"]}.html" class="badge" style="background:color-mix(in srgb, {c["color"]} 12%, transparent);color:{c["color"]};text-decoration:none">{escape(c["name"])} {count}</a>\n  '
+        is_active = current_cat and current_cat["id"] == c["id"]
+        weight = "font-weight:800;" if is_active else ""
+        badge_html += f'<a href="{prefix}cat/{c["id"]}.html" class="badge" style="background:color-mix(in srgb, {c["color"]} 12%, transparent);color:{c["color"]};text-decoration:none;{weight}">{escape(c["name"])} {count}</a>\n  '
 
     active_cat = current_cat if current_cat else categories[0]
     active_count = len([p for p in projects if p["cat"] == active_cat["id"]])
