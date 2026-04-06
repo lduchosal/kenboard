@@ -95,5 +95,10 @@ def create_app() -> Flask:
         """Serve JavaScript."""
         return app.send_static_file("app.js")
 
+    @app.route("/favicon.ico")
+    def favicon() -> Any:
+        """Return empty favicon."""
+        return "", 204
+
     log.info("app_started", debug=debug)
     return app

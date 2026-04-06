@@ -42,7 +42,7 @@ def create_task() -> Any:
             description=data.description,
             status=data.status,
             who=data.who,
-            due_date=data.due_date,
+            due_date=data.parsed_due_date(),
             position=max_pos + 1,
         )
         cur = conn.cursor()
