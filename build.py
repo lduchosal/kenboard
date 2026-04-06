@@ -556,7 +556,7 @@ def build_index():
   <div class="project-add-card" onclick="event.stopPropagation()">
     <h3>Editer categorie</h3>
     <div class="edit-row"><input type="text" id="cat-modal-name" placeholder="Nom de la categorie" style="font-weight:600;font-size:14px"></div>
-    <div class="edit-row cat-modal-colors" id="cat-modal-colors">{cat_color_dots}</div>
+    <div class="edit-row"><div class="color-field cat-modal-colors" id="cat-modal-colors">{cat_color_dots}</div></div>
     <input type="hidden" id="cat-modal-id">
     <div class="edit-actions"><button class="btn btn-save" onclick="saveCat()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('cat-modal').style.display='none'">Annuler</button></div>
   </div>
