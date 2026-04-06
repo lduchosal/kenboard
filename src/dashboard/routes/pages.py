@@ -52,9 +52,7 @@ def _load_all_data() -> dict[str, Any]:
         all_projects = list(queries.proj_get_all(conn))
         # Attach tasks to each project
         for p in all_projects:
-            p["tasks"] = list(
-                queries.task_get_by_project(conn, project_id=p["id"])
-            )
+            p["tasks"] = list(queries.task_get_by_project(conn, project_id=p["id"]))
             p["done"] = len([t for t in p["tasks"] if t["status"] == "done"])
             p["total"] = len(p["tasks"])
             # Build burndown from task counts (simple: just remaining per week placeholder)

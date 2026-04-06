@@ -31,6 +31,7 @@ def create_category() -> Any:
     try:
         max_pos = queries.cat_max_position(conn)
         import uuid
+
         cat_id = str(uuid.uuid4())
         queries.cat_create(
             conn,

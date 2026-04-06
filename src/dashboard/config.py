@@ -27,7 +27,9 @@ class Config:
     DB_TEST_NAME: str = os.getenv("DB_TEST_NAME", "dashboard_test")
 
     # Test migrations (DDL on test DB)
-    DB_TEST_MIGRATE_USER: str = os.getenv("DB_TEST_MIGRATE_USER", "dashboard_test_admin")
+    DB_TEST_MIGRATE_USER: str = os.getenv(
+        "DB_TEST_MIGRATE_USER", "dashboard_test_admin"
+    )
     DB_TEST_MIGRATE_PASSWORD: str = os.getenv("DB_TEST_MIGRATE_PASSWORD", "")
 
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"

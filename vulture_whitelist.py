@@ -8,3 +8,4 @@ Vulture reports them as unused variables in test function signatures.
 seed_category  # noqa
 seed_project  # noqa
 seed_task  # noqa
+setup_test_db  # noqa

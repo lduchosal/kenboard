@@ -8,6 +8,7 @@ from dashboard.app import create_app
 from dashboard.config import Config
 from dashboard.db import load_queries
 
+
 def _ensure_test_db() -> None:
     """Create the test database and tables using the test admin user."""
     conn = pymysql.connect(

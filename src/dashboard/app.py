@@ -25,7 +25,7 @@ def create_app() -> Flask:
     # Custom Jinja2 filter for JS string escaping in onclick attributes
     def jsesc(s: str) -> str:
         """Escape a string for use inside JS single-quoted strings."""
-        return str(s).replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n")
+        return s.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n")
 
     app.jinja_env.filters["jsesc"] = jsesc
 

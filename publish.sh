@@ -56,9 +56,9 @@ done
 
 # Set total steps based on mode
 if [ "$QUALITY_ONLY" = true ]; then
-    STEPS=17
+    STEPS=16
 else
-    STEPS=23
+    STEPS=22
 fi
 STEP=0
 
@@ -155,9 +155,6 @@ run_command "pdm run lint" "Linting"
 
 print_step "Dead Code Check (vulture)"
 run_command "pdm run vulture" "Dead code check"
-
-print_step "Building Static HTML (build.py)"
-run_command "python build.py" "Static HTML generation"
 
 print_step "Running Tests (pytest)"
 if [ "$CI_MODE" = true ]; then

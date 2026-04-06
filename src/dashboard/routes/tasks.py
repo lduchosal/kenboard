@@ -72,7 +72,9 @@ def update_task(task_id: int) -> Any:
                 id=task_id,
                 project_id=data.project_id,
                 status=data.status or existing["status"],
-                position=data.position if data.position is not None else existing["position"],
+                position=(
+                    data.position if data.position is not None else existing["position"]
+                ),
             )
         # Status + position change (drag within kanban)
         elif data.status is not None and data.position is not None:
