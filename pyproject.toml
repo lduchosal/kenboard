@@ -49,6 +49,7 @@ dev = [
     "pytest>=8.4",
     "pytest-cov>=7.0",
     "pytest-asyncio>=1.2.0",
+    "pytest-playwright>=0.6",
     "httpx>=0.24.0",
     # Formatting
     "black>=25.0",
@@ -85,11 +86,12 @@ version-files = ["src/dashboard/__init__.py:__version__"]
 [tool.pdm.scripts]
 
 # Testing
-test = "pytest tests/ -v --tb=short"
-test-quick = "pytest tests/ -v --tb=short -x"
-test-ci = "pytest tests/ -v --tb=short --ignore=tests/integration"
+test = "pytest tests/ -v --tb=short --ignore=tests/e2e"
+test-quick = "pytest tests/ -v --tb=short -x --ignore=tests/e2e"
+test-ci = "pytest tests/ -v --tb=short --ignore=tests/integration --ignore=tests/e2e"
 test-unit = "pytest tests/unit/ -v --tb=short"
 test-integration = "pytest tests/integration/ -v --tb=short"
+test-e2e = "pytest tests/e2e/ -v --tb=short"
 test-cov = "pytest tests/ -v --tb=short --cov=src/dashboard --cov-report=term-missing --cov-report=html"
 
 # Formatting
@@ -165,6 +167,7 @@ markers = [
     "slow: marks tests as slow",
     "integration: marks integration tests",
     "unit: marks unit tests",
+    "e2e: marks end-to-end browser tests",
 ]
 
 # -- coverage -----------------------------------------------------------------

@@ -9,3 +9,6 @@ seed_category  # noqa
 seed_project  # noqa
 seed_task  # noqa
 setup_test_db  # noqa
+clean_db  # noqa
+live_server  # noqa
+_setup_test_db  # noqa
