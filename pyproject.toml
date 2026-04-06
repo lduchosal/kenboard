@@ -100,7 +100,7 @@ lint = "ruff check --fix src/ tests/"
 flake8 = "flake8 src/"
 typecheck = "mypy src/"
 interrogate = "interrogate src/"
-vulture = "vulture src/"
+vulture = "vulture src/ tests/ vulture_whitelist.py"
 refurb = "refurb src/"
 
 # Composite checks
@@ -184,8 +184,7 @@ exclude_also = [
 
 [tool.vulture]
 min_confidence = 80
-paths = ["src"]
-exclude = ["tests"]
+paths = ["src", "tests"]
 
 # -- interrogate --------------------------------------------------------------
 
