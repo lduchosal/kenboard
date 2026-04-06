@@ -1,0 +1,14 @@
+[flake8]
+max-line-length = 125
+extend-ignore = E203, W503, D203, D205, D212, D415, DCO031
+docstring-convention = google
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    .eggs,
+    *.egg,
+    build,
+    dist,
+    .mypy_cache,
+    .tox
