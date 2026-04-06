@@ -1,6 +1,7 @@
 """Flask application factory."""
 
 import os
+from typing import Any
 
 from flask import Flask
 from flask_cors import CORS
@@ -22,7 +23,7 @@ def create_app() -> Flask:
     from pydantic import ValidationError
 
     @app.errorhandler(ValidationError)
-    def handle_validation_error(e):
+    def handle_validation_error(e: ValidationError) -> tuple[dict[str, Any], int]:
         """Return 422 for Pydantic validation errors."""
         return {"error": "Validation error", "details": e.errors()}, 422
 
@@ -33,7 +34,7 @@ def create_app() -> Flask:
 
     # Serve index.html at root
     @app.route("/")
-    def index():
+    def index() -> Any:
         """Serve the dashboard."""
         return app.send_static_file("index.html")
 

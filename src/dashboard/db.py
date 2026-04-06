@@ -1,11 +1,11 @@
 """Database connection and query loading."""
 
-import os
 from pathlib import Path
+from typing import Any
 
 import aiosql
-import pymysql
-import pymysql.cursors
+import pymysql  # type: ignore[import-untyped]
+import pymysql.cursors  # type: ignore[import-untyped]
 
 from dashboard.config import Config
 
@@ -25,6 +25,6 @@ def get_connection() -> pymysql.Connection:
     )
 
 
-def load_queries():
+def load_queries() -> Any:
     """Load SQL queries from the queries directory."""
     return aiosql.from_path(str(QUERIES_DIR), "pymysql", mandatory_parameters=False)

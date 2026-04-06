@@ -1,5 +1,7 @@
 """Task API routes."""
 
+from typing import Any
+
 from flask import Blueprint, jsonify, request
 
 from dashboard.db import get_connection, load_queries
@@ -9,7 +11,7 @@ bp = Blueprint("tasks", __name__, url_prefix="/api/v1/tasks")
 
 
 @bp.route("", methods=["GET"])
-def list_tasks():
+def list_tasks() -> Any:
     """List tasks for a project."""
     project_id = request.args.get("project")
     if not project_id:
@@ -24,7 +26,7 @@ def list_tasks():
 
 
 @bp.route("", methods=["POST"])
-def create_task():
+def create_task() -> Any:
     """Create a new task."""
     data = TaskCreate(**request.get_json())
     conn = get_connection()
@@ -53,7 +55,7 @@ def create_task():
 
 
 @bp.route("/<int:task_id>", methods=["PATCH"])
-def update_task(task_id: int):
+def update_task(task_id: int) -> Any:
     """Update a task."""
     data = TaskUpdate(**request.get_json())
     conn = get_connection()
@@ -73,16 +75,29 @@ def update_task(task_id: int):
                 conn,
                 id=task_id,
                 status=data.status or existing["status"],
-                position=data.position if data.position is not None else existing["position"],
+                position=(
+                    data.position if data.position is not None else existing["position"]
+                ),
             )
 
         # Field updates
-        if any([data.title, data.description is not None, data.who is not None, data.due_date]):
+        if any(
+            [
+                data.title,
+                data.description is not None,
+                data.who is not None,
+                data.due_date,
+            ]
+        ):
             queries.task_update(
                 conn,
                 id=task_id,
                 title=data.title or existing["title"],
-                description=data.description if data.description is not None else existing["description"],
+                description=(
+                    data.description
+                    if data.description is not None
+                    else existing["description"]
+                ),
                 status=data.status or existing["status"],
                 who=data.who if data.who is not None else existing["who"],
                 due_date=data.due_date or existing["due_date"],
@@ -95,7 +110,7 @@ def update_task(task_id: int):
 
 
 @bp.route("/<int:task_id>", methods=["DELETE"])
-def delete_task(task_id: int):
+def delete_task(task_id: int) -> Any:
     """Delete a task."""
     conn = get_connection()
     queries = load_queries()

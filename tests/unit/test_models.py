@@ -49,9 +49,7 @@ class TestProjectModels:
         assert data.status == "active"
 
     def test_create_archived(self):
-        data = ProjectCreate(
-            name="Old", acronym="OLD", cat="tech", status="archived"
-        )
+        data = ProjectCreate(name="Old", acronym="OLD", cat="tech", status="archived")
         assert data.status == "archived"
 
     def test_create_invalid_status(self):

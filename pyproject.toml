@@ -93,14 +93,14 @@ test-cov = "pytest tests/ -v --tb=short --cov=src/dashboard --cov-report=term-mi
 format = "black src/ tests/"
 isort = "isort src/ tests/"
 docformatter = "docformatter --recursive --in-place --wrap-summaries 88 --wrap-descriptions 88 --close-quotes-on-newline src/ tests/"
-absolufy = "absolufy-imports src/"
+absolufy = { shell = "find src/ -name '*.py' -exec absolufy-imports {} +" }
 
 # Linting & type checking
 lint = "ruff check --fix src/ tests/"
 flake8 = "flake8 src/"
 typecheck = "mypy src/"
 interrogate = "interrogate src/"
-vulture = "vulture src/ tests/"
+vulture = "vulture src/"
 refurb = "refurb src/"
 
 # Composite checks
@@ -184,7 +184,8 @@ exclude_also = [
 
 [tool.vulture]
 min_confidence = 80
-paths = ["src", "tests"]
+paths = ["src"]
+exclude = ["tests"]
 
 # -- interrogate --------------------------------------------------------------
 

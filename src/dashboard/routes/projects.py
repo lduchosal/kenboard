@@ -1,5 +1,7 @@
 """Project API routes."""
 
+from typing import Any
+
 from flask import Blueprint, jsonify, request
 
 from dashboard.db import get_connection, load_queries
@@ -9,7 +11,7 @@ bp = Blueprint("projects", __name__, url_prefix="/api/v1/projects")
 
 
 @bp.route("", methods=["GET"])
-def list_projects():
+def list_projects() -> Any:
     """List projects, optionally filtered by category."""
     cat_id = request.args.get("cat")
     conn = get_connection()
@@ -25,7 +27,7 @@ def list_projects():
 
 
 @bp.route("", methods=["POST"])
-def create_project():
+def create_project() -> Any:
     """Create a new project."""
     data = ProjectCreate(**request.get_json())
     conn = get_connection()
@@ -49,7 +51,7 @@ def create_project():
 
 
 @bp.route("/<proj_id>", methods=["PATCH"])
-def update_project(proj_id: str):
+def update_project(proj_id: str) -> Any:
     """Update a project."""
     data = ProjectUpdate(**request.get_json())
     conn = get_connection()
@@ -77,7 +79,7 @@ def update_project(proj_id: str):
 
 
 @bp.route("/<proj_id>", methods=["DELETE"])
-def delete_project(proj_id: str):
+def delete_project(proj_id: str) -> Any:
     """Delete a project (only if no tasks)."""
     conn = get_connection()
     queries = load_queries()

@@ -2,8 +2,6 @@
 
 import json
 
-import pytest
-
 
 class TestCategoryAPI:
     """Test category API endpoints."""
@@ -93,9 +91,7 @@ class TestProjectAPI:
         queries.cat_create(db, id="cat", name="Cat", color="r", position=0)
         resp = client.post(
             "/api/v1/projects",
-            data=json.dumps(
-                {"name": "My Project", "acronym": "PROJ", "cat": "cat"}
-            ),
+            data=json.dumps({"name": "My Project", "acronym": "PROJ", "cat": "cat"}),
             content_type="application/json",
         )
         assert resp.status_code == 201
@@ -106,8 +102,13 @@ class TestProjectAPI:
     def test_list_by_cat(self, client, db, queries):
         queries.cat_create(db, id="cat", name="Cat", color="r", position=0)
         queries.proj_create(
-            db, id="p1", cat_id="cat", name="P1",
-            acronym="PP", status="active", position=0,
+            db,
+            id="p1",
+            cat_id="cat",
+            name="P1",
+            acronym="PP",
+            status="active",
+            position=0,
         )
         resp = client.get("/api/v1/projects?cat=cat")
         assert resp.status_code == 200

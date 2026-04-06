@@ -1,7 +1,5 @@
 """Test aiosql queries load correctly and execute against the DB."""
 
-import pytest
-
 
 class TestQueriesLoad:
     """Test that all expected queries are loaded."""
@@ -81,8 +79,13 @@ class TestProjectQueries:
 
     def test_create_and_get(self, db, queries, seed_category):
         queries.proj_create(
-            db, id="p1", cat_id="test-cat", name="P1",
-            acronym="PP", status="active", position=0,
+            db,
+            id="p1",
+            cat_id="test-cat",
+            name="P1",
+            acronym="PP",
+            status="active",
+            position=0,
         )
         row = queries.proj_get_by_id(db, id="p1")
         assert row["name"] == "P1"
@@ -112,9 +115,14 @@ class TestTaskQueries:
 
     def test_create_and_get(self, db, queries, seed_project):
         queries.task_create(
-            db, project_id="test-proj", title="T1",
-            description="", status="todo", who="Q",
-            due_date=None, position=0,
+            db,
+            project_id="test-proj",
+            title="T1",
+            description="",
+            status="todo",
+            who="Q",
+            due_date=None,
+            position=0,
         )
         cur = db.cursor()
         cur.execute("SELECT LAST_INSERT_ID()")

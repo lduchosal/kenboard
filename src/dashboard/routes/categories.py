@@ -1,6 +1,6 @@
 """Category API routes."""
 
-import uuid
+from typing import Any
 
 from flask import Blueprint, jsonify, request
 
@@ -11,7 +11,7 @@ bp = Blueprint("categories", __name__, url_prefix="/api/v1/categories")
 
 
 @bp.route("", methods=["GET"])
-def list_categories():
+def list_categories() -> Any:
     """List all categories."""
     conn = get_connection()
     queries = load_queries()
@@ -23,7 +23,7 @@ def list_categories():
 
 
 @bp.route("", methods=["POST"])
-def create_category():
+def create_category() -> Any:
     """Create a new category."""
     data = CategoryCreate(**request.get_json())
     conn = get_connection()
@@ -45,7 +45,7 @@ def create_category():
 
 
 @bp.route("/<cat_id>", methods=["PATCH"])
-def update_category(cat_id: str):
+def update_category(cat_id: str) -> Any:
     """Update a category."""
     data = CategoryUpdate(**request.get_json())
     conn = get_connection()
@@ -71,7 +71,7 @@ def update_category(cat_id: str):
 
 
 @bp.route("/<cat_id>", methods=["DELETE"])
-def delete_category(cat_id: str):
+def delete_category(cat_id: str) -> Any:
     """Delete a category."""
     conn = get_connection()
     queries = load_queries()
@@ -83,7 +83,7 @@ def delete_category(cat_id: str):
 
 
 @bp.route("/reorder", methods=["POST"])
-def reorder_categories():
+def reorder_categories() -> Any:
     """Reorder categories."""
     data = request.get_json()
     old_idx = data["from"]
