@@ -4,7 +4,7 @@ from typing import Any
 
 from flask import Blueprint, jsonify, request
 
-from dashboard.db import get_connection, load_queries
+import dashboard.db as db
 from dashboard.models.project import Project, ProjectCreate, ProjectUpdate
 
 bp = Blueprint("projects", __name__, url_prefix="/api/v1/projects")
@@ -14,8 +14,8 @@ bp = Blueprint("projects", __name__, url_prefix="/api/v1/projects")
 def list_projects() -> Any:
     """List projects, optionally filtered by category."""
     cat_id = request.args.get("cat")
-    conn = get_connection()
-    queries = load_queries()
+    conn = db.get_connection()
+    queries = db.load_queries()
     try:
         if cat_id:
             rows = list(queries.proj_get_by_cat(conn, cat_id=cat_id))
@@ -30,8 +30,8 @@ def list_projects() -> Any:
 def create_project() -> Any:
     """Create a new project."""
     data = ProjectCreate(**request.get_json())
-    conn = get_connection()
-    queries = load_queries()
+    conn = db.get_connection()
+    queries = db.load_queries()
     try:
         max_pos = queries.proj_max_position_in_cat(conn, cat_id=data.cat)
         proj_id = data.name.lower().replace(" ", "-")
@@ -54,8 +54,8 @@ def create_project() -> Any:
 def update_project(proj_id: str) -> Any:
     """Update a project."""
     data = ProjectUpdate(**request.get_json())
-    conn = get_connection()
-    queries = load_queries()
+    conn = db.get_connection()
+    queries = db.load_queries()
     try:
         existing = queries.proj_get_by_id(conn, id=proj_id)
         if not existing:
@@ -81,8 +81,8 @@ def update_project(proj_id: str) -> Any:
 @bp.route("/<proj_id>", methods=["DELETE"])
 def delete_project(proj_id: str) -> Any:
     """Delete a project (only if no tasks)."""
-    conn = get_connection()
-    queries = load_queries()
+    conn = db.get_connection()
+    queries = db.load_queries()
     try:
         count = queries.proj_count_tasks(conn, project_id=proj_id)
         if count > 0:

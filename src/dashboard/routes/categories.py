@@ -4,7 +4,7 @@ from typing import Any
 
 from flask import Blueprint, jsonify, request
 
-from dashboard.db import get_connection, load_queries
+import dashboard.db as db
 from dashboard.models.category import Category, CategoryCreate, CategoryUpdate
 
 bp = Blueprint("categories", __name__, url_prefix="/api/v1/categories")
@@ -13,8 +13,8 @@ bp = Blueprint("categories", __name__, url_prefix="/api/v1/categories")
 @bp.route("", methods=["GET"])
 def list_categories() -> Any:
     """List all categories."""
-    conn = get_connection()
-    queries = load_queries()
+    conn = db.get_connection()
+    queries = db.load_queries()
     try:
         rows = list(queries.cat_get_all(conn))
         return jsonify([Category(**row).model_dump() for row in rows])
@@ -26,8 +26,8 @@ def list_categories() -> Any:
 def create_category() -> Any:
     """Create a new category."""
     data = CategoryCreate(**request.get_json())
-    conn = get_connection()
-    queries = load_queries()
+    conn = db.get_connection()
+    queries = db.load_queries()
     try:
         max_pos = queries.cat_max_position(conn)
         cat_id = data.name.lower().replace(" ", "-")
@@ -48,8 +48,8 @@ def create_category() -> Any:
 def update_category(cat_id: str) -> Any:
     """Update a category."""
     data = CategoryUpdate(**request.get_json())
-    conn = get_connection()
-    queries = load_queries()
+    conn = db.get_connection()
+    queries = db.load_queries()
     try:
         existing = queries.cat_get_by_id(conn, id=cat_id)
         if not existing:
@@ -73,8 +73,8 @@ def update_category(cat_id: str) -> Any:
 @bp.route("/<cat_id>", methods=["DELETE"])
 def delete_category(cat_id: str) -> Any:
     """Delete a category."""
-    conn = get_connection()
-    queries = load_queries()
+    conn = db.get_connection()
+    queries = db.load_queries()
     try:
         queries.cat_delete(conn, id=cat_id)
         return "", 204
@@ -88,8 +88,8 @@ def reorder_categories() -> Any:
     data = request.get_json()
     old_idx = data["from"]
     new_idx = data["to"]
-    conn = get_connection()
-    queries = load_queries()
+    conn = db.get_connection()
+    queries = db.load_queries()
     try:
         rows = list(queries.cat_get_all(conn))
         ids = [r["id"] for r in rows]

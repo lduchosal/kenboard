@@ -6,7 +6,7 @@ from typing import Any
 
 from flask import Blueprint, render_template
 
-from dashboard.db import get_connection, load_queries
+import dashboard.db as db
 
 bp = Blueprint("pages", __name__)
 
@@ -45,8 +45,8 @@ def fmt_date(when_str: str) -> str:
 
 def _load_all_data() -> dict[str, Any]:
     """Load all data from the database."""
-    conn = get_connection()
-    queries = load_queries()
+    conn = db.get_connection()
+    queries = db.load_queries()
     try:
         categories = list(queries.cat_get_all(conn))
         all_projects = list(queries.proj_get_all(conn))

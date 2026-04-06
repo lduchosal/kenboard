@@ -4,7 +4,7 @@ from typing import Any
 
 from flask import Blueprint, jsonify, request
 
-from dashboard.db import get_connection, load_queries
+import dashboard.db as db
 from dashboard.models.task import Task, TaskCreate, TaskUpdate
 
 bp = Blueprint("tasks", __name__, url_prefix="/api/v1/tasks")
@@ -16,8 +16,8 @@ def list_tasks() -> Any:
     project_id = request.args.get("project")
     if not project_id:
         return jsonify({"error": "project parameter required"}), 400
-    conn = get_connection()
-    queries = load_queries()
+    conn = db.get_connection()
+    queries = db.load_queries()
     try:
         rows = list(queries.task_get_by_project(conn, project_id=project_id))
         return jsonify([Task(**row).model_dump(mode="json") for row in rows])
@@ -29,8 +29,8 @@ def list_tasks() -> Any:
 def create_task() -> Any:
     """Create a new task."""
     data = TaskCreate(**request.get_json())
-    conn = get_connection()
-    queries = load_queries()
+    conn = db.get_connection()
+    queries = db.load_queries()
     try:
         max_pos = queries.task_max_position(
             conn, project_id=data.project_id, status=data.status
@@ -58,8 +58,8 @@ def create_task() -> Any:
 def update_task(task_id: int) -> Any:
     """Update a task."""
     data = TaskUpdate(**request.get_json())
-    conn = get_connection()
-    queries = load_queries()
+    conn = db.get_connection()
+    queries = db.load_queries()
     try:
         existing = queries.task_get_by_id(conn, id=task_id)
         if not existing:
@@ -112,8 +112,8 @@ def update_task(task_id: int) -> Any:
 @bp.route("/<int:task_id>", methods=["DELETE"])
 def delete_task(task_id: int) -> Any:
     """Delete a task."""
-    conn = get_connection()
-    queries = load_queries()
+    conn = db.get_connection()
+    queries = db.load_queries()
     try:
         queries.task_delete(conn, id=task_id)
         return "", 204
