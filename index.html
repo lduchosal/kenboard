@@ -114,7 +114,7 @@
   <div class="cat-projects"></div>
   <div class="cat-burndown"><div class="bar-group"><div style="height:0%;background:var(--red);opacity:0.5;border-radius:1px"></div></div></div>
 </a><div class="cat-card cat-card-add" onclick="editCat('','','')">
-  <span class="cat-add-plus">+</span>
+  <span class="cat-add-plus"><span style="font-size:18px">+</span> Ajouter une categorie</span>
 </div></div></div><div class="project-add-modal" id="project-modal" style="display:none" onclick="this.style.display='none'">
   <div class="project-add-card" onclick="event.stopPropagation()">
     <h3 id="proj-modal-title">Projet</h3>
@@ -122,7 +122,7 @@
     <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACR" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><input type="text" id="new-proj-due" placeholder="dd.mm" style="width:60px;flex:none"></div>
     <input type="hidden" id="new-proj-cat">
     <input type="hidden" id="new-proj-id">
-    <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('project-modal').style.display='none'">Annuler</button></div>
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-delete" id="proj-modal-delete" style="display:none" onclick="confirmDelete(this, deleteProject)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('project-modal').style.display='none'">Annuler</button></div>
   </div>
 </div><div class="project-add-modal" id="cat-modal" style="display:none" onclick="this.style.display='none'">
   <div class="project-add-card" onclick="event.stopPropagation()">
@@ -131,18 +131,17 @@
     <div class="edit-row"><div class="color-field cat-modal-colors" id="cat-modal-colors"><span class="color-dot" data-color="var(--orange)" style="background:var(--orange)" onclick="event.stopPropagation();selectCatColor(this)"></span><span class="color-dot" data-color="var(--green)" style="background:var(--green)" onclick="event.stopPropagation();selectCatColor(this)"></span><span class="color-dot" data-color="var(--accent)" style="background:var(--accent)" onclick="event.stopPropagation();selectCatColor(this)"></span><span class="color-dot" data-color="var(--purple)" style="background:var(--purple)" onclick="event.stopPropagation();selectCatColor(this)"></span><span class="color-dot" data-color="var(--cyan)" style="background:var(--cyan)" onclick="event.stopPropagation();selectCatColor(this)"></span><span class="color-dot" data-color="var(--red)" style="background:var(--red)" onclick="event.stopPropagation();selectCatColor(this)"></span></div></div>
     <div class="cat-modal-projects-label" style="font-size:10px;font-weight:600;color:var(--dimmed);text-transform:uppercase;margin:8px 0 4px">Projets</div>
     <div class="cat-modal-projects" id="cat-modal-projects"></div>
-    <div class="cat-modal-add-project" onclick="addProjectInCatModal()" style="display:flex;align-items:center;gap:6px;padding:4px 8px;font-size:11px;color:var(--dimmed);cursor:pointer"><span style="font-size:14px">+</span> Ajouter un projet</div>
     <input type="hidden" id="cat-modal-id">
-    <div class="edit-actions"><button class="btn btn-save" onclick="saveCat()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('cat-modal').style.display='none'">Annuler</button></div>
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveCat()">Enregistrer</button><button class="btn btn-delete" id="cat-modal-delete" style="display:none" onclick="confirmDelete(this, deleteCat)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('cat-modal').style.display='none'">Annuler</button></div>
   </div>
 </div><script>const CAT_PROJECTS = {"immobilier": [{"id": "renovation-appart", "name": "Renovation appart", "acronym": "RENO", "tasks": 20}, {"id": "recherche-terrain", "name": "Recherche terrain", "acronym": "TERR", "tasks": 10}, {"id": "dossier-hypotheque", "name": "Dossier hypotheque", "acronym": "HYPO", "tasks": 10}], "sante": [{"id": "bilan-annuel", "name": "Bilan annuel", "acronym": "BILA", "tasks": 6}], "technique": [{"id": "2113ch-website", "name": "2113.ch Website", "acronym": "WEB2", "tasks": 25}, {"id": "infra-ansible", "name": "Infra Ansible", "acronym": "ANSI", "tasks": 20}, {"id": "monitoring-stack", "name": "Monitoring Stack", "acronym": "MONI", "tasks": 20}, {"id": "ssl-pki-renewal", "name": "SSL/PKI Renewal", "acronym": "SSLP", "tasks": 20}, {"id": "kanban-dashboard", "name": "Kanban Dashboard", "acronym": "KANB", "tasks": 20}, {"id": "backup-strategy", "name": "Backup Strategy", "acronym": "BACK", "tasks": 20}, {"id": "migration-freebsd", "name": "Migration FreeBSD", "acronym": "FBSD", "tasks": 20}, {"id": "cicd-pipeline", "name": "CI/CD Pipeline", "acronym": "CICD", "tasks": 20}, {"id": "api-v2", "name": "API v2", "acronym": "APIV", "tasks": 20}, {"id": "docs-techniques", "name": "Docs techniques", "acronym": "DOCS", "tasks": 20}], "famille": [{"id": "vacances-ete", "name": "Vacances ete", "acronym": "VACA", "tasks": 20}], "finance": [], "education": []};</script>
 <div class="project-add-modal" id="task-modal" style="display:none" onclick="this.style.display='none'">
   <div class="project-add-card" onclick="event.stopPropagation()">
-    <h3>Nouvelle tache</h3>
+    <h3 id="task-modal-heading">Nouvelle tache</h3>
     <div class="edit-row"><input type="text" id="task-modal-title" placeholder="Titre" style="font-weight:600"></div>
     <div class="edit-row"><textarea id="task-modal-desc" placeholder="Detail" style="min-height:80px;resize:vertical"></textarea></div>
     <div class="edit-row"><select id="task-modal-who"><option>Q</option><option>Alice</option><option>Bob</option><option>Claire</option></select><input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none"></div>
-    <div class="edit-actions"><button class="btn btn-save" onclick="saveTaskModal()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('task-modal').style.display='none'">Annuler</button></div>
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveTaskModal()">Enregistrer</button><button class="btn btn-delete" id="task-modal-delete" style="display:none" onclick="confirmDelete(this, deleteTask)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('task-modal').style.display='none'">Annuler</button></div>
   </div>
 </div>
 <script>
@@ -175,6 +174,8 @@ function editCat(id, name, color) {
   document.getElementById('cat-modal-id').value = id;
   document.getElementById('cat-modal-name').value = name;
   document.querySelector('#cat-modal h3').textContent = id ? 'Editer categorie' : 'Nouvelle categorie';
+  const delBtn = document.getElementById('cat-modal-delete');
+  if (delBtn) delBtn.style.display = id ? '' : 'none';
   const colors = document.getElementById('cat-modal-colors');
   colors.querySelectorAll('.color-dot').forEach(d => {
     d.classList.toggle('selected', d.dataset.color === color);
@@ -225,6 +226,15 @@ function saveCat() {
   document.getElementById('cat-modal').style.display = 'none';
 }
 
+function deleteCat() {
+  const id = document.getElementById('cat-modal-id').value;
+  if (!id) return;
+  fetch(`${API_BASE}/categories/${id}`, { method: 'DELETE' })
+    .then(() => window.location.reload())
+    .catch(err => console.warn('API not available:', err));
+  document.getElementById('cat-modal').style.display = 'none';
+}
+
 // Add project in category modal
 function addProjectInCatModal() {
   const list = document.getElementById('cat-modal-projects');
@@ -242,6 +252,7 @@ function editProject(id, name, acronym, due, cat) {
   const modal = document.getElementById('project-modal');
   if (!modal) return;
   document.getElementById('proj-modal-title').textContent = id ? 'Editer projet' : 'Nouveau projet';
+  document.querySelectorAll('#proj-modal-delete, #proj-modal-delete2').forEach(b => b.style.display = id ? '' : 'none');
   document.getElementById('new-proj-id').value = id || '';
   document.getElementById('new-proj-cat').value = cat || '';
   document.getElementById('new-proj-name').value = name || '';
@@ -268,13 +279,45 @@ function saveProject() {
   document.getElementById('project-modal').style.display = 'none';
 }
 
+function deleteProject() {
+  const id = document.getElementById('new-proj-id').value;
+  if (!id) return;
+  fetch(`${API_BASE}/projects/${id}`, { method: 'DELETE' })
+    .then(() => window.location.reload())
+    .catch(err => console.warn('API not available:', err));
+  document.getElementById('project-modal').style.display = 'none';
+}
+
+// Toggle detail mode
+function toggleDetail(el) {
+  const wasDetail = el.classList.contains('detail-mode');
+  document.querySelectorAll('.kanban-task.detail-mode').forEach(t => t.classList.remove('detail-mode'));
+  if (!wasDetail) el.classList.add('detail-mode');
+}
+
+// Open edit task modal with pre-filled data
+function openEditTask(id, title, desc, who, when) {
+  _taskTargetList = null;
+  document.getElementById('task-modal-heading').textContent = 'Editer tâche';
+  document.getElementById('task-modal-title').value = title;
+  document.getElementById('task-modal-desc').value = desc;
+  document.getElementById('task-modal-who').value = who;
+  document.getElementById('task-modal-when').value = when;
+  const delBtn = document.getElementById('task-modal-delete');
+  if (delBtn) delBtn.style.display = id ? '' : 'none';
+  document.getElementById('task-modal').style.display = 'flex';
+}
+
 // Task modal
 let _taskTargetList = null;
 function openTaskModal(taskList) {
   _taskTargetList = taskList;
+  document.getElementById('task-modal-heading').textContent = 'Nouvelle tâche';
   document.getElementById('task-modal-title').value = '';
   document.getElementById('task-modal-desc').value = '';
   document.getElementById('task-modal-when').value = '';
+  const delBtn = document.getElementById('task-modal-delete');
+  if (delBtn) delBtn.style.display = 'none';
   document.getElementById('task-modal').style.display = 'flex';
   document.getElementById('task-modal-title').focus();
 }
@@ -298,6 +341,57 @@ function saveTaskModal() {
   }
   document.getElementById('task-modal').style.display = 'none';
 }
+
+let _deleteInterval = null;
+function confirmDelete(btn, callback) {
+  if (btn.dataset.confirmed === 'ready') {
+    btn.dataset.confirmed = 'done';
+    callback();
+    return;
+  }
+  if (btn.dataset.confirmed) return;
+  btn.dataset.confirmed = 'pending';
+  let countdown = 2;
+  btn.textContent = `Confirmer (${countdown})`;
+  btn.style.background = 'color-mix(in srgb, var(--red) 15%, white)';
+  _deleteInterval = setInterval(() => {
+    countdown--;
+    if (countdown > 0) {
+      btn.textContent = `Confirmer (${countdown})`;
+    } else {
+      clearInterval(_deleteInterval);
+      _deleteInterval = null;
+      btn.textContent = 'Confirmer';
+      btn.dataset.confirmed = 'ready';
+    }
+  }, 1000);
+}
+
+function resetDeleteBtns() {
+  if (_deleteInterval) {
+    clearInterval(_deleteInterval);
+    _deleteInterval = null;
+  }
+  document.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.textContent = 'Supprimer';
+    btn.style.background = '';
+    delete btn.dataset.confirmed;
+  });
+}
+
+function deleteTask() {
+  // TODO: call API to delete task
+  console.warn('Delete task - API not implemented');
+  document.getElementById('task-modal').style.display = 'none';
+}
+
+// Reset delete buttons when any modal closes
+document.querySelectorAll('.project-add-modal').forEach(modal => {
+  const observer = new MutationObserver(() => {
+    if (modal.style.display === 'none') resetDeleteBtns();
+  });
+  observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
+});
 
 // Drag & drop
 const API_BASE = '/api/v1';

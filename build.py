@@ -92,11 +92,11 @@ def page(title: str, body: str, css_path: str = "style.css") -> str:
 {body}
 <div class="project-add-modal" id="task-modal" style="display:none" onclick="this.style.display='none'">
   <div class="project-add-card" onclick="event.stopPropagation()">
-    <h3>Nouvelle tache</h3>
+    <h3 id="task-modal-heading">Nouvelle tache</h3>
     <div class="edit-row"><input type="text" id="task-modal-title" placeholder="Titre" style="font-weight:600"></div>
     <div class="edit-row"><textarea id="task-modal-desc" placeholder="Detail" style="min-height:80px;resize:vertical"></textarea></div>
     <div class="edit-row"><select id="task-modal-who">{"".join(f'<option>{escape(p)}</option>' for p in AVATAR_COLORS.keys())}</select><input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none"></div>
-    <div class="edit-actions"><button class="btn btn-save" onclick="saveTaskModal()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('task-modal').style.display='none'">Annuler</button></div>
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveTaskModal()">Enregistrer</button><button class="btn btn-delete" id="task-modal-delete" style="display:none" onclick="confirmDelete(this, deleteTask)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('task-modal').style.display='none'">Annuler</button></div>
   </div>
 </div>
 <script>
@@ -129,6 +129,8 @@ function editCat(id, name, color) {{
   document.getElementById('cat-modal-id').value = id;
   document.getElementById('cat-modal-name').value = name;
   document.querySelector('#cat-modal h3').textContent = id ? 'Editer categorie' : 'Nouvelle categorie';
+  const delBtn = document.getElementById('cat-modal-delete');
+  if (delBtn) delBtn.style.display = id ? '' : 'none';
   const colors = document.getElementById('cat-modal-colors');
   colors.querySelectorAll('.color-dot').forEach(d => {{
     d.classList.toggle('selected', d.dataset.color === color);
@@ -179,6 +181,15 @@ function saveCat() {{
   document.getElementById('cat-modal').style.display = 'none';
 }}
 
+function deleteCat() {{
+  const id = document.getElementById('cat-modal-id').value;
+  if (!id) return;
+  fetch(`${{API_BASE}}/categories/${{id}}`, {{ method: 'DELETE' }})
+    .then(() => window.location.reload())
+    .catch(err => console.warn('API not available:', err));
+  document.getElementById('cat-modal').style.display = 'none';
+}}
+
 // Add project in category modal
 function addProjectInCatModal() {{
   const list = document.getElementById('cat-modal-projects');
@@ -196,6 +207,7 @@ function editProject(id, name, acronym, due, cat) {{
   const modal = document.getElementById('project-modal');
   if (!modal) return;
   document.getElementById('proj-modal-title').textContent = id ? 'Editer projet' : 'Nouveau projet';
+  document.querySelectorAll('#proj-modal-delete, #proj-modal-delete2').forEach(b => b.style.display = id ? '' : 'none');
   document.getElementById('new-proj-id').value = id || '';
   document.getElementById('new-proj-cat').value = cat || '';
   document.getElementById('new-proj-name').value = name || '';
@@ -222,13 +234,45 @@ function saveProject() {{
   document.getElementById('project-modal').style.display = 'none';
 }}
 
+function deleteProject() {{
+  const id = document.getElementById('new-proj-id').value;
+  if (!id) return;
+  fetch(`${{API_BASE}}/projects/${{id}}`, {{ method: 'DELETE' }})
+    .then(() => window.location.reload())
+    .catch(err => console.warn('API not available:', err));
+  document.getElementById('project-modal').style.display = 'none';
+}}
+
+// Toggle detail mode
+function toggleDetail(el) {{
+  const wasDetail = el.classList.contains('detail-mode');
+  document.querySelectorAll('.kanban-task.detail-mode').forEach(t => t.classList.remove('detail-mode'));
+  if (!wasDetail) el.classList.add('detail-mode');
+}}
+
+// Open edit task modal with pre-filled data
+function openEditTask(id, title, desc, who, when) {{
+  _taskTargetList = null;
+  document.getElementById('task-modal-heading').textContent = 'Editer t\u00e2che';
+  document.getElementById('task-modal-title').value = title;
+  document.getElementById('task-modal-desc').value = desc;
+  document.getElementById('task-modal-who').value = who;
+  document.getElementById('task-modal-when').value = when;
+  const delBtn = document.getElementById('task-modal-delete');
+  if (delBtn) delBtn.style.display = id ? '' : 'none';
+  document.getElementById('task-modal').style.display = 'flex';
+}}
+
 // Task modal
 let _taskTargetList = null;
 function openTaskModal(taskList) {{
   _taskTargetList = taskList;
+  document.getElementById('task-modal-heading').textContent = 'Nouvelle t\u00e2che';
   document.getElementById('task-modal-title').value = '';
   document.getElementById('task-modal-desc').value = '';
   document.getElementById('task-modal-when').value = '';
+  const delBtn = document.getElementById('task-modal-delete');
+  if (delBtn) delBtn.style.display = 'none';
   document.getElementById('task-modal').style.display = 'flex';
   document.getElementById('task-modal-title').focus();
 }}
@@ -252,6 +296,57 @@ function saveTaskModal() {{
   }}
   document.getElementById('task-modal').style.display = 'none';
 }}
+
+let _deleteInterval = null;
+function confirmDelete(btn, callback) {{
+  if (btn.dataset.confirmed === 'ready') {{
+    btn.dataset.confirmed = 'done';
+    callback();
+    return;
+  }}
+  if (btn.dataset.confirmed) return;
+  btn.dataset.confirmed = 'pending';
+  let countdown = 2;
+  btn.textContent = `Confirmer (${{countdown}})`;
+  btn.style.background = 'color-mix(in srgb, var(--red) 15%, white)';
+  _deleteInterval = setInterval(() => {{
+    countdown--;
+    if (countdown > 0) {{
+      btn.textContent = `Confirmer (${{countdown}})`;
+    }} else {{
+      clearInterval(_deleteInterval);
+      _deleteInterval = null;
+      btn.textContent = 'Confirmer';
+      btn.dataset.confirmed = 'ready';
+    }}
+  }}, 1000);
+}}
+
+function resetDeleteBtns() {{
+  if (_deleteInterval) {{
+    clearInterval(_deleteInterval);
+    _deleteInterval = null;
+  }}
+  document.querySelectorAll('.btn-delete').forEach(btn => {{
+    btn.textContent = 'Supprimer';
+    btn.style.background = '';
+    delete btn.dataset.confirmed;
+  }});
+}}
+
+function deleteTask() {{
+  // TODO: call API to delete task
+  console.warn('Delete task - API not implemented');
+  document.getElementById('task-modal').style.display = 'none';
+}}
+
+// Reset delete buttons when any modal closes
+document.querySelectorAll('.project-add-modal').forEach(modal => {{
+  const observer = new MutationObserver(() => {{
+    if (modal.style.display === 'none') resetDeleteBtns();
+  }});
+  observer.observe(modal, {{ attributes: true, attributeFilter: ['style'] }});
+}});
 
 // Drag & drop
 const API_BASE = '/api/v1';
@@ -342,7 +437,7 @@ def kanban_html(tasks: list, project_names: dict = None) -> str:
                 when_str = f'{d.day:02d}.{d.month:02d}'
             desc = escape(t.get("desc", ""))
 
-            html += f'<a class="kanban-task" href="#" style="text-decoration:none;color:inherit" data-task-id="{t.get("id", "")}">'
+            html += f'<div class="kanban-task" data-task-id="{t.get("id", "")}" onclick="toggleDetail(this)">'
             html += f'<div class="task-body">'
             html += f'<div class="task-title">{escape(t["title"])}</div>'
             if desc:
@@ -355,8 +450,11 @@ def kanban_html(tasks: list, project_names: dict = None) -> str:
             html += f'<div class="task-avatar" style="background:{avatar_color}" title="{escape(who)}">{initials}</div>'
             if when_str:
                 html += f'<div class="task-when">{when_str}</div>'
+            html += f'<button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask(\'{t.get("id","")}\',\'{escape(t["title"]).replace(chr(39),"&#39;")}\',\'{desc.replace(chr(39),"&#39;")}\',\'{escape(who)}\',\'{when_str}\')">Editer</button>'
             html += f'</div>'
-            html += f'</a>'
+            html += f'</div>'
+        if col_id == "todo":
+            html += f'<div class="kanban-add-task" onclick="openTaskModal(this.closest(\'.kanban-col\').querySelector(\'.kanban-tasks\'))"><span style="font-size:18px">+</span> Ajouter une t&acirc;che</div>'
         if hidden_count > 0:
             html += f'<div style="text-align:center;padding:6px;font-size:11px;color:var(--dimmed);cursor:pointer">+ {hidden_count} autres</div>'
         html += '</div></div>'
@@ -449,7 +547,7 @@ def build_index():
 
     # Add category button
     cat_section += f'''<div class="cat-card cat-card-add" onclick="editCat('','','')">
-  <span class="cat-add-plus">+</span>
+  <span class="cat-add-plus"><span style="font-size:18px">+</span> Ajouter une categorie</span>
 </div>'''
 
     cat_section += '</div></div>'
@@ -462,7 +560,7 @@ def build_index():
     <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACR" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><input type="text" id="new-proj-due" placeholder="dd.mm" style="width:60px;flex:none"></div>
     <input type="hidden" id="new-proj-cat">
     <input type="hidden" id="new-proj-id">
-    <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById(\'project-modal\').style.display=\'none\'">Annuler</button></div>
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-delete" id="proj-modal-delete" style="display:none" onclick="confirmDelete(this, deleteProject)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById(\'project-modal\').style.display=\'none\'">Annuler</button></div>
   </div>
 </div>'''
 
@@ -475,9 +573,8 @@ def build_index():
     <div class="edit-row"><div class="color-field cat-modal-colors" id="cat-modal-colors">{cat_color_dots}</div></div>
     <div class="cat-modal-projects-label" style="font-size:10px;font-weight:600;color:var(--dimmed);text-transform:uppercase;margin:8px 0 4px">Projets</div>
     <div class="cat-modal-projects" id="cat-modal-projects"></div>
-    <div class="cat-modal-add-project" onclick="addProjectInCatModal()" style="display:flex;align-items:center;gap:6px;padding:4px 8px;font-size:11px;color:var(--dimmed);cursor:pointer"><span style="font-size:14px">+</span> Ajouter un projet</div>
     <input type="hidden" id="cat-modal-id">
-    <div class="edit-actions"><button class="btn btn-save" onclick="saveCat()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('cat-modal').style.display='none'">Annuler</button></div>
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveCat()">Enregistrer</button><button class="btn btn-delete" id="cat-modal-delete" style="display:none" onclick="confirmDelete(this, deleteCat)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('cat-modal').style.display='none'">Annuler</button></div>
   </div>
 </div>'''
 
@@ -507,11 +604,12 @@ def build_cat(cat: dict):
     # Project modal for category detail page
     proj_modal = f'''<div class="project-add-modal" id="project-modal" style="display:none" onclick="this.style.display='none'">
   <div class="project-add-card" onclick="event.stopPropagation()">
-    <h3>Nouveau projet</h3>
+    <h3 id="proj-modal-title">Nouveau projet</h3>
     <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" style="font-weight:600"></div>
     <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><input type="text" id="new-proj-due" placeholder="dd.mm" style="width:60px;flex:none"></div>
     <input type="hidden" id="new-proj-cat" value="{cat["id"]}">
-    <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('project-modal').style.display='none'">Annuler</button></div>
+    <input type="hidden" id="new-proj-id">
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-delete" id="proj-modal-delete2" style="display:none" onclick="confirmDelete(this, deleteProject)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('project-modal').style.display='none'">Annuler</button></div>
   </div>
 </div>'''
 
@@ -520,14 +618,14 @@ def build_cat(cat: dict):
         arrow, acolor = health_arrow(p)
         open_count = p["total"] - p["done"]
         body += f'''<div class="section" id="{p["id"]}" style="padding-top:0">
-  <div class="section-title">{escape(p.get("acronym", ""))} / {escape(p["name"])}</div>
+  <div class="section-title"><span>{escape(p.get("acronym", ""))} / {escape(p["name"])}</span><button class="btn-edit section-edit-btn" onclick="editProject('{p["id"]}','{escape(p["name"])}','{escape(p.get("acronym",""))}','','{cat["id"]}')">Editer</button></div>
 {kanban_html(p["tasks"])}
 </div>'''
 
     # Add project button
     body += f'''<div class="section" style="padding-top:0">
   <div class="cat-card-add" onclick="document.getElementById('project-modal').style.display='flex'" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--dimmed)">
-    <span style="font-size:18px">+</span> Ajouter un projet
+    <span style="font-size:18px">+</span> Ajouter un Projet
   </div>
 </div>'''
 
