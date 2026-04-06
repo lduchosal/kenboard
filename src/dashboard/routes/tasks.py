@@ -65,8 +65,17 @@ def update_task(task_id: int) -> Any:
         if not existing:
             return jsonify({"error": "Not found"}), 404
 
-        # Status + position change (drag & drop)
-        if data.status is not None and data.position is not None:
+        # Move to different project (drag between kanbans)
+        if data.project_id is not None:
+            queries.task_move(
+                conn,
+                id=task_id,
+                project_id=data.project_id,
+                status=data.status or existing["status"],
+                position=data.position if data.position is not None else existing["position"],
+            )
+        # Status + position change (drag within kanban)
+        elif data.status is not None and data.position is not None:
             queries.task_update_status(
                 conn, id=task_id, status=data.status, position=data.position
             )

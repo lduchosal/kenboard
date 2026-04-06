@@ -31,6 +31,12 @@ UPDATE tasks
 SET status = :status, position = :position
 WHERE id = :id;
 
+-- name: task_move!
+-- Move a task to a different project, status, and position.
+UPDATE tasks
+SET project_id = :project_id, status = :status, position = :position
+WHERE id = :id;
+
 -- name: task_delete!
 -- Delete a task.
 DELETE FROM tasks

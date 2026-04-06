@@ -20,6 +20,7 @@ class TaskCreate(BaseModel):
 class TaskUpdate(BaseModel):
     """Input model for updating a task."""
 
+    project_id: str | None = None
     title: str | None = Field(None, min_length=1, max_length=250)
     description: str | None = None
     status: Literal["todo", "doing", "review", "done"] | None = None

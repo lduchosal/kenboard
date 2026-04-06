@@ -275,8 +275,11 @@ document.querySelectorAll('.kanban-col').forEach(col => {
     onEnd: (evt) => {
       const taskId = evt.item.dataset.taskId;
       const newStatus = evt.to.dataset.status;
+      const newProjectId = evt.to.closest('.kanban')?.dataset?.projectId;
       if (!taskId) return;
-      fetch(`${API_BASE}/tasks/${taskId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: newStatus, position: evt.newIndex }) })
+      const body = { status: newStatus, position: evt.newIndex };
+      if (newProjectId) body.project_id = newProjectId;
+      fetch(`${API_BASE}/tasks/${taskId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
         .catch(err => console.warn('API:', err));
     }
   });
