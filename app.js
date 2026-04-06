@@ -205,13 +205,14 @@ function saveTaskModal() {
   const when = document.getElementById('task-modal-when').value;
   const status = document.getElementById('task-modal-status').value;
   const projectId = document.getElementById('task-modal-project-id').value;
-  fetch(`${API_BASE}/tasks`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: projectId, title, description: desc, who, due_date: when || null, status }) })
-    .catch(err => console.warn('API:', err));
-  if (_taskTargetList) {
-    const card = document.createElement('div');
-    card.className = 'kanban-task';
-    card.innerHTML = `<div class="task-body"><div class="task-title">${title}</div>${desc ? `<div class="task-desc">${desc}</div>` : ''}</div>`;
-    _taskTargetList.prepend(card);
+  if (_taskEditId) {
+    // Update existing task
+    fetch(`${API_BASE}/tasks/${_taskEditId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description: desc, who, due_date: when || null, status }) })
+      .then(() => window.location.reload()).catch(err => console.warn('API:', err));
+  } else {
+    // Create new task
+    fetch(`${API_BASE}/tasks`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: projectId, title, description: desc, who, due_date: when || null, status }) })
+      .then(() => window.location.reload()).catch(err => console.warn('API:', err));
   }
   document.getElementById('task-modal').style.display = 'none';
 }
