@@ -116,6 +116,36 @@ body {
     flex-direction: column;
     gap: var(--gap);
   }
+  .kanban-rest {
+    flex: 2 !important;
+  }
+}
+
+/* mobile: <= 640px */
+@media (max-width: 640px) {
+  .kanban-rest {
+    flex: 1 !important;
+    flex-direction: column;
+  }
+  .kanban-middle {
+    flex-direction: column;
+  }
+  .cat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* small mobile: <= 480px */
+@media (max-width: 480px) {
+  .kanban {
+    flex-direction: column;
+  }
+  .kanban-rest {
+    flex-direction: column;
+  }
+  .kanban-middle {
+    flex-direction: column;
+  }
 }
 
 /* Avatar dropdown menu */
@@ -307,13 +337,20 @@ body {
   gap: var(--gap);
   min-height: 0;
 }
+.kanban-rest {
+  flex: 3;
+  display: flex;
+  gap: var(--gap);
+  min-width: 0;
+}
 .kanban-middle {
   flex: 2;
   display: flex;
   gap: var(--gap);
   min-width: 0;
 }
-.kanban-middle .kanban-col {
+.kanban-middle .kanban-col,
+.kanban-rest > .kanban-col {
   flex: 1;
 }
 
@@ -408,8 +445,7 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 .kanban-task.detail-mode .task-title {
-  font-size: 14px;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 .kanban-task.detail-mode .task-desc-full {
   font-size: 12px;

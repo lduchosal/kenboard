@@ -85,9 +85,14 @@ def page(title: str, body: str, css_path: str = "style.css") -> str:
 def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False) -> str:
     todo_special_count = [0] if show_edit else [2]  # 0=detail, 1=edit, 2+=normal
     middle_cols = {"doing", "review"}
+    rest_cols = {"doing", "review", "done"}
     html = '<div class="kanban">'
+    in_rest = False
     in_middle = False
     for col_id, col_name, col_color in COLUMNS:
+        if col_id in rest_cols and not in_rest:
+            html += '<div class="kanban-rest">'
+            in_rest = True
         if col_id in middle_cols and not in_middle:
             html += '<div class="kanban-middle">'
             in_middle = True
@@ -158,6 +163,8 @@ def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False
             html += f'<div style="text-align:center;padding:6px;font-size:11px;color:var(--dimmed);cursor:pointer">+ {hidden_count} autres</div>'
         html += '</div>'
     if in_middle:
+        html += '</div>'
+    if in_rest:
         html += '</div>'
     html += '</div>'
     return html
