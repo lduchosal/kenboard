@@ -34,7 +34,8 @@ def create_project() -> Any:
     queries = db.load_queries()
     try:
         max_pos = queries.proj_max_position_in_cat(conn, cat_id=data.cat)
-        proj_id = data.name.lower().replace(" ", "-")
+        import uuid
+        proj_id = str(uuid.uuid4())
         queries.proj_create(
             conn,
             id=proj_id,
