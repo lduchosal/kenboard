@@ -163,10 +163,10 @@ function toggleDetail(el) {
   if (!wasDetail) el.classList.add('detail-mode');
 }
 
-function openEditTask(id, title, desc, who, when, status) {
+function openEditTask(id, title, desc, who, when, status, projectId) {
   _taskTargetList = null;
   _taskEditId = id;
-  // Keep current project_id from hidden field (already set by openTaskModal or previous edit)
+  document.getElementById('task-modal-project-id').value = projectId || '';
   document.getElementById('task-modal-heading').textContent = 'Editer la t\u00e2che';
   document.getElementById('task-modal-title').value = title;
   document.getElementById('task-modal-desc').value = desc;
