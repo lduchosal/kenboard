@@ -37,4 +37,4 @@ def migrate():
     from dashboard.config import Config
 
     db_url = f"mysql://{Config.DB_USER}:{Config.DB_PASSWORD}@{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB_NAME}"
-    subprocess.run(["yoyo", "apply", "--database", db_url, "migrations/"], check=True)
+    subprocess.run(["yoyo", "apply", "--batch", "--database", db_url, "migrations/"], check=True)

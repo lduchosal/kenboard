@@ -10,6 +10,3 @@ CREATE TABLE projects (
     position INT NOT NULL DEFAULT 0,
     FOREIGN KEY (cat_id) REFERENCES categories(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- rollback
-DROP TABLE IF EXISTS projects;

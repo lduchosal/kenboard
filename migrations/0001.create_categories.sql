@@ -7,6 +7,3 @@ CREATE TABLE categories (
     color VARCHAR(50) NOT NULL,
     position INT NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- rollback
-DROP TABLE IF EXISTS categories;
