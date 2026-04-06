@@ -131,19 +131,6 @@ body {
   background: var(--bg);
 }
 
-.back-btn {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 12px;
-  color: var(--text);
-  cursor: pointer;
-  font-weight: 600;
-  text-decoration: none;
-}
-.back-btn:hover { background: var(--card); }
-
 /* -- Sections -- */
 .section { padding: 12px 16px; }
 .section-title {
@@ -163,12 +150,6 @@ body {
 }
 .section-title.stuck {
   border-bottom-color: var(--border);
-}
-
-.divider {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 0 16px;
 }
 
 /* -- Category grid -- */
@@ -223,7 +204,7 @@ body {
   text-transform: uppercase;
   overflow: hidden;
   text-overflow: ellipsis;
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 4px 8px;
   display: flex;
@@ -349,7 +330,7 @@ body {
 }
 
 .kanban-task {
-  background: #ffffff;
+  background: var(--card);
   cursor: pointer;
   transition: box-shadow 0.15s;
   border: 1px solid var(--border);
@@ -450,13 +431,13 @@ body {
 .edit-mode textarea,
 .edit-mode select {
   flex: 1;
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 5px 8px;
   font-size: 12px;
   font-family: inherit;
   color: var(--text);
-  background: #ffffff;
+  background: var(--card);
   outline: none;
 }
 .edit-mode textarea {
@@ -485,7 +466,7 @@ body {
 }
 .edit-mode .btn-save:hover { opacity: 0.9; }
 .edit-mode .btn-cancel {
-  background: #ffffff;
+  background: var(--card);
   color: var(--dimmed);
   border: none;
 }

@@ -15,7 +15,7 @@ with open(os.path.join(HERE, "data.json")) as f:
 categories = data["categories"]
 projects = data["projects"]
 
-cat_map = {c["id"]: c for c in categories}
+
 COLUMNS = [
     ("todo", "A faire", "#d63384"),
     ("doing", "En cours", "var(--cyan)"),
