@@ -78,6 +78,28 @@ def page(title: str, body: str, css_path: str = "style.css") -> str:
 </head>
 <body>
 {body}
+<script>
+const header = document.querySelector('.header');
+let stuckCount = 0;
+document.querySelectorAll('.section-title').forEach(el => {{
+  const observer = new IntersectionObserver(
+    ([e]) => {{
+      const isStuck = e.intersectionRatio < 1;
+      const wasStuck = el.classList.contains('stuck');
+      el.classList.toggle('stuck', isStuck);
+      if (isStuck && !wasStuck) stuckCount++;
+      if (!isStuck && wasStuck) stuckCount--;
+      header.classList.toggle('no-border', stuckCount > 0);
+    }},
+    {{ threshold: [1], rootMargin: '-42px 0px 0px 0px' }}
+  );
+  const sentinel = document.createElement('div');
+  sentinel.style.height = '1px';
+  sentinel.style.marginBottom = '-1px';
+  el.before(sentinel);
+  observer.observe(sentinel);
+}});
+</script>
 </body>
 </html>"""
 
@@ -265,7 +287,7 @@ def build_cat(cat: dict):
     for i, p in enumerate(cat_projects):
         arrow, acolor = health_arrow(p)
         open_count = p["total"] - p["done"]
-        body += f'''<div class="section" id="{p["id"]}">
+        body += f'''<div class="section" id="{p["id"]}" style="padding-top:0">
   <div class="section-title">{escape(p["name"])}</div>
 {kanban_html(p["tasks"], show_edit=(i == 0))}
 </div>'''

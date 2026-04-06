@@ -41,5 +41,27 @@
     </div>
   </div>
 </div>
+<script>
+const header = document.querySelector('.header');
+let stuckCount = 0;
+document.querySelectorAll('.section-title').forEach(el => {
+  const observer = new IntersectionObserver(
+    ([e]) => {
+      const isStuck = e.intersectionRatio < 1;
+      const wasStuck = el.classList.contains('stuck');
+      el.classList.toggle('stuck', isStuck);
+      if (isStuck && !wasStuck) stuckCount++;
+      if (!isStuck && wasStuck) stuckCount--;
+      header.classList.toggle('no-border', stuckCount > 0);
+    },
+    { threshold: [1], rootMargin: '-42px 0px 0px 0px' }
+  );
+  const sentinel = document.createElement('div');
+  sentinel.style.height = '1px';
+  sentinel.style.marginBottom = '-1px';
+  el.before(sentinel);
+  observer.observe(sentinel);
+});
+</script>
 </body>
 </html>

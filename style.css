@@ -35,6 +35,10 @@ body {
   gap: 12px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--border);
+  transition: border-color 0.15s;
+}
+.header.no-border {
+  border-bottom-color: transparent;
 }
 .header h1 { font-size: 16px; font-weight: 700; }
 .header .meta { color: var(--dimmed); font-size: 11px; }
@@ -202,6 +206,16 @@ body {
   letter-spacing: 0.5px;
   color: var(--dimmed);
   margin-bottom: 8px;
+  position: sticky;
+  top: 41px;
+  z-index: 5;
+  background: var(--bg);
+  padding: 6px 0;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+.section-title.stuck {
+  border-bottom-color: var(--border);
 }
 
 .divider {
