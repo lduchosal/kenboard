@@ -721,6 +721,16 @@ body {
   opacity: 1;
 }
 
+.task-hidden { display: none; }
+.show-more {
+  text-align: center;
+  padding: 6px;
+  font-size: 11px;
+  color: var(--dimmed);
+  cursor: pointer;
+}
+.show-more:hover { color: var(--text); }
+
 /* -- Drag & drop states -- */
 .task-ghost {
   opacity: 0.4;

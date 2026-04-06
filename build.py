@@ -143,17 +143,18 @@ def kanban_html(tasks: list) -> str:
         html += f'<div class="kanban-tasks" data-status="{col_id}">'
 
         max_visible = 5 if col_id == "done" else None
-        visible = col_tasks[:max_visible] if max_visible else col_tasks
-        hidden = len(col_tasks) - len(visible)
+        hidden = max(0, len(col_tasks) - max_visible) if max_visible else 0
 
-        for t in visible:
+        for i, t in enumerate(col_tasks):
+            is_hidden = max_visible and i >= max_visible
             who = t.get("who", "?")
             initials = who[0].upper()
             avatar_color = AVATAR_COLORS.get(who, "var(--dimmed)")
             when_str = fmt_date(t["when"]) if t.get("when") else ""
             desc = escape(t.get("desc", ""))
 
-            html += f'<div class="kanban-task" data-task-id="{t.get("id", "")}" onclick="toggleDetail(this)">'
+            hidden_cls = " task-hidden" if is_hidden else ""
+            html += f'<div class="kanban-task{hidden_cls}" data-task-id="{t.get("id", "")}" onclick="toggleDetail(this)">'
             html += f'<div class="task-body"><div class="task-title">{escape(t["title"])}</div>'
             if desc:
                 html += f'<div class="task-desc">{desc}</div>'
@@ -167,7 +168,7 @@ def kanban_html(tasks: list) -> str:
         if col_id == "todo":
             html += '<div class="kanban-add-task" onclick="openTaskModal(this.closest(\'.kanban-col\').querySelector(\'.kanban-tasks\'))"><span style="font-size:18px">+</span> Ajouter une t&acirc;che</div>'
         if hidden > 0:
-            html += f'<div style="text-align:center;padding:6px;font-size:11px;color:var(--dimmed);cursor:pointer">+ {hidden} autres</div>'
+            html += f'<div class="show-more" onclick="this.parentElement.querySelectorAll(\'.task-hidden\').forEach(t=>t.classList.remove(\'task-hidden\'));this.remove()">+ {hidden} autres</div>'
         html += '</div></div>'
 
     if in_middle: html += '</div>'
