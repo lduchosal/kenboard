@@ -165,6 +165,7 @@ function toggleDetail(el) {
 
 function openEditTask(id, title, desc, who, when, status) {
   _taskTargetList = null;
+  _taskEditId = id;
   document.getElementById('task-modal-heading').textContent = 'Editer la t\u00e2che';
   document.getElementById('task-modal-title').value = title;
   document.getElementById('task-modal-desc').value = desc;
@@ -178,9 +179,11 @@ function openEditTask(id, title, desc, who, when, status) {
 
 let _taskTargetList = null;
 let _taskProjectId = null;
+let _taskEditId = null;
 function openTaskModal(taskList) {
   _taskTargetList = taskList;
   _taskProjectId = taskList.closest('.kanban').dataset.projectId || '';
+  _taskEditId = null;
   document.getElementById('task-modal-heading').textContent = 'Nouvelle t\u00e2che';
   document.getElementById('task-modal-title').value = '';
   document.getElementById('task-modal-desc').value = '';
@@ -211,7 +214,8 @@ function saveTaskModal() {
 }
 
 function deleteTask() {
-  fetch(`${API_BASE}/tasks/0`, { method: 'DELETE' })
+  if (!_taskEditId) return;
+  fetch(`${API_BASE}/tasks/${_taskEditId}`, { method: 'DELETE' })
     .then(() => window.location.reload()).catch(err => console.warn('API:', err));
   document.getElementById('task-modal').style.display = 'none';
 }
