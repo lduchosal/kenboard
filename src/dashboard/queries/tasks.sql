@@ -13,8 +13,8 @@ SELECT id, project_id, title, description, status, who, due_date, position,
 FROM tasks
 WHERE id = :id;
 
--- name: task_create<!
--- Create a new task and return its id.
+-- name: task_create!
+-- Create a new task.
 INSERT INTO tasks (project_id, title, description, status, who, due_date, position)
 VALUES (:project_id, :title, :description, :status, :who, :due_date, :position);
 

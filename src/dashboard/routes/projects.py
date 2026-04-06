@@ -16,9 +16,9 @@ def list_projects():
     queries = load_queries()
     try:
         if cat_id:
-            rows = queries.proj_get_by_cat(conn, cat_id=cat_id)
+            rows = list(queries.proj_get_by_cat(conn, cat_id=cat_id))
         else:
-            rows = queries.proj_get_all(conn)
+            rows = list(queries.proj_get_all(conn))
         return jsonify([Project(**row).model_dump() for row in rows])
     finally:
         conn.close()

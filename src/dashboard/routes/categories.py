@@ -16,7 +16,7 @@ def list_categories():
     conn = get_connection()
     queries = load_queries()
     try:
-        rows = queries.cat_get_all(conn)
+        rows = list(queries.cat_get_all(conn))
         return jsonify([Category(**row).model_dump() for row in rows])
     finally:
         conn.close()
@@ -91,7 +91,7 @@ def reorder_categories():
     conn = get_connection()
     queries = load_queries()
     try:
-        rows = queries.cat_get_all(conn)
+        rows = list(queries.cat_get_all(conn))
         ids = [r["id"] for r in rows]
         moved = ids.pop(old_idx)
         ids.insert(new_idx, moved)

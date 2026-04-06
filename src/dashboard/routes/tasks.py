@@ -17,7 +17,7 @@ def list_tasks():
     conn = get_connection()
     queries = load_queries()
     try:
-        rows = queries.task_get_by_project(conn, project_id=project_id)
+        rows = list(queries.task_get_by_project(conn, project_id=project_id))
         return jsonify([Task(**row).model_dump(mode="json") for row in rows])
     finally:
         conn.close()
@@ -30,10 +30,10 @@ def create_task():
     conn = get_connection()
     queries = load_queries()
     try:
-        max_pos = queries.task_max_position_in_project(
+        max_pos = queries.task_max_position(
             conn, project_id=data.project_id, status=data.status
         )
-        task_id = queries.task_create(
+        queries.task_create(
             conn,
             project_id=data.project_id,
             title=data.title,
@@ -43,6 +43,9 @@ def create_task():
             due_date=data.due_date,
             position=max_pos + 1,
         )
+        cur = conn.cursor()
+        cur.execute("SELECT LAST_INSERT_ID()")
+        task_id = cur.fetchone()["LAST_INSERT_ID()"]
         row = queries.task_get_by_id(conn, id=task_id)
         return jsonify(Task(**row).model_dump(mode="json")), 201
     finally:

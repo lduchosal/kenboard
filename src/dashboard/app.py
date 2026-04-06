@@ -18,6 +18,14 @@ def create_app() -> Flask:
 
     CORS(app)
 
+    # Error handler for Pydantic validation errors
+    from pydantic import ValidationError
+
+    @app.errorhandler(ValidationError)
+    def handle_validation_error(e):
+        """Return 422 for Pydantic validation errors."""
+        return {"error": "Validation error", "details": e.errors()}, 422
+
     # Register API blueprints
     app.register_blueprint(categories_bp)
     app.register_blueprint(projects_bp)
