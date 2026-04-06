@@ -177,8 +177,10 @@ function openEditTask(id, title, desc, who, when, status) {
 }
 
 let _taskTargetList = null;
+let _taskProjectId = null;
 function openTaskModal(taskList) {
   _taskTargetList = taskList;
+  _taskProjectId = taskList.closest('.kanban').dataset.projectId || '';
   document.getElementById('task-modal-heading').textContent = 'Nouvelle t\u00e2che';
   document.getElementById('task-modal-title').value = '';
   document.getElementById('task-modal-desc').value = '';
@@ -197,7 +199,7 @@ function saveTaskModal() {
   const who = document.getElementById('task-modal-who').value;
   const when = document.getElementById('task-modal-when').value;
   const status = document.getElementById('task-modal-status').value;
-  fetch(`${API_BASE}/tasks`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, desc, who, when, status }) })
+  fetch(`${API_BASE}/tasks`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: _taskProjectId, title, description: desc, who, due_date: when || null, status }) })
     .catch(err => console.warn('API:', err));
   if (_taskTargetList) {
     const card = document.createElement('div');

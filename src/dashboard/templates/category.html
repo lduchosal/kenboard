@@ -10,6 +10,7 @@
     <button class="btn-edit section-edit-btn" onclick="editProject('{{ p.id }}','{{ p.name | e }}','{{ (p.acronym or '') | e }}','{{ cat.id }}','{{ p.get('status', 'active') }}')">Editer</button>
   </div>
   {% set tasks = p.tasks %}
+  {% set project_id = p.id %}
   {% include "partials/kanban.html" %}
 </div>
 {% endfor %}

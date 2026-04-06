@@ -1,4 +1,4 @@
-<div class="kanban">
+<div class="kanban" data-project-id="{{ project_id | default('', true) }}">
 {# Column: A faire #}
 {% set col = columns[0] %}
 {% set col_tasks = tasks | selectattr("status", "equalto", col.id) | list %}
