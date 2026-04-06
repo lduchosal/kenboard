@@ -10,6 +10,7 @@
   --cyan:    #0550ae;
   --dimmed:  #656d76;
   --text:    #1f2328;
+  --todo:    var(--todo);
   --gap:     8px;
 }
 
@@ -97,7 +98,6 @@ body {
   display: block;
 }
 
-.cat-project-full { display: none; }
 
 /* Avatar dropdown menu */
 .avatar-menu {
@@ -147,8 +147,6 @@ body {
   padding: 6px 0;
   border-bottom: 1px solid transparent;
   transition: border-color 0.15s;
-}
-.section-title {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -677,7 +675,7 @@ body {
   font-weight: 700;
   line-height: 0;
   cursor: pointer;
-  color: #d63384;
+  color: var(--todo);
   opacity: 0.7;
   padding: 0;
 }
@@ -711,9 +709,9 @@ body {
   gap: 4px;
   padding: 8px;
   font-size: 13px;
-  color: #d63384;
+  color: var(--todo);
   cursor: pointer;
-  border: 2px dashed color-mix(in srgb, #d63384 30%, transparent);
+  border: 2px dashed color-mix(in srgb, var(--todo) 30%, transparent);
   border-radius: 6px;
   justify-content: center;
   margin-top: 4px;

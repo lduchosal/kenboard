@@ -38,7 +38,6 @@
       "cat": "immobilier",
       "done": 13,
       "total": 20,
-      "due": "2026-06-15",
       "ideal": [
         20,
         18,
@@ -236,7 +235,6 @@
       "cat": "immobilier",
       "done": 3,
       "total": 10,
-      "due": "2026-09-01",
       "ideal": [
         10,
         9,
@@ -354,7 +352,6 @@
       "cat": "immobilier",
       "done": 8,
       "total": 10,
-      "due": "2026-05-01",
       "ideal": [
         10,
         9,
@@ -472,7 +469,6 @@
       "cat": "sante",
       "done": 3,
       "total": 6,
-      "due": "2026-04-30",
       "ideal": [
         6,
         5,
@@ -558,7 +554,6 @@
       "cat": "technique",
       "done": 18,
       "total": 25,
-      "due": "2026-05-15",
       "ideal": [
         25,
         23,
@@ -796,7 +791,6 @@
       "cat": "technique",
       "done": 9,
       "total": 20,
-      "due": "2026-06-30",
       "ideal": [
         20,
         18,
@@ -994,7 +988,6 @@
       "cat": "technique",
       "done": 6,
       "total": 20,
-      "due": "2026-04-30",
       "ideal": [
         20,
         18,
@@ -1192,7 +1185,6 @@
       "cat": "technique",
       "done": 17,
       "total": 20,
-      "due": "2026-04-20",
       "ideal": [
         20,
         18,
@@ -1390,7 +1382,6 @@
       "cat": "technique",
       "done": 1,
       "total": 20,
-      "due": "2026-07-01",
       "ideal": [
         20,
         18,
@@ -1588,7 +1579,6 @@
       "cat": "technique",
       "done": 11,
       "total": 20,
-      "due": "2026-08-01",
       "ideal": [
         20,
         18,
@@ -1786,7 +1776,6 @@
       "cat": "technique",
       "done": 4,
       "total": 20,
-      "due": "2026-07-15",
       "ideal": [
         20,
         18,
@@ -1984,7 +1973,6 @@
       "cat": "technique",
       "done": 2,
       "total": 20,
-      "due": "2026-08-15",
       "ideal": [
         20,
         18,
@@ -2182,7 +2170,6 @@
       "cat": "technique",
       "done": 12,
       "total": 20,
-      "due": "2026-05-30",
       "ideal": [
         20,
         18,
@@ -2380,7 +2367,6 @@
       "cat": "technique",
       "done": 8,
       "total": 20,
-      "due": "2026-06-15",
       "ideal": [
         20,
         18,
@@ -2578,7 +2564,6 @@
       "cat": "famille",
       "done": 7,
       "total": 20,
-      "due": "2026-07-01",
       "ideal": [
         20,
         18,
