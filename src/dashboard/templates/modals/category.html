@@ -1,0 +1,21 @@
+<div class="project-add-modal" id="cat-modal" style="display:none" onclick="this.style.display='none'">
+  <div class="project-add-card" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="this.closest('.project-add-modal').style.display='none'">&times;</button>
+    <h3>Editer la cat&eacute;gorie</h3>
+    <div class="edit-row"><input type="text" id="cat-modal-name" placeholder="Nom de la cat&eacute;gorie" style="font-weight:600;font-size:14px"></div>
+    <div class="edit-row">
+      <div class="color-field cat-modal-colors" id="cat-modal-colors">
+        {% for name, value in color_list %}
+        <span class="color-dot" data-color="{{ value }}" style="background:{{ value }}" onclick="event.stopPropagation();selectCatColor(this)"></span>
+        {% endfor %}
+      </div>
+    </div>
+    <div style="font-size:10px;font-weight:600;color:var(--dimmed);text-transform:uppercase;margin:8px 0 4px">Projets</div>
+    <div class="cat-modal-projects" id="cat-modal-projects"></div>
+    <input type="hidden" id="cat-modal-id">
+    <div class="edit-actions">
+      <button class="btn btn-save" onclick="saveCat()">Enregistrer</button>
+      <button class="btn btn-delete" id="cat-modal-delete" style="display:none" onclick="confirmDelete(this, deleteCat)">Supprimer</button>
+    </div>
+  </div>
+</div>

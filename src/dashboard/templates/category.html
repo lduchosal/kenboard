@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block body %}
+{% include "partials/header.html" %}
+
+{% for p in active_projects %}
+<div class="section" id="{{ p.id }}" style="padding-top:0">
+  <div class="section-title">
+    <span>{{ p.acronym or p.name[:4] | upper }} / {{ p.name }}</span>
+    <button class="btn-edit section-edit-btn" onclick="editProject('{{ p.id }}','{{ p.name | e }}','{{ (p.acronym or '') | e }}','{{ cat.id }}','{{ p.get('status', 'active') }}')">Editer</button>
+  </div>
+  {% set tasks = p.tasks %}
+  {% include "partials/kanban.html" %}
+</div>
+{% endfor %}
+
+<div class="section" style="padding-top:0">
+  <div class="cat-card-add" onclick="document.getElementById('project-modal').style.display='flex'" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--dimmed)">
+    <span style="font-size:18px">+</span> Ajouter un projet
+  </div>
+</div>
+
+{% if archived_projects %}
+<div class="section" style="padding-top:0">
+  <div class="archived-toggle" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('span').textContent=this.nextElementSibling.style.display==='none'?'+':'-'">
+    <span>+</span> Afficher les projets archiv&eacute;s ({{ archived_projects | length }})
+  </div>
+  <div class="archived-list" style="display:none">
+    {% for p in archived_projects %}
+    <div class="section archived-project" id="{{ p.id }}" style="padding-top:0;opacity:0.5">
+      <div class="section-title">
+        <span>{{ p.acronym or p.name[:4] | upper }} / {{ p.name }}</span>
+        <button class="btn-edit section-edit-btn" onclick="editProject('{{ p.id }}','{{ p.name | e }}','{{ (p.acronym or '') | e }}','{{ cat.id }}','{{ p.get('status', 'active') }}')">Editer</button>
+      </div>
+      {% set tasks = p.tasks %}
+      {% include "partials/kanban.html" %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block modals %}
+{% set cat_id = cat.id %}
+{% include "modals/project.html" %}
+<script>const CAT_PROJECTS = {{ cat_projects_json | safe }};</script>
+{% endblock %}

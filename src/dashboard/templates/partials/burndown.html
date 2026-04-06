@@ -1,0 +1,7 @@
+<div class="cat-burndown">
+{% set mx = [1] %}
+{% if actual and actual | max > 0 %}{% set _ = mx.__setitem__(0, actual | max) %}{% endif %}
+{% for v in actual %}
+<div class="bar-group"><div style="height:{{ (v / mx[0] * 100) | round }}%;background:{{ color }};opacity:0.5;border-radius:1px"></div></div>
+{% endfor %}
+</div>

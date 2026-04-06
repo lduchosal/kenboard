@@ -1,0 +1,55 @@
+<div class="kanban">
+{# Column: A faire #}
+{% set col = columns[0] %}
+{% set col_tasks = tasks | selectattr("status", "equalto", col.id) | list %}
+<div class="kanban-col" style="background:color-mix(in srgb, {{ col.color }} 5%, white)">
+  <div class="kanban-col-header" style="background:color-mix(in srgb, {{ col.color }} 25%, transparent)">
+    <span class="col-name" style="color:{{ col.color }}">{{ col.name }}</span>
+    <button class="kanban-add-btn" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'))">+</button>
+  </div>
+  <div class="kanban-tasks" data-status="{{ col.id }}">
+    {% for t in col_tasks %}
+    {% include "partials/task_card.html" %}
+    {% endfor %}
+    <div class="kanban-add-task" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'))"><span style="font-size:18px">+</span> Ajouter une t&acirc;che</div>
+  </div>
+</div>
+
+{# Columns: En cours + Revue + Fait (responsive wrapper) #}
+<div class="kanban-rest">
+  <div class="kanban-middle">
+    {% for col in columns[1:3] %}
+    {% set col_tasks = tasks | selectattr("status", "equalto", col.id) | list %}
+    <div class="kanban-col" style="background:color-mix(in srgb, {{ col.color }} 5%, white)">
+      <div class="kanban-col-header" style="background:color-mix(in srgb, {{ col.color }} 25%, transparent)">
+        <span class="col-name" style="color:{{ col.color }}">{{ col.name }}</span>
+      </div>
+      <div class="kanban-tasks" data-status="{{ col.id }}">
+        {% for t in col_tasks %}
+        {% include "partials/task_card.html" %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# Column: Fait (with show more) #}
+  {% set col = columns[3] %}
+  {% set col_tasks = tasks | selectattr("status", "equalto", col.id) | list %}
+  {% set max_visible = 5 %}
+  <div class="kanban-col" style="background:color-mix(in srgb, {{ col.color }} 5%, white)">
+    <div class="kanban-col-header" style="background:color-mix(in srgb, {{ col.color }} 25%, transparent)">
+      <span class="col-name" style="color:{{ col.color }}">{{ col.name }}</span>
+    </div>
+    <div class="kanban-tasks" data-status="{{ col.id }}">
+      {% for t in col_tasks %}
+      {% set is_hidden = loop.index0 >= max_visible %}
+      {% include "partials/task_card.html" %}
+      {% endfor %}
+      {% if col_tasks | length > max_visible %}
+      <div class="show-more" onclick="this.parentElement.querySelectorAll('.task-hidden').forEach(t=>t.classList.remove('task-hidden'));this.remove()">+ {{ col_tasks | length - max_visible }} autres</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+</div>

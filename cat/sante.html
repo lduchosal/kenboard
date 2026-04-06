@@ -10,24 +10,26 @@
 <body>
 <div class="header">
   <a href="../index.html" style="text-decoration:none"><h1>DASHBOARD</h1></a>
-  <div class="header-badges"><a href="../cat/immobilier.html" class="badge" style="background:color-mix(in srgb, var(--orange) 12%, transparent);color:var(--orange);text-decoration:none;">Immobilier 3</a>
-  <a href="../cat/sante.html" class="badge" style="background:color-mix(in srgb, var(--green) 12%, transparent);color:var(--green);text-decoration:none;font-weight:800;">Sante 1</a>
-  <a href="../cat/technique.html" class="badge" style="background:color-mix(in srgb, var(--accent) 12%, transparent);color:var(--accent);text-decoration:none;">Technique 10</a>
-  <a href="../cat/famille.html" class="badge" style="background:color-mix(in srgb, var(--purple) 12%, transparent);color:var(--purple);text-decoration:none;">Famille 1</a>
-  <a href="../cat/finance.html" class="badge" style="background:color-mix(in srgb, var(--cyan) 12%, transparent);color:var(--cyan);text-decoration:none;">Finance 0</a>
-  <a href="../cat/education.html" class="badge" style="background:color-mix(in srgb, var(--red) 12%, transparent);color:var(--red);text-decoration:none;">Education 0</a>
+  <div class="header-badges">
+    <a href="../cat/immobilier.html" class="badge" style="background:color-mix(in srgb, var(--orange) 12%, transparent);color:var(--orange);text-decoration:none;">Immobilier 3</a>
+    <a href="../cat/sante.html" class="badge" style="background:color-mix(in srgb, var(--green) 12%, transparent);color:var(--green);text-decoration:none;font-weight:800;">Sante 1</a>
+    <a href="../cat/technique.html" class="badge" style="background:color-mix(in srgb, var(--accent) 12%, transparent);color:var(--accent);text-decoration:none;">Technique 10</a>
+    <a href="../cat/famille.html" class="badge" style="background:color-mix(in srgb, var(--purple) 12%, transparent);color:var(--purple);text-decoration:none;">Famille 1</a>
+    <a href="../cat/finance.html" class="badge" style="background:color-mix(in srgb, var(--cyan) 12%, transparent);color:var(--cyan);text-decoration:none;">Finance 0</a>
+    <a href="../cat/education.html" class="badge" style="background:color-mix(in srgb, var(--red) 12%, transparent);color:var(--red);text-decoration:none;">Education 0</a>
   </div>
   <div class="header-badges-dropdown">
     <div class="badge-menu-toggle" onclick="this.parentElement.classList.toggle('open')">
       <span class="badge" style="background:color-mix(in srgb, var(--green) 12%, transparent);color:var(--green);text-decoration:none">Sante 1 <span class="badge-chevron">&#9662;</span></span>
     </div>
-    <div class="badge-menu-dropdown"><a href="../cat/immobilier.html" class="badge" style="background:color-mix(in srgb, var(--orange) 12%, transparent);color:var(--orange);text-decoration:none;">Immobilier 3</a>
-  <a href="../cat/sante.html" class="badge" style="background:color-mix(in srgb, var(--green) 12%, transparent);color:var(--green);text-decoration:none;font-weight:800;">Sante 1</a>
-  <a href="../cat/technique.html" class="badge" style="background:color-mix(in srgb, var(--accent) 12%, transparent);color:var(--accent);text-decoration:none;">Technique 10</a>
-  <a href="../cat/famille.html" class="badge" style="background:color-mix(in srgb, var(--purple) 12%, transparent);color:var(--purple);text-decoration:none;">Famille 1</a>
-  <a href="../cat/finance.html" class="badge" style="background:color-mix(in srgb, var(--cyan) 12%, transparent);color:var(--cyan);text-decoration:none;">Finance 0</a>
-  <a href="../cat/education.html" class="badge" style="background:color-mix(in srgb, var(--red) 12%, transparent);color:var(--red);text-decoration:none;">Education 0</a>
-  </div>
+    <div class="badge-menu-dropdown">
+      <a href="../cat/immobilier.html" class="badge" style="background:color-mix(in srgb, var(--orange) 12%, transparent);color:var(--orange);text-decoration:none;">Immobilier 3</a>
+      <a href="../cat/sante.html" class="badge" style="background:color-mix(in srgb, var(--green) 12%, transparent);color:var(--green);text-decoration:none;font-weight:800;">Sante 1</a>
+      <a href="../cat/technique.html" class="badge" style="background:color-mix(in srgb, var(--accent) 12%, transparent);color:var(--accent);text-decoration:none;">Technique 10</a>
+      <a href="../cat/famille.html" class="badge" style="background:color-mix(in srgb, var(--purple) 12%, transparent);color:var(--purple);text-decoration:none;">Famille 1</a>
+      <a href="../cat/finance.html" class="badge" style="background:color-mix(in srgb, var(--cyan) 12%, transparent);color:var(--cyan);text-decoration:none;">Finance 0</a>
+      <a href="../cat/education.html" class="badge" style="background:color-mix(in srgb, var(--red) 12%, transparent);color:var(--red);text-decoration:none;">Education 0</a>
+    </div>
   </div>
   <span style="flex:1"></span>
   <div class="avatar-menu">
@@ -36,37 +38,133 @@
       <a href="#">Deconnexion</a>
     </div>
   </div>
-</div><div class="section" id="bilan-annuel" style="padding-top:0">
-  <div class="section-title"><span>BILA / Bilan annuel</span><button class="btn-edit section-edit-btn" onclick="editProject('bilan-annuel','Bilan annuel','BILA','sante','active')">Editer</button></div>
-<div class="kanban"><div class="kanban-col" style="background:color-mix(in srgb, var(--todo) 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, var(--todo) 25%, transparent)"><span class="col-name" style="color:var(--todo)">A faire</span><button class="kanban-add-btn" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'))">+</button></div><div class="kanban-tasks" data-status="todo"><div class="kanban-task" data-task-id="45" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Dermato</div></div><div class="task-right"><div class="task-avatar" style="background:#8250df" title="Alice">A</div><div class="task-when">15.04</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('45','Dermato','','Alice','15.04','todo')">Editer</button></div></div><div class="kanban-task" data-task-id="46" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Bilan complet</div><div class="task-desc">A planifier</div></div><div class="task-right"><div class="task-avatar" style="background:#bf8700" title="Bob">B</div><div class="task-when">10.05</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('46','Bilan complet','A planifier','Bob','10.05','todo')">Editer</button></div></div><div class="kanban-add-task" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'))"><span style="font-size:18px">+</span> Ajouter une t&acirc;che</div></div></div><div class="kanban-rest"><div class="kanban-middle"><div class="kanban-col" style="background:color-mix(in srgb, var(--cyan) 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, var(--cyan) 25%, transparent)"><span class="col-name" style="color:var(--cyan)">En cours</span></div><div class="kanban-tasks" data-status="doing"><div class="kanban-task" data-task-id="44" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Ophtalmo</div><div class="task-desc">Bloque par dependance</div></div><div class="task-right"><div class="task-avatar" style="background:#bf8700" title="Bob">B</div><div class="task-when">07.04</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('44','Ophtalmo','Bloque par dependance','Bob','07.04','doing')">Editer</button></div></div></div></div><div class="kanban-col" style="background:color-mix(in srgb, var(--purple) 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, var(--purple) 25%, transparent)"><span class="col-name" style="color:var(--purple)">Revue</span></div><div class="kanban-tasks" data-status="review"></div></div></div><div class="kanban-col" style="background:color-mix(in srgb, var(--green) 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, var(--green) 25%, transparent)"><span class="col-name" style="color:var(--green)">Fait</span></div><div class="kanban-tasks" data-status="done"><div class="kanban-task" data-task-id="41" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Prise de sang</div></div><div class="task-right"><div class="task-avatar" style="background:#1a7f37" title="Claire">C</div><div class="task-when">20.03</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('41','Prise de sang','','Claire','20.03','done')">Editer</button></div></div><div class="kanban-task" data-task-id="42" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Generaliste</div></div><div class="task-right"><div class="task-avatar" style="background:#bf8700" title="Bob">B</div><div class="task-when">15.02</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('42','Generaliste','','Bob','15.02','done')">Editer</button></div></div><div class="kanban-task" data-task-id="43" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Dentiste</div></div><div class="task-right"><div class="task-avatar" style="background:#8250df" title="Alice">A</div><div class="task-when">15.02</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('43','Dentiste','','Alice','15.02','done')">Editer</button></div></div></div></div></div></div>
-</div><div class="section" style="padding-top:0">
+</div>
+<div class="section" id="bilan-annuel" style="padding-top:0">
+  <div class="section-title">
+    <span>BILA / Bilan annuel</span>
+    <button class="btn-edit section-edit-btn" onclick="editProject('bilan-annuel','Bilan annuel','BILA','sante','active')">Editer</button>
+  </div>
+<div class="kanban">
+<div class="kanban-col" style="background:color-mix(in srgb, var(--todo) 5%, white)">
+  <div class="kanban-col-header" style="background:color-mix(in srgb, var(--todo) 25%, transparent)">
+    <span class="col-name" style="color:var(--todo)">A faire</span>
+    <button class="kanban-add-btn" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'))">+</button>
+  </div>
+  <div class="kanban-tasks" data-status="todo">
+<div class="kanban-task" data-task-id="45" onclick="toggleDetail(this)">
+  <div class="task-body">
+    <div class="task-title">Dermato</div>
+  </div>
+  <div class="task-right">
+    <div class="task-avatar" style="background:#8250df" title="Alice">A</div>
+<div class="task-when">15.04</div>    <button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('45','Dermato','','Alice','15.04','todo')">Editer</button>
+  </div>
+</div><div class="kanban-task" data-task-id="46" onclick="toggleDetail(this)">
+  <div class="task-body">
+    <div class="task-title">Bilan complet</div>
+<div class="task-desc">A planifier</div>  </div>
+  <div class="task-right">
+    <div class="task-avatar" style="background:#bf8700" title="Bob">B</div>
+<div class="task-when">10.05</div>    <button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('46','Bilan complet','A planifier','Bob','10.05','todo')">Editer</button>
+  </div>
+</div>    <div class="kanban-add-task" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'))"><span style="font-size:18px">+</span> Ajouter une t&acirc;che</div>
+  </div>
+</div>
+
+<div class="kanban-rest">
+  <div class="kanban-middle">
+    <div class="kanban-col" style="background:color-mix(in srgb, var(--cyan) 5%, white)">
+      <div class="kanban-col-header" style="background:color-mix(in srgb, var(--cyan) 25%, transparent)">
+        <span class="col-name" style="color:var(--cyan)">En cours</span>
+      </div>
+      <div class="kanban-tasks" data-status="doing">
+<div class="kanban-task" data-task-id="44" onclick="toggleDetail(this)">
+  <div class="task-body">
+    <div class="task-title">Ophtalmo</div>
+<div class="task-desc">Bloque par dependance</div>  </div>
+  <div class="task-right">
+    <div class="task-avatar" style="background:#bf8700" title="Bob">B</div>
+<div class="task-when">07.04</div>    <button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('44','Ophtalmo','Bloque par dependance','Bob','07.04','doing')">Editer</button>
+  </div>
+</div>      </div>
+    </div>
+    <div class="kanban-col" style="background:color-mix(in srgb, var(--purple) 5%, white)">
+      <div class="kanban-col-header" style="background:color-mix(in srgb, var(--purple) 25%, transparent)">
+        <span class="col-name" style="color:var(--purple)">Revue</span>
+      </div>
+      <div class="kanban-tasks" data-status="review">
+      </div>
+    </div>
+  </div>
+
+  <div class="kanban-col" style="background:color-mix(in srgb, var(--green) 5%, white)">
+    <div class="kanban-col-header" style="background:color-mix(in srgb, var(--green) 25%, transparent)">
+      <span class="col-name" style="color:var(--green)">Fait</span>
+    </div>
+    <div class="kanban-tasks" data-status="done">
+<div class="kanban-task" data-task-id="41" onclick="toggleDetail(this)">
+  <div class="task-body">
+    <div class="task-title">Prise de sang</div>
+  </div>
+  <div class="task-right">
+    <div class="task-avatar" style="background:#1a7f37" title="Claire">C</div>
+<div class="task-when">20.03</div>    <button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('41','Prise de sang','','Claire','20.03','done')">Editer</button>
+  </div>
+</div><div class="kanban-task" data-task-id="42" onclick="toggleDetail(this)">
+  <div class="task-body">
+    <div class="task-title">Generaliste</div>
+  </div>
+  <div class="task-right">
+    <div class="task-avatar" style="background:#bf8700" title="Bob">B</div>
+<div class="task-when">15.02</div>    <button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('42','Generaliste','','Bob','15.02','done')">Editer</button>
+  </div>
+</div><div class="kanban-task" data-task-id="43" onclick="toggleDetail(this)">
+  <div class="task-body">
+    <div class="task-title">Dentiste</div>
+  </div>
+  <div class="task-right">
+    <div class="task-avatar" style="background:#8250df" title="Alice">A</div>
+<div class="task-when">15.02</div>    <button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('43','Dentiste','','Alice','15.02','done')">Editer</button>
+  </div>
+</div>    </div>
+  </div>
+</div>
+</div></div>
+
+<div class="section" style="padding-top:0">
   <div class="cat-card-add" onclick="document.getElementById('project-modal').style.display='flex'" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--dimmed)">
     <span style="font-size:18px">+</span> Ajouter un projet
   </div>
-</div><div class="project-add-modal" id="project-modal" style="display:none" onclick="this.style.display='none'">
-  <div class="project-add-card" onclick="event.stopPropagation()">
-    <button class="modal-close" onclick="this.closest('.project-add-modal').style.display='none'">&times;</button>
-    <h3 id="proj-modal-title">Projet</h3>
-    <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" style="font-weight:600"></div>
-    <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><select id="new-proj-status"><option value="active">Actif</option><option value="archived">Archivé</option></select></div>
-    <input type="hidden" id="new-proj-cat" value="sante">
-    <input type="hidden" id="new-proj-id">
-    <div style="font-size:10px;font-weight:600;color:var(--dimmed);text-transform:uppercase;margin:8px 0 4px" id="proj-modal-projects-label">Projets</div>
-    <div class="cat-modal-projects" id="proj-modal-projects"></div>
-    <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-delete" id="proj-modal-delete" style="display:none" onclick="confirmDelete(this, deleteProject)">Supprimer</button></div>
-  </div>
-</div><script>const CAT_PROJECTS = {"immobilier": [{"id": "renovation-appart", "name": "Renovation appart", "acronym": "RENO", "tasks": 20}, {"id": "recherche-terrain", "name": "Recherche terrain", "acronym": "TERR", "tasks": 10}, {"id": "dossier-hypotheque", "name": "Dossier hypotheque", "acronym": "HYPO", "tasks": 10}], "sante": [{"id": "bilan-annuel", "name": "Bilan annuel", "acronym": "BILA", "tasks": 6}], "technique": [{"id": "2113ch-website", "name": "2113.ch Website", "acronym": "WEB2", "tasks": 25}, {"id": "infra-ansible", "name": "Infra Ansible", "acronym": "ANSI", "tasks": 20}, {"id": "monitoring-stack", "name": "Monitoring Stack", "acronym": "MONI", "tasks": 20}, {"id": "ssl-pki-renewal", "name": "SSL/PKI Renewal", "acronym": "SSLP", "tasks": 20}, {"id": "kanban-dashboard", "name": "Kanban Dashboard", "acronym": "KANB", "tasks": 20}, {"id": "backup-strategy", "name": "Backup Strategy", "acronym": "BACK", "tasks": 20}, {"id": "migration-freebsd", "name": "Migration FreeBSD", "acronym": "FBSD", "tasks": 20}, {"id": "cicd-pipeline", "name": "CI/CD Pipeline", "acronym": "CICD", "tasks": 20}, {"id": "api-v2", "name": "API v2", "acronym": "APIV", "tasks": 20}, {"id": "docs-techniques", "name": "Docs techniques", "acronym": "DOCS", "tasks": 20}], "famille": [{"id": "vacances-ete", "name": "Vacances ete", "acronym": "VACA", "tasks": 20}], "finance": [], "education": []};</script>
+</div>
+
+
 <div class="project-add-modal" id="task-modal" style="display:none" onclick="this.style.display='none'">
   <div class="project-add-card" onclick="event.stopPropagation()">
     <button class="modal-close" onclick="this.closest('.project-add-modal').style.display='none'">&times;</button>
-    <h3 id="task-modal-heading">Nouvelle tâche</h3>
+    <h3 id="task-modal-heading">Nouvelle t&acirc;che</h3>
     <div class="edit-row"><input type="text" id="task-modal-title" placeholder="Titre" style="font-weight:600"></div>
     <div class="edit-row"><textarea id="task-modal-desc" placeholder="Detail"></textarea></div>
-    <div class="edit-row"><select id="task-modal-who"><option>Q</option><option>Alice</option><option>Bob</option><option>Claire</option></select><input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none"><select id="task-modal-status"><option value="todo">A faire</option><option value="doing">En cours</option><option value="review">Revue</option><option value="done">Fait</option></select></div>
-    <div class="edit-actions"><button class="btn btn-save" onclick="saveTaskModal()">Enregistrer</button><button class="btn btn-delete" id="task-modal-delete" style="display:none" onclick="confirmDelete(this, deleteTask)">Supprimer</button></div>
+    <div class="edit-row">
+      <select id="task-modal-who">
+        <option>Q</option>
+        <option>Alice</option>
+        <option>Bob</option>
+        <option>Claire</option>
+      </select>
+      <input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none">
+      <select id="task-modal-status">
+        <option value="todo">A faire</option>
+        <option value="doing">En cours</option>
+        <option value="review">Revue</option>
+        <option value="done">Fait</option>
+      </select>
+    </div>
+    <div class="edit-actions">
+      <button class="btn btn-save" onclick="saveTaskModal()">Enregistrer</button>
+      <button class="btn btn-delete" id="task-modal-delete" style="display:none" onclick="confirmDelete(this, deleteTask)">Supprimer</button>
+    </div>
   </div>
-</div>
-<div class="project-add-modal" id="confirm-modal" style="display:none" onclick="this.style.display='none'">
+</div><div class="project-add-modal" id="confirm-modal" style="display:none" onclick="this.style.display='none'">
   <div class="project-add-card" onclick="event.stopPropagation()" style="width:280px">
     <h3 id="confirm-modal-title">Confirmer la suppression</h3>
     <div style="text-align:center;margin:16px 0">
@@ -78,7 +176,26 @@
       <button class="btn btn-delete" id="confirm-modal-ok" onclick="">Supprimer</button>
     </div>
   </div>
-</div>
+</div><div class="project-add-modal" id="project-modal" style="display:none" onclick="this.style.display='none'">
+  <div class="project-add-card" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="this.closest('.project-add-modal').style.display='none'">&times;</button>
+    <h3 id="proj-modal-title">Projet</h3>
+    <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" style="font-weight:600"></div>
+    <div class="edit-row">
+      <input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase">
+      <select id="new-proj-status"><option value="active">Actif</option><option value="archived">Archiv&eacute;</option></select>
+    </div>
+    <input type="hidden" id="new-proj-cat" value=&#34;sante&#34;>
+    <input type="hidden" id="new-proj-id">
+    <div style="font-size:10px;font-weight:600;color:var(--dimmed);text-transform:uppercase;margin:8px 0 4px" id="proj-modal-projects-label">Projets</div>
+    <div class="cat-modal-projects" id="proj-modal-projects"></div>
+    <div class="edit-actions">
+      <button class="btn btn-save" onclick="saveProject()">Enregistrer</button>
+      <button class="btn btn-delete" id="proj-modal-delete" style="display:none" onclick="confirmDelete(this, deleteProject)">Supprimer</button>
+    </div>
+  </div>
+</div><script>const CAT_PROJECTS = {"immobilier": [{"id": "renovation-appart", "name": "Renovation appart", "acronym": "RENO", "tasks": 20}, {"id": "recherche-terrain", "name": "Recherche terrain", "acronym": "TERR", "tasks": 10}, {"id": "dossier-hypotheque", "name": "Dossier hypotheque", "acronym": "HYPO", "tasks": 10}], "sante": [{"id": "bilan-annuel", "name": "Bilan annuel", "acronym": "BILA", "tasks": 6}], "technique": [{"id": "2113ch-website", "name": "2113.ch Website", "acronym": "WEB2", "tasks": 25}, {"id": "infra-ansible", "name": "Infra Ansible", "acronym": "ANSI", "tasks": 20}, {"id": "monitoring-stack", "name": "Monitoring Stack", "acronym": "MONI", "tasks": 20}, {"id": "ssl-pki-renewal", "name": "SSL/PKI Renewal", "acronym": "SSLP", "tasks": 20}, {"id": "kanban-dashboard", "name": "Kanban Dashboard", "acronym": "KANB", "tasks": 20}, {"id": "backup-strategy", "name": "Backup Strategy", "acronym": "BACK", "tasks": 20}, {"id": "migration-freebsd", "name": "Migration FreeBSD", "acronym": "FBSD", "tasks": 20}, {"id": "cicd-pipeline", "name": "CI/CD Pipeline", "acronym": "CICD", "tasks": 20}, {"id": "api-v2", "name": "API v2", "acronym": "APIV", "tasks": 20}, {"id": "docs-techniques", "name": "Docs techniques", "acronym": "DOCS", "tasks": 20}], "famille": [{"id": "vacances-ete", "name": "Vacances ete", "acronym": "VACA", "tasks": 20}], "finance": [], "education": []};</script>
+
 <script defer src="../app.js"></script>
 </body>
 </html>

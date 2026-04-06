@@ -1,0 +1,19 @@
+<div class="project-add-modal" id="project-modal" style="display:none" onclick="this.style.display='none'">
+  <div class="project-add-card" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="this.closest('.project-add-modal').style.display='none'">&times;</button>
+    <h3 id="proj-modal-title">Projet</h3>
+    <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" style="font-weight:600"></div>
+    <div class="edit-row">
+      <input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase">
+      <select id="new-proj-status"><option value="active">Actif</option><option value="archived">Archiv&eacute;</option></select>
+    </div>
+    <input type="hidden" id="new-proj-cat"{{ ' value="' + cat_id + '"' if cat_id else '' }}>
+    <input type="hidden" id="new-proj-id">
+    <div style="font-size:10px;font-weight:600;color:var(--dimmed);text-transform:uppercase;margin:8px 0 4px" id="proj-modal-projects-label">Projets</div>
+    <div class="cat-modal-projects" id="proj-modal-projects"></div>
+    <div class="edit-actions">
+      <button class="btn btn-save" onclick="saveProject()">Enregistrer</button>
+      <button class="btn btn-delete" id="proj-modal-delete" style="display:none" onclick="confirmDelete(this, deleteProject)">Supprimer</button>
+    </div>
+  </div>
+</div>

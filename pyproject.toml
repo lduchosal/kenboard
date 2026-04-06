@@ -76,13 +76,6 @@ build-backend = "pdm.backend"
 [tool.pdm]
 distribution = true
 
-[tool.pdm.version]
-source = "file"
-path = "src/dashboard/__init__.py"
-
-[tool.pdm-bump]
-version-files = ["src/dashboard/__init__.py:__version__"]
-
 # -- PDM Scripts --------------------------------------------------------------
 
 [tool.pdm.scripts]

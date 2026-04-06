@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title>
+<link rel="stylesheet" href="{{ prefix }}style.css">
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+</head>
+<body>
+{% block body %}{% endblock %}
+
+{% include "modals/task.html" %}
+{% include "modals/confirm.html" %}
+{% block modals %}{% endblock %}
+{% block scripts %}{% endblock %}
+
+<script defer src="{{ prefix }}app.js"></script>
+</body>
+</html>
