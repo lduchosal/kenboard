@@ -419,17 +419,11 @@ body {
 /* -- Task detail mode -- */
 .kanban-task.detail-mode {
   cursor: default;
-  padding: 12px 14px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
-.kanban-task.detail-mode .task-title {
-  margin-bottom: 2px;
-}
 .kanban-task.detail-mode .task-desc-full {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--dimmed);
-  line-height: 1.5;
-  white-space: pre-wrap;
 }
 
 /* -- Task edit mode -- */
@@ -471,8 +465,9 @@ body {
 }
 .edit-mode .edit-actions {
   display: flex;
+  flex-direction: column-reverse;
   gap: 6px;
-  justify-content: flex-end;
+  align-items: flex-end;
   margin-top: 4px;
   width: 100%;
 }

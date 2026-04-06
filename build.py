@@ -318,7 +318,7 @@ def build_cat(cat: dict):
         arrow, acolor = health_arrow(p)
         open_count = p["total"] - p["done"]
         body += f'''<div class="section" id="{p["id"]}" style="padding-top:0">
-  <div class="section-title">{escape(p["name"])}</div>
+  <div class="section-title">{escape(p.get("acronym", ""))} / {escape(p["name"])}</div>
 {kanban_html(p["tasks"], show_edit=(i == 0))}
 </div>'''
 
