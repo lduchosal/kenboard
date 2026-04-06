@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 import structlog
 
@@ -48,15 +49,17 @@ def setup_logging(debug: bool = False) -> None:
     formatter = structlog.stdlib.ProcessorFormatter(
         processors=[
             structlog.stdlib.ProcessorFormatter.remove_processors_meta,
-            structlog.dev.ConsoleRenderer()
-            if debug
-            else structlog.processors.JSONRenderer(),
+            (
+                structlog.dev.ConsoleRenderer()
+                if debug
+                else structlog.processors.JSONRenderer()
+            ),
         ],
     )
     file_handler.setFormatter(formatter)
     console_handler.setFormatter(formatter)
 
 
-def get_logger(name: str) -> structlog.stdlib.BoundLogger:
+def get_logger(name: str) -> Any:
     """Get a named logger."""
     return structlog.get_logger(name)
