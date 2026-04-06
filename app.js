@@ -166,6 +166,7 @@ function toggleDetail(el) {
 function openEditTask(id, title, desc, who, when, status) {
   _taskTargetList = null;
   _taskEditId = id;
+  // Keep current project_id from hidden field (already set by openTaskModal or previous edit)
   document.getElementById('task-modal-heading').textContent = 'Editer la t\u00e2che';
   document.getElementById('task-modal-title').value = title;
   document.getElementById('task-modal-desc').value = desc;
@@ -184,6 +185,7 @@ function openTaskModal(taskList, projectId) {
   _taskTargetList = taskList;
   _taskProjectId = projectId || taskList.closest('.kanban')?.dataset?.projectId || '';
   _taskEditId = null;
+  document.getElementById('task-modal-project-id').value = _taskProjectId;
   document.getElementById('task-modal-heading').textContent = 'Nouvelle t\u00e2che';
   document.getElementById('task-modal-title').value = '';
   document.getElementById('task-modal-desc').value = '';
@@ -202,7 +204,8 @@ function saveTaskModal() {
   const who = document.getElementById('task-modal-who').value;
   const when = document.getElementById('task-modal-when').value;
   const status = document.getElementById('task-modal-status').value;
-  fetch(`${API_BASE}/tasks`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: _taskProjectId, title, description: desc, who, due_date: when || null, status }) })
+  const projectId = document.getElementById('task-modal-project-id').value;
+  fetch(`${API_BASE}/tasks`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: projectId, title, description: desc, who, due_date: when || null, status }) })
     .catch(err => console.warn('API:', err));
   if (_taskTargetList) {
     const card = document.createElement('div');
