@@ -176,8 +176,9 @@ fi
 print_step "Bumping Version (pdm bump ${BUMP_TYPE})"
 run_command "pdm bump -v ${BUMP_TYPE}" "Version bump"
 
-# Extract version after bump
-VERSION=$(python -c "import sys; sys.path.insert(0, 'src'); import dashboard; print(dashboard.__version__)")
+# Sync __init__.py with pyproject.toml version
+VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+sed -i '' "s/__version__ = \".*\"/__version__ = \"${VERSION}\"/" src/dashboard/__init__.py
 echo "${BLUE}New version: ${VERSION}${NC}"
 
 print_step "Building Package (pdm)"
