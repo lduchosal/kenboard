@@ -16,9 +16,9 @@ def list_projects():
     queries = load_queries()
     try:
         if cat_id:
-            rows = queries.projects.get_by_cat(conn, cat_id=cat_id)
+            rows = queries.proj_get_by_cat(conn, cat_id=cat_id)
         else:
-            rows = queries.projects.get_all(conn)
+            rows = queries.proj_get_all(conn)
         return jsonify([Project(**row).model_dump() for row in rows])
     finally:
         conn.close()
@@ -31,9 +31,9 @@ def create_project():
     conn = get_connection()
     queries = load_queries()
     try:
-        max_pos = queries.projects.max_position_in_cat(conn, cat_id=data.cat)
+        max_pos = queries.proj_max_position_in_cat(conn, cat_id=data.cat)
         proj_id = data.name.lower().replace(" ", "-")
-        queries.projects.create(
+        queries.proj_create(
             conn,
             id=proj_id,
             cat_id=data.cat,
@@ -42,7 +42,7 @@ def create_project():
             status=data.status,
             position=max_pos + 1,
         )
-        row = queries.projects.get_by_id(conn, id=proj_id)
+        row = queries.proj_get_by_id(conn, id=proj_id)
         return jsonify(Project(**row).model_dump()), 201
     finally:
         conn.close()
@@ -55,10 +55,10 @@ def update_project(proj_id: str):
     conn = get_connection()
     queries = load_queries()
     try:
-        existing = queries.projects.get_by_id(conn, id=proj_id)
+        existing = queries.proj_get_by_id(conn, id=proj_id)
         if not existing:
             return jsonify({"error": "Not found"}), 404
-        queries.projects.update(
+        queries.proj_update(
             conn,
             id=proj_id,
             name=data.name or existing["name"],
@@ -69,8 +69,8 @@ def update_project(proj_id: str):
         # Reorder sibling projects if requested
         if data.project_order:
             for i, pid in enumerate(data.project_order):
-                queries.projects.update_position(conn, id=pid, position=i)
-        row = queries.projects.get_by_id(conn, id=proj_id)
+                queries.proj_update_position(conn, id=pid, position=i)
+        row = queries.proj_get_by_id(conn, id=proj_id)
         return jsonify(Project(**row).model_dump())
     finally:
         conn.close()
@@ -82,10 +82,10 @@ def delete_project(proj_id: str):
     conn = get_connection()
     queries = load_queries()
     try:
-        count = queries.projects.count_tasks(conn, project_id=proj_id)
+        count = queries.proj_count_tasks(conn, project_id=proj_id)
         if count > 0:
             return jsonify({"error": "Cannot delete project with tasks"}), 400
-        queries.projects.delete(conn, id=proj_id)
+        queries.proj_delete(conn, id=proj_id)
         return "", 204
     finally:
         conn.close()

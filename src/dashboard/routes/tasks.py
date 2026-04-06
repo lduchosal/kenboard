@@ -17,7 +17,7 @@ def list_tasks():
     conn = get_connection()
     queries = load_queries()
     try:
-        rows = queries.tasks.get_by_project(conn, project_id=project_id)
+        rows = queries.task_get_by_project(conn, project_id=project_id)
         return jsonify([Task(**row).model_dump(mode="json") for row in rows])
     finally:
         conn.close()
@@ -30,10 +30,10 @@ def create_task():
     conn = get_connection()
     queries = load_queries()
     try:
-        max_pos = queries.tasks.max_position_in_project(
+        max_pos = queries.task_max_position_in_project(
             conn, project_id=data.project_id, status=data.status
         )
-        task_id = queries.tasks.create(
+        task_id = queries.task_create(
             conn,
             project_id=data.project_id,
             title=data.title,
@@ -43,7 +43,7 @@ def create_task():
             due_date=data.due_date,
             position=max_pos + 1,
         )
-        row = queries.tasks.get_by_id(conn, id=task_id)
+        row = queries.task_get_by_id(conn, id=task_id)
         return jsonify(Task(**row).model_dump(mode="json")), 201
     finally:
         conn.close()
@@ -56,17 +56,17 @@ def update_task(task_id: int):
     conn = get_connection()
     queries = load_queries()
     try:
-        existing = queries.tasks.get_by_id(conn, id=task_id)
+        existing = queries.task_get_by_id(conn, id=task_id)
         if not existing:
             return jsonify({"error": "Not found"}), 404
 
         # Status + position change (drag & drop)
         if data.status is not None and data.position is not None:
-            queries.tasks.update_status(
+            queries.task_update_status(
                 conn, id=task_id, status=data.status, position=data.position
             )
         elif data.status is not None or data.position is not None:
-            queries.tasks.update_status(
+            queries.task_update_status(
                 conn,
                 id=task_id,
                 status=data.status or existing["status"],
@@ -75,7 +75,7 @@ def update_task(task_id: int):
 
         # Field updates
         if any([data.title, data.description is not None, data.who is not None, data.due_date]):
-            queries.tasks.update(
+            queries.task_update(
                 conn,
                 id=task_id,
                 title=data.title or existing["title"],
@@ -85,7 +85,7 @@ def update_task(task_id: int):
                 due_date=data.due_date or existing["due_date"],
             )
 
-        row = queries.tasks.get_by_id(conn, id=task_id)
+        row = queries.task_get_by_id(conn, id=task_id)
         return jsonify(Task(**row).model_dump(mode="json"))
     finally:
         conn.close()
@@ -97,7 +97,7 @@ def delete_task(task_id: int):
     conn = get_connection()
     queries = load_queries()
     try:
-        queries.tasks.delete(conn, id=task_id)
+        queries.task_delete(conn, id=task_id)
         return "", 204
     finally:
         conn.close()

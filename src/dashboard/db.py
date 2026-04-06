@@ -25,6 +25,6 @@ def get_connection() -> pymysql.Connection:
     )
 
 
-def load_queries() -> aiosql.Queries:
+def load_queries():
     """Load SQL queries from the queries directory."""
-    return aiosql.from_path(str(QUERIES_DIR), "pymysql")
+    return aiosql.from_path(str(QUERIES_DIR), "pymysql", mandatory_parameters=False)
