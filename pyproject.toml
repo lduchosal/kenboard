@@ -28,12 +28,13 @@ dependencies = [
     "flask>=3.1",
     "flask-cors>=5.0",
     "pymysql>=1.1",
-    "sqlalchemy>=2.0",
-    "alembic>=1.14",
+    "aiosql>=12.0",
+    "yoyo-migrations>=8.2",
     "pydantic>=2.11",
     "structlog>=24.0",
     "click>=8.1",
     "python-dotenv>=1.0",
+    "jinja2>=3.1",
 ]
 
 [project.scripts]

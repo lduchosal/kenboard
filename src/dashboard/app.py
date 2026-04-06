@@ -1,0 +1,32 @@
+"""Flask application factory."""
+
+import os
+
+from flask import Flask
+from flask_cors import CORS
+
+from dashboard.routes import categories_bp, projects_bp, tasks_bp
+
+
+def create_app() -> Flask:
+    """Create and configure the Flask application."""
+    app = Flask(
+        __name__,
+        static_folder=os.path.join(os.path.dirname(__file__), "..", "..", ""),
+        static_url_path="",
+    )
+
+    CORS(app)
+
+    # Register API blueprints
+    app.register_blueprint(categories_bp)
+    app.register_blueprint(projects_bp)
+    app.register_blueprint(tasks_bp)
+
+    # Serve index.html at root
+    @app.route("/")
+    def index():
+        """Serve the dashboard."""
+        return app.send_static_file("index.html")
+
+    return app
