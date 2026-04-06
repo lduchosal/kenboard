@@ -102,6 +102,36 @@ document.querySelectorAll('.section-title').forEach(el => {{
   observer.observe(sentinel);
 }});
 
+// Add task
+function addTask(btn) {{
+  const form = btn.closest('.kanban-new-form');
+  const title = form.querySelector('.new-task-title').value.trim();
+  if (!title) return;
+  const desc = form.querySelector('.new-task-desc').value.trim();
+  const who = form.querySelector('.new-task-who').value;
+  const when = form.querySelector('.new-task-when').value;
+  fetch(`${{API_BASE}}/tasks`, {{
+    method: 'POST',
+    headers: {{ 'Content-Type': 'application/json' }},
+    body: JSON.stringify({{ title, desc, who, when, status: 'todo' }})
+  }}).catch(err => console.warn('API not available:', err));
+  const col = form.closest('.kanban-col');
+  const tasks = col.querySelector('.kanban-tasks');
+  const card = document.createElement('div');
+  card.className = 'kanban-task';
+  card.innerHTML = `<div class="task-body"><div class="task-title">${{title}}</div>${{desc ? `<div class="task-desc">${{desc}}</div>` : ''}}</div>`;
+  tasks.prepend(card);
+  form.querySelector('.new-task-title').value = '';
+  form.querySelector('.new-task-desc').value = '';
+  form.querySelector('.new-task-when').value = '';
+  form.style.display = 'none';
+}}
+
+function cancelAdd(btn) {{
+  const form = btn.closest('.kanban-new-form');
+  form.style.display = 'none';
+}}
+
 // Kanban drag & drop
 const API_BASE = '/api/v1';
 
@@ -152,7 +182,18 @@ def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False
             in_middle = False
         col_tasks = [t for t in tasks if t["status"] == col_id]
         html += f'<div class="kanban-col" style="background:color-mix(in srgb, {col_color} 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, {col_color} 25%, transparent)">'
-        html += f'<span class="col-name" style="color:{col_color}">{col_name}</span></div>'
+        html += f'<span class="col-name" style="color:{col_color}">{col_name}</span>'
+        if col_id == "todo":
+            people_opts = "".join(f'<option>{escape(p)}</option>' for p in AVATAR_COLORS.keys())
+            html += f'<button class="kanban-add-btn" onclick="this.closest(\'.kanban-col\').querySelector(\'.kanban-new-form\').style.display=\'block\'">+</button>'
+        html += f'</div>'
+        if col_id == "todo":
+            html += f'<div class="kanban-task edit-mode kanban-new-form" style="display:none">'
+            html += f'<div class="edit-row"><input type="text" class="new-task-title" placeholder="Titre" style="font-weight:600"></div>'
+            html += f'<div class="edit-row"><textarea class="new-task-desc" placeholder="Detail"></textarea></div>'
+            html += f'<div class="edit-row"><select class="new-task-who">{people_opts}</select><input type="text" class="new-task-when" placeholder="dd.mm" style="width:60px;flex:none"></div>'
+            html += f'<div class="edit-actions"><button class="btn btn-save" onclick="addTask(this)">Enregistrer</button><button class="btn btn-cancel" onclick="cancelAdd(this)">Annuler</button></div>'
+            html += f'</div>'
         html += f'<div class="kanban-tasks" data-status="{col_id}">'
         max_visible = 5 if col_id == "done" else None
         visible_tasks = col_tasks[:max_visible] if max_visible else col_tasks
@@ -180,6 +221,7 @@ def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False
                 html += f'<div class="task-avatar" style="background:{avatar_color}" title="{escape(who)}">{initials}</div>'
                 if when_str:
                     html += f'<div class="task-when">{when_str}</div>'
+                html += f'<button class="btn-edit">Editer</button>'
                 html += f'</div>'
                 html += f'</div>'
 
@@ -191,7 +233,7 @@ def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False
                 html += f'<div class="edit-row"><input type="text" value="{escape(t["title"])}" placeholder="Titre" style="font-weight:600"></div>'
                 html += f'<div class="edit-row"><textarea placeholder="Detail">{escape(desc)}</textarea></div>'
                 html += f'<div class="edit-row"><select>{people_options}</select><input type="text" value="{when_str}" placeholder="dd.mm" style="width:60px;flex:none"></div>'
-                html += f'<div class="edit-actions"><button class="btn btn-cancel">Annuler</button><button class="btn btn-save">Enregistrer</button></div>'
+                html += f'<div class="edit-actions"><button class="btn btn-save">Enregistrer</button><button class="btn btn-cancel">Annuler</button></div>'
                 html += f'</div>'
 
             # Normal card

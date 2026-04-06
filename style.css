@@ -335,7 +335,7 @@ body {
   transition: box-shadow 0.15s;
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 8px 10px;
+  padding: 12px 14px;
   margin-bottom: 6px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   font-size: 12px;
@@ -386,6 +386,27 @@ body {
   min-height: 20px;
 }
 
+/* -- Add task button in header -- */
+.kanban-add-btn {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: none;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 0;
+  cursor: pointer;
+  color: #d63384;
+  opacity: 0.7;
+  padding: 0;
+}
+.kanban-add-btn:hover {
+  opacity: 1;
+}
+
 /* -- Drag & drop states -- */
 .task-ghost {
   opacity: 0.4;
@@ -397,6 +418,20 @@ body {
   opacity: 0.9;
 }
 
+.btn-edit {
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dimmed);
+  cursor: pointer;
+}
+.btn-edit:hover {
+  background: var(--bg);
+}
+
 /* -- Task detail mode -- */
 .kanban-task.detail-mode {
   cursor: default;
@@ -405,6 +440,11 @@ body {
 .kanban-task.detail-mode .task-desc-full {
   font-size: 11px;
   color: var(--dimmed);
+}
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
 }
 
 /* -- Task edit mode -- */
@@ -446,7 +486,7 @@ body {
 }
 .edit-mode .edit-actions {
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   gap: 6px;
   align-items: flex-end;
   margin-top: 4px;
@@ -487,9 +527,6 @@ body {
   .edit-mode .edit-row input {
     width: 100% !important;
     flex: none !important;
-  }
-  .edit-mode .edit-actions {
-    flex-direction: column-reverse;
   }
   .kanban-middle {
     flex: 1 !important;

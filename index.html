@@ -131,6 +131,36 @@ document.querySelectorAll('.section-title').forEach(el => {
   observer.observe(sentinel);
 });
 
+// Add task
+function addTask(btn) {
+  const form = btn.closest('.kanban-new-form');
+  const title = form.querySelector('.new-task-title').value.trim();
+  if (!title) return;
+  const desc = form.querySelector('.new-task-desc').value.trim();
+  const who = form.querySelector('.new-task-who').value;
+  const when = form.querySelector('.new-task-when').value;
+  fetch(`${API_BASE}/tasks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, desc, who, when, status: 'todo' })
+  }).catch(err => console.warn('API not available:', err));
+  const col = form.closest('.kanban-col');
+  const tasks = col.querySelector('.kanban-tasks');
+  const card = document.createElement('div');
+  card.className = 'kanban-task';
+  card.innerHTML = `<div class="task-body"><div class="task-title">${title}</div>${desc ? `<div class="task-desc">${desc}</div>` : ''}</div>`;
+  tasks.prepend(card);
+  form.querySelector('.new-task-title').value = '';
+  form.querySelector('.new-task-desc').value = '';
+  form.querySelector('.new-task-when').value = '';
+  form.style.display = 'none';
+}
+
+function cancelAdd(btn) {
+  const form = btn.closest('.kanban-new-form');
+  form.style.display = 'none';
+}
+
 // Kanban drag & drop
 const API_BASE = '/api/v1';
 
