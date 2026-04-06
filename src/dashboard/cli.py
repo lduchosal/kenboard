@@ -31,12 +31,33 @@ def build() -> None:
 
 @cli.command()
 def migrate() -> None:
-    """Run database migrations."""
+    """Run database migrations on the production database."""
     import subprocess
 
     from dashboard.config import Config
 
-    db_url = f"mysql://{Config.DB_USER}:{Config.DB_PASSWORD}@{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB_NAME}"
+    db_url = (
+        f"mysql://{Config.DB_MIGRATE_USER}:{Config.DB_MIGRATE_PASSWORD}"
+        f"@{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB_NAME}"
+    )
     subprocess.run(
-        ["yoyo", "apply", "--batch", "--database", db_url, "migrations/"], check=True
+        ["yoyo", "apply", "--batch", "--database", db_url, "migrations/"],
+        check=True,
+    )
+
+
+@cli.command()
+def migrate_test() -> None:
+    """Run database migrations on the test database."""
+    import subprocess
+
+    from dashboard.config import Config
+
+    db_url = (
+        f"mysql://{Config.DB_TEST_MIGRATE_USER}:{Config.DB_TEST_MIGRATE_PASSWORD}"
+        f"@{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB_TEST_NAME}"
+    )
+    subprocess.run(
+        ["yoyo", "apply", "--batch", "--database", db_url, "migrations/"],
+        check=True,
     )
