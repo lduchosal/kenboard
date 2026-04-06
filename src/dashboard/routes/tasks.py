@@ -97,7 +97,7 @@ def update_task(task_id: int) -> Any:
                 data.title,
                 data.description is not None,
                 data.who is not None,
-                data.due_date,
+                data.parsed_due_date(),
             ]
         ):
             queries.task_update(
@@ -111,7 +111,7 @@ def update_task(task_id: int) -> Any:
                 ),
                 status=data.status or existing["status"],
                 who=data.who if data.who is not None else existing["who"],
-                due_date=data.due_date or existing["due_date"],
+                due_date=data.parsed_due_date() or existing["due_date"],
             )
 
         row = queries.task_get_by_id(conn, id=task_id)
