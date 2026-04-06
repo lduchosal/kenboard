@@ -16,7 +16,7 @@
 {% endfor %}
 
 <div class="section" style="padding-top:0">
-  <div class="cat-card-add" onclick="document.getElementById('project-modal').style.display='flex'" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--dimmed)">
+  <div class="cat-card-add" onclick="editProject('','','','{{ cat.id }}','active')" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--dimmed)">
     <span style="font-size:18px">+</span> Ajouter un projet
   </div>
 </div>
