@@ -227,7 +227,7 @@
           "id": 20
         }
       ],
-      "acronym": "REN"
+      "acronym": "RENO"
     },
     {
       "id": "recherche-terrain",
@@ -344,7 +344,7 @@
           "id": 30
         }
       ],
-      "acronym": "TER"
+      "acronym": "TERR"
     },
     {
       "id": "dossier-hypotheque",
@@ -461,7 +461,7 @@
           "id": 40
         }
       ],
-      "acronym": "HYP"
+      "acronym": "HYPO"
     },
     {
       "id": "bilan-annuel",
@@ -546,7 +546,7 @@
           "id": 46
         }
       ],
-      "acronym": "BIL"
+      "acronym": "BILA"
     },
     {
       "id": "2113ch-website",
@@ -783,7 +783,7 @@
           "id": 71
         }
       ],
-      "acronym": "WEB"
+      "acronym": "WEB2"
     },
     {
       "id": "infra-ansible",
@@ -980,7 +980,7 @@
           "id": 91
         }
       ],
-      "acronym": "ANS"
+      "acronym": "ANSI"
     },
     {
       "id": "monitoring-stack",
@@ -1177,7 +1177,7 @@
           "id": 111
         }
       ],
-      "acronym": "MON"
+      "acronym": "MONI"
     },
     {
       "id": "ssl-pki-renewal",
@@ -1374,7 +1374,7 @@
           "id": 131
         }
       ],
-      "acronym": "SSL"
+      "acronym": "SSLP"
     },
     {
       "id": "kanban-dashboard",
@@ -1571,7 +1571,7 @@
           "id": 151
         }
       ],
-      "acronym": "KAN"
+      "acronym": "KANB"
     },
     {
       "id": "backup-strategy",
@@ -1768,7 +1768,7 @@
           "id": 171
         }
       ],
-      "acronym": "BAK"
+      "acronym": "BACK"
     },
     {
       "id": "migration-freebsd",
@@ -1965,7 +1965,7 @@
           "id": 191
         }
       ],
-      "acronym": "BSD"
+      "acronym": "FBSD"
     },
     {
       "id": "cicd-pipeline",
@@ -2162,7 +2162,7 @@
           "id": 211
         }
       ],
-      "acronym": "CIC"
+      "acronym": "CICD"
     },
     {
       "id": "api-v2",
@@ -2359,7 +2359,7 @@
           "id": 231
         }
       ],
-      "acronym": "API"
+      "acronym": "APIV"
     },
     {
       "id": "docs-techniques",
@@ -2556,7 +2556,7 @@
           "id": 251
         }
       ],
-      "acronym": "DOC"
+      "acronym": "DOCS"
     },
     {
       "id": "vacances-ete",
@@ -2753,7 +2753,7 @@
           "id": 271
         }
       ],
-      "acronym": "VAC"
+      "acronym": "VACA"
     }
   ]
 }

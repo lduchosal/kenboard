@@ -45,77 +45,87 @@
   <div class="cat-header">
     <div class="cat-dot" style="background:var(--orange)"></div>
     <span class="cat-name">Immobilier</span>
+    <button class="btn-edit cat-edit-btn" onclick="event.preventDefault();editCat('immobilier','Immobilier','var(--orange)')">Editer</button>
     <div class="cat-kpis"><div class="cat-kpi">
       <div class="value" style="color:var(--text)">16</div>
       <div class="label">Ouvertes</div>
     </div></div>
   </div>
+  <div class="cat-projects"><div class="cat-project" onclick="event.preventDefault();window.location='cat/immobilier.html#renovation-appart'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--orange) 70%, white)"></span><span class="cat-project-full">Renovation appart</span><span class="cat-project-short">RENO</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/immobilier.html#recherche-terrain'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--orange) 50%, white)"></span><span class="cat-project-full">Recherche terrain</span><span class="cat-project-short">TERR</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/immobilier.html#dossier-hypotheque'"><span class="cat-project-dot" style="background:#d0d7de"></span><span class="cat-project-full">Dossier hypotheque</span><span class="cat-project-short">HYPO</span></div></div>
   <div class="cat-burndown"><div class="bar-group"><div style="height:100%;background:var(--orange);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:95%;background:var(--orange);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:82%;background:var(--orange);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:75%;background:var(--orange);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:68%;background:var(--orange);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:60%;background:var(--orange);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:50%;background:var(--orange);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:48%;background:var(--orange);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:42%;background:var(--orange);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:40%;background:var(--orange);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:40%;background:var(--orange);opacity:0.5;border-radius:1px"></div></div></div>
-  <div class="cat-projects"><div class="cat-project" onclick="event.preventDefault();window.location='cat/immobilier.html#renovation-appart'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--orange) 70%, white)"></span><span class="cat-project-full">Renovation appart</span><span class="cat-project-short">REN</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/immobilier.html#recherche-terrain'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--orange) 50%, white)"></span><span class="cat-project-full">Recherche terrain</span><span class="cat-project-short">TER</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/immobilier.html#dossier-hypotheque'"><span class="cat-project-dot" style="background:#d0d7de"></span><span class="cat-project-full">Dossier hypotheque</span><span class="cat-project-short">HYP</span></div></div>
 </a><a class="cat-card" href="cat/sante.html">
   <div class="cat-header">
     <div class="cat-dot" style="background:var(--green)"></div>
     <span class="cat-name">Sante</span>
+    <button class="btn-edit cat-edit-btn" onclick="event.preventDefault();editCat('sante','Sante','var(--green)')">Editer</button>
     <div class="cat-kpis"><div class="cat-kpi">
       <div class="value" style="color:var(--text)">3</div>
       <div class="label">Ouvertes</div>
     </div></div>
   </div>
+  <div class="cat-projects"><div class="cat-project" onclick="event.preventDefault();window.location='cat/sante.html#bilan-annuel'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--green) 50%, white)"></span><span class="cat-project-full">Bilan annuel</span><span class="cat-project-short">BILA</span></div></div>
   <div class="cat-burndown"><div class="bar-group"><div style="height:100%;background:var(--green);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:100%;background:var(--green);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:83%;background:var(--green);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:83%;background:var(--green);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:67%;background:var(--green);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:67%;background:var(--green);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:50%;background:var(--green);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:50%;background:var(--green);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:50%;background:var(--green);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:50%;background:var(--green);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:50%;background:var(--green);opacity:0.5;border-radius:1px"></div></div></div>
-  <div class="cat-projects"><div class="cat-project" onclick="event.preventDefault();window.location='cat/sante.html#bilan-annuel'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--green) 50%, white)"></span><span class="cat-project-full">Bilan annuel</span><span class="cat-project-short">BIL</span></div></div>
 </a><a class="cat-card" href="cat/technique.html">
   <div class="cat-header">
     <div class="cat-dot" style="background:var(--accent)"></div>
     <span class="cat-name">Technique</span>
+    <button class="btn-edit cat-edit-btn" onclick="event.preventDefault();editCat('technique','Technique','var(--accent)')">Editer</button>
     <div class="cat-kpis"><div class="cat-kpi">
       <div class="value" style="color:var(--text)">117</div>
       <div class="label">Ouvertes</div>
     </div></div>
   </div>
+  <div class="cat-projects"><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#2113ch-website'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 90%, white)"></span><span class="cat-project-full">2113.ch Website</span><span class="cat-project-short">WEB2</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#infra-ansible'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 70%, white)"></span><span class="cat-project-full">Infra Ansible</span><span class="cat-project-short">ANSI</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#monitoring-stack'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 50%, white)"></span><span class="cat-project-full">Monitoring Stack</span><span class="cat-project-short">MONI</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#ssl-pki-renewal'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 50%, white)"></span><span class="cat-project-full">SSL/PKI Renewal</span><span class="cat-project-short">SSLP</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#kanban-dashboard'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 90%, white)"></span><span class="cat-project-full">Kanban Dashboard</span><span class="cat-project-short">KANB</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#backup-strategy'"><span class="cat-project-dot" style="background:#d0d7de"></span><span class="cat-project-full">Backup Strategy</span><span class="cat-project-short">BACK</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#migration-freebsd'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 50%, white)"></span><span class="cat-project-full">Migration FreeBSD</span><span class="cat-project-short">FBSD</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#cicd-pipeline'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 70%, white)"></span><span class="cat-project-full">CI/CD Pipeline</span><span class="cat-project-short">CICD</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#api-v2'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 70%, white)"></span><span class="cat-project-full">API v2</span><span class="cat-project-short">APIV</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#docs-techniques'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 70%, white)"></span><span class="cat-project-full">Docs techniques</span><span class="cat-project-short">DOCS</span></div></div>
   <div class="cat-burndown"><div class="bar-group"><div style="height:100%;background:var(--accent);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:96%;background:var(--accent);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:90%;background:var(--accent);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:84%;background:var(--accent);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:78%;background:var(--accent);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:71%;background:var(--accent);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:66%;background:var(--accent);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:63%;background:var(--accent);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:59%;background:var(--accent);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:57%;background:var(--accent);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:57%;background:var(--accent);opacity:0.5;border-radius:1px"></div></div></div>
-  <div class="cat-projects"><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#2113ch-website'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 90%, white)"></span><span class="cat-project-full">2113.ch Website</span><span class="cat-project-short">WEB</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#infra-ansible'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 70%, white)"></span><span class="cat-project-full">Infra Ansible</span><span class="cat-project-short">ANS</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#monitoring-stack'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 50%, white)"></span><span class="cat-project-full">Monitoring Stack</span><span class="cat-project-short">MON</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#ssl-pki-renewal'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 50%, white)"></span><span class="cat-project-full">SSL/PKI Renewal</span><span class="cat-project-short">SSL</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#kanban-dashboard'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 90%, white)"></span><span class="cat-project-full">Kanban Dashboard</span><span class="cat-project-short">KAN</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#backup-strategy'"><span class="cat-project-dot" style="background:#d0d7de"></span><span class="cat-project-full">Backup Strategy</span><span class="cat-project-short">BAK</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#migration-freebsd'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 50%, white)"></span><span class="cat-project-full">Migration FreeBSD</span><span class="cat-project-short">BSD</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#cicd-pipeline'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 70%, white)"></span><span class="cat-project-full">CI/CD Pipeline</span><span class="cat-project-short">CIC</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#api-v2'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 70%, white)"></span><span class="cat-project-full">API v2</span><span class="cat-project-short">API</span></div><div class="cat-project" onclick="event.preventDefault();window.location='cat/technique.html#docs-techniques'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--accent) 70%, white)"></span><span class="cat-project-full">Docs techniques</span><span class="cat-project-short">DOC</span></div></div>
 </a><a class="cat-card" href="cat/famille.html">
   <div class="cat-header">
     <div class="cat-dot" style="background:var(--purple)"></div>
     <span class="cat-name">Famille</span>
+    <button class="btn-edit cat-edit-btn" onclick="event.preventDefault();editCat('famille','Famille','var(--purple)')">Editer</button>
     <div class="cat-kpis"><div class="cat-kpi">
       <div class="value" style="color:var(--text)">13</div>
       <div class="label">Ouvertes</div>
     </div></div>
   </div>
+  <div class="cat-projects"><div class="cat-project" onclick="event.preventDefault();window.location='cat/famille.html#vacances-ete'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--purple) 70%, white)"></span><span class="cat-project-full">Vacances ete</span><span class="cat-project-short">VACA</span></div></div>
   <div class="cat-burndown"><div class="bar-group"><div style="height:100%;background:var(--purple);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:95%;background:var(--purple);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:90%;background:var(--purple);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:85%;background:var(--purple);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:80%;background:var(--purple);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:75%;background:var(--purple);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:70%;background:var(--purple);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:65%;background:var(--purple);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:65%;background:var(--purple);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:65%;background:var(--purple);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:65%;background:var(--purple);opacity:0.5;border-radius:1px"></div></div></div>
-  <div class="cat-projects"><div class="cat-project" onclick="event.preventDefault();window.location='cat/famille.html#vacances-ete'"><span class="cat-project-dot" style="background:color-mix(in srgb, var(--purple) 70%, white)"></span><span class="cat-project-full">Vacances ete</span><span class="cat-project-short">VAC</span></div></div>
 </a><a class="cat-card" href="cat/finance.html">
   <div class="cat-header">
     <div class="cat-dot" style="background:var(--cyan)"></div>
     <span class="cat-name">Finance</span>
+    <button class="btn-edit cat-edit-btn" onclick="event.preventDefault();editCat('finance','Finance','var(--cyan)')">Editer</button>
     <div class="cat-kpis"><div class="cat-kpi">
       <div class="value" style="color:var(--text)">0</div>
       <div class="label">Ouvertes</div>
     </div></div>
   </div>
-  <div class="cat-burndown"><div class="bar-group"><div style="height:0%;background:var(--cyan);opacity:0.5;border-radius:1px"></div></div></div>
   <div class="cat-projects"></div>
+  <div class="cat-burndown"><div class="bar-group"><div style="height:0%;background:var(--cyan);opacity:0.5;border-radius:1px"></div></div></div>
 </a><div class="cat-card cat-card-add editing" onclick="event.stopPropagation()">
-  <div class="cat-add-form" style="display:block">
-    <div class="cat-header"><div class="color-picker" onclick="event.stopPropagation();this.classList.toggle('open')"><div class="color-picker-current cat-dot" style="background:var(--red)" data-color="var(--red)"></div><div class="color-picker-dropdown"><span class="color-dot" data-color="var(--orange)" style="background:var(--orange)" onclick="selectColor(this)"></span><span class="color-dot" data-color="var(--green)" style="background:var(--green)" onclick="selectColor(this)"></span><span class="color-dot" data-color="var(--accent)" style="background:var(--accent)" onclick="selectColor(this)"></span><span class="color-dot" data-color="var(--purple)" style="background:var(--purple)" onclick="selectColor(this)"></span><span class="color-dot" data-color="var(--cyan)" style="background:var(--cyan)" onclick="selectColor(this)"></span><span class="color-dot" data-color="var(--red)" style="background:var(--red)" onclick="selectColor(this)"></span></div></div><input type="text" class="new-cat-name cat-name-input" value="Education"></div>
+  <div class="cat-add-form" style="display:flex">
+    <div class="cat-header"><div class="color-picker" onclick="event.stopPropagation();this.classList.toggle('open')"><div class="color-picker-current cat-dot" style="background:var(--red)" data-color="var(--red)"></div><div class="color-picker-dropdown"><span class="color-dot" data-color="var(--orange)" style="background:var(--orange)" onclick="event.stopPropagation();selectColor(this)"></span><span class="color-dot" data-color="var(--green)" style="background:var(--green)" onclick="event.stopPropagation();selectColor(this)"></span><span class="color-dot" data-color="var(--accent)" style="background:var(--accent)" onclick="event.stopPropagation();selectColor(this)"></span><span class="color-dot" data-color="var(--purple)" style="background:var(--purple)" onclick="event.stopPropagation();selectColor(this)"></span><span class="color-dot" data-color="var(--cyan)" style="background:var(--cyan)" onclick="event.stopPropagation();selectColor(this)"></span><span class="color-dot" data-color="var(--red)" style="background:var(--red)" onclick="event.stopPropagation();selectColor(this)"></span></div></div><input type="text" class="new-cat-name cat-name-input" value="Education"><div class="cat-kpis"><div class="cat-kpi"><div class="value" style="color:var(--text)">2</div><div class="label">Ouvertes</div></div></div></div>
+    <div class="cat-projects"><div class="cat-project" onclick="event.stopPropagation();editProject('pyt','Python avance','PYT','15.06','education')"><span class="cat-project-dot" style="background:var(--red)"></span><span class="cat-project-short">PYT</span></div><div class="cat-project" onclick="event.stopPropagation();editProject('rst','Rust intro','RST','01.07','education')"><span class="cat-project-dot" style="background:#d0d7de"></span><span class="cat-project-short">RST</span></div><div class="cat-project cat-project-add" onclick="event.stopPropagation();addProjectChip(this)"><span class="cat-project-plus">+</span></div></div>
+    <div class="cat-burndown"><div class="bar-group"><div style="height:100%;background:var(--red);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:88%;background:var(--red);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:88%;background:var(--red);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:75%;background:var(--red);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:62%;background:var(--red);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:62%;background:var(--red);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:50%;background:var(--red);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:50%;background:var(--red);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:38%;background:var(--red);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:38%;background:var(--red);opacity:0.5;border-radius:1px"></div></div><div class="bar-group"><div style="height:25%;background:var(--red);opacity:0.5;border-radius:1px"></div></div></div>
     <div class="edit-actions"><button class="btn btn-save">Enregistrer</button><button class="btn btn-cancel">Annuler</button></div>
   </div>
-</div><div class="cat-card cat-card-add" onclick="this.querySelector('.cat-add-form').style.display='block';this.querySelector('.cat-add-placeholder').style.display='none';this.classList.add('editing')">
-  <div class="cat-add-placeholder">
-    <span class="cat-add-plus">+</span>
-  </div>
-  <div class="cat-add-form" style="display:none" onclick="event.stopPropagation()">
-    <div class="cat-header"><div class="color-picker" onclick="event.stopPropagation();this.classList.toggle('open')"><div class="color-picker-current cat-dot" style="background:var(--orange)" data-color="var(--orange)"></div><div class="color-picker-dropdown"><span class="color-dot" data-color="var(--orange)" style="background:var(--orange)" onclick="selectColor(this)"></span><span class="color-dot" data-color="var(--green)" style="background:var(--green)" onclick="selectColor(this)"></span><span class="color-dot" data-color="var(--accent)" style="background:var(--accent)" onclick="selectColor(this)"></span><span class="color-dot" data-color="var(--purple)" style="background:var(--purple)" onclick="selectColor(this)"></span><span class="color-dot" data-color="var(--cyan)" style="background:var(--cyan)" onclick="selectColor(this)"></span><span class="color-dot" data-color="var(--red)" style="background:var(--red)" onclick="selectColor(this)"></span></div></div><input type="text" class="new-cat-name cat-name-input" placeholder="Nom de la categorie"></div>
-    <div class="edit-actions"><button class="btn btn-save" onclick="addCategory(this)">Enregistrer</button><button class="btn btn-cancel" onclick="cancelAddCat(this)">Annuler</button></div>
-  </div>
-</div></div></div><div class="project-add-modal" id="project-modal" style="display:none" onclick="this.style.display='none'">
+</div><div class="cat-card cat-card-add" onclick="addCatCard(this)">
+  <span class="cat-add-plus">+</span>
+</div></div></div><template id="color-dots-tpl"><span class="color-dot" data-color="var(--orange)" style="background:var(--orange)" onclick="event.stopPropagation();selectColor(this)"></span><span class="color-dot" data-color="var(--green)" style="background:var(--green)" onclick="event.stopPropagation();selectColor(this)"></span><span class="color-dot" data-color="var(--accent)" style="background:var(--accent)" onclick="event.stopPropagation();selectColor(this)"></span><span class="color-dot" data-color="var(--purple)" style="background:var(--purple)" onclick="event.stopPropagation();selectColor(this)"></span><span class="color-dot" data-color="var(--cyan)" style="background:var(--cyan)" onclick="event.stopPropagation();selectColor(this)"></span><span class="color-dot" data-color="var(--red)" style="background:var(--red)" onclick="event.stopPropagation();selectColor(this)"></span></template><div class="project-add-modal" id="project-modal" style="display:none" onclick="this.style.display='none'">
   <div class="project-add-card" onclick="event.stopPropagation()">
-    <h3>Nouveau projet</h3>
+    <h3 id="proj-modal-title">Projet</h3>
     <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" style="font-weight:600"></div>
-    <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACR" maxlength="3" style="width:60px;flex:none;text-transform:uppercase"><input type="text" id="new-proj-due" placeholder="dd.mm" style="width:60px;flex:none"></div>
+    <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACR" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><input type="text" id="new-proj-due" placeholder="dd.mm" style="width:60px;flex:none"></div>
     <input type="hidden" id="new-proj-cat">
-    <div class="edit-actions"><button class="btn btn-save" onclick="addProject()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('project-modal').style.display='none'">Annuler</button></div>
+    <input type="hidden" id="new-proj-id">
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('project-modal').style.display='none'">Annuler</button></div>
+  </div>
+</div><div class="project-add-modal" id="cat-modal" style="display:none" onclick="this.style.display='none'">
+  <div class="project-add-card" onclick="event.stopPropagation()">
+    <h3>Editer categorie</h3>
+    <div class="edit-row"><input type="text" id="cat-modal-name" placeholder="Nom de la categorie" style="font-weight:600;font-size:14px"></div>
+    <div class="edit-row cat-modal-colors" id="cat-modal-colors"><span class="color-dot" data-color="var(--orange)" style="background:var(--orange)" onclick="event.stopPropagation();selectCatColor(this)"></span><span class="color-dot" data-color="var(--green)" style="background:var(--green)" onclick="event.stopPropagation();selectCatColor(this)"></span><span class="color-dot" data-color="var(--accent)" style="background:var(--accent)" onclick="event.stopPropagation();selectCatColor(this)"></span><span class="color-dot" data-color="var(--purple)" style="background:var(--purple)" onclick="event.stopPropagation();selectCatColor(this)"></span><span class="color-dot" data-color="var(--cyan)" style="background:var(--cyan)" onclick="event.stopPropagation();selectCatColor(this)"></span><span class="color-dot" data-color="var(--red)" style="background:var(--red)" onclick="event.stopPropagation();selectCatColor(this)"></span></div>
+    <input type="hidden" id="cat-modal-id">
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveCat()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('cat-modal').style.display='none'">Annuler</button></div>
   </div>
 </div>
 <script>
@@ -150,6 +160,84 @@ function selectColor(dot) {
   picker.classList.remove('open');
 }
 
+// Add project chip in category edit
+let projectChipCounter = {};
+function addProjectChip(addBtn) {
+  const grid = addBtn.closest('.cat-projects');
+  const card = addBtn.closest('.cat-card');
+  const nameInput = card.querySelector('.cat-name-input');
+  const catName = (nameInput ? nameInput.value.trim() : 'CAT').substring(0, 4).toUpperCase();
+  if (!projectChipCounter[catName]) projectChipCounter[catName] = 0;
+  projectChipCounter[catName]++;
+  const acronym = catName + projectChipCounter[catName];
+  const chip = document.createElement('div');
+  chip.className = 'cat-project';
+  chip.onclick = (e) => { e.stopPropagation(); editProject('', '', acronym, '', catName.toLowerCase()); };
+  chip.innerHTML = `<span class="cat-project-dot" style="background:#d0d7de"></span><span class="cat-project-short">${acronym}</span><span class="cat-project-remove" onclick="event.stopPropagation();this.parentElement.remove()">&times;</span>`;
+  grid.insertBefore(chip, addBtn);
+}
+
+// Edit category modal
+function editCat(id, name, color) {
+  const modal = document.getElementById('cat-modal');
+  if (!modal) return;
+  document.getElementById('cat-modal-id').value = id;
+  document.getElementById('cat-modal-name').value = name;
+  const colors = document.getElementById('cat-modal-colors');
+  colors.querySelectorAll('.color-dot').forEach(d => {
+    d.classList.toggle('selected', d.dataset.color === color);
+  });
+  modal.style.display = 'flex';
+}
+
+function selectCatColor(dot) {
+  const container = document.getElementById('cat-modal-colors');
+  container.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+  dot.classList.add('selected');
+}
+
+function saveCat() {
+  const id = document.getElementById('cat-modal-id').value;
+  const name = document.getElementById('cat-modal-name').value.trim();
+  const selected = document.querySelector('#cat-modal-colors .color-dot.selected');
+  const color = selected ? selected.dataset.color : '';
+  if (!name) return;
+  fetch(`${API_BASE}/categories/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, color })
+  }).then(() => window.location.reload())
+    .catch(err => console.warn('API not available:', err));
+  document.getElementById('cat-modal').style.display = 'none';
+}
+
+// Add category card to grid
+function addCatCard(addBtn) {
+  const tpl = document.getElementById('color-dots-tpl');
+  const dots = tpl ? tpl.innerHTML : '';
+  const firstColor = 'var(--orange)';
+  const card = document.createElement('div');
+  card.className = 'cat-card cat-card-add editing';
+  card.onclick = (e) => e.stopPropagation();
+  card.innerHTML = `
+    <div class="cat-add-form" style="display:flex">
+      <div class="cat-header">
+        <div class="color-picker" onclick="event.stopPropagation();this.classList.toggle('open')">
+          <div class="color-picker-current cat-dot" style="background:${firstColor}" data-color="${firstColor}"></div>
+          <div class="color-picker-dropdown">${dots}</div>
+        </div>
+        <input type="text" class="new-cat-name cat-name-input" placeholder="Nom de la categorie">
+        <div class="cat-kpis"><div class="cat-kpi"><div class="value" style="color:var(--text)">0</div><div class="label">Ouvertes</div></div></div>
+      </div>
+      <div class="edit-actions">
+        <button class="btn btn-save" onclick="addCategory(this)">Enregistrer</button>
+        <button class="btn btn-cancel" onclick="cancelAddCat(this)">Annuler</button>
+      </div>
+    </div>`;
+  addBtn.parentElement.insertBefore(card, addBtn);
+  card.querySelector('.cat-name-input').focus();
+}
+
 // Add category
 function addCategory(btn) {
   const form = btn.closest('.cat-add-form');
@@ -166,35 +254,39 @@ function addCategory(btn) {
 }
 
 function cancelAddCat(btn) {
-  const card = btn.closest('.cat-card-add');
-  card.querySelector('.cat-add-form').style.display = 'none';
-  card.querySelector('.cat-add-placeholder').style.display = '';
-  card.classList.remove('editing');
+  const card = btn.closest('.cat-card-add.editing');
+  card.remove();
 }
 
-// Add project
-function showAddProject(el, catId) {
+// Edit / Add project
+function editProject(id, name, acronym, due, cat) {
   const modal = document.getElementById('project-modal');
   if (!modal) return;
-  document.getElementById('new-proj-cat').value = catId;
-  document.getElementById('new-proj-name').value = '';
-  document.getElementById('new-proj-acronym').value = '';
-  document.getElementById('new-proj-due').value = '';
+  document.getElementById('proj-modal-title').textContent = id ? 'Editer projet' : 'Nouveau projet';
+  document.getElementById('new-proj-id').value = id || '';
+  document.getElementById('new-proj-cat').value = cat || '';
+  document.getElementById('new-proj-name').value = name || '';
+  document.getElementById('new-proj-acronym').value = acronym || '';
+  document.getElementById('new-proj-due').value = due || '';
   modal.style.display = 'flex';
 }
 
-function addProject() {
+function saveProject() {
+  const id = document.getElementById('new-proj-id').value;
   const name = document.getElementById('new-proj-name').value.trim();
   const acronym = document.getElementById('new-proj-acronym').value.trim().toUpperCase();
   const due = document.getElementById('new-proj-due').value.trim();
   const cat = document.getElementById('new-proj-cat').value;
   if (!name || !acronym) return;
-  fetch(`${API_BASE}/projects`, {
-    method: 'POST',
+  const method = id ? 'PATCH' : 'POST';
+  const url = id ? `${API_BASE}/projects/${id}` : `${API_BASE}/projects`;
+  fetch(url, {
+    method,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, acronym, cat, due })
   }).then(() => window.location.reload())
     .catch(err => console.warn('API not available:', err));
+  document.getElementById('project-modal').style.display = 'none';
 }
 
 // Add task
@@ -227,8 +319,29 @@ function cancelAdd(btn) {
   form.style.display = 'none';
 }
 
-// Kanban drag & drop
+// Drag & drop
 const API_BASE = '/api/v1';
+
+// Category drag & drop
+const catGrid = document.querySelector('.cat-grid');
+if (catGrid) {
+  new Sortable(catGrid, {
+    animation: 150,
+    draggable: '.cat-card:not(.cat-card-add)',
+    ghostClass: 'task-ghost',
+    chosenClass: 'task-chosen',
+    filter: '.cat-card-add:not(.editing)',
+    onEnd: (evt) => {
+      fetch(`${API_BASE}/categories/reorder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: evt.oldIndex, to: evt.newIndex })
+      }).catch(err => console.warn('API not available:', err));
+    }
+  });
+}
+
+// Kanban drag & drop
 
 document.querySelectorAll('.kanban-col').forEach(col => {
   const taskContainer = col.querySelector('.kanban-tasks');

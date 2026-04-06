@@ -42,7 +42,7 @@
     </div>
   </div>
 </div><div class="section" id="bilan-annuel" style="padding-top:0">
-  <div class="section-title">BIL / Bilan annuel</div>
+  <div class="section-title">BILA / Bilan annuel</div>
 <div class="kanban"><div class="kanban-col" style="background:color-mix(in srgb, #d63384 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, #d63384 25%, transparent)"><span class="col-name" style="color:#d63384">A faire</span><button class="kanban-add-btn" onclick="this.closest('.kanban-col').querySelector('.kanban-new-form').style.display='block'">+</button></div><div class="kanban-task edit-mode kanban-new-form" style="display:none"><div class="edit-row"><input type="text" class="new-task-title" placeholder="Titre" style="font-weight:600"></div><div class="edit-row"><textarea class="new-task-desc" placeholder="Detail"></textarea></div><div class="edit-row"><select class="new-task-who"><option>Q</option><option>Alice</option><option>Bob</option><option>Claire</option></select><input type="text" class="new-task-when" placeholder="dd.mm" style="width:60px;flex:none"></div><div class="edit-actions"><button class="btn btn-save" onclick="addTask(this)">Enregistrer</button><button class="btn btn-cancel" onclick="cancelAdd(this)">Annuler</button></div></div><div class="kanban-tasks" data-status="todo"><div class="kanban-task detail-mode" data-task-id="45"><div class="task-body"><div class="task-title">Dermato</div></div><div class="task-right"><div class="task-avatar" style="background:#8250df" title="Alice">A</div><div class="task-when">15.04</div><button class="btn-edit">Editer</button></div></div><div class="kanban-task edit-mode" data-task-id="46"><div class="edit-row"><input type="text" value="Bilan complet" placeholder="Titre" style="font-weight:600"></div><div class="edit-row"><textarea placeholder="Detail">A planifier</textarea></div><div class="edit-row"><select><option>Q</option><option>Alice</option><option selected>Bob</option><option>Claire</option></select><input type="text" value="10.05" placeholder="dd.mm" style="width:60px;flex:none"></div><div class="edit-actions"><button class="btn btn-save">Enregistrer</button><button class="btn btn-cancel">Annuler</button></div></div></div></div><div class="kanban-rest"><div class="kanban-middle"><div class="kanban-col" style="background:color-mix(in srgb, var(--cyan) 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, var(--cyan) 25%, transparent)"><span class="col-name" style="color:var(--cyan)">En cours</span></div><div class="kanban-tasks" data-status="doing"><a class="kanban-task" href="#" style="text-decoration:none;color:inherit" data-task-id="44"><div class="task-body"><div class="task-title">Ophtalmo</div><div class="task-desc">Bloque par dependance</div></div><div class="task-right"><div class="task-avatar" style="background:#bf8700" title="Bob">B</div><div class="task-when">07.04</div></div></a></div></div><div class="kanban-col" style="background:color-mix(in srgb, var(--purple) 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, var(--purple) 25%, transparent)"><span class="col-name" style="color:var(--purple)">Revue</span></div><div class="kanban-tasks" data-status="review"></div></div></div><div class="kanban-col" style="background:color-mix(in srgb, var(--green) 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, var(--green) 25%, transparent)"><span class="col-name" style="color:var(--green)">Fait</span></div><div class="kanban-tasks" data-status="done"><a class="kanban-task" href="#" style="text-decoration:none;color:inherit" data-task-id="41"><div class="task-body"><div class="task-title">Prise de sang</div></div><div class="task-right"><div class="task-avatar" style="background:#1a7f37" title="Claire">C</div><div class="task-when">20.03</div></div></a><a class="kanban-task" href="#" style="text-decoration:none;color:inherit" data-task-id="42"><div class="task-body"><div class="task-title">Generaliste</div></div><div class="task-right"><div class="task-avatar" style="background:#bf8700" title="Bob">B</div><div class="task-when">15.02</div></div></a><a class="kanban-task" href="#" style="text-decoration:none;color:inherit" data-task-id="43"><div class="task-body"><div class="task-title">Dentiste</div></div><div class="task-right"><div class="task-avatar" style="background:#8250df" title="Alice">A</div><div class="task-when">15.02</div></div></a></div></div></div></div>
 </div>
 <script>
@@ -77,6 +77,84 @@ function selectColor(dot) {
   picker.classList.remove('open');
 }
 
+// Add project chip in category edit
+let projectChipCounter = {};
+function addProjectChip(addBtn) {
+  const grid = addBtn.closest('.cat-projects');
+  const card = addBtn.closest('.cat-card');
+  const nameInput = card.querySelector('.cat-name-input');
+  const catName = (nameInput ? nameInput.value.trim() : 'CAT').substring(0, 4).toUpperCase();
+  if (!projectChipCounter[catName]) projectChipCounter[catName] = 0;
+  projectChipCounter[catName]++;
+  const acronym = catName + projectChipCounter[catName];
+  const chip = document.createElement('div');
+  chip.className = 'cat-project';
+  chip.onclick = (e) => { e.stopPropagation(); editProject('', '', acronym, '', catName.toLowerCase()); };
+  chip.innerHTML = `<span class="cat-project-dot" style="background:#d0d7de"></span><span class="cat-project-short">${acronym}</span><span class="cat-project-remove" onclick="event.stopPropagation();this.parentElement.remove()">&times;</span>`;
+  grid.insertBefore(chip, addBtn);
+}
+
+// Edit category modal
+function editCat(id, name, color) {
+  const modal = document.getElementById('cat-modal');
+  if (!modal) return;
+  document.getElementById('cat-modal-id').value = id;
+  document.getElementById('cat-modal-name').value = name;
+  const colors = document.getElementById('cat-modal-colors');
+  colors.querySelectorAll('.color-dot').forEach(d => {
+    d.classList.toggle('selected', d.dataset.color === color);
+  });
+  modal.style.display = 'flex';
+}
+
+function selectCatColor(dot) {
+  const container = document.getElementById('cat-modal-colors');
+  container.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+  dot.classList.add('selected');
+}
+
+function saveCat() {
+  const id = document.getElementById('cat-modal-id').value;
+  const name = document.getElementById('cat-modal-name').value.trim();
+  const selected = document.querySelector('#cat-modal-colors .color-dot.selected');
+  const color = selected ? selected.dataset.color : '';
+  if (!name) return;
+  fetch(`${API_BASE}/categories/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, color })
+  }).then(() => window.location.reload())
+    .catch(err => console.warn('API not available:', err));
+  document.getElementById('cat-modal').style.display = 'none';
+}
+
+// Add category card to grid
+function addCatCard(addBtn) {
+  const tpl = document.getElementById('color-dots-tpl');
+  const dots = tpl ? tpl.innerHTML : '';
+  const firstColor = 'var(--orange)';
+  const card = document.createElement('div');
+  card.className = 'cat-card cat-card-add editing';
+  card.onclick = (e) => e.stopPropagation();
+  card.innerHTML = `
+    <div class="cat-add-form" style="display:flex">
+      <div class="cat-header">
+        <div class="color-picker" onclick="event.stopPropagation();this.classList.toggle('open')">
+          <div class="color-picker-current cat-dot" style="background:${firstColor}" data-color="${firstColor}"></div>
+          <div class="color-picker-dropdown">${dots}</div>
+        </div>
+        <input type="text" class="new-cat-name cat-name-input" placeholder="Nom de la categorie">
+        <div class="cat-kpis"><div class="cat-kpi"><div class="value" style="color:var(--text)">0</div><div class="label">Ouvertes</div></div></div>
+      </div>
+      <div class="edit-actions">
+        <button class="btn btn-save" onclick="addCategory(this)">Enregistrer</button>
+        <button class="btn btn-cancel" onclick="cancelAddCat(this)">Annuler</button>
+      </div>
+    </div>`;
+  addBtn.parentElement.insertBefore(card, addBtn);
+  card.querySelector('.cat-name-input').focus();
+}
+
 // Add category
 function addCategory(btn) {
   const form = btn.closest('.cat-add-form');
@@ -93,35 +171,39 @@ function addCategory(btn) {
 }
 
 function cancelAddCat(btn) {
-  const card = btn.closest('.cat-card-add');
-  card.querySelector('.cat-add-form').style.display = 'none';
-  card.querySelector('.cat-add-placeholder').style.display = '';
-  card.classList.remove('editing');
+  const card = btn.closest('.cat-card-add.editing');
+  card.remove();
 }
 
-// Add project
-function showAddProject(el, catId) {
+// Edit / Add project
+function editProject(id, name, acronym, due, cat) {
   const modal = document.getElementById('project-modal');
   if (!modal) return;
-  document.getElementById('new-proj-cat').value = catId;
-  document.getElementById('new-proj-name').value = '';
-  document.getElementById('new-proj-acronym').value = '';
-  document.getElementById('new-proj-due').value = '';
+  document.getElementById('proj-modal-title').textContent = id ? 'Editer projet' : 'Nouveau projet';
+  document.getElementById('new-proj-id').value = id || '';
+  document.getElementById('new-proj-cat').value = cat || '';
+  document.getElementById('new-proj-name').value = name || '';
+  document.getElementById('new-proj-acronym').value = acronym || '';
+  document.getElementById('new-proj-due').value = due || '';
   modal.style.display = 'flex';
 }
 
-function addProject() {
+function saveProject() {
+  const id = document.getElementById('new-proj-id').value;
   const name = document.getElementById('new-proj-name').value.trim();
   const acronym = document.getElementById('new-proj-acronym').value.trim().toUpperCase();
   const due = document.getElementById('new-proj-due').value.trim();
   const cat = document.getElementById('new-proj-cat').value;
   if (!name || !acronym) return;
-  fetch(`${API_BASE}/projects`, {
-    method: 'POST',
+  const method = id ? 'PATCH' : 'POST';
+  const url = id ? `${API_BASE}/projects/${id}` : `${API_BASE}/projects`;
+  fetch(url, {
+    method,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, acronym, cat, due })
   }).then(() => window.location.reload())
     .catch(err => console.warn('API not available:', err));
+  document.getElementById('project-modal').style.display = 'none';
 }
 
 // Add task
@@ -154,8 +236,29 @@ function cancelAdd(btn) {
   form.style.display = 'none';
 }
 
-// Kanban drag & drop
+// Drag & drop
 const API_BASE = '/api/v1';
+
+// Category drag & drop
+const catGrid = document.querySelector('.cat-grid');
+if (catGrid) {
+  new Sortable(catGrid, {
+    animation: 150,
+    draggable: '.cat-card:not(.cat-card-add)',
+    ghostClass: 'task-ghost',
+    chosenClass: 'task-chosen',
+    filter: '.cat-card-add:not(.editing)',
+    onEnd: (evt) => {
+      fetch(`${API_BASE}/categories/reorder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: evt.oldIndex, to: evt.newIndex })
+      }).catch(err => console.warn('API not available:', err));
+    }
+  });
+}
+
+// Kanban drag & drop
 
 document.querySelectorAll('.kanban-col').forEach(col => {
   const taskContainer = col.querySelector('.kanban-tasks');
