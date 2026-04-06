@@ -119,7 +119,7 @@
   <div class="project-add-card" onclick="event.stopPropagation()">
     <h3 id="proj-modal-title">Projet</h3>
     <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" style="font-weight:600"></div>
-    <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACR" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><input type="text" id="new-proj-due" placeholder="dd.mm" style="width:60px;flex:none"></div>
+    <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><select id="new-proj-status"><option value="active">Actif</option><option value="archived">Archiv&eacute;</option></select></div>
     <input type="hidden" id="new-proj-cat">
     <input type="hidden" id="new-proj-id">
     <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-delete" id="proj-modal-delete" style="display:none" onclick="confirmDelete(this, deleteProject)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('project-modal').style.display='none'">Annuler</button></div>
@@ -140,7 +140,7 @@
     <h3 id="task-modal-heading">Nouvelle tache</h3>
     <div class="edit-row"><input type="text" id="task-modal-title" placeholder="Titre" style="font-weight:600"></div>
     <div class="edit-row"><textarea id="task-modal-desc" placeholder="Detail" style="min-height:80px;resize:vertical"></textarea></div>
-    <div class="edit-row"><select id="task-modal-who"><option>Q</option><option>Alice</option><option>Bob</option><option>Claire</option></select><input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none"></div>
+    <div class="edit-row"><select id="task-modal-who"><option>Q</option><option>Alice</option><option>Bob</option><option>Claire</option></select><input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none"><select id="task-modal-status"><option value="todo">A faire</option><option value="doing">En cours</option><option value="review">Revue</option><option value="done">Fait</option></select></div>
     <div class="edit-actions"><button class="btn btn-save" onclick="saveTaskModal()">Enregistrer</button><button class="btn btn-delete" id="task-modal-delete" style="display:none" onclick="confirmDelete(this, deleteTask)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('task-modal').style.display='none'">Annuler</button></div>
   </div>
 </div>
@@ -248,7 +248,7 @@ function addProjectInCatModal() {
 }
 
 // Edit / Add project
-function editProject(id, name, acronym, due, cat) {
+function editProject(id, name, acronym, cat, status) {
   const modal = document.getElementById('project-modal');
   if (!modal) return;
   document.getElementById('proj-modal-title').textContent = id ? 'Editer projet' : 'Nouveau projet';
@@ -257,7 +257,7 @@ function editProject(id, name, acronym, due, cat) {
   document.getElementById('new-proj-cat').value = cat || '';
   document.getElementById('new-proj-name').value = name || '';
   document.getElementById('new-proj-acronym').value = acronym || '';
-  document.getElementById('new-proj-due').value = due || '';
+  document.getElementById('new-proj-status').value = status || 'active';
   modal.style.display = 'flex';
 }
 
@@ -265,7 +265,6 @@ function saveProject() {
   const id = document.getElementById('new-proj-id').value;
   const name = document.getElementById('new-proj-name').value.trim();
   const acronym = document.getElementById('new-proj-acronym').value.trim().toUpperCase();
-  const due = document.getElementById('new-proj-due').value.trim();
   const cat = document.getElementById('new-proj-cat').value;
   if (!name || !acronym) return;
   const method = id ? 'PATCH' : 'POST';
@@ -273,7 +272,7 @@ function saveProject() {
   fetch(url, {
     method,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, acronym, cat, due })
+    body: JSON.stringify({ name, acronym, cat, status: document.getElementById('new-proj-status').value })
   }).then(() => window.location.reload())
     .catch(err => console.warn('API not available:', err));
   document.getElementById('project-modal').style.display = 'none';
@@ -296,13 +295,14 @@ function toggleDetail(el) {
 }
 
 // Open edit task modal with pre-filled data
-function openEditTask(id, title, desc, who, when) {
+function openEditTask(id, title, desc, who, when, status) {
   _taskTargetList = null;
   document.getElementById('task-modal-heading').textContent = 'Editer tâche';
   document.getElementById('task-modal-title').value = title;
   document.getElementById('task-modal-desc').value = desc;
   document.getElementById('task-modal-who').value = who;
   document.getElementById('task-modal-when').value = when;
+  document.getElementById('task-modal-status').value = status || 'todo';
   const delBtn = document.getElementById('task-modal-delete');
   if (delBtn) delBtn.style.display = id ? '' : 'none';
   document.getElementById('task-modal').style.display = 'flex';
@@ -316,6 +316,7 @@ function openTaskModal(taskList) {
   document.getElementById('task-modal-title').value = '';
   document.getElementById('task-modal-desc').value = '';
   document.getElementById('task-modal-when').value = '';
+  document.getElementById('task-modal-status').value = 'todo';
   const delBtn = document.getElementById('task-modal-delete');
   if (delBtn) delBtn.style.display = 'none';
   document.getElementById('task-modal').style.display = 'flex';

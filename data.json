@@ -227,7 +227,8 @@
           "id": 20
         }
       ],
-      "acronym": "RENO"
+      "acronym": "RENO",
+      "status": "active"
     },
     {
       "id": "recherche-terrain",
@@ -344,7 +345,8 @@
           "id": 30
         }
       ],
-      "acronym": "TERR"
+      "acronym": "TERR",
+      "status": "active"
     },
     {
       "id": "dossier-hypotheque",
@@ -461,7 +463,8 @@
           "id": 40
         }
       ],
-      "acronym": "HYPO"
+      "acronym": "HYPO",
+      "status": "active"
     },
     {
       "id": "bilan-annuel",
@@ -546,7 +549,8 @@
           "id": 46
         }
       ],
-      "acronym": "BILA"
+      "acronym": "BILA",
+      "status": "active"
     },
     {
       "id": "2113ch-website",
@@ -783,7 +787,8 @@
           "id": 71
         }
       ],
-      "acronym": "WEB2"
+      "acronym": "WEB2",
+      "status": "active"
     },
     {
       "id": "infra-ansible",
@@ -980,7 +985,8 @@
           "id": 91
         }
       ],
-      "acronym": "ANSI"
+      "acronym": "ANSI",
+      "status": "active"
     },
     {
       "id": "monitoring-stack",
@@ -1177,7 +1183,8 @@
           "id": 111
         }
       ],
-      "acronym": "MONI"
+      "acronym": "MONI",
+      "status": "active"
     },
     {
       "id": "ssl-pki-renewal",
@@ -1374,7 +1381,8 @@
           "id": 131
         }
       ],
-      "acronym": "SSLP"
+      "acronym": "SSLP",
+      "status": "active"
     },
     {
       "id": "kanban-dashboard",
@@ -1571,7 +1579,8 @@
           "id": 151
         }
       ],
-      "acronym": "KANB"
+      "acronym": "KANB",
+      "status": "active"
     },
     {
       "id": "backup-strategy",
@@ -1768,7 +1777,8 @@
           "id": 171
         }
       ],
-      "acronym": "BACK"
+      "acronym": "BACK",
+      "status": "archived"
     },
     {
       "id": "migration-freebsd",
@@ -1965,7 +1975,8 @@
           "id": 191
         }
       ],
-      "acronym": "FBSD"
+      "acronym": "FBSD",
+      "status": "active"
     },
     {
       "id": "cicd-pipeline",
@@ -2162,7 +2173,8 @@
           "id": 211
         }
       ],
-      "acronym": "CICD"
+      "acronym": "CICD",
+      "status": "active"
     },
     {
       "id": "api-v2",
@@ -2359,7 +2371,8 @@
           "id": 231
         }
       ],
-      "acronym": "APIV"
+      "acronym": "APIV",
+      "status": "active"
     },
     {
       "id": "docs-techniques",
@@ -2556,7 +2569,8 @@
           "id": 251
         }
       ],
-      "acronym": "DOCS"
+      "acronym": "DOCS",
+      "status": "archived"
     },
     {
       "id": "vacances-ete",
@@ -2753,7 +2767,8 @@
           "id": 271
         }
       ],
-      "acronym": "VACA"
+      "acronym": "VACA",
+      "status": "active"
     }
   ]
 }

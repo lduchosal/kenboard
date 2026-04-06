@@ -42,8 +42,8 @@
     </div>
   </div>
 </div><div class="section" id="bilan-annuel" style="padding-top:0">
-  <div class="section-title"><span>BILA / Bilan annuel</span><button class="btn-edit section-edit-btn" onclick="editProject('bilan-annuel','Bilan annuel','BILA','','sante')">Editer</button></div>
-<div class="kanban"><div class="kanban-col" style="background:color-mix(in srgb, #d63384 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, #d63384 25%, transparent)"><span class="col-name" style="color:#d63384">A faire</span><button class="kanban-add-btn" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'))">+</button></div><div class="kanban-tasks" data-status="todo"><div class="kanban-task" data-task-id="45" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Dermato</div></div><div class="task-right"><div class="task-avatar" style="background:#8250df" title="Alice">A</div><div class="task-when">15.04</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('45','Dermato','','Alice','15.04')">Editer</button></div></div><div class="kanban-task" data-task-id="46" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Bilan complet</div><div class="task-desc">A planifier</div></div><div class="task-right"><div class="task-avatar" style="background:#bf8700" title="Bob">B</div><div class="task-when">10.05</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('46','Bilan complet','A planifier','Bob','10.05')">Editer</button></div></div><div class="kanban-add-task" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'))"><span style="font-size:18px">+</span> Ajouter une t&acirc;che</div></div></div><div class="kanban-rest"><div class="kanban-middle"><div class="kanban-col" style="background:color-mix(in srgb, var(--cyan) 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, var(--cyan) 25%, transparent)"><span class="col-name" style="color:var(--cyan)">En cours</span></div><div class="kanban-tasks" data-status="doing"><div class="kanban-task" data-task-id="44" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Ophtalmo</div><div class="task-desc">Bloque par dependance</div></div><div class="task-right"><div class="task-avatar" style="background:#bf8700" title="Bob">B</div><div class="task-when">07.04</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('44','Ophtalmo','Bloque par dependance','Bob','07.04')">Editer</button></div></div></div></div><div class="kanban-col" style="background:color-mix(in srgb, var(--purple) 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, var(--purple) 25%, transparent)"><span class="col-name" style="color:var(--purple)">Revue</span></div><div class="kanban-tasks" data-status="review"></div></div></div><div class="kanban-col" style="background:color-mix(in srgb, var(--green) 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, var(--green) 25%, transparent)"><span class="col-name" style="color:var(--green)">Fait</span></div><div class="kanban-tasks" data-status="done"><div class="kanban-task" data-task-id="41" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Prise de sang</div></div><div class="task-right"><div class="task-avatar" style="background:#1a7f37" title="Claire">C</div><div class="task-when">20.03</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('41','Prise de sang','','Claire','20.03')">Editer</button></div></div><div class="kanban-task" data-task-id="42" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Generaliste</div></div><div class="task-right"><div class="task-avatar" style="background:#bf8700" title="Bob">B</div><div class="task-when">15.02</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('42','Generaliste','','Bob','15.02')">Editer</button></div></div><div class="kanban-task" data-task-id="43" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Dentiste</div></div><div class="task-right"><div class="task-avatar" style="background:#8250df" title="Alice">A</div><div class="task-when">15.02</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('43','Dentiste','','Alice','15.02')">Editer</button></div></div></div></div></div></div>
+  <div class="section-title"><span>BILA / Bilan annuel</span><button class="btn-edit section-edit-btn" onclick="editProject('bilan-annuel','Bilan annuel','BILA','sante','active')">Editer</button></div>
+<div class="kanban"><div class="kanban-col" style="background:color-mix(in srgb, #d63384 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, #d63384 25%, transparent)"><span class="col-name" style="color:#d63384">A faire</span><button class="kanban-add-btn" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'))">+</button></div><div class="kanban-tasks" data-status="todo"><div class="kanban-task" data-task-id="45" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Dermato</div></div><div class="task-right"><div class="task-avatar" style="background:#8250df" title="Alice">A</div><div class="task-when">15.04</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('45','Dermato','','Alice','15.04','todo')">Editer</button></div></div><div class="kanban-task" data-task-id="46" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Bilan complet</div><div class="task-desc">A planifier</div></div><div class="task-right"><div class="task-avatar" style="background:#bf8700" title="Bob">B</div><div class="task-when">10.05</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('46','Bilan complet','A planifier','Bob','10.05','todo')">Editer</button></div></div><div class="kanban-add-task" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'))"><span style="font-size:18px">+</span> Ajouter une t&acirc;che</div></div></div><div class="kanban-rest"><div class="kanban-middle"><div class="kanban-col" style="background:color-mix(in srgb, var(--cyan) 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, var(--cyan) 25%, transparent)"><span class="col-name" style="color:var(--cyan)">En cours</span></div><div class="kanban-tasks" data-status="doing"><div class="kanban-task" data-task-id="44" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Ophtalmo</div><div class="task-desc">Bloque par dependance</div></div><div class="task-right"><div class="task-avatar" style="background:#bf8700" title="Bob">B</div><div class="task-when">07.04</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('44','Ophtalmo','Bloque par dependance','Bob','07.04','doing')">Editer</button></div></div></div></div><div class="kanban-col" style="background:color-mix(in srgb, var(--purple) 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, var(--purple) 25%, transparent)"><span class="col-name" style="color:var(--purple)">Revue</span></div><div class="kanban-tasks" data-status="review"></div></div></div><div class="kanban-col" style="background:color-mix(in srgb, var(--green) 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, var(--green) 25%, transparent)"><span class="col-name" style="color:var(--green)">Fait</span></div><div class="kanban-tasks" data-status="done"><div class="kanban-task" data-task-id="41" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Prise de sang</div></div><div class="task-right"><div class="task-avatar" style="background:#1a7f37" title="Claire">C</div><div class="task-when">20.03</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('41','Prise de sang','','Claire','20.03','done')">Editer</button></div></div><div class="kanban-task" data-task-id="42" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Generaliste</div></div><div class="task-right"><div class="task-avatar" style="background:#bf8700" title="Bob">B</div><div class="task-when">15.02</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('42','Generaliste','','Bob','15.02','done')">Editer</button></div></div><div class="kanban-task" data-task-id="43" onclick="toggleDetail(this)"><div class="task-body"><div class="task-title">Dentiste</div></div><div class="task-right"><div class="task-avatar" style="background:#8250df" title="Alice">A</div><div class="task-when">15.02</div><button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('43','Dentiste','','Alice','15.02','done')">Editer</button></div></div></div></div></div></div>
 </div><div class="section" style="padding-top:0">
   <div class="cat-card-add" onclick="document.getElementById('project-modal').style.display='flex'" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--dimmed)">
     <span style="font-size:18px">+</span> Ajouter un Projet
@@ -52,7 +52,7 @@
   <div class="project-add-card" onclick="event.stopPropagation()">
     <h3 id="proj-modal-title">Nouveau projet</h3>
     <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" style="font-weight:600"></div>
-    <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><input type="text" id="new-proj-due" placeholder="dd.mm" style="width:60px;flex:none"></div>
+    <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><select id="new-proj-status"><option value="active">Actif</option><option value="archived">Archiv&eacute;</option></select></div>
     <input type="hidden" id="new-proj-cat" value="sante">
     <input type="hidden" id="new-proj-id">
     <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-delete" id="proj-modal-delete2" style="display:none" onclick="confirmDelete(this, deleteProject)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('project-modal').style.display='none'">Annuler</button></div>
@@ -63,7 +63,7 @@
     <h3 id="task-modal-heading">Nouvelle tache</h3>
     <div class="edit-row"><input type="text" id="task-modal-title" placeholder="Titre" style="font-weight:600"></div>
     <div class="edit-row"><textarea id="task-modal-desc" placeholder="Detail" style="min-height:80px;resize:vertical"></textarea></div>
-    <div class="edit-row"><select id="task-modal-who"><option>Q</option><option>Alice</option><option>Bob</option><option>Claire</option></select><input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none"></div>
+    <div class="edit-row"><select id="task-modal-who"><option>Q</option><option>Alice</option><option>Bob</option><option>Claire</option></select><input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none"><select id="task-modal-status"><option value="todo">A faire</option><option value="doing">En cours</option><option value="review">Revue</option><option value="done">Fait</option></select></div>
     <div class="edit-actions"><button class="btn btn-save" onclick="saveTaskModal()">Enregistrer</button><button class="btn btn-delete" id="task-modal-delete" style="display:none" onclick="confirmDelete(this, deleteTask)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('task-modal').style.display='none'">Annuler</button></div>
   </div>
 </div>
@@ -171,7 +171,7 @@ function addProjectInCatModal() {
 }
 
 // Edit / Add project
-function editProject(id, name, acronym, due, cat) {
+function editProject(id, name, acronym, cat, status) {
   const modal = document.getElementById('project-modal');
   if (!modal) return;
   document.getElementById('proj-modal-title').textContent = id ? 'Editer projet' : 'Nouveau projet';
@@ -180,7 +180,7 @@ function editProject(id, name, acronym, due, cat) {
   document.getElementById('new-proj-cat').value = cat || '';
   document.getElementById('new-proj-name').value = name || '';
   document.getElementById('new-proj-acronym').value = acronym || '';
-  document.getElementById('new-proj-due').value = due || '';
+  document.getElementById('new-proj-status').value = status || 'active';
   modal.style.display = 'flex';
 }
 
@@ -188,7 +188,6 @@ function saveProject() {
   const id = document.getElementById('new-proj-id').value;
   const name = document.getElementById('new-proj-name').value.trim();
   const acronym = document.getElementById('new-proj-acronym').value.trim().toUpperCase();
-  const due = document.getElementById('new-proj-due').value.trim();
   const cat = document.getElementById('new-proj-cat').value;
   if (!name || !acronym) return;
   const method = id ? 'PATCH' : 'POST';
@@ -196,7 +195,7 @@ function saveProject() {
   fetch(url, {
     method,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, acronym, cat, due })
+    body: JSON.stringify({ name, acronym, cat, status: document.getElementById('new-proj-status').value })
   }).then(() => window.location.reload())
     .catch(err => console.warn('API not available:', err));
   document.getElementById('project-modal').style.display = 'none';
@@ -219,13 +218,14 @@ function toggleDetail(el) {
 }
 
 // Open edit task modal with pre-filled data
-function openEditTask(id, title, desc, who, when) {
+function openEditTask(id, title, desc, who, when, status) {
   _taskTargetList = null;
   document.getElementById('task-modal-heading').textContent = 'Editer tâche';
   document.getElementById('task-modal-title').value = title;
   document.getElementById('task-modal-desc').value = desc;
   document.getElementById('task-modal-who').value = who;
   document.getElementById('task-modal-when').value = when;
+  document.getElementById('task-modal-status').value = status || 'todo';
   const delBtn = document.getElementById('task-modal-delete');
   if (delBtn) delBtn.style.display = id ? '' : 'none';
   document.getElementById('task-modal').style.display = 'flex';
@@ -239,6 +239,7 @@ function openTaskModal(taskList) {
   document.getElementById('task-modal-title').value = '';
   document.getElementById('task-modal-desc').value = '';
   document.getElementById('task-modal-when').value = '';
+  document.getElementById('task-modal-status').value = 'todo';
   const delBtn = document.getElementById('task-modal-delete');
   if (delBtn) delBtn.style.display = 'none';
   document.getElementById('task-modal').style.display = 'flex';

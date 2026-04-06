@@ -95,7 +95,7 @@ def page(title: str, body: str, css_path: str = "style.css") -> str:
     <h3 id="task-modal-heading">Nouvelle tache</h3>
     <div class="edit-row"><input type="text" id="task-modal-title" placeholder="Titre" style="font-weight:600"></div>
     <div class="edit-row"><textarea id="task-modal-desc" placeholder="Detail" style="min-height:80px;resize:vertical"></textarea></div>
-    <div class="edit-row"><select id="task-modal-who">{"".join(f'<option>{escape(p)}</option>' for p in AVATAR_COLORS.keys())}</select><input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none"></div>
+    <div class="edit-row"><select id="task-modal-who">{"".join(f'<option>{escape(p)}</option>' for p in AVATAR_COLORS.keys())}</select><input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none"><select id="task-modal-status"><option value="todo">A faire</option><option value="doing">En cours</option><option value="review">Revue</option><option value="done">Fait</option></select></div>
     <div class="edit-actions"><button class="btn btn-save" onclick="saveTaskModal()">Enregistrer</button><button class="btn btn-delete" id="task-modal-delete" style="display:none" onclick="confirmDelete(this, deleteTask)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('task-modal').style.display='none'">Annuler</button></div>
   </div>
 </div>
@@ -203,7 +203,7 @@ function addProjectInCatModal() {{
 }}
 
 // Edit / Add project
-function editProject(id, name, acronym, due, cat) {{
+function editProject(id, name, acronym, cat, status) {{
   const modal = document.getElementById('project-modal');
   if (!modal) return;
   document.getElementById('proj-modal-title').textContent = id ? 'Editer projet' : 'Nouveau projet';
@@ -212,7 +212,7 @@ function editProject(id, name, acronym, due, cat) {{
   document.getElementById('new-proj-cat').value = cat || '';
   document.getElementById('new-proj-name').value = name || '';
   document.getElementById('new-proj-acronym').value = acronym || '';
-  document.getElementById('new-proj-due').value = due || '';
+  document.getElementById('new-proj-status').value = status || 'active';
   modal.style.display = 'flex';
 }}
 
@@ -220,7 +220,6 @@ function saveProject() {{
   const id = document.getElementById('new-proj-id').value;
   const name = document.getElementById('new-proj-name').value.trim();
   const acronym = document.getElementById('new-proj-acronym').value.trim().toUpperCase();
-  const due = document.getElementById('new-proj-due').value.trim();
   const cat = document.getElementById('new-proj-cat').value;
   if (!name || !acronym) return;
   const method = id ? 'PATCH' : 'POST';
@@ -228,7 +227,7 @@ function saveProject() {{
   fetch(url, {{
     method,
     headers: {{ 'Content-Type': 'application/json' }},
-    body: JSON.stringify({{ name, acronym, cat, due }})
+    body: JSON.stringify({{ name, acronym, cat, status: document.getElementById('new-proj-status').value }})
   }}).then(() => window.location.reload())
     .catch(err => console.warn('API not available:', err));
   document.getElementById('project-modal').style.display = 'none';
@@ -251,13 +250,14 @@ function toggleDetail(el) {{
 }}
 
 // Open edit task modal with pre-filled data
-function openEditTask(id, title, desc, who, when) {{
+function openEditTask(id, title, desc, who, when, status) {{
   _taskTargetList = null;
   document.getElementById('task-modal-heading').textContent = 'Editer t\u00e2che';
   document.getElementById('task-modal-title').value = title;
   document.getElementById('task-modal-desc').value = desc;
   document.getElementById('task-modal-who').value = who;
   document.getElementById('task-modal-when').value = when;
+  document.getElementById('task-modal-status').value = status || 'todo';
   const delBtn = document.getElementById('task-modal-delete');
   if (delBtn) delBtn.style.display = id ? '' : 'none';
   document.getElementById('task-modal').style.display = 'flex';
@@ -271,6 +271,7 @@ function openTaskModal(taskList) {{
   document.getElementById('task-modal-title').value = '';
   document.getElementById('task-modal-desc').value = '';
   document.getElementById('task-modal-when').value = '';
+  document.getElementById('task-modal-status').value = 'todo';
   const delBtn = document.getElementById('task-modal-delete');
   if (delBtn) delBtn.style.display = 'none';
   document.getElementById('task-modal').style.display = 'flex';
@@ -450,7 +451,7 @@ def kanban_html(tasks: list, project_names: dict = None) -> str:
             html += f'<div class="task-avatar" style="background:{avatar_color}" title="{escape(who)}">{initials}</div>'
             if when_str:
                 html += f'<div class="task-when">{when_str}</div>'
-            html += f'<button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask(\'{t.get("id","")}\',\'{escape(t["title"]).replace(chr(39),"&#39;")}\',\'{desc.replace(chr(39),"&#39;")}\',\'{escape(who)}\',\'{when_str}\')">Editer</button>'
+            html += f'<button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask(\'{t.get("id","")}\',\'{escape(t["title"]).replace(chr(39),"&#39;")}\',\'{desc.replace(chr(39),"&#39;")}\',\'{escape(who)}\',\'{when_str}\',\'{t["status"]}\')">Editer</button>'
             html += f'</div>'
             html += f'</div>'
         if col_id == "todo":
@@ -557,7 +558,7 @@ def build_index():
   <div class="project-add-card" onclick="event.stopPropagation()">
     <h3 id="proj-modal-title">Projet</h3>
     <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" style="font-weight:600"></div>
-    <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACR" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><input type="text" id="new-proj-due" placeholder="dd.mm" style="width:60px;flex:none"></div>
+    <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><select id="new-proj-status"><option value="active">Actif</option><option value="archived">Archiv&eacute;</option></select></div>
     <input type="hidden" id="new-proj-cat">
     <input type="hidden" id="new-proj-id">
     <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-delete" id="proj-modal-delete" style="display:none" onclick="confirmDelete(this, deleteProject)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById(\'project-modal\').style.display=\'none\'">Annuler</button></div>
@@ -606,19 +607,20 @@ def build_cat(cat: dict):
   <div class="project-add-card" onclick="event.stopPropagation()">
     <h3 id="proj-modal-title">Nouveau projet</h3>
     <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" style="font-weight:600"></div>
-    <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><input type="text" id="new-proj-due" placeholder="dd.mm" style="width:60px;flex:none"></div>
+    <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><select id="new-proj-status"><option value="active">Actif</option><option value="archived">Archiv&eacute;</option></select></div>
     <input type="hidden" id="new-proj-cat" value="{cat["id"]}">
     <input type="hidden" id="new-proj-id">
     <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-delete" id="proj-modal-delete2" style="display:none" onclick="confirmDelete(this, deleteProject)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('project-modal').style.display='none'">Annuler</button></div>
   </div>
 </div>'''
 
+    active_projects = [p for p in cat_projects if p.get("status", "active") == "active"]
+    archived_projects = [p for p in cat_projects if p.get("status") == "archived"]
+
     body = ""
-    for i, p in enumerate(cat_projects):
-        arrow, acolor = health_arrow(p)
-        open_count = p["total"] - p["done"]
+    for i, p in enumerate(active_projects):
         body += f'''<div class="section" id="{p["id"]}" style="padding-top:0">
-  <div class="section-title"><span>{escape(p.get("acronym", ""))} / {escape(p["name"])}</span><button class="btn-edit section-edit-btn" onclick="editProject('{p["id"]}','{escape(p["name"])}','{escape(p.get("acronym",""))}','','{cat["id"]}')">Editer</button></div>
+  <div class="section-title"><span>{escape(p.get("acronym", ""))} / {escape(p["name"])}</span><button class="btn-edit section-edit-btn" onclick="editProject('{p["id"]}','{escape(p["name"])}','{escape(p.get("acronym",""))}','{cat["id"]}','{p.get("status","active")}')">Editer</button></div>
 {kanban_html(p["tasks"])}
 </div>'''
 
@@ -628,6 +630,20 @@ def build_cat(cat: dict):
     <span style="font-size:18px">+</span> Ajouter un Projet
   </div>
 </div>'''
+
+    # Archived projects
+    if archived_projects:
+        body += f'''<div class="section" style="padding-top:0">
+  <div class="archived-toggle" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('span').textContent=this.nextElementSibling.style.display==='none'?'+':'-'">
+    <span>+</span> Afficher les projets archiv&eacute;s ({len(archived_projects)})
+  </div>
+  <div class="archived-list" style="display:none">'''
+        for p in archived_projects:
+            body += f'''<div class="section archived-project" id="{p["id"]}" style="padding-top:0;opacity:0.5">
+  <div class="section-title"><span>{escape(p.get("acronym", ""))} / {escape(p["name"])}</span><button class="btn-edit section-edit-btn" onclick="editProject('{p["id"]}','{escape(p["name"])}','{escape(p.get("acronym",""))}','{cat["id"]}','{p.get("status","active")}')">Editer</button></div>
+{kanban_html(p["tasks"])}
+</div>'''
+        body += '</div></div>'
 
     return page(cat["name"], header + body + proj_modal, css_path="../style.css")
 

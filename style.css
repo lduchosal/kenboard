@@ -685,6 +685,26 @@ body {
   opacity: 1;
 }
 
+.archived-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--dimmed);
+  cursor: pointer;
+  padding: 8px 0;
+}
+.archived-toggle:hover {
+  color: var(--text);
+}
+.archived-toggle span {
+  font-size: 18px;
+}
+.archived-list .section {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .kanban-add-task {
   display: flex;
   align-items: center;
