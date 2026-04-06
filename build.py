@@ -202,7 +202,6 @@ def build_header(prefix: str = "", current_cat: dict = None) -> str:
   <div class="avatar-menu">
     <div class="avatar-btn" onclick="this.parentElement.classList.toggle('open')" style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;cursor:pointer" title="Q">Q</div>
     <div class="avatar-dropdown">
-      <a href="#">Parametres</a>
       <a href="#">Deconnexion</a>
     </div>
   </div>
