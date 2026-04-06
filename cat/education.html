@@ -65,6 +65,62 @@ document.querySelectorAll('.section-title').forEach(el => {
   observer.observe(sentinel);
 });
 
+// Color picker
+function selectColor(dot) {
+  const picker = dot.closest('.color-picker');
+  const current = picker.querySelector('.color-picker-current');
+  current.style.background = dot.dataset.color;
+  current.dataset.color = dot.dataset.color;
+  picker.classList.remove('open');
+}
+
+// Add category
+function addCategory(btn) {
+  const form = btn.closest('.cat-add-form');
+  const name = form.querySelector('.new-cat-name').value.trim();
+  const current = form.querySelector('.color-picker-current');
+  const color = current ? current.dataset.color : '';
+  if (!name) return;
+  fetch(`${API_BASE}/categories`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, color })
+  }).then(() => window.location.reload())
+    .catch(err => console.warn('API not available:', err));
+}
+
+function cancelAddCat(btn) {
+  const card = btn.closest('.cat-card-add');
+  card.querySelector('.cat-add-form').style.display = 'none';
+  card.querySelector('.cat-add-placeholder').style.display = '';
+  card.classList.remove('editing');
+}
+
+// Add project
+function showAddProject(el, catId) {
+  const modal = document.getElementById('project-modal');
+  if (!modal) return;
+  document.getElementById('new-proj-cat').value = catId;
+  document.getElementById('new-proj-name').value = '';
+  document.getElementById('new-proj-acronym').value = '';
+  document.getElementById('new-proj-due').value = '';
+  modal.style.display = 'flex';
+}
+
+function addProject() {
+  const name = document.getElementById('new-proj-name').value.trim();
+  const acronym = document.getElementById('new-proj-acronym').value.trim().toUpperCase();
+  const due = document.getElementById('new-proj-due').value.trim();
+  const cat = document.getElementById('new-proj-cat').value;
+  if (!name || !acronym) return;
+  fetch(`${API_BASE}/projects`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, acronym, cat, due })
+  }).then(() => window.location.reload())
+    .catch(err => console.warn('API not available:', err));
+}
+
 // Add task
 function addTask(btn) {
   const form = btn.closest('.kanban-new-form');

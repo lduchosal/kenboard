@@ -24,6 +24,15 @@ COLUMNS = [
 ]
 
 
+COLOR_LIST = [
+    ("Orange", "var(--orange)", "\U0001f7e0"),
+    ("Vert", "var(--green)", "\U0001f7e2"),
+    ("Bleu", "var(--accent)", "\U0001f535"),
+    ("Violet", "var(--purple)", "\U0001f7e3"),
+    ("Cyan", "var(--cyan)", "\U0001f539"),
+    ("Rouge", "var(--red)", "\U0001f534"),
+]
+
 AVATAR_COLORS = {
     "Q": "#0969da",
     "Alice": "#8250df",
@@ -101,6 +110,62 @@ document.querySelectorAll('.section-title').forEach(el => {{
   el.before(sentinel);
   observer.observe(sentinel);
 }});
+
+// Color picker
+function selectColor(dot) {{
+  const picker = dot.closest('.color-picker');
+  const current = picker.querySelector('.color-picker-current');
+  current.style.background = dot.dataset.color;
+  current.dataset.color = dot.dataset.color;
+  picker.classList.remove('open');
+}}
+
+// Add category
+function addCategory(btn) {{
+  const form = btn.closest('.cat-add-form');
+  const name = form.querySelector('.new-cat-name').value.trim();
+  const current = form.querySelector('.color-picker-current');
+  const color = current ? current.dataset.color : '';
+  if (!name) return;
+  fetch(`${{API_BASE}}/categories`, {{
+    method: 'POST',
+    headers: {{ 'Content-Type': 'application/json' }},
+    body: JSON.stringify({{ name, color }})
+  }}).then(() => window.location.reload())
+    .catch(err => console.warn('API not available:', err));
+}}
+
+function cancelAddCat(btn) {{
+  const card = btn.closest('.cat-card-add');
+  card.querySelector('.cat-add-form').style.display = 'none';
+  card.querySelector('.cat-add-placeholder').style.display = '';
+  card.classList.remove('editing');
+}}
+
+// Add project
+function showAddProject(el, catId) {{
+  const modal = document.getElementById('project-modal');
+  if (!modal) return;
+  document.getElementById('new-proj-cat').value = catId;
+  document.getElementById('new-proj-name').value = '';
+  document.getElementById('new-proj-acronym').value = '';
+  document.getElementById('new-proj-due').value = '';
+  modal.style.display = 'flex';
+}}
+
+function addProject() {{
+  const name = document.getElementById('new-proj-name').value.trim();
+  const acronym = document.getElementById('new-proj-acronym').value.trim().toUpperCase();
+  const due = document.getElementById('new-proj-due').value.trim();
+  const cat = document.getElementById('new-proj-cat').value;
+  if (!name || !acronym) return;
+  fetch(`${{API_BASE}}/projects`, {{
+    method: 'POST',
+    headers: {{ 'Content-Type': 'application/json' }},
+    body: JSON.stringify({{ name, acronym, cat, due }})
+  }}).then(() => window.location.reload())
+    .catch(err => console.warn('API not available:', err));
+}}
 
 // Add task
 function addTask(btn) {{
@@ -307,7 +372,7 @@ def build_index():
 
     # Category cards
     cat_section = '<div class="section"><div class="cat-grid">'
-    for c in categories:
+    for ci, c in enumerate(categories):
         cat_projects = [p for p in projects if p["cat"] == c["id"]]
         total_done = sum(p["done"] for p in cat_projects)
         total_tasks = sum(p["total"] for p in cat_projects)
@@ -327,9 +392,20 @@ def build_index():
                 dot_color = "#d0d7de"
             else:
                 dot_color = f'color-mix(in srgb, {c["color"]} {min(30 + doing_count * 20, 100)}%, white)'
-            project_list += f'<div class="cat-project" onclick="window.location=\'cat/{c["id"]}.html#{p["id"]}\'"><span class="cat-project-dot" style="background:{dot_color}"></span><span class="cat-project-full">{escape(p["name"])}</span><span class="cat-project-short">{escape(p.get("acronym", p["name"][:3].upper()))}</span></div>'
+            project_list += f'<div class="cat-project" onclick="event.preventDefault();window.location=\'cat/{c["id"]}.html#{p["id"]}\'"><span class="cat-project-dot" style="background:{dot_color}"></span><span class="cat-project-full">{escape(p["name"])}</span><span class="cat-project-short">{escape(p.get("acronym", p["name"][:3].upper()))}</span></div>'
 
-        cat_section += f'''<a class="cat-card" href="cat/{c["id"]}.html">
+        is_last = ci == len(categories) - 1
+        if is_last:
+            # Last category shown in edit mode as demo
+            color_dots_edit = "".join(f'<span class="color-dot" data-color="{cv}" style="background:{cv}" onclick="selectColor(this)"></span>' for cn, cv, dot in COLOR_LIST)
+            cat_section += f'''<div class="cat-card cat-card-add editing" onclick="event.stopPropagation()">
+  <div class="cat-add-form" style="display:block">
+    <div class="cat-header"><div class="color-picker" onclick="event.stopPropagation();this.classList.toggle('open')"><div class="color-picker-current cat-dot" style="background:{c["color"]}" data-color="{c["color"]}"></div><div class="color-picker-dropdown">{color_dots_edit}</div></div><input type="text" class="new-cat-name cat-name-input" value="{escape(c["name"])}"></div>
+    <div class="edit-actions"><button class="btn btn-save">Enregistrer</button><button class="btn btn-cancel">Annuler</button></div>
+  </div>
+</div>'''
+        else:
+            cat_section += f'''<a class="cat-card" href="cat/{c["id"]}.html">
   <div class="cat-header">
     <div class="cat-dot" style="background:{c["color"]}"></div>
     <span class="cat-name">{escape(c["name"])}</span>
@@ -342,9 +418,33 @@ def build_index():
   <div class="cat-projects">{project_list}</div>
 </a>'''
 
+    # Add category card
+    first_color = COLOR_LIST[0][1]
+    color_dots = "".join(f'<span class="color-dot" data-color="{c}" style="background:{c}" onclick="selectColor(this)"></span>' for n, c, dot in COLOR_LIST)
+    cat_section += f'''<div class="cat-card cat-card-add" onclick="this.querySelector('.cat-add-form').style.display='block';this.querySelector('.cat-add-placeholder').style.display='none';this.classList.add('editing')">
+  <div class="cat-add-placeholder">
+    <span class="cat-add-plus">+</span>
+  </div>
+  <div class="cat-add-form" style="display:none" onclick="event.stopPropagation()">
+    <div class="cat-header"><div class="color-picker" onclick="event.stopPropagation();this.classList.toggle('open')"><div class="color-picker-current cat-dot" style="background:{first_color}" data-color="{first_color}"></div><div class="color-picker-dropdown">{color_dots}</div></div><input type="text" class="new-cat-name cat-name-input" placeholder="Nom de la categorie"></div>
+    <div class="edit-actions"><button class="btn btn-save" onclick="addCategory(this)">Enregistrer</button><button class="btn btn-cancel" onclick="cancelAddCat(this)">Annuler</button></div>
+  </div>
+</div>'''
+
     cat_section += '</div></div>'
 
-    return page("Dashboard", header + cat_section)
+    # Add project modal
+    modal = '''<div class="project-add-modal" id="project-modal" style="display:none" onclick="this.style.display='none'">
+  <div class="project-add-card" onclick="event.stopPropagation()">
+    <h3>Nouveau projet</h3>
+    <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" style="font-weight:600"></div>
+    <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACR" maxlength="3" style="width:60px;flex:none;text-transform:uppercase"><input type="text" id="new-proj-due" placeholder="dd.mm" style="width:60px;flex:none"></div>
+    <input type="hidden" id="new-proj-cat">
+    <div class="edit-actions"><button class="btn btn-save" onclick="addProject()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById(\'project-modal\').style.display=\'none\'">Annuler</button></div>
+  </div>
+</div>'''
+
+    return page("Dashboard", header + cat_section + modal)
 
 
 # =====================================================================
