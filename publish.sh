@@ -106,9 +106,9 @@ echo "██████╔╝██║  ██║███████║██
 echo "╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ "
 echo "${NC}"
 if [ "$QUALITY_ONLY" = true ]; then
-    echo "${BOLD}Starting Dashboard Quality Checks...${NC}"
+    echo "${BOLD}Starting Kenboard Quality Checks...${NC}"
 else
-    echo "${BOLD}Starting Dashboard Publishing Process...${NC}"
+    echo "${BOLD}Starting Kenboard Publishing Process...${NC}"
 fi
 
 print_step "Cleaning Previous Build (pdm run clean)"
@@ -191,7 +191,7 @@ COMMIT_MSG="chore: release version ${VERSION}"
 run_command "git commit -m \"${COMMIT_MSG}\"" "Git commit"
 
 print_step "Creating Tag and Pushing"
-run_command "git tag dashboard-${VERSION}" "Creating git tag"
+run_command "git tag kenboard-${VERSION}" "Creating git tag"
 run_command "git push" "Pushing commits"
 run_command "git push --tags" "Pushing tags"
 
@@ -201,5 +201,5 @@ run_command "pdm run clean" "Clean"
 echo ""
 echo "${GREEN}${BOLD}🎉 PUBLISHING COMPLETED SUCCESSFULLY! 🎉${NC}"
 echo "${GREEN}${BOLD}═══════════════════════════════════════════════════════════════${NC}"
-echo "${GREEN}Dashboard v${VERSION} has been successfully published and tagged!${NC}"
+echo "${GREEN}Kenboard v${VERSION} has been successfully published and tagged!${NC}"
 echo ""

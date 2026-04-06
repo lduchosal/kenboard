@@ -1,5 +1,5 @@
 [project]
-name = "dashboard"
+name = "kenboard"
 version = "0.1.1"
 description = "Project management dashboard with kanban boards, burndown charts, and category-based organization. Flask API backend with MySQL storage and static HTML generation."
 authors = [
@@ -9,7 +9,7 @@ requires-python = ">=3.11"
 license = { text = "MIT" }
 readme = "README.md"
 
-keywords = ["dashboard", "kanban", "project-management", "flask", "mysql"]
+keywords = ["kenboard", "kanban", "project-management", "flask", "mysql", "dashboard"]
 
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -38,7 +38,7 @@ dependencies = [
 ]
 
 [project.scripts]
-dashboard = "dashboard.cli:cli"
+kenboard = "dashboard.cli:cli"
 
 [dependency-groups]
 dev = [
@@ -115,7 +115,7 @@ install = "pdm install"
 install-dev = "pdm install -G dev"
 
 # Version
-version-show = "python -c \"import dashboard; print(dashboard.__version__)\""
+version-show = "python -c \"import dashboard; print(dashboard.__version__)\"" # package still named dashboard internally
 version-patch = "pdm bump -v patch"
 version-minor = "pdm bump -v minor"
 version-major = "pdm bump -v major"

@@ -9,7 +9,7 @@
 ## 1. Installation depuis PyPI
 
 ```sh
-pip install dashboard
+pip install kenboard
 ```
 
 ## 2. Installation depuis les sources (developpement)
@@ -159,13 +159,13 @@ DEBUG=true
 Appliquer les migrations sur la base de production :
 
 ```sh
-dashboard migrate
+kenboard migrate
 ```
 
 Appliquer les migrations sur la base de test :
 
 ```sh
-dashboard migrate-test
+kenboard migrate-test
 ```
 
 ### Verifier les tables
@@ -199,7 +199,7 @@ yoyo rollback --batch \
 ### Developpement
 
 ```sh
-dashboard serve --debug
+kenboard serve --debug
 ```
 
 Le serveur demarre sur http://127.0.0.1:5000
@@ -229,7 +229,7 @@ sh publish.sh --quality
 ## 8. Generer les pages statiques (optionnel)
 
 ```sh
-dashboard build
+kenboard build
 ```
 
 ## 9. Reverse proxy (Nginx)
