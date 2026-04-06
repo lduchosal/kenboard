@@ -222,7 +222,7 @@ if (catGrid) {{
     draggable: '.cat-card:not(.cat-card-add)',
     ghostClass: 'task-ghost',
     chosenClass: 'task-chosen',
-    filter: '.cat-card-add:not(.editing)',
+    filter: '.cat-card-add',
     onEnd: (evt) => {{
       fetch(`${{API_BASE}}/categories/reorder`, {{
         method: 'POST',
@@ -232,6 +232,7 @@ if (catGrid) {{
     }}
   }});
 }}
+
 
 // Kanban drag & drop
 
