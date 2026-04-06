@@ -113,38 +113,13 @@ document.querySelectorAll('.section-title').forEach(el => {{
   observer.observe(sentinel);
 }});
 
-// Color picker
-function selectColor(dot) {{
-  const picker = dot.closest('.color-picker');
-  const current = picker.querySelector('.color-picker-current');
-  current.style.background = dot.dataset.color;
-  current.dataset.color = dot.dataset.color;
-  picker.classList.remove('open');
-}}
-
-// Add project chip in category edit
-let projectChipCounter = {{}};
-function addProjectChip(addBtn) {{
-  const grid = addBtn.closest('.cat-projects');
-  const card = addBtn.closest('.cat-card');
-  const nameInput = card.querySelector('.cat-name-input');
-  const catName = (nameInput ? nameInput.value.trim() : 'CAT').substring(0, 4).toUpperCase();
-  if (!projectChipCounter[catName]) projectChipCounter[catName] = 0;
-  projectChipCounter[catName]++;
-  const acronym = catName + projectChipCounter[catName];
-  const chip = document.createElement('div');
-  chip.className = 'cat-project';
-  chip.onclick = (e) => {{ e.stopPropagation(); editProject('', '', acronym, '', catName.toLowerCase()); }};
-  chip.innerHTML = `<span class="cat-project-dot" style="background:#d0d7de"></span><span class="cat-project-short">${{acronym}}</span><span class="cat-project-remove" onclick="event.stopPropagation();this.parentElement.remove()">&times;</span>`;
-  grid.insertBefore(chip, addBtn);
-}}
-
 // Edit category modal
 function editCat(id, name, color) {{
   const modal = document.getElementById('cat-modal');
   if (!modal) return;
   document.getElementById('cat-modal-id').value = id;
   document.getElementById('cat-modal-name').value = name;
+  document.querySelector('#cat-modal h3').textContent = id ? 'Editer categorie' : 'Nouvelle categorie';
   const colors = document.getElementById('cat-modal-colors');
   colors.querySelectorAll('.color-dot').forEach(d => {{
     d.classList.toggle('selected', d.dataset.color === color);
@@ -164,60 +139,15 @@ function saveCat() {{
   const selected = document.querySelector('#cat-modal-colors .color-dot.selected');
   const color = selected ? selected.dataset.color : '';
   if (!name) return;
-  fetch(`${{API_BASE}}/categories/${{id}}`, {{
-    method: 'PATCH',
+  const method = id ? 'PATCH' : 'POST';
+  const url = id ? `${{API_BASE}}/categories/${{id}}` : `${{API_BASE}}/categories`;
+  fetch(url, {{
+    method,
     headers: {{ 'Content-Type': 'application/json' }},
     body: JSON.stringify({{ name, color }})
   }}).then(() => window.location.reload())
     .catch(err => console.warn('API not available:', err));
   document.getElementById('cat-modal').style.display = 'none';
-}}
-
-// Add category card to grid
-function addCatCard(addBtn) {{
-  const tpl = document.getElementById('color-dots-tpl');
-  const dots = tpl ? tpl.innerHTML : '';
-  const firstColor = '{FIRST_COLOR}';
-  const card = document.createElement('div');
-  card.className = 'cat-card cat-card-add editing';
-  card.onclick = (e) => e.stopPropagation();
-  card.innerHTML = `
-    <div class="cat-add-form" style="display:flex">
-      <div class="cat-header">
-        <div class="color-picker" onclick="event.stopPropagation();this.classList.toggle('open')">
-          <div class="color-picker-current cat-dot" style="background:${{firstColor}}" data-color="${{firstColor}}"></div>
-          <div class="color-picker-dropdown">${{dots}}</div>
-        </div>
-        <input type="text" class="new-cat-name cat-name-input" placeholder="Nom de la categorie">
-        <div class="cat-kpis"><div class="cat-kpi"><div class="value" style="color:var(--text)">0</div><div class="label">Ouvertes</div></div></div>
-      </div>
-      <div class="edit-actions">
-        <button class="btn btn-save" onclick="addCategory(this)">Enregistrer</button>
-        <button class="btn btn-cancel" onclick="cancelAddCat(this)">Annuler</button>
-      </div>
-    </div>`;
-  addBtn.parentElement.insertBefore(card, addBtn);
-  card.querySelector('.cat-name-input').focus();
-}}
-
-// Add category
-function addCategory(btn) {{
-  const form = btn.closest('.cat-add-form');
-  const name = form.querySelector('.new-cat-name').value.trim();
-  const current = form.querySelector('.color-picker-current');
-  const color = current ? current.dataset.color : '';
-  if (!name) return;
-  fetch(`${{API_BASE}}/categories`, {{
-    method: 'POST',
-    headers: {{ 'Content-Type': 'application/json' }},
-    body: JSON.stringify({{ name, color }})
-  }}).then(() => window.location.reload())
-    .catch(err => console.warn('API not available:', err));
-}}
-
-function cancelAddCat(btn) {{
-  const card = btn.closest('.cat-card-add.editing');
-  card.remove();
 }}
 
 // Edit / Add project
@@ -499,23 +429,7 @@ def build_index():
                 dot_color = f'color-mix(in srgb, {c["color"]} {min(30 + doing_count * 20, 100)}%, white)'
             project_list += f'<div class="cat-project" onclick="event.preventDefault();window.location=\'cat/{c["id"]}.html#{p["id"]}\'"><span class="cat-project-dot" style="background:{dot_color}"></span><span class="cat-project-full">{escape(p["name"])}</span><span class="cat-project-short">{escape(p.get("acronym", p["name"][:4].upper()))}</span></div>'
 
-        is_last = ci == len(categories) - 1
-        if is_last:
-            # Last category shown in edit mode as demo
-            color_dots_edit = "".join(f'<span class="color-dot" data-color="{cv}" style="background:{cv}" onclick="event.stopPropagation();selectColor(this)"></span>' for cn, cv, dot in COLOR_LIST)
-            # Fake burndown data for demo
-            demo_actual = [8, 7, 7, 6, 5, 5, 4, 4, 3, 3, 2]
-            demo_projects = '<div class="cat-project" onclick="event.stopPropagation();editProject(\'pyt\',\'Python avance\',\'PYT\',\'15.06\',\'{cat}\')"><span class="cat-project-dot" style="background:{color}"></span><span class="cat-project-short">PYT</span></div><div class="cat-project" onclick="event.stopPropagation();editProject(\'rst\',\'Rust intro\',\'RST\',\'01.07\',\'{cat}\')"><span class="cat-project-dot" style="background:#d0d7de"></span><span class="cat-project-short">RST</span></div><div class="cat-project cat-project-add" onclick="event.stopPropagation();addProjectChip(this)"><span class="cat-project-plus">+</span></div>'.format(color=c["color"], cat=c["id"])
-            cat_section += f'''<div class="cat-card cat-card-add editing" onclick="event.stopPropagation()">
-  <div class="cat-add-form" style="display:flex">
-    <div class="cat-header"><div class="color-picker" onclick="event.stopPropagation();this.classList.toggle('open')"><div class="color-picker-current cat-dot" style="background:{c["color"]}" data-color="{c["color"]}"></div><div class="color-picker-dropdown">{color_dots_edit}</div></div><input type="text" class="new-cat-name cat-name-input" value="{escape(c["name"])}"><div class="cat-kpis"><div class="cat-kpi"><div class="value" style="color:var(--text)">2</div><div class="label">Ouvertes</div></div></div></div>
-    <div class="cat-projects">{demo_projects}</div>
-    <div class="cat-burndown">{burndown_bars(demo_actual, c["color"])}</div>
-    <div class="edit-actions"><button class="btn btn-save">Enregistrer</button><button class="btn btn-cancel">Annuler</button></div>
-  </div>
-</div>'''
-        else:
-            cat_section += f'''<a class="cat-card" href="cat/{c["id"]}.html">
+        cat_section += f'''<a class="cat-card" href="cat/{c["id"]}.html">
   <div class="cat-header">
     <div class="cat-dot" style="background:{c["color"]}"></div>
     <span class="cat-name">{escape(c["name"])}</span>
@@ -530,13 +444,11 @@ def build_index():
 </a>'''
 
     # Add category button
-    color_dots = "".join(f'<span class="color-dot" data-color="{cv}" style="background:{cv}" onclick="event.stopPropagation();selectColor(this)"></span>' for cn, cv, dot in COLOR_LIST)
-    cat_section += f'''<div class="cat-card cat-card-add" onclick="addCatCard(this)">
+    cat_section += f'''<div class="cat-card cat-card-add" onclick="editCat('','','')">
   <span class="cat-add-plus">+</span>
 </div>'''
 
     cat_section += '</div></div>'
-    cat_section += f'<template id="color-dots-tpl">{color_dots}</template>'
 
     # Project edit modal
     modal = '''<div class="project-add-modal" id="project-modal" style="display:none" onclick="this.style.display='none'">
