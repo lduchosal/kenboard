@@ -31,6 +31,9 @@ COLOR_LIST = [
     ("Violet", "var(--purple)"),
     ("Cyan", "var(--cyan)"),
     ("Rouge", "var(--red)"),
+    ("Rose", "var(--todo)"),
+    ("Jaune", "var(--yellow)"),
+    ("Gris", "var(--dimmed)"),
 ]
 
 AVATAR_COLORS = {
@@ -92,6 +95,8 @@ def project_modal_html(cat_id: str = "") -> str:
     <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><select id="new-proj-status"><option value="active">Actif</option><option value="archived">Archiv\u00e9</option></select></div>
     <input type="hidden" id="new-proj-cat"{cat_val}>
     <input type="hidden" id="new-proj-id">
+    <div style="font-size:10px;font-weight:600;color:var(--dimmed);text-transform:uppercase;margin:8px 0 4px" id="proj-modal-projects-label">Projets</div>
+    <div class="cat-modal-projects" id="proj-modal-projects"></div>
     <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-delete" id="proj-modal-delete" style="display:none" onclick="confirmDelete(this, deleteProject)">Supprimer</button><button class="btn btn-cancel" onclick="document.getElementById('project-modal').style.display='none'">Annuler</button></div>
   </div>
 </div>'''
@@ -208,6 +213,15 @@ def build_header(prefix: str = "", current_cat: dict = None) -> str:
 </div>'''
 
 
+def cat_projects_script() -> str:
+    """Generate inline script with CAT_PROJECTS data for JS."""
+    data = {
+        c["id"]: [{"id": p["id"], "name": p["name"], "acronym": p.get("acronym", p["name"][:4].upper()), "tasks": len(p.get("tasks", []))} for p in projects if p["cat"] == c["id"]]
+        for c in categories
+    }
+    return f'<script>const CAT_PROJECTS = {json.dumps(data)};</script>'
+
+
 # -- Dashboard (index.html) --------------------------------------------------
 
 def build_index():
@@ -259,14 +273,7 @@ def build_index():
   </div>
 </div>'''
 
-    # Project data for JS
-    cat_projects_js = {
-        c["id"]: [{"id": p["id"], "name": p["name"], "acronym": p.get("acronym", p["name"][:4].upper()), "tasks": len(p.get("tasks", []))} for p in projects if p["cat"] == c["id"]]
-        for c in categories
-    }
-    projects_data = f'<script>const CAT_PROJECTS = {json.dumps(cat_projects_js)};</script>'
-
-    return page("Dashboard", header + cat_section + project_modal_html() + cat_modal + projects_data)
+    return page("Dashboard", header + cat_section + project_modal_html() + cat_modal + cat_projects_script())
 
 
 # -- Category detail (cat/{id}.html) -----------------------------------------
@@ -287,7 +294,7 @@ def build_cat(cat: dict):
 
     body += f'''<div class="section" style="padding-top:0">
   <div class="cat-card-add" onclick="document.getElementById('project-modal').style.display='flex'" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--dimmed)">
-    <span style="font-size:18px">+</span> Ajouter un Projet
+    <span style="font-size:18px">+</span> Ajouter un projet
   </div>
 </div>'''
 
@@ -304,7 +311,7 @@ def build_cat(cat: dict):
 </div>'''
         body += '</div></div>'
 
-    return page(cat["name"], header + body + project_modal_html(cat["id"]), css_path="../style.css")
+    return page(cat["name"], header + body + project_modal_html(cat["id"]) + cat_projects_script(), css_path="../style.css")
 
 
 # -- HTML validation ----------------------------------------------------------

@@ -11,6 +11,7 @@
   --dimmed:  #656d76;
   --text:    #1f2328;
   --todo:    #d63384;
+  --yellow:  #d4a017;
   --gap:     8px;
 }
 
@@ -467,6 +468,10 @@ body {
 }
 .cat-modal-project .proj-name {
   flex: 1;
+}
+.cat-modal-project.current-project {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, white);
 }
 .cat-modal-project .proj-remove {
   color: var(--dimmed);

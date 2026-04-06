@@ -52,7 +52,7 @@ function editCat(id, name, color) {
       list.appendChild(el);
     });
     if (list._sortable) list._sortable.destroy();
-    list._sortable = new Sortable(list, { animation: 150, ghostClass: 'task-ghost', handle: '.grip' });
+    list._sortable = new Sortable(list, { animation: 150, ghostClass: 'task-ghost' });
   }
   modal.style.display = 'flex';
 }
@@ -107,6 +107,28 @@ function editProject(id, name, acronym, cat, status) {
   document.getElementById('new-proj-name').value = name || '';
   document.getElementById('new-proj-acronym').value = acronym || '';
   document.getElementById('new-proj-status').value = status || 'active';
+
+  // Populate sibling projects list
+  const list = document.getElementById('proj-modal-projects');
+  const label = document.getElementById('proj-modal-projects-label');
+  if (list && cat) {
+    list.innerHTML = '';
+    const projs = (typeof CAT_PROJECTS !== 'undefined') ? (CAT_PROJECTS[cat] || []) : [];
+    projs.forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'cat-modal-project' + (p.id === id ? ' current-project' : '');
+      el.dataset.projectId = p.id;
+      el.innerHTML = `<span class="grip">&#9776;</span><span class="proj-name">${p.name}</span><span class="proj-acronym">${p.acronym}</span>`;
+      list.appendChild(el);
+    });
+    if (list._sortable) list._sortable.destroy();
+    list._sortable = new Sortable(list, { animation: 150, ghostClass: 'task-ghost' });
+    if (label) label.style.display = projs.length > 0 ? '' : 'none';
+  } else if (list) {
+    list.innerHTML = '';
+    if (label) label.style.display = 'none';
+  }
+
   modal.style.display = 'flex';
 }
 
@@ -119,7 +141,8 @@ function saveProject() {
   if (!name || !acronym) return;
   const method = id ? 'PATCH' : 'POST';
   const url = id ? `${API_BASE}/projects/${id}` : `${API_BASE}/projects`;
-  fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, acronym, cat, status }) })
+  const projectOrder = [...document.querySelectorAll('#proj-modal-projects .cat-modal-project')].map(el => el.dataset.projectId);
+  fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, acronym, cat, status, projectOrder }) })
     .then(() => window.location.reload()).catch(err => console.warn('API:', err));
   document.getElementById('project-modal').style.display = 'none';
 }
