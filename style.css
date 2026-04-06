@@ -48,6 +48,38 @@ body {
   text-transform: uppercase;
 }
 
+/* Avatar dropdown menu */
+.avatar-menu {
+  position: relative;
+}
+.avatar-dropdown {
+  display: none;
+  position: absolute;
+  top: 36px;
+  right: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  min-width: 140px;
+  z-index: 20;
+  overflow: hidden;
+}
+.avatar-menu.open .avatar-dropdown {
+  display: block;
+}
+.avatar-dropdown a {
+  display: block;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 500;
+}
+.avatar-dropdown a:hover {
+  background: var(--bg);
+}
+
 .back-btn {
   background: none;
   border: 1px solid var(--border);

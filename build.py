@@ -167,8 +167,13 @@ def build_header(prefix: str = ""):
   <a href="{prefix}index.html" style="text-decoration:none"><h1>DASHBOARD</h1></a>
   {badge_html}
   <span style="flex:1"></span>
-  <a href="#" style="font-size:11px;color:var(--dimmed);text-decoration:none">DECONNEXION</a>
-  <div style="width:28px;height:28px;border-radius:50%;background:#0969da;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white" title="Q">Q</div>
+  <div class="avatar-menu">
+    <div class="avatar-btn" onclick="this.parentElement.classList.toggle('open')" style="width:28px;height:28px;border-radius:50%;background:#0969da;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;cursor:pointer" title="Q">Q</div>
+    <div class="avatar-dropdown">
+      <a href="#">Parametres</a>
+      <a href="#">Deconnexion</a>
+    </div>
+  </div>
 </div>'''
 
 
@@ -176,7 +181,7 @@ def build_index():
     header = build_header()
 
     # Category cards
-    cat_section = '<div class="section"><div class="section-title">Vue par categorie</div><div class="cat-grid">'
+    cat_section = '<div class="section"><div class="cat-grid">'
     for c in categories:
         cat_projects = [p for p in projects if p["cat"] == c["id"]]
         total_done = sum(p["done"] for p in cat_projects)
