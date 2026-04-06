@@ -11,6 +11,6 @@
   <div class="task-right">
     <div class="task-avatar" style="background:{{ avatar_color }}" title="{{ who }}">{{ initials }}</div>
     {% if when_str %}<div class="task-when">{{ when_str }}</div>{% endif %}
-    <button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('{{ t.get('id', '') }}','{{ t.title | e }}','{{ desc | e }}','{{ who }}','{{ when_str }}','{{ t.status }}')">Editer</button>
+    <button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask('{{ t.get('id', '') }}','{{ t.title | jsesc }}','{{ desc | jsesc }}','{{ who | jsesc }}','{{ when_str }}','{{ t.status }}')">Editer</button>
   </div>
 </div>

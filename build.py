@@ -88,6 +88,13 @@ env = Environment(
     lstrip_blocks=True,
 )
 
+def jsesc(s: str) -> str:
+    """Escape a string for use inside JS single-quoted strings."""
+    return str(s).replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n")
+
+
+env.filters["jsesc"] = jsesc
+
 # Register custom functions as globals
 env.globals.update(
     categories=categories,
