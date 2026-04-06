@@ -90,6 +90,15 @@ def page(title: str, body: str, css_path: str = "style.css") -> str:
 </head>
 <body>
 {body}
+<div class="project-add-modal" id="task-modal" style="display:none" onclick="this.style.display='none'">
+  <div class="project-add-card" onclick="event.stopPropagation()">
+    <h3>Nouvelle tache</h3>
+    <div class="edit-row"><input type="text" id="task-modal-title" placeholder="Titre" style="font-weight:600"></div>
+    <div class="edit-row"><textarea id="task-modal-desc" placeholder="Detail" style="min-height:80px;resize:vertical"></textarea></div>
+    <div class="edit-row"><select id="task-modal-who">{"".join(f'<option>{escape(p)}</option>' for p in AVATAR_COLORS.keys())}</select><input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none"></div>
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveTaskModal()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('task-modal').style.display='none'">Annuler</button></div>
+  </div>
+</div>
 <script>
 // Sticky title observer
 const header = document.querySelector('.header');
@@ -124,6 +133,25 @@ function editCat(id, name, color) {{
   colors.querySelectorAll('.color-dot').forEach(d => {{
     d.classList.toggle('selected', d.dataset.color === color);
   }});
+  // Populate project list
+  const list = document.getElementById('cat-modal-projects');
+  list.innerHTML = '';
+  const projs = (typeof CAT_PROJECTS !== 'undefined' && id) ? (CAT_PROJECTS[id] || []) : [];
+  projs.forEach(p => {{
+    const el = document.createElement('div');
+    el.className = 'cat-modal-project';
+    el.dataset.projectId = p.id;
+    const canDelete = p.tasks === 0;
+    el.innerHTML = `<span class="grip">&#9776;</span><span class="proj-name">${{p.name}}</span><span class="proj-acronym">${{p.acronym}}</span>${{canDelete ? '<span class="proj-remove" onclick="this.parentElement.remove()" title="Supprimer">&times;</span>' : ''}}`;
+    list.appendChild(el);
+  }});
+  // Init sortable on project list
+  if (list._sortable) list._sortable.destroy();
+  list._sortable = new Sortable(list, {{
+    animation: 150,
+    ghostClass: 'task-ghost',
+    handle: '.grip'
+  }});
   modal.style.display = 'flex';
 }}
 
@@ -139,15 +167,28 @@ function saveCat() {{
   const selected = document.querySelector('#cat-modal-colors .color-dot.selected');
   const color = selected ? selected.dataset.color : '';
   if (!name) return;
+  const projectOrder = [...document.querySelectorAll('#cat-modal-projects .cat-modal-project')].map(el => el.dataset.projectId);
   const method = id ? 'PATCH' : 'POST';
   const url = id ? `${{API_BASE}}/categories/${{id}}` : `${{API_BASE}}/categories`;
   fetch(url, {{
     method,
     headers: {{ 'Content-Type': 'application/json' }},
-    body: JSON.stringify({{ name, color }})
+    body: JSON.stringify({{ name, color, projectOrder }})
   }}).then(() => window.location.reload())
     .catch(err => console.warn('API not available:', err));
   document.getElementById('cat-modal').style.display = 'none';
+}}
+
+// Add project in category modal
+function addProjectInCatModal() {{
+  const list = document.getElementById('cat-modal-projects');
+  const catId = document.getElementById('cat-modal-id').value;
+  const el = document.createElement('div');
+  el.className = 'cat-modal-project';
+  el.dataset.projectId = '';
+  el.innerHTML = `<span class="grip">&#9776;</span><input type="text" class="proj-name-input" placeholder="Nom du projet" style="flex:1;border:1px solid var(--border);border-radius:3px;padding:2px 6px;font-size:12px;font-family:inherit"><input type="text" class="proj-acr-input" placeholder="ACRO" maxlength="4" style="width:50px;border:1px solid var(--border);border-radius:3px;padding:2px 6px;font-size:10px;font-family:inherit;text-transform:uppercase"><span class="proj-remove" onclick="this.parentElement.remove()" title="Supprimer">&times;</span>`;
+  list.appendChild(el);
+  el.querySelector('.proj-name-input').focus();
 }}
 
 // Edit / Add project
@@ -181,34 +222,35 @@ function saveProject() {{
   document.getElementById('project-modal').style.display = 'none';
 }}
 
-// Add task
-function addTask(btn) {{
-  const form = btn.closest('.kanban-new-form');
-  const title = form.querySelector('.new-task-title').value.trim();
+// Task modal
+let _taskTargetList = null;
+function openTaskModal(taskList) {{
+  _taskTargetList = taskList;
+  document.getElementById('task-modal-title').value = '';
+  document.getElementById('task-modal-desc').value = '';
+  document.getElementById('task-modal-when').value = '';
+  document.getElementById('task-modal').style.display = 'flex';
+  document.getElementById('task-modal-title').focus();
+}}
+
+function saveTaskModal() {{
+  const title = document.getElementById('task-modal-title').value.trim();
   if (!title) return;
-  const desc = form.querySelector('.new-task-desc').value.trim();
-  const who = form.querySelector('.new-task-who').value;
-  const when = form.querySelector('.new-task-when').value;
+  const desc = document.getElementById('task-modal-desc').value.trim();
+  const who = document.getElementById('task-modal-who').value;
+  const when = document.getElementById('task-modal-when').value;
   fetch(`${{API_BASE}}/tasks`, {{
     method: 'POST',
     headers: {{ 'Content-Type': 'application/json' }},
     body: JSON.stringify({{ title, desc, who, when, status: 'todo' }})
   }}).catch(err => console.warn('API not available:', err));
-  const col = form.closest('.kanban-col');
-  const tasks = col.querySelector('.kanban-tasks');
-  const card = document.createElement('div');
-  card.className = 'kanban-task';
-  card.innerHTML = `<div class="task-body"><div class="task-title">${{title}}</div>${{desc ? `<div class="task-desc">${{desc}}</div>` : ''}}</div>`;
-  tasks.prepend(card);
-  form.querySelector('.new-task-title').value = '';
-  form.querySelector('.new-task-desc').value = '';
-  form.querySelector('.new-task-when').value = '';
-  form.style.display = 'none';
-}}
-
-function cancelAdd(btn) {{
-  const form = btn.closest('.kanban-new-form');
-  form.style.display = 'none';
+  if (_taskTargetList) {{
+    const card = document.createElement('div');
+    card.className = 'kanban-task';
+    card.innerHTML = `<div class="task-body"><div class="task-title">${{title}}</div>${{desc ? `<div class="task-desc">${{desc}}</div>` : ''}}</div>`;
+    _taskTargetList.prepend(card);
+  }}
+  document.getElementById('task-modal').style.display = 'none';
 }}
 
 // Drag & drop
@@ -264,8 +306,7 @@ document.querySelectorAll('.kanban-col').forEach(col => {{
 </html>"""
 
 
-def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False) -> str:
-    todo_special_count = [0] if show_edit else [2]  # 0=detail, 1=edit, 2+=normal
+def kanban_html(tasks: list, project_names: dict = None) -> str:
     middle_cols = {"doing", "review"}
     rest_cols = {"doing", "review", "done"}
     html = '<div class="kanban">'
@@ -285,16 +326,8 @@ def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False
         html += f'<div class="kanban-col" style="background:color-mix(in srgb, {col_color} 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, {col_color} 25%, transparent)">'
         html += f'<span class="col-name" style="color:{col_color}">{col_name}</span>'
         if col_id == "todo":
-            people_opts = "".join(f'<option>{escape(p)}</option>' for p in AVATAR_COLORS.keys())
-            html += f'<button class="kanban-add-btn" onclick="this.closest(\'.kanban-col\').querySelector(\'.kanban-new-form\').style.display=\'block\'">+</button>'
+            html += f'<button class="kanban-add-btn" onclick="openTaskModal(this.closest(\'.kanban-col\').querySelector(\'.kanban-tasks\'))">+</button>'
         html += f'</div>'
-        if col_id == "todo":
-            html += f'<div class="kanban-task edit-mode kanban-new-form" style="display:none">'
-            html += f'<div class="edit-row"><input type="text" class="new-task-title" placeholder="Titre" style="font-weight:600"></div>'
-            html += f'<div class="edit-row"><textarea class="new-task-desc" placeholder="Detail"></textarea></div>'
-            html += f'<div class="edit-row"><select class="new-task-who">{people_opts}</select><input type="text" class="new-task-when" placeholder="dd.mm" style="width:60px;flex:none"></div>'
-            html += f'<div class="edit-actions"><button class="btn btn-save" onclick="addTask(this)">Enregistrer</button><button class="btn btn-cancel" onclick="cancelAdd(this)">Annuler</button></div>'
-            html += f'</div>'
         html += f'<div class="kanban-tasks" data-status="{col_id}">'
         max_visible = 5 if col_id == "done" else None
         visible_tasks = col_tasks[:max_visible] if max_visible else col_tasks
@@ -309,51 +342,21 @@ def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False
                 when_str = f'{d.day:02d}.{d.month:02d}'
             desc = escape(t.get("desc", ""))
 
-            # First TODO: detail view (read-only expanded)
-            if col_id == "todo" and todo_special_count[0] == 0:
-                todo_special_count[0] = 1
-                html += f'<div class="kanban-task detail-mode" data-task-id="{t.get("id", "")}">'
-                html += f'<div class="task-body">'
-                html += f'<div class="task-title">{escape(t["title"])}</div>'
-                if desc:
-                    html += f'<div class="task-desc-full">{desc}</div>'
-                html += f'</div>'
-                html += f'<div class="task-right">'
-                html += f'<div class="task-avatar" style="background:{avatar_color}" title="{escape(who)}">{initials}</div>'
-                if when_str:
-                    html += f'<div class="task-when">{when_str}</div>'
-                html += f'<button class="btn-edit">Editer</button>'
-                html += f'</div>'
-                html += f'</div>'
-
-            # Second TODO: edit mode
-            elif col_id == "todo" and todo_special_count[0] == 1:
-                todo_special_count[0] = 2
-                people_options = "".join(f'<option{"" if p != who else " selected"}>{escape(p)}</option>' for p in AVATAR_COLORS.keys())
-                html += f'<div class="kanban-task edit-mode" data-task-id="{t.get("id", "")}">'
-                html += f'<div class="edit-row"><input type="text" value="{escape(t["title"])}" placeholder="Titre" style="font-weight:600"></div>'
-                html += f'<div class="edit-row"><textarea placeholder="Detail">{escape(desc)}</textarea></div>'
-                html += f'<div class="edit-row"><select>{people_options}</select><input type="text" value="{when_str}" placeholder="dd.mm" style="width:60px;flex:none"></div>'
-                html += f'<div class="edit-actions"><button class="btn btn-save">Enregistrer</button><button class="btn btn-cancel">Annuler</button></div>'
-                html += f'</div>'
-
-            # Normal card
-            else:
-                html += f'<a class="kanban-task" href="#" style="text-decoration:none;color:inherit" data-task-id="{t.get("id", "")}">'
-                html += f'<div class="task-body">'
-                html += f'<div class="task-title">{escape(t["title"])}</div>'
-                if desc:
-                    html += f'<div class="task-desc">{desc}</div>'
-                if project_names and "_project" in t:
-                    pname, pcolor = t["_project"], t["_color"]
-                    html += f'<div style="margin-top:2px"><span class="task-tag" style="background:{pcolor}">{escape(pname)}</span></div>'
-                html += f'</div>'
-                html += f'<div class="task-right">'
-                html += f'<div class="task-avatar" style="background:{avatar_color}" title="{escape(who)}">{initials}</div>'
-                if when_str:
-                    html += f'<div class="task-when">{when_str}</div>'
-                html += f'</div>'
-                html += f'</a>'
+            html += f'<a class="kanban-task" href="#" style="text-decoration:none;color:inherit" data-task-id="{t.get("id", "")}">'
+            html += f'<div class="task-body">'
+            html += f'<div class="task-title">{escape(t["title"])}</div>'
+            if desc:
+                html += f'<div class="task-desc">{desc}</div>'
+            if project_names and "_project" in t:
+                pname, pcolor = t["_project"], t["_color"]
+                html += f'<div style="margin-top:2px"><span class="task-tag" style="background:{pcolor}">{escape(pname)}</span></div>'
+            html += f'</div>'
+            html += f'<div class="task-right">'
+            html += f'<div class="task-avatar" style="background:{avatar_color}" title="{escape(who)}">{initials}</div>'
+            if when_str:
+                html += f'<div class="task-when">{when_str}</div>'
+            html += f'</div>'
+            html += f'</a>'
         if hidden_count > 0:
             html += f'<div style="text-align:center;padding:6px;font-size:11px;color:var(--dimmed);cursor:pointer">+ {hidden_count} autres</div>'
         html += '</div></div>'
@@ -470,12 +473,25 @@ def build_index():
     <h3>Editer categorie</h3>
     <div class="edit-row"><input type="text" id="cat-modal-name" placeholder="Nom de la categorie" style="font-weight:600;font-size:14px"></div>
     <div class="edit-row"><div class="color-field cat-modal-colors" id="cat-modal-colors">{cat_color_dots}</div></div>
+    <div class="cat-modal-projects-label" style="font-size:10px;font-weight:600;color:var(--dimmed);text-transform:uppercase;margin:8px 0 4px">Projets</div>
+    <div class="cat-modal-projects" id="cat-modal-projects"></div>
+    <div class="cat-modal-add-project" onclick="addProjectInCatModal()" style="display:flex;align-items:center;gap:6px;padding:4px 8px;font-size:11px;color:var(--dimmed);cursor:pointer"><span style="font-size:14px">+</span> Ajouter un projet</div>
     <input type="hidden" id="cat-modal-id">
     <div class="edit-actions"><button class="btn btn-save" onclick="saveCat()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('cat-modal').style.display='none'">Annuler</button></div>
   </div>
 </div>'''
 
-    return page("Dashboard", header + cat_section + modal + cat_modal)
+    # Project data for JS
+    import json as _json
+    cat_projects_js = {}
+    for c in categories:
+        cat_projects_js[c["id"]] = [
+            {"id": p["id"], "name": p["name"], "acronym": p.get("acronym", p["name"][:4].upper()), "tasks": len(p.get("tasks", []))}
+            for p in projects if p["cat"] == c["id"]
+        ]
+    projects_data = f'<script>const CAT_PROJECTS = {_json.dumps(cat_projects_js)};</script>'
+
+    return page("Dashboard", header + cat_section + modal + cat_modal + projects_data)
 
 
 # =====================================================================
@@ -488,16 +504,34 @@ def build_cat(cat: dict):
 
     header = build_header("../", current_cat=cat)
 
+    # Project modal for category detail page
+    proj_modal = f'''<div class="project-add-modal" id="project-modal" style="display:none" onclick="this.style.display='none'">
+  <div class="project-add-card" onclick="event.stopPropagation()">
+    <h3>Nouveau projet</h3>
+    <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" style="font-weight:600"></div>
+    <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><input type="text" id="new-proj-due" placeholder="dd.mm" style="width:60px;flex:none"></div>
+    <input type="hidden" id="new-proj-cat" value="{cat["id"]}">
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('project-modal').style.display='none'">Annuler</button></div>
+  </div>
+</div>'''
+
     body = ""
     for i, p in enumerate(cat_projects):
         arrow, acolor = health_arrow(p)
         open_count = p["total"] - p["done"]
         body += f'''<div class="section" id="{p["id"]}" style="padding-top:0">
   <div class="section-title">{escape(p.get("acronym", ""))} / {escape(p["name"])}</div>
-{kanban_html(p["tasks"], show_edit=(i == 0))}
+{kanban_html(p["tasks"])}
 </div>'''
 
-    return page(cat["name"], header + body, css_path="../style.css")
+    # Add project button
+    body += f'''<div class="section" style="padding-top:0">
+  <div class="cat-card-add" onclick="document.getElementById('project-modal').style.display='flex'" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--dimmed)">
+    <span style="font-size:18px">+</span> Ajouter un projet
+  </div>
+</div>'''
+
+    return page(cat["name"], header + body + proj_modal, css_path="../style.css")
 
 
 

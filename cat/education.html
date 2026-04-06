@@ -41,6 +41,27 @@
       <a href="#">Deconnexion</a>
     </div>
   </div>
+</div><div class="section" style="padding-top:0">
+  <div class="cat-card-add" onclick="document.getElementById('project-modal').style.display='flex'" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--dimmed)">
+    <span style="font-size:18px">+</span> Ajouter un projet
+  </div>
+</div><div class="project-add-modal" id="project-modal" style="display:none" onclick="this.style.display='none'">
+  <div class="project-add-card" onclick="event.stopPropagation()">
+    <h3>Nouveau projet</h3>
+    <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" style="font-weight:600"></div>
+    <div class="edit-row"><input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase"><input type="text" id="new-proj-due" placeholder="dd.mm" style="width:60px;flex:none"></div>
+    <input type="hidden" id="new-proj-cat" value="education">
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveProject()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('project-modal').style.display='none'">Annuler</button></div>
+  </div>
+</div>
+<div class="project-add-modal" id="task-modal" style="display:none" onclick="this.style.display='none'">
+  <div class="project-add-card" onclick="event.stopPropagation()">
+    <h3>Nouvelle tache</h3>
+    <div class="edit-row"><input type="text" id="task-modal-title" placeholder="Titre" style="font-weight:600"></div>
+    <div class="edit-row"><textarea id="task-modal-desc" placeholder="Detail" style="min-height:80px;resize:vertical"></textarea></div>
+    <div class="edit-row"><select id="task-modal-who"><option>Q</option><option>Alice</option><option>Bob</option><option>Claire</option></select><input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none"></div>
+    <div class="edit-actions"><button class="btn btn-save" onclick="saveTaskModal()">Enregistrer</button><button class="btn btn-cancel" onclick="document.getElementById('task-modal').style.display='none'">Annuler</button></div>
+  </div>
 </div>
 <script>
 // Sticky title observer
@@ -76,6 +97,25 @@ function editCat(id, name, color) {
   colors.querySelectorAll('.color-dot').forEach(d => {
     d.classList.toggle('selected', d.dataset.color === color);
   });
+  // Populate project list
+  const list = document.getElementById('cat-modal-projects');
+  list.innerHTML = '';
+  const projs = (typeof CAT_PROJECTS !== 'undefined' && id) ? (CAT_PROJECTS[id] || []) : [];
+  projs.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'cat-modal-project';
+    el.dataset.projectId = p.id;
+    const canDelete = p.tasks === 0;
+    el.innerHTML = `<span class="grip">&#9776;</span><span class="proj-name">${p.name}</span><span class="proj-acronym">${p.acronym}</span>${canDelete ? '<span class="proj-remove" onclick="this.parentElement.remove()" title="Supprimer">&times;</span>' : ''}`;
+    list.appendChild(el);
+  });
+  // Init sortable on project list
+  if (list._sortable) list._sortable.destroy();
+  list._sortable = new Sortable(list, {
+    animation: 150,
+    ghostClass: 'task-ghost',
+    handle: '.grip'
+  });
   modal.style.display = 'flex';
 }
 
@@ -91,15 +131,28 @@ function saveCat() {
   const selected = document.querySelector('#cat-modal-colors .color-dot.selected');
   const color = selected ? selected.dataset.color : '';
   if (!name) return;
+  const projectOrder = [...document.querySelectorAll('#cat-modal-projects .cat-modal-project')].map(el => el.dataset.projectId);
   const method = id ? 'PATCH' : 'POST';
   const url = id ? `${API_BASE}/categories/${id}` : `${API_BASE}/categories`;
   fetch(url, {
     method,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, color })
+    body: JSON.stringify({ name, color, projectOrder })
   }).then(() => window.location.reload())
     .catch(err => console.warn('API not available:', err));
   document.getElementById('cat-modal').style.display = 'none';
+}
+
+// Add project in category modal
+function addProjectInCatModal() {
+  const list = document.getElementById('cat-modal-projects');
+  const catId = document.getElementById('cat-modal-id').value;
+  const el = document.createElement('div');
+  el.className = 'cat-modal-project';
+  el.dataset.projectId = '';
+  el.innerHTML = `<span class="grip">&#9776;</span><input type="text" class="proj-name-input" placeholder="Nom du projet" style="flex:1;border:1px solid var(--border);border-radius:3px;padding:2px 6px;font-size:12px;font-family:inherit"><input type="text" class="proj-acr-input" placeholder="ACRO" maxlength="4" style="width:50px;border:1px solid var(--border);border-radius:3px;padding:2px 6px;font-size:10px;font-family:inherit;text-transform:uppercase"><span class="proj-remove" onclick="this.parentElement.remove()" title="Supprimer">&times;</span>`;
+  list.appendChild(el);
+  el.querySelector('.proj-name-input').focus();
 }
 
 // Edit / Add project
@@ -133,34 +186,35 @@ function saveProject() {
   document.getElementById('project-modal').style.display = 'none';
 }
 
-// Add task
-function addTask(btn) {
-  const form = btn.closest('.kanban-new-form');
-  const title = form.querySelector('.new-task-title').value.trim();
+// Task modal
+let _taskTargetList = null;
+function openTaskModal(taskList) {
+  _taskTargetList = taskList;
+  document.getElementById('task-modal-title').value = '';
+  document.getElementById('task-modal-desc').value = '';
+  document.getElementById('task-modal-when').value = '';
+  document.getElementById('task-modal').style.display = 'flex';
+  document.getElementById('task-modal-title').focus();
+}
+
+function saveTaskModal() {
+  const title = document.getElementById('task-modal-title').value.trim();
   if (!title) return;
-  const desc = form.querySelector('.new-task-desc').value.trim();
-  const who = form.querySelector('.new-task-who').value;
-  const when = form.querySelector('.new-task-when').value;
+  const desc = document.getElementById('task-modal-desc').value.trim();
+  const who = document.getElementById('task-modal-who').value;
+  const when = document.getElementById('task-modal-when').value;
   fetch(`${API_BASE}/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title, desc, who, when, status: 'todo' })
   }).catch(err => console.warn('API not available:', err));
-  const col = form.closest('.kanban-col');
-  const tasks = col.querySelector('.kanban-tasks');
-  const card = document.createElement('div');
-  card.className = 'kanban-task';
-  card.innerHTML = `<div class="task-body"><div class="task-title">${title}</div>${desc ? `<div class="task-desc">${desc}</div>` : ''}</div>`;
-  tasks.prepend(card);
-  form.querySelector('.new-task-title').value = '';
-  form.querySelector('.new-task-desc').value = '';
-  form.querySelector('.new-task-when').value = '';
-  form.style.display = 'none';
-}
-
-function cancelAdd(btn) {
-  const form = btn.closest('.kanban-new-form');
-  form.style.display = 'none';
+  if (_taskTargetList) {
+    const card = document.createElement('div');
+    card.className = 'kanban-task';
+    card.innerHTML = `<div class="task-body"><div class="task-title">${title}</div>${desc ? `<div class="task-desc">${desc}</div>` : ''}</div>`;
+    _taskTargetList.prepend(card);
+  }
+  document.getElementById('task-modal').style.display = 'none';
 }
 
 // Drag & drop
