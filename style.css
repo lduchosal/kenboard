@@ -10,7 +10,7 @@
   --cyan:    #0550ae;
   --dimmed:  #656d76;
   --text:    #1f2328;
-  --todo:    var(--todo);
+  --todo:    #d63384;
   --gap:     8px;
 }
 
