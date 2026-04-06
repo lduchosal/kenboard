@@ -53,7 +53,7 @@ body {
   text-transform: uppercase;
 }
 
-/* Header badges responsive */
+/* Header badges */
 .header-badges {
   display: flex;
   gap: 6px;
@@ -98,59 +98,6 @@ body {
 }
 
 .cat-project-full { display: none; }
-
-/* tablet: <= 768px */
-@media (max-width: 768px) {
-  .header-badges { display: none; }
-  .header-badges-dropdown { display: block; }
-  .edit-mode .edit-row {
-    flex-direction: column;
-  }
-  .edit-mode .edit-row select,
-  .edit-mode .edit-row input {
-    width: 100% !important;
-    flex: none !important;
-  }
-  .edit-mode .edit-actions {
-    flex-direction: column-reverse;
-  }
-  .kanban-middle {
-    flex: 1 !important;
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap);
-  }
-  .kanban-rest {
-    flex: 2 !important;
-  }
-}
-
-/* mobile: <= 640px */
-@media (max-width: 640px) {
-  .kanban-rest {
-    flex: 1 !important;
-    flex-direction: column;
-  }
-  .kanban-middle {
-    flex-direction: column;
-  }
-  .cat-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* small mobile: <= 480px */
-@media (max-width: 480px) {
-  .kanban {
-    flex-direction: column;
-  }
-  .kanban-rest {
-    flex-direction: column;
-  }
-  .kanban-middle {
-    flex-direction: column;
-  }
-}
 
 /* Avatar dropdown menu */
 .avatar-menu {
@@ -224,7 +171,7 @@ body {
   margin: 0 16px;
 }
 
-/* -- Category grid (2 columns) -- */
+/* -- Category grid -- */
 .cat-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -303,7 +250,7 @@ body {
   justify-content: flex-end; height: 100%;
 }
 
-/* -- Project cards grid (4 columns) -- */
+/* -- Project cards grid -- */
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -452,7 +399,7 @@ body {
   color: white;
 }
 
-/* -- Task detail mode (read-only expanded) -- */
+/* -- Task detail mode -- */
 .kanban-task.detail-mode {
   cursor: default;
   padding: 12px 14px;
@@ -531,3 +478,58 @@ body {
   border: none;
 }
 .edit-mode .btn-cancel:hover { background: var(--bg); }
+
+/* =================================================================
+   RESPONSIVE — media queries at the end to ensure correct cascade
+   ================================================================= */
+
+/* tablet: <= 768px */
+@media (max-width: 768px) {
+  .header-badges { display: none; }
+  .header-badges-dropdown { display: block; }
+  .edit-mode .edit-row {
+    flex-direction: column;
+  }
+  .edit-mode .edit-row select,
+  .edit-mode .edit-row input {
+    width: 100% !important;
+    flex: none !important;
+  }
+  .edit-mode .edit-actions {
+    flex-direction: column-reverse;
+  }
+  .kanban-middle {
+    flex: 1 !important;
+    flex-direction: column;
+  }
+  .kanban-rest {
+    flex: 2 !important;
+  }
+}
+
+/* mobile: <= 640px */
+@media (max-width: 640px) {
+  .kanban-rest {
+    flex: 1 !important;
+    flex-direction: column;
+  }
+  .kanban-middle {
+    flex-direction: column;
+  }
+}
+
+/* small mobile: <= 480px */
+@media (max-width: 480px) {
+  .kanban {
+    flex-direction: column;
+  }
+  .kanban-rest {
+    flex-direction: column;
+  }
+  .kanban-middle {
+    flex-direction: column;
+  }
+  .cat-grid {
+    grid-template-columns: 1fr;
+  }
+}
