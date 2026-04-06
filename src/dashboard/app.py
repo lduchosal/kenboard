@@ -19,11 +19,10 @@ def create_app() -> Flask:
     debug = os.getenv("DEBUG", "false").lower() == "true"
     setup_logging(debug=debug)
 
-    root_dir = os.path.join(os.path.dirname(__file__), "..", "..")
     app = Flask(
         __name__,
         template_folder=os.path.join(os.path.dirname(__file__), "templates"),
-        static_folder=root_dir,
+        static_folder=os.path.join(os.path.dirname(__file__), "static"),
         static_url_path="/static",
     )
 
@@ -84,15 +83,15 @@ def create_app() -> Flask:
     app.register_blueprint(projects_bp)
     app.register_blueprint(tasks_bp)
 
-    # Serve static assets (CSS, JS)
+    # Convenience routes for static assets at root
     @app.route("/style.css")
     def serve_css() -> Any:
-        """Serve stylesheet."""
+        """Serve stylesheet from root URL."""
         return app.send_static_file("style.css")
 
     @app.route("/app.js")
     def serve_js() -> Any:
-        """Serve JavaScript."""
+        """Serve JavaScript from root URL."""
         return app.send_static_file("app.js")
 
     @app.route("/favicon.ico")

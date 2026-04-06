@@ -9,7 +9,7 @@ from typing import Any
 import structlog
 
 LOG_DIR = Path(
-    os.getenv("LOG_DIR", os.path.join(os.path.dirname(__file__), "..", "..", "logs"))
+    os.getenv("LOG_DIR", "logs")
 )
 LOG_FILE = LOG_DIR / "dashboard.log"
 

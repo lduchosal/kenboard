@@ -1,5 +1,7 @@
 """CLI entry point."""
 
+from pathlib import Path
+
 import click
 
 
@@ -41,7 +43,7 @@ def migrate() -> None:
         f"@{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB_NAME}"
     )
     subprocess.run(
-        ["yoyo", "apply", "--batch", "--database", db_url, "migrations/"],
+        ["yoyo", "apply", "--batch", "--database", db_url, str(Path(__file__).parent / "migrations")],
         check=True,
     )
 
@@ -58,6 +60,6 @@ def migrate_test() -> None:
         f"@{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB_TEST_NAME}"
     )
     subprocess.run(
-        ["yoyo", "apply", "--batch", "--database", db_url, "migrations/"],
+        ["yoyo", "apply", "--batch", "--database", db_url, str(Path(__file__).parent / "migrations")],
         check=True,
     )
