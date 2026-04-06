@@ -1,6 +1,6 @@
 [project]
 name = "kenboard"
-version = "0.1.3"
+version = "0.1.4"
 description = "Project management dashboard with kanban boards, burndown charts, and category-based organization. Flask API backend with MySQL storage and static HTML generation."
 authors = [
     { name = "Q" }
@@ -76,6 +76,9 @@ build-backend = "pdm.backend"
 
 [tool.pdm]
 distribution = true
+
+[tool.pdm-bump]
+version-files = ["src/dashboard/__init__.py:__version__"]
 
 # -- PDM Scripts --------------------------------------------------------------
 
