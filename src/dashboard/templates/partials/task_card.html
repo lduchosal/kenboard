@@ -1,8 +1,9 @@
-{% set who = t.get("who", "?") %}
+{% set who = t.get("who", "") or "?" %}
 {% set initials = who[0].upper() %}
 {% set avatar_color = avatar_colors.get(who, "var(--dimmed)") %}
-{% set when_str = fmt_date(t.when) if t.get("when") else "" %}
-{% set desc = t.get("desc", "") %}
+{% set when_val = t.get("due_date") or t.get("when") %}
+{% set when_str = fmt_date(when_val | string) if when_val else "" %}
+{% set desc = t.get("description", "") or t.get("desc", "") %}
 <div class="kanban-task{{ ' task-hidden' if is_hidden else '' }}" data-task-id="{{ t.get('id', '') }}" onclick="toggleDetail(this)">
   <div class="task-body">
     <div class="task-title">{{ t.title }}</div>
