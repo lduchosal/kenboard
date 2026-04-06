@@ -75,10 +75,12 @@ def page(title: str, body: str, css_path: str = "style.css") -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{escape(title)}</title>
 <link rel="stylesheet" href="{css_path}">
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 </head>
 <body>
 {body}
 <script>
+// Sticky title observer
 const header = document.querySelector('.header');
 let stuckCount = 0;
 document.querySelectorAll('.section-title').forEach(el => {{
@@ -98,6 +100,33 @@ document.querySelectorAll('.section-title').forEach(el => {{
   sentinel.style.marginBottom = '-1px';
   el.before(sentinel);
   observer.observe(sentinel);
+}});
+
+// Kanban drag & drop
+const API_BASE = '/api/v1';
+
+document.querySelectorAll('.kanban-col').forEach(col => {{
+  const taskContainer = col.querySelector('.kanban-tasks');
+  if (!taskContainer) return;
+  new Sortable(taskContainer, {{
+    group: 'kanban',
+    animation: 150,
+    draggable: '.kanban-task',
+    ghostClass: 'task-ghost',
+    chosenClass: 'task-chosen',
+    dragClass: 'task-drag',
+    onEnd: (evt) => {{
+      const taskId = evt.item.dataset.taskId;
+      const newStatus = evt.to.dataset.status;
+      const newIndex = evt.newIndex;
+      if (!taskId) return;
+      fetch(`${{API_BASE}}/tasks/${{taskId}}`, {{
+        method: 'PATCH',
+        headers: {{ 'Content-Type': 'application/json' }},
+        body: JSON.stringify({{ status: newStatus, position: newIndex }})
+      }}).catch(err => console.warn('API not available:', err));
+    }}
+  }});
 }});
 </script>
 </body>
@@ -124,6 +153,7 @@ def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False
         col_tasks = [t for t in tasks if t["status"] == col_id]
         html += f'<div class="kanban-col" style="background:color-mix(in srgb, {col_color} 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, {col_color} 25%, transparent)">'
         html += f'<span class="col-name" style="color:{col_color}">{col_name}</span></div>'
+        html += f'<div class="kanban-tasks" data-status="{col_id}">'
         max_visible = 5 if col_id == "done" else None
         visible_tasks = col_tasks[:max_visible] if max_visible else col_tasks
         hidden_count = len(col_tasks) - len(visible_tasks)
@@ -140,7 +170,7 @@ def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False
             # First TODO: detail view (read-only expanded)
             if col_id == "todo" and todo_special_count[0] == 0:
                 todo_special_count[0] = 1
-                html += f'<div class="kanban-task detail-mode">'
+                html += f'<div class="kanban-task detail-mode" data-task-id="{t.get("id", "")}">'
                 html += f'<div class="task-body">'
                 html += f'<div class="task-title">{escape(t["title"])}</div>'
                 if desc:
@@ -157,7 +187,7 @@ def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False
             elif col_id == "todo" and todo_special_count[0] == 1:
                 todo_special_count[0] = 2
                 people_options = "".join(f'<option{"" if p != who else " selected"}>{escape(p)}</option>' for p in AVATAR_COLORS.keys())
-                html += f'<div class="kanban-task edit-mode">'
+                html += f'<div class="kanban-task edit-mode" data-task-id="{t.get("id", "")}">'
                 html += f'<div class="edit-row"><input type="text" value="{escape(t["title"])}" placeholder="Titre" style="font-weight:600"></div>'
                 html += f'<div class="edit-row"><textarea placeholder="Detail">{escape(desc)}</textarea></div>'
                 html += f'<div class="edit-row"><select>{people_options}</select><input type="text" value="{when_str}" placeholder="dd.mm" style="width:60px;flex:none"></div>'
@@ -166,7 +196,7 @@ def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False
 
             # Normal card
             else:
-                html += f'<a class="kanban-task" href="#" style="text-decoration:none;color:inherit">'
+                html += f'<a class="kanban-task" href="#" style="text-decoration:none;color:inherit" data-task-id="{t.get("id", "")}">'
                 html += f'<div class="task-body">'
                 html += f'<div class="task-title">{escape(t["title"])}</div>'
                 if desc:
@@ -183,7 +213,7 @@ def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False
                 html += f'</a>'
         if hidden_count > 0:
             html += f'<div style="text-align:center;padding:6px;font-size:11px;color:var(--dimmed);cursor:pointer">+ {hidden_count} autres</div>'
-        html += '</div>'
+        html += '</div></div>'
     if in_middle:
         html += '</div>'
     if in_rest:

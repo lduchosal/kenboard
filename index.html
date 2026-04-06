@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dashboard</title>
 <link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 </head>
 <body>
 <div class="header">
@@ -108,6 +109,7 @@
   <div class="cat-projects"></div>
 </a></div></div>
 <script>
+// Sticky title observer
 const header = document.querySelector('.header');
 let stuckCount = 0;
 document.querySelectorAll('.section-title').forEach(el => {
@@ -127,6 +129,33 @@ document.querySelectorAll('.section-title').forEach(el => {
   sentinel.style.marginBottom = '-1px';
   el.before(sentinel);
   observer.observe(sentinel);
+});
+
+// Kanban drag & drop
+const API_BASE = '/api/v1';
+
+document.querySelectorAll('.kanban-col').forEach(col => {
+  const taskContainer = col.querySelector('.kanban-tasks');
+  if (!taskContainer) return;
+  new Sortable(taskContainer, {
+    group: 'kanban',
+    animation: 150,
+    draggable: '.kanban-task',
+    ghostClass: 'task-ghost',
+    chosenClass: 'task-chosen',
+    dragClass: 'task-drag',
+    onEnd: (evt) => {
+      const taskId = evt.item.dataset.taskId;
+      const newStatus = evt.to.dataset.status;
+      const newIndex = evt.newIndex;
+      if (!taskId) return;
+      fetch(`${API_BASE}/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, position: newIndex })
+      }).catch(err => console.warn('API not available:', err));
+    }
+  });
 });
 </script>
 </body>

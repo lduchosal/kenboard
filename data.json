@@ -71,140 +71,160 @@
           "status": "done",
           "who": "Q",
           "when": "2026-03-01",
-          "desc": ""
+          "desc": "",
+          "id": 1
         },
         {
           "title": "Devis plombier",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 2
         },
         {
           "title": "Choix carrelage sdb",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 3
         },
         {
           "title": "Commande cuisine",
           "status": "done",
           "who": "Q",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 4
         },
         {
           "title": "Peinture chambre 1",
           "status": "done",
           "who": "Q",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 5
         },
         {
           "title": "Peinture chambre 2",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-01",
-          "desc": ""
+          "desc": "",
+          "id": 6
         },
         {
           "title": "Peinture salon",
           "status": "done",
           "who": "Q",
           "when": "2026-03-01",
-          "desc": ""
+          "desc": "",
+          "id": 7
         },
         {
           "title": "Pose parquet",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 8
         },
         {
           "title": "Installation cuisine",
           "status": "done",
           "who": "Q",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 9
         },
         {
           "title": "Plomberie sdb",
           "status": "done",
           "who": "Alice",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 10
         },
         {
           "title": "Electricite salon",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 11
         },
         {
           "title": "Electricite chambres",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 12
         },
         {
           "title": "Pose carrelage sdb",
           "status": "done",
           "who": "Bob",
           "when": "2026-02-20",
-          "desc": ""
+          "desc": "",
+          "id": 13
         },
         {
           "title": "Montage meubles",
           "status": "doing",
           "who": "Q",
           "when": "2026-04-07",
-          "desc": "En cours de realisation"
+          "desc": "En cours de realisation",
+          "id": 14
         },
         {
           "title": "Finitions peinture",
           "status": "doing",
           "who": "Claire",
           "when": "2026-04-10",
-          "desc": ""
+          "desc": "",
+          "id": 15
         },
         {
           "title": "Nettoyage chantier",
           "status": "review",
           "who": "Bob",
           "when": "2026-04-06",
-          "desc": "En attente de relecture"
+          "desc": "En attente de relecture",
+          "id": 16
         },
         {
           "title": "Deco salon",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-30",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 17
         },
         {
           "title": "Rideaux",
           "status": "todo",
           "who": "Q",
           "when": "2026-04-15",
-          "desc": ""
+          "desc": "",
+          "id": 18
         },
         {
           "title": "Luminaires",
           "status": "todo",
           "who": "Claire",
           "when": "2026-04-15",
-          "desc": ""
+          "desc": "",
+          "id": 19
         },
         {
           "title": "Inspection finale",
           "status": "todo",
           "who": "Bob",
           "when": "2026-04-30",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 20
         }
       ],
       "acronym": "REN"
@@ -248,70 +268,80 @@
           "status": "done",
           "who": "Bob",
           "when": "2026-02-20",
-          "desc": ""
+          "desc": "",
+          "id": 21
         },
         {
           "title": "Budget max",
           "status": "done",
           "who": "Q",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 22
         },
         {
           "title": "Liste agences",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 23
         },
         {
           "title": "Visites terrain A",
           "status": "doing",
           "who": "Q",
           "when": "2026-04-10",
-          "desc": "Avancement 50%"
+          "desc": "Avancement 50%",
+          "id": 24
         },
         {
           "title": "Etude PLU",
           "status": "todo",
           "who": "Q",
           "when": "2026-05-15",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 25
         },
         {
           "title": "Etude sol",
           "status": "todo",
           "who": "Bob",
           "when": "2026-06-01",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 26
         },
         {
           "title": "Viabilisation",
           "status": "todo",
           "who": "Bob",
           "when": "2026-05-15",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 27
         },
         {
           "title": "Negociation",
           "status": "todo",
           "who": "Alice",
           "when": "2026-06-01",
-          "desc": ""
+          "desc": "",
+          "id": 28
         },
         {
           "title": "Compromis",
           "status": "todo",
           "who": "Q",
           "when": "2026-04-15",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 29
         },
         {
           "title": "Acte notarie",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-30",
-          "desc": "A planifier"
+          "desc": "A planifier",
+          "id": 30
         }
       ],
       "acronym": "TER"
@@ -355,70 +385,80 @@
           "status": "done",
           "who": "Q",
           "when": "2026-02-20",
-          "desc": ""
+          "desc": "",
+          "id": 31
         },
         {
           "title": "Releve bancaire 3 mois",
           "status": "done",
           "who": "Alice",
           "when": "2026-02-20",
-          "desc": ""
+          "desc": "",
+          "id": 32
         },
         {
           "title": "Avis imposition",
           "status": "done",
           "who": "Q",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 33
         },
         {
           "title": "Simulation en ligne",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 34
         },
         {
           "title": "RDV banque A",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 35
         },
         {
           "title": "RDV banque B",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-15",
-          "desc": ""
+          "desc": "",
+          "id": 36
         },
         {
           "title": "RDV courtier",
           "status": "done",
           "who": "Alice",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 37
         },
         {
           "title": "Comparaison offres",
           "status": "done",
           "who": "Bob",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 38
         },
         {
           "title": "Signature offre",
           "status": "review",
           "who": "Q",
           "when": "2026-04-06",
-          "desc": "Feedback demande"
+          "desc": "Feedback demande",
+          "id": 39
         },
         {
           "title": "Deblocage fonds",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-20",
-          "desc": ""
+          "desc": "",
+          "id": 40
         }
       ],
       "acronym": "HYP"
@@ -462,42 +502,48 @@
           "status": "done",
           "who": "Claire",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 41
         },
         {
           "title": "Generaliste",
           "status": "done",
           "who": "Bob",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 42
         },
         {
           "title": "Dentiste",
           "status": "done",
           "who": "Alice",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 43
         },
         {
           "title": "Ophtalmo",
           "status": "doing",
           "who": "Bob",
           "when": "2026-04-07",
-          "desc": "Bloque par dependance"
+          "desc": "Bloque par dependance",
+          "id": 44
         },
         {
           "title": "Dermato",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-15",
-          "desc": ""
+          "desc": "",
+          "id": 45
         },
         {
           "title": "Bilan complet",
           "status": "todo",
           "who": "Bob",
           "when": "2026-05-10",
-          "desc": "A planifier"
+          "desc": "A planifier",
+          "id": 46
         }
       ],
       "acronym": "BIL"
@@ -541,175 +587,200 @@
           "status": "done",
           "who": "Bob",
           "when": "2026-03-01",
-          "desc": ""
+          "desc": "",
+          "id": 47
         },
         {
           "title": "Theme base",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 48
         },
         {
           "title": "Page accueil",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 49
         },
         {
           "title": "Page about",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 50
         },
         {
           "title": "Blog engine",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 51
         },
         {
           "title": "RSS feed",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 52
         },
         {
           "title": "SEO meta",
           "status": "done",
           "who": "Alice",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 53
         },
         {
           "title": "Sitemap",
           "status": "done",
           "who": "Bob",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 54
         },
         {
           "title": "HTTPS",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 55
         },
         {
           "title": "CI deploy",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-15",
-          "desc": ""
+          "desc": "",
+          "id": 56
         },
         {
           "title": "Analytics",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 57
         },
         {
           "title": "Contact form",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-01",
-          "desc": ""
+          "desc": "",
+          "id": 58
         },
         {
           "title": "Articles migration",
           "status": "done",
           "who": "Q",
           "when": "2026-02-20",
-          "desc": ""
+          "desc": "",
+          "id": 59
         },
         {
           "title": "Images optim",
           "status": "done",
           "who": "Q",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 60
         },
         {
           "title": "Dark mode",
           "status": "done",
           "who": "Alice",
           "when": "2026-02-20",
-          "desc": ""
+          "desc": "",
+          "id": 61
         },
         {
           "title": "Mobile responsive",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 62
         },
         {
           "title": "Search",
           "status": "done",
           "who": "Q",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 63
         },
         {
           "title": "Performance audit",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 64
         },
         {
           "title": "Newsletter",
           "status": "doing",
           "who": "Claire",
           "when": "2026-04-12",
-          "desc": "En cours de realisation"
+          "desc": "En cours de realisation",
+          "id": 65
         },
         {
           "title": "Comments system",
           "status": "doing",
           "who": "Bob",
           "when": "2026-04-12",
-          "desc": "En cours de realisation"
+          "desc": "En cours de realisation",
+          "id": 66
         },
         {
           "title": "Portfolio page",
           "status": "doing",
           "who": "Q",
           "when": "2026-04-12",
-          "desc": "En cours de realisation"
+          "desc": "En cours de realisation",
+          "id": 67
         },
         {
           "title": "Accessibility audit",
           "status": "review",
           "who": "Q",
           "when": "2026-04-08",
-          "desc": "En attente de relecture"
+          "desc": "En attente de relecture",
+          "id": 68
         },
         {
           "title": "Legal pages",
           "status": "review",
           "who": "Bob",
           "when": "2026-04-06",
-          "desc": "Feedback demande"
+          "desc": "Feedback demande",
+          "id": 69
         },
         {
           "title": "Launch announce",
           "status": "todo",
           "who": "Bob",
           "when": "2026-05-10",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 70
         },
         {
           "title": "Social preview",
           "status": "todo",
           "who": "Alice",
           "when": "2026-05-10",
-          "desc": "A planifier"
+          "desc": "A planifier",
+          "id": 71
         }
       ],
       "acronym": "WEB"
@@ -753,140 +824,160 @@
           "status": "done",
           "who": "Q",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 72
         },
         {
           "title": "Base roles",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 73
         },
         {
           "title": "SSH hardening",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 74
         },
         {
           "title": "Firewall rules",
           "status": "done",
           "who": "Q",
           "when": "2026-02-20",
-          "desc": ""
+          "desc": "",
+          "id": 75
         },
         {
           "title": "Nginx role",
           "status": "done",
           "who": "Bob",
           "when": "2026-02-20",
-          "desc": ""
+          "desc": "",
+          "id": 76
         },
         {
           "title": "PHP role",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 77
         },
         {
           "title": "MySQL role",
           "status": "done",
           "who": "Bob",
           "when": "2026-02-20",
-          "desc": ""
+          "desc": "",
+          "id": 78
         },
         {
           "title": "Backup role",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 79
         },
         {
           "title": "Monitoring agent",
           "status": "done",
           "who": "Q",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 80
         },
         {
           "title": "DNS role",
           "status": "doing",
           "who": "Bob",
           "when": "2026-04-10",
-          "desc": "Avancement 50%"
+          "desc": "Avancement 50%",
+          "id": 81
         },
         {
           "title": "Mail role",
           "status": "doing",
           "who": "Q",
           "when": "2026-04-07",
-          "desc": ""
+          "desc": "",
+          "id": 82
         },
         {
           "title": "Docker role",
           "status": "review",
           "who": "Bob",
           "when": "2026-04-08",
-          "desc": "En attente de relecture"
+          "desc": "En attente de relecture",
+          "id": 83
         },
         {
           "title": "Vault secrets",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-15",
-          "desc": "A planifier"
+          "desc": "A planifier",
+          "id": 84
         },
         {
           "title": "CI lint",
           "status": "todo",
           "who": "Alice",
           "when": "2026-05-15",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 85
         },
         {
           "title": "Staging env",
           "status": "todo",
           "who": "Q",
           "when": "2026-04-15",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 86
         },
         {
           "title": "Prod deploy",
           "status": "todo",
           "who": "Claire",
           "when": "2026-04-15",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 87
         },
         {
           "title": "Rollback strategy",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-20",
-          "desc": ""
+          "desc": "",
+          "id": 88
         },
         {
           "title": "Doc runbook",
           "status": "todo",
           "who": "Claire",
           "when": "2026-05-15",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 89
         },
         {
           "title": "Load balancer",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-30",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 90
         },
         {
           "title": "Auto-scaling",
           "status": "todo",
           "who": "Claire",
           "when": "2026-04-20",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 91
         }
       ],
       "acronym": "ANS"
@@ -930,140 +1021,160 @@
           "status": "done",
           "who": "Alice",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 92
         },
         {
           "title": "Node exporter",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 93
         },
         {
           "title": "Grafana setup",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 94
         },
         {
           "title": "Basic dashboards",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-01",
-          "desc": ""
+          "desc": "",
+          "id": 95
         },
         {
           "title": "Alertmanager",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 96
         },
         {
           "title": "Uptime checks",
           "status": "done",
           "who": "Q",
           "when": "2026-03-15",
-          "desc": ""
+          "desc": "",
+          "id": 97
         },
         {
           "title": "Log aggregation",
           "status": "doing",
           "who": "Q",
           "when": "2026-04-12",
-          "desc": "Avancement 50%"
+          "desc": "Avancement 50%",
+          "id": 98
         },
         {
           "title": "Custom metrics",
           "status": "review",
           "who": "Alice",
           "when": "2026-04-06",
-          "desc": ""
+          "desc": "",
+          "id": 99
         },
         {
           "title": "SLA dashboard",
           "status": "review",
           "who": "Q",
           "when": "2026-04-06",
-          "desc": "Feedback demande"
+          "desc": "Feedback demande",
+          "id": 100
         },
         {
           "title": "Incident runbook",
           "status": "review",
           "who": "Q",
           "when": "2026-04-06",
-          "desc": "En attente de relecture"
+          "desc": "En attente de relecture",
+          "id": 101
         },
         {
           "title": "Loki setup",
           "status": "todo",
           "who": "Q",
           "when": "2026-04-15",
-          "desc": "A planifier"
+          "desc": "A planifier",
+          "id": 102
         },
         {
           "title": "Tracing",
           "status": "todo",
           "who": "Bob",
           "when": "2026-04-15",
-          "desc": "A planifier"
+          "desc": "A planifier",
+          "id": 103
         },
         {
           "title": "PagerDuty integration",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-30",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 104
         },
         {
           "title": "Capacity planning",
           "status": "todo",
           "who": "Claire",
           "when": "2026-04-20",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 105
         },
         {
           "title": "Historical reports",
           "status": "todo",
           "who": "Alice",
           "when": "2026-06-01",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 106
         },
         {
           "title": "Cost monitoring",
           "status": "todo",
           "who": "Claire",
           "when": "2026-04-20",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 107
         },
         {
           "title": "Security alerts",
           "status": "todo",
           "who": "Claire",
           "when": "2026-05-10",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 108
         },
         {
           "title": "Network monitoring",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-15",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 109
         },
         {
           "title": "DB monitoring",
           "status": "todo",
           "who": "Q",
           "when": "2026-06-01",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 110
         },
         {
           "title": "Synthetic tests",
           "status": "todo",
           "who": "Claire",
           "when": "2026-04-30",
-          "desc": ""
+          "desc": "",
+          "id": 111
         }
       ],
       "acronym": "MON"
@@ -1107,140 +1218,160 @@
           "status": "done",
           "who": "Claire",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 112
         },
         {
           "title": "Liste domaines",
           "status": "done",
           "who": "Claire",
           "when": "2026-02-20",
-          "desc": ""
+          "desc": "",
+          "id": 113
         },
         {
           "title": "Choix CA",
           "status": "done",
           "who": "Q",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 114
         },
         {
           "title": "Setup ACME",
           "status": "done",
           "who": "Q",
           "when": "2026-03-01",
-          "desc": ""
+          "desc": "",
+          "id": 115
         },
         {
           "title": "Wildcard cert",
           "status": "done",
           "who": "Claire",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 116
         },
         {
           "title": "Renouvellement auto",
           "status": "done",
           "who": "Bob",
           "when": "2026-02-20",
-          "desc": ""
+          "desc": "",
+          "id": 117
         },
         {
           "title": "Test HTTPS",
           "status": "done",
           "who": "Q",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 118
         },
         {
           "title": "HSTS headers",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 119
         },
         {
           "title": "OCSP stapling",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 120
         },
         {
           "title": "Cert pinning review",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 121
         },
         {
           "title": "Internal CA",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 122
         },
         {
           "title": "Client certs",
           "status": "done",
           "who": "Alice",
           "when": "2026-02-20",
-          "desc": ""
+          "desc": "",
+          "id": 123
         },
         {
           "title": "Revocation list",
           "status": "done",
           "who": "Q",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 124
         },
         {
           "title": "Key rotation",
           "status": "done",
           "who": "Q",
           "when": "2026-03-01",
-          "desc": ""
+          "desc": "",
+          "id": 125
         },
         {
           "title": "Backup keys",
           "status": "done",
           "who": "Q",
           "when": "2026-03-01",
-          "desc": ""
+          "desc": "",
+          "id": 126
         },
         {
           "title": "Monitoring expiry",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 127
         },
         {
           "title": "Documentation",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 128
         },
         {
           "title": "Compliance check",
           "status": "doing",
           "who": "Claire",
           "when": "2026-04-07",
-          "desc": ""
+          "desc": "",
+          "id": 129
         },
         {
           "title": "Pentest cert",
           "status": "review",
           "who": "Claire",
           "when": "2026-04-06",
-          "desc": "Feedback demande"
+          "desc": "Feedback demande",
+          "id": 130
         },
         {
           "title": "Final signoff",
           "status": "todo",
           "who": "Alice",
           "when": "2026-05-10",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 131
         }
       ],
       "acronym": "SSL"
@@ -1284,140 +1415,160 @@
           "status": "done",
           "who": "Q",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 132
         },
         {
           "title": "Maquette HTML",
           "status": "doing",
           "who": "Bob",
           "when": "2026-04-10",
-          "desc": ""
+          "desc": "",
+          "id": 133
         },
         {
           "title": "Data model",
           "status": "doing",
           "who": "Bob",
           "when": "2026-04-10",
-          "desc": "Bloque par dependance"
+          "desc": "Bloque par dependance",
+          "id": 134
         },
         {
           "title": "Backend API",
           "status": "doing",
           "who": "Claire",
           "when": "2026-04-07",
-          "desc": "En cours de realisation"
+          "desc": "En cours de realisation",
+          "id": 135
         },
         {
           "title": "Kanban view",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-30",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 136
         },
         {
           "title": "Drag and drop",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-15",
-          "desc": "A planifier"
+          "desc": "A planifier",
+          "id": 137
         },
         {
           "title": "Burndown charts",
           "status": "todo",
           "who": "Q",
           "when": "2026-06-01",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 138
         },
         {
           "title": "Categories",
           "status": "todo",
           "who": "Bob",
           "when": "2026-04-15",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 139
         },
         {
           "title": "Auth",
           "status": "todo",
           "who": "Q",
           "when": "2026-05-15",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 140
         },
         {
           "title": "Export MD",
           "status": "todo",
           "who": "Claire",
           "when": "2026-05-15",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 141
         },
         {
           "title": "Import MD",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-15",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 142
         },
         {
           "title": "Filtres",
           "status": "todo",
           "who": "Q",
           "when": "2026-04-20",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 143
         },
         {
           "title": "Search",
           "status": "todo",
           "who": "Q",
           "when": "2026-05-15",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 144
         },
         {
           "title": "Notifications",
           "status": "todo",
           "who": "Q",
           "when": "2026-06-01",
-          "desc": "A planifier"
+          "desc": "A planifier",
+          "id": 145
         },
         {
           "title": "Mobile view",
           "status": "todo",
           "who": "Alice",
           "when": "2026-05-10",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 146
         },
         {
           "title": "Themes",
           "status": "todo",
           "who": "Q",
           "when": "2026-05-15",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 147
         },
         {
           "title": "API docs",
           "status": "todo",
           "who": "Alice",
           "when": "2026-05-15",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 148
         },
         {
           "title": "Tests",
           "status": "todo",
           "who": "Q",
           "when": "2026-05-15",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 149
         },
         {
           "title": "CI/CD",
           "status": "todo",
           "who": "Q",
           "when": "2026-05-10",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 150
         },
         {
           "title": "Deploy FreeBSD",
           "status": "todo",
           "who": "Bob",
           "when": "2026-04-30",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 151
         }
       ],
       "acronym": "KAN"
@@ -1461,140 +1612,160 @@
           "status": "done",
           "who": "Alice",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 152
         },
         {
           "title": "Politique retention",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 153
         },
         {
           "title": "ZFS snapshots",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 154
         },
         {
           "title": "Rsync remote",
           "status": "done",
           "who": "Alice",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 155
         },
         {
           "title": "Cron scheduling",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 156
         },
         {
           "title": "Encryption at rest",
           "status": "done",
           "who": "Bob",
           "when": "2026-02-20",
-          "desc": ""
+          "desc": "",
+          "id": 157
         },
         {
           "title": "Test restore DB",
           "status": "done",
           "who": "Q",
           "when": "2026-03-01",
-          "desc": ""
+          "desc": "",
+          "id": 158
         },
         {
           "title": "Test restore files",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 159
         },
         {
           "title": "Offsite sync",
           "status": "done",
           "who": "Q",
           "when": "2026-03-01",
-          "desc": ""
+          "desc": "",
+          "id": 160
         },
         {
           "title": "Monitoring backups",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 161
         },
         {
           "title": "Documentation",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 162
         },
         {
           "title": "Disaster recovery plan",
           "status": "review",
           "who": "Bob",
           "when": "2026-04-06",
-          "desc": "En attente de relecture"
+          "desc": "En attente de relecture",
+          "id": 163
         },
         {
           "title": "RTO/RPO validation",
           "status": "review",
           "who": "Alice",
           "when": "2026-04-08",
-          "desc": "Feedback demande"
+          "desc": "Feedback demande",
+          "id": 164
         },
         {
           "title": "Compliance audit",
           "status": "review",
           "who": "Bob",
           "when": "2026-04-06",
-          "desc": "Feedback demande"
+          "desc": "Feedback demande",
+          "id": 165
         },
         {
           "title": "Cross-region",
           "status": "review",
           "who": "Claire",
           "when": "2026-04-08",
-          "desc": "Feedback demande"
+          "desc": "Feedback demande",
+          "id": 166
         },
         {
           "title": "Versioning policy",
           "status": "review",
           "who": "Q",
           "when": "2026-04-08",
-          "desc": "Feedback demande"
+          "desc": "Feedback demande",
+          "id": 167
         },
         {
           "title": "Bandwidth optim",
           "status": "todo",
           "who": "Q",
           "when": "2026-04-20",
-          "desc": ""
+          "desc": "",
+          "id": 168
         },
         {
           "title": "Dedup",
           "status": "todo",
           "who": "Bob",
           "when": "2026-04-15",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 169
         },
         {
           "title": "Cold storage",
           "status": "todo",
           "who": "Q",
           "when": "2026-06-01",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 170
         },
         {
           "title": "Annual drill",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-30",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 171
         }
       ],
       "acronym": "BAK"
@@ -1638,140 +1809,160 @@
           "status": "done",
           "who": "Bob",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 172
         },
         {
           "title": "Compat check",
           "status": "done",
           "who": "Alice",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 173
         },
         {
           "title": "Env staging",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 174
         },
         {
           "title": "Backup pre-migration",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 175
         },
         {
           "title": "Ports update",
           "status": "doing",
           "who": "Claire",
           "when": "2026-04-10",
-          "desc": ""
+          "desc": "",
+          "id": 176
         },
         {
           "title": "Kernel config",
           "status": "todo",
           "who": "Q",
           "when": "2026-04-15",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 177
         },
         {
           "title": "Jails migration",
           "status": "todo",
           "who": "Claire",
           "when": "2026-04-30",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 178
         },
         {
           "title": "ZFS pool upgrade",
           "status": "todo",
           "who": "Q",
           "when": "2026-04-15",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 179
         },
         {
           "title": "Network config",
           "status": "todo",
           "who": "Bob",
           "when": "2026-04-20",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 180
         },
         {
           "title": "Firewall rules",
           "status": "todo",
           "who": "Bob",
           "when": "2026-04-20",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 181
         },
         {
           "title": "Services migration",
           "status": "todo",
           "who": "Claire",
           "when": "2026-05-15",
-          "desc": "A planifier"
+          "desc": "A planifier",
+          "id": 182
         },
         {
           "title": "PHP upgrade",
           "status": "todo",
           "who": "Claire",
           "when": "2026-05-15",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 183
         },
         {
           "title": "MySQL upgrade",
           "status": "todo",
           "who": "Q",
           "when": "2026-04-15",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 184
         },
         {
           "title": "SSL certs",
           "status": "todo",
           "who": "Q",
           "when": "2026-06-01",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 185
         },
         {
           "title": "DNS cutover",
           "status": "todo",
           "who": "Alice",
           "when": "2026-05-15",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 186
         },
         {
           "title": "Performance tests",
           "status": "todo",
           "who": "Q",
           "when": "2026-04-30",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 187
         },
         {
           "title": "Rollback plan",
           "status": "todo",
           "who": "Alice",
           "when": "2026-05-10",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 188
         },
         {
           "title": "Monitoring post",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-15",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 189
         },
         {
           "title": "Doc update",
           "status": "todo",
           "who": "Bob",
           "when": "2026-04-30",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 190
         },
         {
           "title": "Prod cutover",
           "status": "todo",
           "who": "Q",
           "when": "2026-04-30",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 191
         }
       ],
       "acronym": "BSD"
@@ -1815,140 +2006,160 @@
           "status": "done",
           "who": "Alice",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 192
         },
         {
           "title": "Runner install",
           "status": "done",
           "who": "Alice",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 193
         },
         {
           "title": "Lint stage",
           "status": "doing",
           "who": "Q",
           "when": "2026-04-10",
-          "desc": "En cours de realisation"
+          "desc": "En cours de realisation",
+          "id": 194
         },
         {
           "title": "Test stage",
           "status": "doing",
           "who": "Claire",
           "when": "2026-04-12",
-          "desc": "En cours de realisation"
+          "desc": "En cours de realisation",
+          "id": 195
         },
         {
           "title": "Build stage",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-20",
-          "desc": ""
+          "desc": "",
+          "id": 196
         },
         {
           "title": "Deploy stage",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-20",
-          "desc": ""
+          "desc": "",
+          "id": 197
         },
         {
           "title": "Secrets mgmt",
           "status": "todo",
           "who": "Claire",
           "when": "2026-04-15",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 198
         },
         {
           "title": "Branch protection",
           "status": "todo",
           "who": "Alice",
           "when": "2026-06-01",
-          "desc": "A planifier"
+          "desc": "A planifier",
+          "id": 199
         },
         {
           "title": "Review apps",
           "status": "todo",
           "who": "Bob",
           "when": "2026-05-10",
-          "desc": ""
+          "desc": "",
+          "id": 200
         },
         {
           "title": "Artifact storage",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-30",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 201
         },
         {
           "title": "Notifications",
           "status": "todo",
           "who": "Alice",
           "when": "2026-06-01",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 202
         },
         {
           "title": "Caching",
           "status": "todo",
           "who": "Q",
           "when": "2026-05-10",
-          "desc": ""
+          "desc": "",
+          "id": 203
         },
         {
           "title": "Parallel jobs",
           "status": "todo",
           "who": "Q",
           "when": "2026-05-10",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 204
         },
         {
           "title": "Rollback",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-20",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 205
         },
         {
           "title": "Monitoring",
           "status": "todo",
           "who": "Claire",
           "when": "2026-04-30",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 206
         },
         {
           "title": "Security scan",
           "status": "todo",
           "who": "Bob",
           "when": "2026-04-20",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 207
         },
         {
           "title": "Dependency scan",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-15",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 208
         },
         {
           "title": "Performance gate",
           "status": "todo",
           "who": "Alice",
           "when": "2026-05-10",
-          "desc": ""
+          "desc": "",
+          "id": 209
         },
         {
           "title": "Documentation",
           "status": "todo",
           "who": "Bob",
           "when": "2026-04-30",
-          "desc": ""
+          "desc": "",
+          "id": 210
         },
         {
           "title": "Team onboarding",
           "status": "todo",
           "who": "Q",
           "when": "2026-04-30",
-          "desc": ""
+          "desc": "",
+          "id": 211
         }
       ],
       "acronym": "CIC"
@@ -1992,140 +2203,160 @@
           "status": "done",
           "who": "Bob",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 212
         },
         {
           "title": "Auth JWT",
           "status": "done",
           "who": "Claire",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 213
         },
         {
           "title": "CRUD users",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-01",
-          "desc": ""
+          "desc": "",
+          "id": 214
         },
         {
           "title": "CRUD projects",
           "status": "done",
           "who": "Q",
           "when": "2026-03-15",
-          "desc": ""
+          "desc": "",
+          "id": 215
         },
         {
           "title": "CRUD tasks",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 216
         },
         {
           "title": "Rate limiting",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-01",
-          "desc": ""
+          "desc": "",
+          "id": 217
         },
         {
           "title": "Pagination",
           "status": "done",
           "who": "Q",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 218
         },
         {
           "title": "Filtering",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-15",
-          "desc": ""
+          "desc": "",
+          "id": 219
         },
         {
           "title": "Validation",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 220
         },
         {
           "title": "Error handling",
           "status": "done",
           "who": "Q",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 221
         },
         {
           "title": "Logging",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-15",
-          "desc": ""
+          "desc": "",
+          "id": 222
         },
         {
           "title": "CORS config",
           "status": "done",
           "who": "Q",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 223
         },
         {
           "title": "Webhooks",
           "status": "doing",
           "who": "Claire",
           "when": "2026-04-07",
-          "desc": ""
+          "desc": "",
+          "id": 224
         },
         {
           "title": "Batch operations",
           "status": "doing",
           "who": "Alice",
           "when": "2026-04-10",
-          "desc": "Bloque par dependance"
+          "desc": "Bloque par dependance",
+          "id": 225
         },
         {
           "title": "Websockets",
           "status": "review",
           "who": "Claire",
           "when": "2026-04-06",
-          "desc": "Feedback demande"
+          "desc": "Feedback demande",
+          "id": 226
         },
         {
           "title": "GraphQL layer",
           "status": "review",
           "who": "Bob",
           "when": "2026-04-08",
-          "desc": ""
+          "desc": "",
+          "id": 227
         },
         {
           "title": "SDK Python",
           "status": "todo",
           "who": "Q",
           "when": "2026-06-01",
-          "desc": ""
+          "desc": "",
+          "id": 228
         },
         {
           "title": "SDK JS",
           "status": "todo",
           "who": "Bob",
           "when": "2026-05-15",
-          "desc": ""
+          "desc": "",
+          "id": 229
         },
         {
           "title": "Load tests",
           "status": "todo",
           "who": "Bob",
           "when": "2026-06-01",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 230
         },
         {
           "title": "API versioning",
           "status": "todo",
           "who": "Claire",
           "when": "2026-04-30",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 231
         }
       ],
       "acronym": "API"
@@ -2169,140 +2400,160 @@
           "status": "done",
           "who": "Claire",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 232
         },
         {
           "title": "Architecture overview",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 233
         },
         {
           "title": "Network diagram",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 234
         },
         {
           "title": "Server inventory",
           "status": "done",
           "who": "Claire",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 235
         },
         {
           "title": "Backup procedures",
           "status": "done",
           "who": "Claire",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 236
         },
         {
           "title": "Incident response",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-25",
-          "desc": ""
+          "desc": "",
+          "id": 237
         },
         {
           "title": "Onboarding guide",
           "status": "done",
           "who": "Bob",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 238
         },
         {
           "title": "FAQ",
           "status": "done",
           "who": "Q",
           "when": "2026-03-15",
-          "desc": ""
+          "desc": "",
+          "id": 239
         },
         {
           "title": "API reference",
           "status": "doing",
           "who": "Bob",
           "when": "2026-04-07",
-          "desc": "Avancement 50%"
+          "desc": "Avancement 50%",
+          "id": 240
         },
         {
           "title": "Runbook updates",
           "status": "doing",
           "who": "Claire",
           "when": "2026-04-12",
-          "desc": ""
+          "desc": "",
+          "id": 241
         },
         {
           "title": "Troubleshooting guide",
           "status": "review",
           "who": "Bob",
           "when": "2026-04-08",
-          "desc": ""
+          "desc": "",
+          "id": 242
         },
         {
           "title": "Change log",
           "status": "review",
           "who": "Claire",
           "when": "2026-04-08",
-          "desc": ""
+          "desc": "",
+          "id": 243
         },
         {
           "title": "Security policies",
           "status": "todo",
           "who": "Alice",
           "when": "2026-05-15",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 244
         },
         {
           "title": "Compliance docs",
           "status": "todo",
           "who": "Claire",
           "when": "2026-06-01",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 245
         },
         {
           "title": "Disaster recovery",
           "status": "todo",
           "who": "Alice",
           "when": "2026-06-01",
-          "desc": ""
+          "desc": "",
+          "id": 246
         },
         {
           "title": "Capacity planning",
           "status": "todo",
           "who": "Q",
           "when": "2026-04-30",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 247
         },
         {
           "title": "Vendor contacts",
           "status": "todo",
           "who": "Bob",
           "when": "2026-04-15",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 248
         },
         {
           "title": "License tracking",
           "status": "todo",
           "who": "Alice",
           "when": "2026-06-01",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 249
         },
         {
           "title": "Training materials",
           "status": "todo",
           "who": "Bob",
           "when": "2026-04-20",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 250
         },
         {
           "title": "Video tutorials",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-20",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 251
         }
       ],
       "acronym": "DOC"
@@ -2346,140 +2597,160 @@
           "status": "done",
           "who": "Q",
           "when": "2026-03-01",
-          "desc": ""
+          "desc": "",
+          "id": 252
         },
         {
           "title": "Dates",
           "status": "done",
           "who": "Alice",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 253
         },
         {
           "title": "Vols",
           "status": "done",
           "who": "Q",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 254
         },
         {
           "title": "Hotel",
           "status": "done",
           "who": "Claire",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 255
         },
         {
           "title": "Assurance voyage",
           "status": "done",
           "who": "Alice",
           "when": "2026-02-15",
-          "desc": ""
+          "desc": "",
+          "id": 256
         },
         {
           "title": "Passeports check",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-20",
-          "desc": ""
+          "desc": "",
+          "id": 257
         },
         {
           "title": "Vaccins",
           "status": "done",
           "who": "Claire",
           "when": "2026-03-10",
-          "desc": ""
+          "desc": "",
+          "id": 258
         },
         {
           "title": "Location voiture",
           "status": "doing",
           "who": "Alice",
           "when": "2026-04-12",
-          "desc": ""
+          "desc": "",
+          "id": 259
         },
         {
           "title": "Itineraire",
           "status": "doing",
           "who": "Q",
           "when": "2026-04-07",
-          "desc": "Avancement 50%"
+          "desc": "Avancement 50%",
+          "id": 260
         },
         {
           "title": "Restaurants",
           "status": "review",
           "who": "Claire",
           "when": "2026-04-06",
-          "desc": "En attente de relecture"
+          "desc": "En attente de relecture",
+          "id": 261
         },
         {
           "title": "Activites",
           "status": "review",
           "who": "Alice",
           "when": "2026-04-08",
-          "desc": ""
+          "desc": "",
+          "id": 262
         },
         {
           "title": "Valises",
           "status": "todo",
           "who": "Q",
           "when": "2026-05-15",
-          "desc": "En attente de validation"
+          "desc": "En attente de validation",
+          "id": 263
         },
         {
           "title": "Garde chat",
           "status": "todo",
           "who": "Alice",
           "when": "2026-04-15",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 264
         },
         {
           "title": "Arret courrier",
           "status": "todo",
           "who": "Claire",
           "when": "2026-04-20",
-          "desc": ""
+          "desc": "",
+          "id": 265
         },
         {
           "title": "Devises",
           "status": "todo",
           "who": "Claire",
           "when": "2026-06-01",
-          "desc": "A planifier"
+          "desc": "A planifier",
+          "id": 266
         },
         {
           "title": "Adaptateur prise",
           "status": "todo",
           "who": "Bob",
           "when": "2026-05-10",
-          "desc": "A planifier"
+          "desc": "A planifier",
+          "id": 267
         },
         {
           "title": "Playlist road trip",
           "status": "todo",
           "who": "Claire",
           "when": "2026-05-15",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 268
         },
         {
           "title": "Guide voyage",
           "status": "todo",
           "who": "Claire",
           "when": "2026-04-20",
-          "desc": "A discuter"
+          "desc": "A discuter",
+          "id": 269
         },
         {
           "title": "Checklist depart",
           "status": "todo",
           "who": "Claire",
           "when": "2026-05-10",
-          "desc": "A planifier"
+          "desc": "A planifier",
+          "id": 270
         },
         {
           "title": "Budget journalier",
           "status": "todo",
           "who": "Bob",
           "when": "2026-04-20",
-          "desc": "Priorite moyenne"
+          "desc": "Priorite moyenne",
+          "id": 271
         }
       ],
       "acronym": "VAC"

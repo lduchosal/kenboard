@@ -399,6 +399,23 @@ body {
   color: white;
 }
 
+/* -- Kanban tasks container (for Sortable) -- */
+.kanban-tasks {
+  flex: 1;
+  min-height: 20px;
+}
+
+/* -- Drag & drop states -- */
+.task-ghost {
+  opacity: 0.4;
+}
+.task-chosen {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+.task-drag {
+  opacity: 0.9;
+}
+
 /* -- Task detail mode -- */
 .kanban-task.detail-mode {
   cursor: default;
