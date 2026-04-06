@@ -206,7 +206,8 @@
           "when": "2026-04-30",
           "desc": "En attente de validation"
         }
-      ]
+      ],
+      "acronym": "REN"
     },
     {
       "id": "recherche-terrain",
@@ -312,7 +313,8 @@
           "when": "2026-04-30",
           "desc": "A planifier"
         }
-      ]
+      ],
+      "acronym": "TER"
     },
     {
       "id": "dossier-hypotheque",
@@ -418,7 +420,8 @@
           "when": "2026-04-20",
           "desc": ""
         }
-      ]
+      ],
+      "acronym": "HYP"
     },
     {
       "id": "bilan-annuel",
@@ -496,7 +499,8 @@
           "when": "2026-05-10",
           "desc": "A planifier"
         }
-      ]
+      ],
+      "acronym": "BIL"
     },
     {
       "id": "2113ch-website",
@@ -707,7 +711,8 @@
           "when": "2026-05-10",
           "desc": "A planifier"
         }
-      ]
+      ],
+      "acronym": "WEB"
     },
     {
       "id": "infra-ansible",
@@ -883,7 +888,8 @@
           "when": "2026-04-20",
           "desc": "Priorite moyenne"
         }
-      ]
+      ],
+      "acronym": "ANS"
     },
     {
       "id": "monitoring-stack",
@@ -1059,7 +1065,8 @@
           "when": "2026-04-30",
           "desc": ""
         }
-      ]
+      ],
+      "acronym": "MON"
     },
     {
       "id": "ssl-pki-renewal",
@@ -1235,7 +1242,8 @@
           "when": "2026-05-10",
           "desc": "A discuter"
         }
-      ]
+      ],
+      "acronym": "SSL"
     },
     {
       "id": "kanban-dashboard",
@@ -1411,7 +1419,8 @@
           "when": "2026-04-30",
           "desc": "A discuter"
         }
-      ]
+      ],
+      "acronym": "KAN"
     },
     {
       "id": "backup-strategy",
@@ -1587,7 +1596,8 @@
           "when": "2026-04-30",
           "desc": "A discuter"
         }
-      ]
+      ],
+      "acronym": "BAK"
     },
     {
       "id": "migration-freebsd",
@@ -1763,7 +1773,8 @@
           "when": "2026-04-30",
           "desc": "Priorite moyenne"
         }
-      ]
+      ],
+      "acronym": "BSD"
     },
     {
       "id": "cicd-pipeline",
@@ -1939,7 +1950,8 @@
           "when": "2026-04-30",
           "desc": ""
         }
-      ]
+      ],
+      "acronym": "CIC"
     },
     {
       "id": "api-v2",
@@ -2115,7 +2127,8 @@
           "when": "2026-04-30",
           "desc": "En attente de validation"
         }
-      ]
+      ],
+      "acronym": "API"
     },
     {
       "id": "docs-techniques",
@@ -2291,7 +2304,8 @@
           "when": "2026-04-20",
           "desc": "Priorite moyenne"
         }
-      ]
+      ],
+      "acronym": "DOC"
     },
     {
       "id": "vacances-ete",
@@ -2467,7 +2481,8 @@
           "when": "2026-04-20",
           "desc": "Priorite moyenne"
         }
-      ]
+      ],
+      "acronym": "VAC"
     }
   ]
 }

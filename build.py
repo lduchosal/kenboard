@@ -84,8 +84,16 @@ def page(title: str, body: str, css_path: str = "style.css") -> str:
 
 def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False) -> str:
     todo_special_count = [0] if show_edit else [2]  # 0=detail, 1=edit, 2+=normal
+    middle_cols = {"doing", "review"}
     html = '<div class="kanban">'
+    in_middle = False
     for col_id, col_name, col_color in COLUMNS:
+        if col_id in middle_cols and not in_middle:
+            html += '<div class="kanban-middle">'
+            in_middle = True
+        elif col_id not in middle_cols and in_middle:
+            html += '</div>'
+            in_middle = False
         col_tasks = [t for t in tasks if t["status"] == col_id]
         html += f'<div class="kanban-col" style="background:color-mix(in srgb, {col_color} 5%, white)"><div class="kanban-col-header" style="background:color-mix(in srgb, {col_color} 25%, transparent)">'
         html += f'<span class="col-name" style="color:{col_color}">{col_name}</span></div>'
@@ -149,6 +157,8 @@ def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False
         if hidden_count > 0:
             html += f'<div style="text-align:center;padding:6px;font-size:11px;color:var(--dimmed);cursor:pointer">+ {hidden_count} autres</div>'
         html += '</div>'
+    if in_middle:
+        html += '</div>'
     html += '</div>'
     return html
 
@@ -156,16 +166,28 @@ def kanban_html(tasks: list, project_names: dict = None, show_edit: bool = False
 # =====================================================================
 # index.html — Dashboard
 # =====================================================================
-def build_header(prefix: str = ""):
+def build_header(prefix: str = "", current_cat: dict = None):
     """Shared header for all pages. prefix is the path to root ('' or '../')."""
     badge_html = ""
     for c in categories:
         count = len([p for p in projects if p["cat"] == c["id"]])
         badge_html += f'<a href="{prefix}cat/{c["id"]}.html" class="badge" style="background:color-mix(in srgb, {c["color"]} 12%, transparent);color:{c["color"]};text-decoration:none">{escape(c["name"])} {count}</a>\n  '
 
+    active_cat = current_cat if current_cat else categories[0]
+    active_count = len([p for p in projects if p["cat"] == active_cat["id"]])
     return f'''<div class="header">
   <a href="{prefix}index.html" style="text-decoration:none"><h1>DASHBOARD</h1></a>
-  {badge_html}
+  <div class="header-badges">
+    {badge_html}
+  </div>
+  <div class="header-badges-dropdown">
+    <div class="badge-menu-toggle" onclick="this.parentElement.classList.toggle('open')">
+      <span class="badge" style="background:color-mix(in srgb, {active_cat["color"]} 12%, transparent);color:{active_cat["color"]};text-decoration:none">{escape(active_cat["name"])} {active_count} <span class="badge-chevron">&#9662;</span></span>
+    </div>
+    <div class="badge-menu-dropdown">
+      {badge_html}
+    </div>
+  </div>
   <span style="flex:1"></span>
   <div class="avatar-menu">
     <div class="avatar-btn" onclick="this.parentElement.classList.toggle('open')" style="width:28px;height:28px;border-radius:50%;background:#0969da;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;cursor:pointer" title="Q">Q</div>
@@ -202,7 +224,7 @@ def build_index():
                 dot_color = "#d0d7de"
             else:
                 dot_color = f'color-mix(in srgb, {c["color"]} {min(30 + doing_count * 20, 100)}%, white)'
-            project_list += f'<div class="cat-project" onclick="window.location=\'cat/{c["id"]}.html#{p["id"]}\'"><span class="cat-project-dot" style="background:{dot_color}"></span>{escape(p["name"])}</div>'
+            project_list += f'<div class="cat-project" onclick="window.location=\'cat/{c["id"]}.html#{p["id"]}\'"><span class="cat-project-dot" style="background:{dot_color}"></span><span class="cat-project-full">{escape(p["name"])}</span><span class="cat-project-short">{escape(p.get("acronym", p["name"][:3].upper()))}</span></div>'
 
         cat_section += f'''<a class="cat-card" href="cat/{c["id"]}.html">
   <div class="cat-header">
@@ -230,7 +252,7 @@ def build_cat(cat: dict):
     total_done = sum(p["done"] for p in cat_projects)
     total_tasks = sum(p["total"] for p in cat_projects)
 
-    header = build_header("../")
+    header = build_header("../", current_cat=cat)
 
     body = ""
     for i, p in enumerate(cat_projects):
