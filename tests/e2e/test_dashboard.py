@@ -220,8 +220,11 @@ class TestTaskCRUD:
         expect(page.locator(".task-title").first).to_have_text("Ma Tache")
 
     def test_task_id_visible(self, live_server, clean_db, page: Page):
-        """#21: the task id is shown on every card (#N), dimmed and right- aligned, in
+        """#21: the task id is shown on every card (#N), dimmed and right-aligned, in
         both normal and detail mode.
+
+        In normal mode the id sits next to the title (`.task-title-row .task-id`). In
+        detail mode it moves into the right column above the avatar (`.task-id-detail`).
         """
         self._setup_project(live_server, page)
 
@@ -234,17 +237,20 @@ class TestTaskCRUD:
 
         card = page.locator(".kanban-task").first
         task_id = card.get_attribute("data-task-id")
-        id_label = card.locator(".task-id")
+        inline_id = card.locator(".task-title-row .task-id")
+        right_id = card.locator(".task-id-detail")
 
-        # Visible in normal mode
-        expect(id_label).to_be_visible()
-        expect(id_label).to_have_text(f"#{task_id}")
+        # Normal mode: inline id visible, right-column id hidden
+        expect(inline_id).to_be_visible()
+        expect(inline_id).to_have_text(f"#{task_id}")
+        expect(right_id).not_to_be_visible()
 
-        # Still visible in detail mode
+        # Detail mode: inline id hidden, right-column id visible
         card.click()
         expect(card).to_have_class(re.compile(r"\bdetail-mode\b"))
-        expect(id_label).to_be_visible()
-        expect(id_label).to_have_text(f"#{task_id}")
+        expect(inline_id).not_to_be_visible()
+        expect(right_id).to_be_visible()
+        expect(right_id).to_have_text(f"#{task_id}")
 
     def test_task_detail_toggle(self, live_server, clean_db, page: Page):
         """Click a task to toggle detail mode."""

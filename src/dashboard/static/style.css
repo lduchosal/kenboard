@@ -660,11 +660,10 @@ body {
   margin-bottom: 6px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   font-size: 12px;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  /* flow-root contains the floated .task-right (in detail mode) so the
+   * card height grows with the float instead of collapsing. */
+  display: flow-root;
 }
-.kanban-task .task-body { flex: 1; min-width: 0; }
 .kanban-task .task-title-row {
   display: flex;
   align-items: baseline;
@@ -678,6 +677,24 @@ body {
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
+/* In detail mode the inline #id next to the title is hidden (it moves
+ * into the right column above the avatar) and the title row becomes a
+ * plain block so the title text wraps naturally around the floated
+ * .task-right.
+ */
+.kanban-task.detail-mode .task-title-row,
+.kanban-task.edit-mode .task-title-row {
+  display: block;
+}
+.kanban-task.detail-mode .task-title-row .task-id,
+.kanban-task.edit-mode .task-title-row .task-id { display: none; }
+.kanban-task .task-id-detail {
+  font-size: 10px;
+  color: var(--dimmed);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
 .kanban-task .task-desc { font-size: 11px; color: var(--dimmed); margin-bottom: 2px; display: none; }
 .kanban-task.detail-mode .task-desc,
 .kanban-task.edit-mode .task-desc { display: block; }
@@ -686,11 +703,27 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  flex-shrink: 0;
 }
 .kanban-task.detail-mode .task-right,
 .kanban-task.edit-mode .task-right {
   display: flex;
+  /* Float right so the body text + description wrap around it. The
+   * .task-right element comes first in the DOM so the float anchors at
+   * the top of the card. */
+  float: right;
+  margin: 0 0 4px 8px;
+}
+/* Editer button row, sits at the bottom of the card and clears the
+ * floated .task-right so it never overlaps the avatar/id column. */
+.kanban-task .task-actions {
+  display: none;
+  clear: both;
+  text-align: right;
+  padding-top: 6px;
+}
+.kanban-task.detail-mode .task-actions,
+.kanban-task.edit-mode .task-actions {
+  display: block;
 }
 .kanban-task .task-when { font-size: 9px; color: var(--dimmed); white-space: nowrap; }
 .kanban-task .task-avatar {

@@ -5,6 +5,16 @@
 {% set when_str = fmt_date(when_val | string) if when_val else "" %}
 {% set desc = t.get("description", "") or t.get("desc", "") %}
 <div class="kanban-task{{ ' task-hidden' if is_hidden else '' }}" data-task-id="{{ t.get('id', '') }}" onclick="toggleDetail(this)">
+  {# .task-right comes BEFORE .task-body so the float:right (in detail
+     mode) is anchored at the top of the card and the body text wraps
+     around it. The Editer button lives in .task-actions at the bottom
+     of the card, below the float, so it always sits flush at the
+     bottom regardless of how short the description is. #}
+  <div class="task-right">
+    <div class="task-id-detail">#{{ t.get('id', '') }}</div>
+    <div class="task-avatar" style="background:{{ avatar_color }}" title="{{ who }}">{{ initials }}</div>
+    {% if when_str %}<div class="task-when">{{ when_str }}</div>{% endif %}
+  </div>
   <div class="task-body">
     <div class="task-title-row">
       <span class="task-title">{{ t.title }}</span>
@@ -12,9 +22,7 @@
     </div>
     {% if desc %}<div class="task-desc">{{ desc }}</div>{% endif %}
   </div>
-  <div class="task-right">
-    <div class="task-avatar" style="background:{{ avatar_color }}" title="{{ who }}">{{ initials }}</div>
-    {% if when_str %}<div class="task-when">{{ when_str }}</div>{% endif %}
-    <button class="btn-edit detail-only" onclick="event.stopPropagation();openEditTask(this,'{{ t.get('id', '') }}','{{ t.title | jsesc }}','{{ desc | jsesc }}','{{ who | jsesc }}','{{ when_str }}')">Editer</button>
+  <div class="task-actions detail-only">
+    <button class="btn-edit" onclick="event.stopPropagation();openEditTask(this,'{{ t.get('id', '') }}','{{ t.title | jsesc }}','{{ desc | jsesc }}','{{ who | jsesc }}','{{ when_str }}')">Editer</button>
   </div>
 </div>
