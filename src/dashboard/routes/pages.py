@@ -126,7 +126,7 @@ def index() -> Any:
     """Serve the dashboard."""
     data = _load_all_data()
     ctx = _build_context(data, prefix="/")
-    ctx["title"] = "Dashboard"
+    ctx["title"] = "Kenboard"
     return render_template("index.html", **ctx)
 
 

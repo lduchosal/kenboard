@@ -9,12 +9,12 @@ class TestDashboardLoads:
     def test_title(self, live_server, clean_db, page: Page):
         """Dashboard page has correct title."""
         page.goto(live_server)
-        expect(page).to_have_title("Dashboard")
+        expect(page).to_have_title("Kenboard")
 
     def test_header_visible(self, live_server, clean_db, page: Page):
-        """Header with DASHBOARD title is visible."""
+        """Header with KENBOARD title is visible."""
         page.goto(live_server)
-        expect(page.locator("h1")).to_have_text("DASHBOARD")
+        expect(page.locator("h1")).to_have_text("KENBOARD")
 
     def test_add_category_button(self, live_server, clean_db, page: Page):
         """Add category card is visible."""
