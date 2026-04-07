@@ -8,9 +8,7 @@ from typing import Any
 
 import structlog
 
-LOG_DIR = Path(
-    os.getenv("LOG_DIR", "logs")
-)
+LOG_DIR = Path(os.getenv("LOG_DIR", "logs"))
 LOG_FILE = LOG_DIR / "dashboard.log"
 
 
