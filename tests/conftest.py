@@ -70,6 +70,28 @@ def _ensure_test_db() -> None:
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS api_keys (
+            id VARCHAR(36) NOT NULL PRIMARY KEY,
+            key_hash CHAR(64) NOT NULL UNIQUE,
+            label VARCHAR(100) NOT NULL,
+            expires_at DATETIME NULL,
+            last_used_at DATETIME NULL,
+            revoked_at DATETIME NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_key_hash (key_hash)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS api_key_projects (
+            api_key_id VARCHAR(36) NOT NULL,
+            project_id VARCHAR(36) NOT NULL,
+            scope ENUM('read','write','admin') NOT NULL,
+            PRIMARY KEY (api_key_id, project_id),
+            FOREIGN KEY (api_key_id) REFERENCES api_keys(id) ON DELETE CASCADE,
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """)
     conn.close()
 
 
@@ -90,6 +112,17 @@ def _get_test_connection() -> pymysql.Connection:
 def setup_test_db():
     """Create the test database once per session."""
     _ensure_test_db()
+
+
+@pytest.fixture(autouse=True)
+def disable_auth_enforcement(monkeypatch):
+    """Force KENBOARD_AUTH_ENFORCED=False for every test by default.
+
+    Tests that need to exercise the strict middleware re-enable it via
+    ``monkeypatch.setattr(Config, "KENBOARD_AUTH_ENFORCED", True)`` (cf.
+    ``tests/unit/test_api_keys.py::TestMiddlewareEnforcedMode``).
+    """
+    monkeypatch.setattr(Config, "KENBOARD_AUTH_ENFORCED", False)
 
 
 @pytest.fixture(scope="session")
@@ -124,6 +157,8 @@ def db():
     # Cleanup before test
     cur = conn.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
+    cur.execute("DELETE FROM api_key_projects")
+    cur.execute("DELETE FROM api_keys")
     cur.execute("DELETE FROM tasks")
     cur.execute("DELETE FROM projects")
     cur.execute("DELETE FROM categories")
@@ -133,6 +168,8 @@ def db():
     # Cleanup after test
     cur = conn.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
+    cur.execute("DELETE FROM api_key_projects")
+    cur.execute("DELETE FROM api_keys")
     cur.execute("DELETE FROM tasks")
     cur.execute("DELETE FROM projects")
     cur.execute("DELETE FROM categories")

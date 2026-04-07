@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block body %}
+{% include "partials/header.html" %}
+
+<div class="section" style="padding-top:0">
+  <div class="section-title"><span>Gestion des cl&eacute;s API</span></div>
+
+  <table class="users-table" id="keys-table" style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border);text-align:left">
+        <th style="padding:8px 6px">Label</th>
+        <th style="padding:8px 6px">Statut</th>
+        <th style="padding:8px 6px">Cr&eacute;&eacute;e</th>
+        <th style="padding:8px 6px">Derni&egrave;re utilisation</th>
+        <th style="padding:8px 6px">Expire</th>
+        <th style="padding:8px 6px">Scopes</th>
+        <th style="padding:8px 6px"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for k in api_keys %}
+      <tr data-key-id="{{ k.id }}" style="border-bottom:1px solid var(--border)">
+        <td style="padding:6px"><input type="text" class="k-label" value="{{ k.label }}" autocomplete="off" style="width:100%"></td>
+        <td style="padding:6px">
+          {% if k.revoked_at %}<span class="badge" style="background:color-mix(in srgb,var(--red) 12%,transparent);color:var(--red)">r&eacute;voqu&eacute;e</span>
+          {% elif k.expires_at and k.expires_at < now %}<span class="badge" style="background:color-mix(in srgb,var(--orange) 12%,transparent);color:var(--orange)">expir&eacute;e</span>
+          {% else %}<span class="badge" style="background:color-mix(in srgb,var(--green) 12%,transparent);color:var(--green)">active</span>
+          {% endif %}
+        </td>
+        <td style="padding:6px;font-size:11px;color:var(--dimmed)">{{ k.created_at.strftime('%Y-%m-%d %H:%M') if k.created_at else '' }}</td>
+        <td style="padding:6px;font-size:11px;color:var(--dimmed)">{{ k.last_used_at.strftime('%Y-%m-%d %H:%M') if k.last_used_at else '--' }}</td>
+        <td style="padding:6px"><input type="text" class="k-expires" value="{{ k.expires_at.strftime('%Y-%m-%dT%H:%M') if k.expires_at else '' }}" placeholder="YYYY-MM-DDTHH:MM" autocomplete="off" style="width:140px"></td>
+        <td style="padding:6px">
+          <div class="k-scopes">
+            {% for s in k.scopes %}
+            <div class="k-scope-row" data-project-id="{{ s.project_id }}" style="display:flex;gap:4px;margin-bottom:2px;font-size:11px;align-items:center">
+              <select class="k-scope-project" style="flex:1;font-size:11px">
+                {% for p in projects %}
+                <option value="{{ p.id }}" {% if p.id == s.project_id %}selected{% endif %}>{{ p.acronym or p.name[:4]|upper }} / {{ p.name }}</option>
+                {% endfor %}
+              </select>
+              <select class="k-scope-level" style="font-size:11px">
+                <option value="read" {% if s.scope == 'read' %}selected{% endif %}>read</option>
+                <option value="write" {% if s.scope == 'write' %}selected{% endif %}>write</option>
+                <option value="admin" {% if s.scope == 'admin' %}selected{% endif %}>admin</option>
+              </select>
+              <span class="k-scope-remove" onclick="this.parentElement.remove()" style="cursor:pointer;color:var(--dimmed)">&times;</span>
+            </div>
+            {% endfor %}
+          </div>
+          <span class="k-scope-add" onclick="addScopeRow(this)" style="cursor:pointer;font-size:11px;color:var(--accent)">+ ajouter scope</span>
+        </td>
+        <td style="padding:6px;white-space:nowrap">
+          <button class="btn-edit btn-save-key" onclick="saveKey(this)">Enregistrer</button>
+          <button class="btn-edit btn-delete-key" onclick="prepareRevokeKey(this)">R&eacute;voquer</button>
+        </td>
+      </tr>
+      {% endfor %}
+      <tr style="border-top:2px solid var(--border)"><td colspan="7" style="padding:8px 6px 4px 6px;font-size:11px;color:var(--dimmed);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Nouvelle cl&eacute;</td></tr>
+      <tr id="keys-add-row" style="border-bottom:1px solid var(--border);background:var(--bg)">
+        <td style="padding:6px"><input type="text" id="new-key-label" placeholder="Label" autocomplete="off" style="width:100%"></td>
+        <td style="padding:6px;font-size:11px;color:var(--dimmed)">--</td>
+        <td style="padding:6px;font-size:11px;color:var(--dimmed)">--</td>
+        <td style="padding:6px;font-size:11px;color:var(--dimmed)">--</td>
+        <td style="padding:6px"><input type="text" id="new-key-expires" placeholder="YYYY-MM-DDTHH:MM" autocomplete="off" style="width:140px"></td>
+        <td style="padding:6px">
+          <div id="new-key-scopes"></div>
+          <span onclick="addNewScopeRow()" style="cursor:pointer;font-size:11px;color:var(--accent)">+ ajouter scope</span>
+        </td>
+        <td style="padding:6px"><button class="btn btn-save" id="keys-create-btn" onclick="createKey()">Cr&eacute;er</button></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="project-add-modal" id="key-shown-modal" style="display:none">
+  <div class="project-add-card" onclick="event.stopPropagation()">
+    <h3>Cl&eacute; cr&eacute;&eacute;e &mdash; copie-la maintenant</h3>
+    <p style="font-size:11px;color:var(--dimmed);margin-bottom:10px">
+      Cette cl&eacute; ne sera plus jamais affich&eacute;e. Si tu la perds, il faudra en cr&eacute;er une nouvelle.
+    </p>
+    <textarea id="key-shown-text" readonly style="width:100%;min-height:60px;font-family:ui-monospace,monospace;font-size:12px;padding:8px"></textarea>
+    <div class="edit-actions">
+      <button class="btn btn-save" onclick="document.getElementById('key-shown-modal').style.display='none';location.reload()">Compris</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% set projects_for_js = projects | list %}
+<script>
+const PROJECTS = {{ projects_for_js | tojson }};
+let _keyDeleteId = null;
+
+function _scopeRowHtml(selectedProjectId, selectedScope) {
+  const opts = PROJECTS.map(p =>
+    `<option value="${p.id}"${p.id === selectedProjectId ? ' selected' : ''}>${(p.acronym || p.name.slice(0,4).toUpperCase())} / ${p.name}</option>`
+  ).join('');
+  const levelOpts = ['read','write','admin'].map(l =>
+    `<option value="${l}"${l === selectedScope ? ' selected' : ''}>${l}</option>`
+  ).join('');
+  return `<div class="k-scope-row" style="display:flex;gap:4px;margin-bottom:2px;font-size:11px;align-items:center">
+    <select class="k-scope-project" style="flex:1;font-size:11px">${opts}</select>
+    <select class="k-scope-level" style="font-size:11px">${levelOpts}</select>
+    <span class="k-scope-remove" onclick="this.parentElement.remove()" style="cursor:pointer;color:var(--dimmed)">&times;</span>
+  </div>`;
+}
+
+function addScopeRow(btn) {
+  if (!PROJECTS.length) { showError('Validation', 'Aucun projet à scoper'); return; }
+  const container = btn.parentElement.querySelector('.k-scopes');
+  container.insertAdjacentHTML('beforeend', _scopeRowHtml(PROJECTS[0].id, 'read'));
+}
+
+function addNewScopeRow() {
+  if (!PROJECTS.length) { showError('Validation', 'Aucun projet à scoper'); return; }
+  document.getElementById('new-key-scopes')
+    .insertAdjacentHTML('beforeend', _scopeRowHtml(PROJECTS[0].id, 'read'));
+}
+
+function _collectScopes(container) {
+  return [...container.querySelectorAll('.k-scope-row')].map(row => ({
+    project_id: row.querySelector('.k-scope-project').value,
+    scope: row.querySelector('.k-scope-level').value,
+  }));
+}
+
+async function saveKey(btn) {
+  const tr = btn.closest('tr');
+  const id = tr.dataset.keyId;
+  const expires = tr.querySelector('.k-expires').value.trim();
+  const body = {
+    label: tr.querySelector('.k-label').value,
+    expires_at: expires || null,
+    scopes: _collectScopes(tr.querySelector('.k-scopes')),
+  };
+  try {
+    await apiCall('/api/v1/keys/' + id, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    });
+    location.reload();
+  } catch (e) { /* popup shown */ }
+}
+
+function prepareRevokeKey(btn) {
+  _keyDeleteId = btn.closest('tr').dataset.keyId;
+  confirmDelete(btn, revokeKey);
+}
+
+async function revokeKey() {
+  if (!_keyDeleteId) return;
+  try {
+    await apiCall('/api/v1/keys/' + _keyDeleteId, {method: 'DELETE'});
+    location.reload();
+  } catch (e) { /* popup shown */ }
+}
+
+async function createKey() {
+  const label = document.getElementById('new-key-label').value.trim();
+  if (!label) { showError('Validation', 'Label requis'); return; }
+  const expires = document.getElementById('new-key-expires').value.trim();
+  const body = {
+    label,
+    expires_at: expires || null,
+    scopes: _collectScopes(document.getElementById('new-key-scopes')),
+  };
+  let r;
+  try {
+    r = await apiCall('/api/v1/keys', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    });
+  } catch (e) { return; }
+  const data = await r.json();
+  const modal = document.getElementById('key-shown-modal');
+  document.getElementById('key-shown-text').value = data.key;
+  modal.style.display = 'flex';
+}
+</script>
+{% endblock %}

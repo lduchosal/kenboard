@@ -161,9 +161,26 @@ d'un user qui avait des taches).
 | Login form + session cookie | Pas fait | Tache "AUTH / Password authentification" sur le board |
 | Middleware exigant un user logge sur les routes ecriture | Pas fait | Idem |
 | Protection de `/admin/users` par `is_admin` | Pas fait | Idem |
-| API keys avec scopes par projet | Pas fait | Tache "API / API keys avec scopes par projet" sur le board |
-| Page de gestion des API keys | Pas fait | Tache "API / UI de gestion des API keys" |
+| API keys avec scopes par projet | **Fait** (mode soft) | Cf. `doc/api-keys.md`, tache #6 |
+| Page de gestion des API keys `/admin/keys` | **Fait** | Cf. `doc/api-keys.md`, tache #7 |
 | Reset / changement de mot de passe par l'utilisateur lui-meme | Pas fait | A planifier (le PATCH actuel impose de connaitre l'id, accessible aux admins via UI) |
+
+## Auth API REST (Bearer keys)
+
+Mise en place dans la release qui ferme #6 et #7. Voir `doc/api-keys.md`
+pour le detail. En resume :
+
+- Table `api_keys` (sha256 du token, label, expires_at, last_used_at,
+  revoked_at) + table `api_key_projects` (scope `read|write|admin` par
+  projet)
+- Header `Authorization: Bearer kb_<key>`
+- Cle admin globale `KENBOARD_ADMIN_KEY` dans le `.env` pour les
+  endpoints non scopes par projet (`/api/v1/keys`, `/api/v1/users`,
+  `/api/v1/categories`, `/api/v1/projects`)
+- **Mode opt-in** : `KENBOARD_AUTH_ENFORCED=false` par defaut, le
+  middleware ne bloque rien tant que la web UI ne sait pas
+  s'authentifier (cf #1)
+- Page d'admin `/admin/keys` calquee sur `/admin/users`
 
 Tant que ces points ne sont pas faits, considerer kenboard comme une application
 **ouverte sur son reseau d'ecoute** : tout le monde a acces de creation/modification.

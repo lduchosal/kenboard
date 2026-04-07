@@ -62,13 +62,14 @@ async function saveUser(btn) {
   };
   const pwd = tr.querySelector('.u-password').value;
   if (pwd) body.password = pwd;
-  const r = await fetch('/api/v1/users/' + id, {
-    method: 'PATCH',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(body),
-  });
-  if (r.ok) location.reload();
-  else alert('Erreur: ' + r.status + ' ' + (await r.text()));
+  try {
+    await apiCall('/api/v1/users/' + id, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    });
+    location.reload();
+  } catch (e) { /* error popup already shown by apiCall */ }
 }
 
 function prepareDeleteUser(btn) {
@@ -78,9 +79,10 @@ function prepareDeleteUser(btn) {
 
 async function deleteUser() {
   if (!_userDeleteId) return;
-  const r = await fetch('/api/v1/users/' + _userDeleteId, {method: 'DELETE'});
-  if (r.ok) location.reload();
-  else alert('Erreur: ' + r.status);
+  try {
+    await apiCall('/api/v1/users/' + _userDeleteId, {method: 'DELETE'});
+    location.reload();
+  } catch (e) { /* popup shown */ }
 }
 
 async function createUser() {
@@ -91,14 +93,18 @@ async function createUser() {
   };
   const pwd = document.getElementById('new-password').value;
   if (pwd) body.password = pwd;
-  if (!body.name || !body.color) { alert('Nom et couleur requis'); return; }
-  const r = await fetch('/api/v1/users', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(body),
-  });
-  if (r.ok) location.reload();
-  else alert('Erreur: ' + r.status + ' ' + (await r.text()));
+  if (!body.name || !body.color) {
+    showError('Validation', 'Nom et couleur requis');
+    return;
+  }
+  try {
+    await apiCall('/api/v1/users', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    });
+    location.reload();
+  } catch (e) { /* popup shown */ }
 }
 </script>
 {% endblock %}

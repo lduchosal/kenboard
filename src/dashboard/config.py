@@ -33,3 +33,9 @@ class Config:
     DB_TEST_MIGRATE_PASSWORD: str = os.getenv("DB_TEST_MIGRATE_PASSWORD", "")
 
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
+
+    # API key authentication (cf. doc/api-keys.md)
+    KENBOARD_ADMIN_KEY: str = os.getenv("KENBOARD_ADMIN_KEY", "")
+    KENBOARD_AUTH_ENFORCED: bool = (
+        os.getenv("KENBOARD_AUTH_ENFORCED", "false").lower() == "true"
+    )

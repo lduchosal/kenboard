@@ -2,6 +2,61 @@
 
 const API_BASE = '/api/v1';
 
+// -- Error popup -------------------------------------------------------------
+// Centralized API error reporting. Every fetch to the backend should go
+// through `apiCall` so failures (network, 401, 403, 4xx, 5xx) surface as a
+// visible modal instead of being swallowed into console.warn or `alert()`.
+function showError(title, body) {
+  const modal = document.getElementById('error-modal');
+  if (!modal) {
+    // Fallback for pages that didn't include the partial (shouldn't happen,
+    // it's in base.html).
+    window.alert(`${title}\n\n${body}`);
+    return;
+  }
+  document.getElementById('error-modal-title').textContent = title;
+  document.getElementById('error-modal-body').textContent = body || '';
+  modal.style.display = 'flex';
+}
+
+async function apiCall(url, opts = {}) {
+  let r;
+  try {
+    r = await fetch(url, opts);
+  } catch (err) {
+    showError('Erreur réseau', err && err.message ? err.message : String(err));
+    throw err;
+  }
+  if (!r.ok) {
+    const text = await r.text();
+    let detail = text;
+    try {
+      const parsed = JSON.parse(text);
+      detail = parsed.error || parsed.detail || text;
+    } catch (_) { /* not json, keep raw */ }
+    let title;
+    if (r.status === 401) {
+      title = 'Non authentifié';
+      detail = detail || 'Cette opération nécessite une clé API valide. Voir /admin/keys.';
+    } else if (r.status === 403) {
+      title = 'Permission refusée';
+    } else if (r.status === 404) {
+      title = 'Introuvable';
+    } else if (r.status === 409) {
+      title = 'Conflit';
+    } else if (r.status === 422) {
+      title = 'Validation';
+    } else if (r.status >= 500) {
+      title = `Erreur serveur (${r.status})`;
+    } else {
+      title = `Erreur ${r.status}`;
+    }
+    showError(title, detail);
+    throw new Error(`HTTP ${r.status}: ${detail}`);
+  }
+  return r;
+}
+
 // -- Sticky title observer ---------------------------------------------------
 
 const header = document.querySelector('.header');
@@ -72,16 +127,16 @@ function saveCat() {
   const projectOrder = [...document.querySelectorAll('#cat-modal-projects .cat-modal-project')].map(el => el.dataset.projectId);
   const method = id ? 'PATCH' : 'POST';
   const url = id ? `${API_BASE}/categories/${id}` : `${API_BASE}/categories`;
-  fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color, projectOrder }) })
-    .then(() => window.location.reload()).catch(err => console.warn('API:', err));
+  apiCall(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color, projectOrder }) })
+    .then(() => window.location.reload()).catch(() => {});
   document.getElementById('cat-modal').style.display = 'none';
 }
 
 function deleteCat() {
   const id = document.getElementById('cat-modal-id').value;
   if (!id) return;
-  fetch(`${API_BASE}/categories/${id}`, { method: 'DELETE' })
-    .then(() => window.location.reload()).catch(err => console.warn('API:', err));
+  apiCall(`${API_BASE}/categories/${id}`, { method: 'DELETE' })
+    .then(() => window.location.reload()).catch(() => {});
   document.getElementById('cat-modal').style.display = 'none';
 }
 
@@ -142,16 +197,16 @@ function saveProject() {
   const method = id ? 'PATCH' : 'POST';
   const url = id ? `${API_BASE}/projects/${id}` : `${API_BASE}/projects`;
   const projectOrder = [...document.querySelectorAll('#proj-modal-projects .cat-modal-project')].map(el => el.dataset.projectId);
-  fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, acronym, cat, status, projectOrder }) })
-    .then(() => window.location.reload()).catch(err => console.warn('API:', err));
+  apiCall(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, acronym, cat, status, projectOrder }) })
+    .then(() => window.location.reload()).catch(() => {});
   document.getElementById('project-modal').style.display = 'none';
 }
 
 function deleteProject() {
   const id = document.getElementById('new-proj-id').value;
   if (!id) return;
-  fetch(`${API_BASE}/projects/${id}`, { method: 'DELETE' })
-    .then(() => window.location.reload()).catch(err => console.warn('API:', err));
+  apiCall(`${API_BASE}/projects/${id}`, { method: 'DELETE' })
+    .then(() => window.location.reload()).catch(() => {});
   document.getElementById('project-modal').style.display = 'none';
 }
 
@@ -214,20 +269,20 @@ function saveTaskModal() {
   const projectId = document.getElementById('task-modal-project-id').value;
   if (_taskEditId) {
     // Update existing task
-    fetch(`${API_BASE}/tasks/${_taskEditId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description: desc, who, due_date: when || null, status }) })
-      .then(() => window.location.reload()).catch(err => console.warn('API:', err));
+    apiCall(`${API_BASE}/tasks/${_taskEditId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description: desc, who, due_date: when || null, status }) })
+      .then(() => window.location.reload()).catch(() => {});
   } else {
     // Create new task
-    fetch(`${API_BASE}/tasks`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: projectId, title, description: desc, who, due_date: when || null, status }) })
-      .then(() => window.location.reload()).catch(err => console.warn('API:', err));
+    apiCall(`${API_BASE}/tasks`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: projectId, title, description: desc, who, due_date: when || null, status }) })
+      .then(() => window.location.reload()).catch(() => {});
   }
   document.getElementById('task-modal').style.display = 'none';
 }
 
 function deleteTask() {
   if (!_taskEditId) return;
-  fetch(`${API_BASE}/tasks/${_taskEditId}`, { method: 'DELETE' })
-    .then(() => window.location.reload()).catch(err => console.warn('API:', err));
+  apiCall(`${API_BASE}/tasks/${_taskEditId}`, { method: 'DELETE' })
+    .then(() => window.location.reload()).catch(() => {});
   document.getElementById('task-modal').style.display = 'none';
 }
 
@@ -267,8 +322,8 @@ if (catGrid) {
     animation: 150, draggable: '.cat-card:not(.cat-card-add)',
     ghostClass: 'task-ghost', chosenClass: 'task-chosen', filter: '.cat-card-add',
     onEnd: (evt) => {
-      fetch(`${API_BASE}/categories/reorder`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: evt.oldIndex, to: evt.newIndex }) })
-        .catch(err => console.warn('API:', err));
+      apiCall(`${API_BASE}/categories/reorder`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: evt.oldIndex, to: evt.newIndex }) })
+        .catch(() => {});
     }
   });
 }
@@ -286,8 +341,8 @@ document.querySelectorAll('.kanban-col').forEach(col => {
       if (!taskId) return;
       const body = { status: newStatus, position: evt.newIndex };
       if (newProjectId) body.project_id = newProjectId;
-      fetch(`${API_BASE}/tasks/${taskId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-        .catch(err => console.warn('API:', err));
+      apiCall(`${API_BASE}/tasks/${taskId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        .catch(() => {});
     }
   });
 });

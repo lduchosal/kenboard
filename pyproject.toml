@@ -92,13 +92,13 @@ version-files = ["src/dashboard/__init__.py:__version__"]
 [tool.pdm.scripts]
 
 # Testing
-test = "pytest tests/ -v --tb=short --ignore=tests/e2e"
-test-quick = "pytest tests/ -v --tb=short -x --ignore=tests/e2e"
-test-ci = "pytest tests/ -v --tb=short --ignore=tests/integration --ignore=tests/e2e"
-test-unit = "pytest tests/unit/ -v --tb=short"
-test-integration = "pytest tests/integration/ -v --tb=short"
-test-e2e = "pytest tests/e2e/ -v --tb=short"
-test-cov = "pytest tests/ -v --tb=short --cov=src/dashboard --cov-report=term-missing --cov-report=html"
+test = "pytest tests/ -q --tb=short --ignore=tests/e2e"
+test-quick = "pytest tests/ -q --tb=short -x --ignore=tests/e2e"
+test-ci = "pytest tests/ -q --tb=short --ignore=tests/integration --ignore=tests/e2e"
+test-unit = "pytest tests/unit/ -q --tb=short"
+test-integration = "pytest tests/integration/ -q --tb=short"
+test-e2e = "pytest tests/e2e/ -q --tb=short"
+test-cov = "pytest tests/ -q --tb=short --cov=src/dashboard --cov-report=term-missing --cov-report=html"
 
 # Formatting
 format = "black src/ tests/"

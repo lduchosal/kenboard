@@ -1,0 +1,10 @@
+<div class="project-add-modal" id="error-modal" style="display:none" onclick="this.style.display='none'">
+  <div class="project-add-card error-card" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="document.getElementById('error-modal').style.display='none'">&times;</button>
+    <h3 id="error-modal-title">Erreur</h3>
+    <p id="error-modal-body" class="error-body"></p>
+    <div class="edit-actions">
+      <button class="btn btn-cancel" onclick="document.getElementById('error-modal').style.display='none'">Fermer</button>
+    </div>
+  </div>
+</div>

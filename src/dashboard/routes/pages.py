@@ -1,7 +1,7 @@
 """Page routes — serve dynamic HTML from database."""
 
 import json
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 from flask import Blueprint, render_template
@@ -136,6 +136,29 @@ def admin_users() -> Any:
     ctx = _build_context(data, prefix="/")
     ctx["title"] = "Utilisateurs"
     return render_template("admin_users.html", **ctx)
+
+
+@bp.route("/admin/keys")
+def admin_keys() -> Any:
+    """Serve the API keys management admin page."""
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        api_keys = list(queries.key_get_all(conn))
+        for k in api_keys:
+            scopes = list(queries.key_scopes_get(conn, api_key_id=k["id"]))
+            k["scopes"] = [
+                {"project_id": s["project_id"], "scope": s["scope"]} for s in scopes
+            ]
+    finally:
+        conn.close()
+    data = _load_all_data()
+    ctx = _build_context(data, prefix="/")
+    ctx["title"] = "Cles API"
+    ctx["api_keys"] = api_keys
+    ctx["projects"] = data["all_projects"]
+    ctx["now"] = datetime.now()
+    return render_template("admin_keys.html", **ctx)
 
 
 @bp.route("/cat/<cat_id>.html")
