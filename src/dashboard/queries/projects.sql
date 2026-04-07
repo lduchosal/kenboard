@@ -1,31 +1,32 @@
 -- name: proj_get_all
 -- Get all projects ordered by position.
-SELECT id, cat_id, name, acronym, status, position
+SELECT id, cat_id, name, acronym, status, position, default_who
 FROM projects
 ORDER BY position;
 
 -- name: proj_get_by_cat
 -- Get projects for a category ordered by position.
-SELECT id, cat_id, name, acronym, status, position
+SELECT id, cat_id, name, acronym, status, position, default_who
 FROM projects
 WHERE cat_id = :cat_id
 ORDER BY position;
 
 -- name: proj_get_by_id^
 -- Get a single project by id.
-SELECT id, cat_id, name, acronym, status, position
+SELECT id, cat_id, name, acronym, status, position, default_who
 FROM projects
 WHERE id = :id;
 
 -- name: proj_create!
 -- Create a new project.
-INSERT INTO projects (id, cat_id, name, acronym, status, position)
-VALUES (:id, :cat_id, :name, :acronym, :status, :position);
+INSERT INTO projects (id, cat_id, name, acronym, status, position, default_who)
+VALUES (:id, :cat_id, :name, :acronym, :status, :position, :default_who);
 
 -- name: proj_update!
 -- Update a project.
 UPDATE projects
-SET name = :name, acronym = :acronym, cat_id = :cat_id, status = :status
+SET name = :name, acronym = :acronym, cat_id = :cat_id, status = :status,
+    default_who = :default_who
 WHERE id = :id;
 
 -- name: proj_delete!

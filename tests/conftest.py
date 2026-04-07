@@ -40,9 +40,24 @@ def _ensure_test_db() -> None:
             acronym VARCHAR(4) NOT NULL,
             status ENUM('active', 'archived') NOT NULL DEFAULT 'active',
             position INT NOT NULL DEFAULT 0,
+            default_who VARCHAR(100) NOT NULL DEFAULT '',
             FOREIGN KEY (cat_id) REFERENCES categories(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """)
+    # In case the table was created by an earlier session without the
+    # default_who column, add it. MySQL 8 doesn't support ADD COLUMN IF
+    # NOT EXISTS — check INFORMATION_SCHEMA first.
+    cur.execute(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+        "WHERE TABLE_SCHEMA = DATABASE() "
+        "AND TABLE_NAME = 'projects' "
+        "AND COLUMN_NAME = 'default_who'"
+    )
+    if cur.fetchone()[0] == 0:
+        cur.execute(
+            "ALTER TABLE projects "
+            "ADD COLUMN default_who VARCHAR(100) NOT NULL DEFAULT ''"
+        )
     cur.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
             id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -216,6 +231,7 @@ def seed_project(db, queries, seed_category):
         acronym="TEST",
         status="active",
         position=0,
+        default_who="",
     )
     return queries.proj_get_by_id(db, id="test-proj")
 

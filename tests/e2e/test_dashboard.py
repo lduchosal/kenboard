@@ -29,6 +29,20 @@ class TestDashboardLoads:
         expect(badge).to_be_visible()
         expect(badge).to_have_text(f"v{__version__}")
 
+    def test_cat_drag_handle_present(self, live_server, clean_db, page: Page):
+        """#28: each category card has a `.cat-drag-handle` element used as the only
+        draggable area in mobile mode (hidden by CSS on desktop).
+        """
+        # Seed a category so the grid has at least one card
+        page.goto(live_server)
+        page.click(".cat-card-add")
+        page.fill("#cat-modal-name", "Tech")
+        page.click("#cat-modal .btn-save")
+        page.wait_for_timeout(500)
+        page.reload()
+        # Handle exists in DOM (desktop hides it via CSS, mobile shows it)
+        expect(page.locator(".cat-card .cat-drag-handle")).to_have_count(1)
+
     def test_add_category_button(self, live_server, clean_db, page: Page):
         """Add category card is visible."""
         page.goto(live_server)
@@ -294,6 +308,66 @@ class TestTaskCRUD:
         page.wait_for_timeout(500)
         page.reload()
         expect(page.locator(".kanban-task")).to_have_count(0)
+
+    def test_duplicate_task(self, live_server, clean_db, page: Page):
+        """#17: the Dupliquer button creates a copy with ' - copy' suffix."""
+        self._setup_project(live_server, page)
+        self._add_task(page, "Original")
+
+        self._open_task_edit_modal(page)
+        # Duplicate button visible only in edit mode
+        expect(page.locator("#task-modal-duplicate")).to_be_visible()
+        page.click("#task-modal-duplicate")
+        # Modal stays open, heading switches to "(copie)"
+        expect(page.locator("#task-modal")).to_be_visible()
+        expect(page.locator("#task-modal-heading")).to_contain_text("copie")
+        # Title input now shows the new title with " - copy"
+        expect(page.locator("#task-modal-title")).to_have_value("Original - copy")
+        # Reload — both tasks must be in the DB
+        page.reload()
+        titles = sorted(t.inner_text() for t in page.locator(".task-title").all())
+        assert titles == ["Original", "Original - copy"]
+
+    def test_duplicate_button_hidden_on_create(self, live_server, clean_db, page: Page):
+        """The Dupliquer button is only visible when editing an existing task, not when
+        creating a new one.
+        """
+        self._setup_project(live_server, page)
+        page.click(".kanban-add-btn")
+        expect(page.locator("#task-modal")).to_be_visible()
+        expect(page.locator("#task-modal-duplicate")).not_to_be_visible()
+
+    def test_project_default_who_prefills_task_modal(
+        self, live_server, clean_db, page: Page
+    ):
+        """#29: setting a default user on a project pre-fills the `who` select when
+        creating a new task in that project.
+        """
+        # Seed users so the dropdown has options
+        page.goto(live_server + "/admin/users")
+        page.fill("#new-name", "Alice")
+        page.fill("#new-color", "#8250df")
+        page.click("#users-create-btn")
+        page.wait_for_timeout(400)
+        page.fill("#new-name", "Bob")
+        page.fill("#new-color", "#bf8700")
+        page.click("#users-create-btn")
+        page.wait_for_timeout(400)
+
+        # Setup project
+        _create_category_and_project(live_server, page)
+
+        # Edit the project, set default_who = Bob
+        page.locator(".section-title").first.hover()
+        page.locator(".section-edit-btn").first.click()
+        page.select_option("#new-proj-default-who", "Bob")
+        page.click("#project-modal .btn-save")
+        page.wait_for_timeout(500)
+        page.reload()
+
+        # Open the new task modal — `who` should be pre-filled to Bob
+        page.click(".kanban-add-btn")
+        expect(page.locator("#task-modal-who")).to_have_value("Bob")
 
     def test_move_task_via_status_select(self, live_server, clean_db, page: Page):
         """Move a task between columns by changing its status in the edit modal."""

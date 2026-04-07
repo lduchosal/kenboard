@@ -109,6 +109,7 @@ class TestProjectAPI:
             acronym="PP",
             status="active",
             position=0,
+            default_who="",
         )
         resp = client.get("/api/v1/projects?cat=cat")
         assert resp.status_code == 200

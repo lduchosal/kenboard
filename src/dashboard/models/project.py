@@ -12,6 +12,7 @@ class ProjectCreate(BaseModel):
     acronym: str = Field(..., min_length=1, max_length=4)
     cat: str = Field(..., min_length=1)
     status: Literal["active", "archived"] = "active"
+    default_who: str = Field("", max_length=100)
 
 
 class ProjectUpdate(BaseModel):
@@ -21,6 +22,7 @@ class ProjectUpdate(BaseModel):
     acronym: str | None = Field(None, min_length=1, max_length=4)
     cat: str | None = None
     status: Literal["active", "archived"] | None = None
+    default_who: str | None = Field(None, max_length=100)
     project_order: list[str] | None = None
 
 
@@ -33,3 +35,4 @@ class Project(BaseModel):
     acronym: str
     status: str
     position: int
+    default_who: str = ""

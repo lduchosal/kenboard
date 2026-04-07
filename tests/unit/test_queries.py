@@ -86,6 +86,7 @@ class TestProjectQueries:
             acronym="PP",
             status="active",
             position=0,
+            default_who="",
         )
         row = queries.proj_get_by_id(db, id="p1")
         assert row["name"] == "P1"

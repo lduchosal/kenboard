@@ -20,6 +20,7 @@
     <input type="hidden" id="task-modal-project-id">
     <div class="edit-actions">
       <button class="btn btn-save" onclick="saveTaskModal()">Enregistrer</button>
+      <button class="btn" id="task-modal-duplicate" style="display:none;background:var(--card);color:var(--accent);border:1px solid var(--accent)" onclick="duplicateTask()">Dupliquer</button>
       <button class="btn btn-delete" id="task-modal-delete" style="display:none" onclick="confirmDelete(this, deleteTask)">Supprimer</button>
     </div>
   </div>

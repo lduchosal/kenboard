@@ -45,6 +45,7 @@ def create_project() -> Any:
             acronym=data.acronym.upper(),
             status=data.status,
             position=max_pos + 1,
+            default_who=data.default_who,
         )
         row = queries.proj_get_by_id(conn, id=proj_id)
         return jsonify(Project(**row).model_dump()), 201
@@ -69,6 +70,11 @@ def update_project(proj_id: str) -> Any:
             acronym=(data.acronym or existing["acronym"]).upper(),
             cat_id=data.cat or existing["cat_id"],
             status=data.status or existing["status"],
+            default_who=(
+                data.default_who
+                if data.default_who is not None
+                else existing["default_who"]
+            ),
         )
         # Reorder sibling projects if requested
         if data.project_order:

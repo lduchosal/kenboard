@@ -218,6 +218,16 @@ body {
   flex-shrink: 0;
 }
 .cat-card .cat-name { font-weight: 700; font-size: 14px; }
+.cat-drag-handle {
+  display: none;
+  font-size: 16px;
+  color: var(--dimmed);
+  cursor: grab;
+  padding: 4px 8px;
+  margin-left: 4px;
+  touch-action: none;
+}
+.cat-drag-handle:active { cursor: grabbing; }
 
 .cat-kpis { display: flex; gap: 16px; margin-left: auto; }
 .cat-kpi { text-align: center; }
@@ -427,9 +437,13 @@ body {
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.15);
   padding: 20px;
-  width: 320px;
-}
-.project-add-card {
+  /* Width grows with the viewport: at least 50vw on desktop, capped at
+   * 720px so it never spans the whole 4K monitor; on mobile it takes
+   * almost the full screen via the media queries at the bottom of this
+   * file. The 320px floor preserves the original look on tiny modals. */
+  width: clamp(320px, 50vw, 720px);
+  max-height: 90vh;
+  overflow-y: auto;
   position: relative;
 }
 .modal-close {
@@ -1073,6 +1087,11 @@ body {
   .kanban-rest {
     flex: 2 !important;
   }
+  /* Edit modal: take 70% on tablets to give the user more breathing room */
+  .project-add-card {
+    width: 70vw;
+    max-width: 720px;
+  }
 }
 
 /* mobile: <= 640px */
@@ -1099,5 +1118,17 @@ body {
   }
   .cat-grid {
     grid-template-columns: 1fr;
+  }
+  /* Edit modal: take almost the full screen on phones */
+  .project-add-card {
+    width: 95vw;
+    max-width: none;
+    padding: 16px;
+  }
+  /* Show the drag handle on mobile so vertical scroll is not blocked
+   * by Sortable taking over the whole card. The handle is the only
+   * draggable area in mobile mode (cf. js/Sortable handle option). */
+  .cat-drag-handle {
+    display: inline-block;
   }
 }

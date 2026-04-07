@@ -41,9 +41,21 @@ def _setup_test_db():
             acronym VARCHAR(4) NOT NULL,
             status ENUM('active', 'archived') NOT NULL DEFAULT 'active',
             position INT NOT NULL DEFAULT 0,
+            default_who VARCHAR(100) NOT NULL DEFAULT '',
             FOREIGN KEY (cat_id) REFERENCES categories(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """)
+    cur.execute(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+        "WHERE TABLE_SCHEMA = DATABASE() "
+        "AND TABLE_NAME = 'projects' "
+        "AND COLUMN_NAME = 'default_who'"
+    )
+    if cur.fetchone()[0] == 0:
+        cur.execute(
+            "ALTER TABLE projects "
+            "ADD COLUMN default_who VARCHAR(100) NOT NULL DEFAULT ''"
+        )
     cur.execute("""
         CREATE TABLE IF NOT EXISTS tasks (
             id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,

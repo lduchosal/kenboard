@@ -27,6 +27,7 @@ def project(client, db, queries):
         acronym="DEMO",
         status="active",
         position=0,
+        default_who="",
     )
     return "proj-1"
 
@@ -332,6 +333,7 @@ class TestMiddlewareEnforcedMode:
             acronym="OTH",
             status="active",
             position=0,
+            default_who="",
         )
         # Key has scope on proj-2 only
         created = client.post(

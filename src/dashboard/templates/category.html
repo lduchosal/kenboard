@@ -7,10 +7,11 @@
 <div class="section" id="{{ p.id }}" style="padding-top:0">
   <div class="section-title">
     <span>{{ p.acronym or p.name[:4] | upper }} / {{ p.name }}</span>
-    <button class="btn-edit section-edit-btn" onclick="editProject('{{ p.id }}','{{ p.name | jsesc }}','{{ (p.acronym or '') | jsesc }}','{{ cat.id }}','{{ p.get('status', 'active') }}')">Editer</button>
+    <button class="btn-edit section-edit-btn" onclick="editProject('{{ p.id }}','{{ p.name | jsesc }}','{{ (p.acronym or '') | jsesc }}','{{ cat.id }}','{{ p.get('status', 'active') }}','{{ p.get('default_who', '') | jsesc }}')">Editer</button>
   </div>
   {% set tasks = p.tasks %}
   {% set project_id = p.id %}
+  {% set project_default_who = p.get('default_who', '') %}
   {% include "partials/kanban.html" %}
 </div>
 {% endfor %}
@@ -31,9 +32,11 @@
     <div class="section archived-project" id="{{ p.id }}" style="padding-top:0;opacity:0.5">
       <div class="section-title">
         <span>{{ p.acronym or p.name[:4] | upper }} / {{ p.name }}</span>
-        <button class="btn-edit section-edit-btn" onclick="editProject('{{ p.id }}','{{ p.name | jsesc }}','{{ (p.acronym or '') | jsesc }}','{{ cat.id }}','{{ p.get('status', 'active') }}')">Editer</button>
+        <button class="btn-edit section-edit-btn" onclick="editProject('{{ p.id }}','{{ p.name | jsesc }}','{{ (p.acronym or '') | jsesc }}','{{ cat.id }}','{{ p.get('status', 'active') }}','{{ p.get('default_who', '') | jsesc }}')">Editer</button>
       </div>
       {% set tasks = p.tasks %}
+      {% set project_id = p.id %}
+      {% set project_default_who = p.get('default_who', '') %}
       {% include "partials/kanban.html" %}
     </div>
     {% endfor %}

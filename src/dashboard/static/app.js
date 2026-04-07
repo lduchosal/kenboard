@@ -152,7 +152,7 @@ function addProjectInCatModal() {
 
 // -- Project CRUD ------------------------------------------------------------
 
-function editProject(id, name, acronym, cat, status) {
+function editProject(id, name, acronym, cat, status, defaultWho) {
   const modal = document.getElementById('project-modal');
   if (!modal) return;
   document.getElementById('proj-modal-title').textContent = id ? 'Editer le projet' : 'Nouveau projet';
@@ -162,6 +162,8 @@ function editProject(id, name, acronym, cat, status) {
   document.getElementById('new-proj-name').value = name || '';
   document.getElementById('new-proj-acronym').value = acronym || '';
   document.getElementById('new-proj-status').value = status || 'active';
+  const dwSelect = document.getElementById('new-proj-default-who');
+  if (dwSelect) dwSelect.value = defaultWho || '';
 
   // Populate sibling projects list
   const list = document.getElementById('proj-modal-projects');
@@ -193,11 +195,12 @@ function saveProject() {
   const acronym = document.getElementById('new-proj-acronym').value.trim().toUpperCase();
   const cat = document.getElementById('new-proj-cat').value;
   const status = document.getElementById('new-proj-status').value;
+  const defaultWho = document.getElementById('new-proj-default-who')?.value || '';
   if (!name || !acronym) return;
   const method = id ? 'PATCH' : 'POST';
   const url = id ? `${API_BASE}/projects/${id}` : `${API_BASE}/projects`;
   const projectOrder = [...document.querySelectorAll('#proj-modal-projects .cat-modal-project')].map(el => el.dataset.projectId);
-  apiCall(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, acronym, cat, status, projectOrder }) })
+  apiCall(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, acronym, cat, status, default_who: defaultWho, projectOrder }) })
     .then(() => window.location.reload()).catch(() => {});
   document.getElementById('project-modal').style.display = 'none';
 }
@@ -237,6 +240,8 @@ function openEditTask(btn, id, title, desc, who, when) {
   document.getElementById('task-modal-status').value = status;
   const delBtn = document.getElementById('task-modal-delete');
   if (delBtn) delBtn.style.display = id ? '' : 'none';
+  const dupBtn = document.getElementById('task-modal-duplicate');
+  if (dupBtn) dupBtn.style.display = id ? '' : 'none';
   document.getElementById('task-modal').style.display = 'flex';
 }
 
@@ -245,7 +250,8 @@ let _taskProjectId = null;
 let _taskEditId = null;
 function openTaskModal(taskList, projectId) {
   _taskTargetList = taskList;
-  _taskProjectId = projectId || taskList.closest('.kanban')?.dataset?.projectId || '';
+  const kanban = taskList.closest('.kanban');
+  _taskProjectId = projectId || kanban?.dataset?.projectId || '';
   _taskEditId = null;
   document.getElementById('task-modal-project-id').value = _taskProjectId;
   document.getElementById('task-modal-heading').textContent = 'Nouvelle t\u00e2che';
@@ -253,8 +259,19 @@ function openTaskModal(taskList, projectId) {
   document.getElementById('task-modal-desc').value = '';
   document.getElementById('task-modal-when').value = '';
   document.getElementById('task-modal-status').value = 'todo';
+  // who: project default if set, else logged-in user (already pre-selected
+  // server-side via Jinja in the modal template).
+  const projectDefaultWho = kanban?.dataset?.defaultWho || '';
+  if (projectDefaultWho) {
+    const whoSelect = document.getElementById('task-modal-who');
+    if (whoSelect && [...whoSelect.options].some(o => o.value === projectDefaultWho)) {
+      whoSelect.value = projectDefaultWho;
+    }
+  }
   const delBtn = document.getElementById('task-modal-delete');
   if (delBtn) delBtn.style.display = 'none';
+  const dupBtn = document.getElementById('task-modal-duplicate');
+  if (dupBtn) dupBtn.style.display = 'none';
   document.getElementById('task-modal').style.display = 'flex';
   document.getElementById('task-modal-title').focus();
 }
@@ -284,6 +301,41 @@ function deleteTask() {
   apiCall(`${API_BASE}/tasks/${_taskEditId}`, { method: 'DELETE' })
     .then(() => window.location.reload()).catch(() => {});
   document.getElementById('task-modal').style.display = 'none';
+}
+
+async function duplicateTask() {
+  // POST a copy of the current modal fields, then re-bind the modal to
+  // the new task id so the user can keep editing without closing.
+  if (!_taskEditId) return;
+  const title = document.getElementById('task-modal-title').value.trim();
+  if (!title) return;
+  const desc = document.getElementById('task-modal-desc').value;
+  const who = document.getElementById('task-modal-who').value;
+  const when = document.getElementById('task-modal-when').value;
+  const status = document.getElementById('task-modal-status').value;
+  const projectId = document.getElementById('task-modal-project-id').value;
+  let r;
+  try {
+    r = await apiCall(`${API_BASE}/tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: projectId,
+        title: title + ' - copy',
+        description: desc,
+        who,
+        due_date: when || null,
+        status,
+      }),
+    });
+  } catch (e) { return; }
+  const created = await r.json();
+  // Re-bind the modal to the new task. The user keeps editing in place.
+  _taskEditId = created.id;
+  document.getElementById('task-modal-title').value = created.title;
+  document.getElementById('task-modal-heading').textContent = 'Editer la t\u00e2che (copie)';
+  document.getElementById('task-modal-title').focus();
+  document.getElementById('task-modal-title').select();
 }
 
 // -- Delete confirmation -----------------------------------------------------
@@ -316,17 +368,41 @@ function confirmDelete(btn, callback) {
 
 // -- Drag & drop -------------------------------------------------------------
 
+// On mobile (≤ 480px), restrict the draggable area of category cards to a
+// dedicated handle so vertical scrolling stays smooth. On desktop the whole
+// card stays draggable. We re-evaluate the matchMedia on resize and rebuild
+// the Sortable instance so the behaviour switches as the viewport changes.
 const catGrid = document.querySelector('.cat-grid');
-if (catGrid) {
-  new Sortable(catGrid, {
-    animation: 150, draggable: '.cat-card:not(.cat-card-add)',
-    ghostClass: 'task-ghost', chosenClass: 'task-chosen', filter: '.cat-card-add',
+let _catSortable = null;
+const _mobileCatMq = window.matchMedia('(max-width: 480px)');
+
+function _initCatSortable() {
+  if (!catGrid) return;
+  if (_catSortable) {
+    _catSortable.destroy();
+    _catSortable = null;
+  }
+  const opts = {
+    animation: 150,
+    draggable: '.cat-card:not(.cat-card-add)',
+    ghostClass: 'task-ghost',
+    chosenClass: 'task-chosen',
+    filter: '.cat-card-add',
     onEnd: (evt) => {
-      apiCall(`${API_BASE}/categories/reorder`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: evt.oldIndex, to: evt.newIndex }) })
-        .catch(() => {});
-    }
-  });
+      apiCall(`${API_BASE}/categories/reorder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: evt.oldIndex, to: evt.newIndex }),
+      }).catch(() => {});
+    },
+  };
+  if (_mobileCatMq.matches) {
+    opts.handle = '.cat-drag-handle';
+  }
+  _catSortable = new Sortable(catGrid, opts);
 }
+_initCatSortable();
+_mobileCatMq.addEventListener('change', _initCatSortable);
 
 document.querySelectorAll('.kanban-col').forEach(col => {
   const tc = col.querySelector('.kanban-tasks');
