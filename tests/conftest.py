@@ -59,6 +59,17 @@ def _ensure_test_db() -> None:
             INDEX idx_project_status (project_id, status)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id VARCHAR(36) NOT NULL PRIMARY KEY,
+            name VARCHAR(100) NOT NULL UNIQUE,
+            color VARCHAR(50) NOT NULL,
+            password_hash VARCHAR(255) NOT NULL DEFAULT '',
+            is_admin TINYINT(1) NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """)
     conn.close()
 
 
@@ -116,6 +127,7 @@ def db():
     cur.execute("DELETE FROM tasks")
     cur.execute("DELETE FROM projects")
     cur.execute("DELETE FROM categories")
+    cur.execute("DELETE FROM users")
     cur.execute("SET FOREIGN_KEY_CHECKS = 1")
     yield conn
     # Cleanup after test
@@ -124,6 +136,7 @@ def db():
     cur.execute("DELETE FROM tasks")
     cur.execute("DELETE FROM projects")
     cur.execute("DELETE FROM categories")
+    cur.execute("DELETE FROM users")
     cur.execute("SET FOREIGN_KEY_CHECKS = 1")
     conn.close()
 

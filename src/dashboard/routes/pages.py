@@ -29,13 +29,6 @@ COLOR_LIST = [
     ("Gris", "var(--dimmed)"),
 ]
 
-AVATAR_COLORS = {
-    "Q": "#0969da",
-    "Alice": "#8250df",
-    "Bob": "#bf8700",
-    "Claire": "#1a7f37",
-}
-
 
 def fmt_date(when_str: str) -> str:
     """Format ISO date to dd.mm."""
@@ -50,6 +43,7 @@ def _load_all_data() -> dict[str, Any]:
     try:
         categories = list(queries.cat_get_all(conn))
         all_projects = list(queries.proj_get_all(conn))
+        users = list(queries.usr_get_all(conn))
         # Attach tasks to each project
         for p in all_projects:
             p["tasks"] = list(queries.task_get_by_project(conn, project_id=p["id"]))
@@ -62,6 +56,7 @@ def _load_all_data() -> dict[str, Any]:
         return {
             "categories": categories,
             "all_projects": all_projects,
+            "users": users,
         }
     finally:
         conn.close()
@@ -106,6 +101,9 @@ def _build_context(
             sum(p.get("actual", [0])[i] for p in project_list) for i in range(length)
         ]
 
+    users = data.get("users", [])
+    avatar_colors = {u["name"]: u["color"] for u in users}
+
     return {
         "prefix": prefix,
         "current_cat": current_cat,
@@ -115,7 +113,8 @@ def _build_context(
         "cat_projects_json": json.dumps(cat_projects_js),
         "columns": COLUMNS,
         "color_list": COLOR_LIST,
-        "avatar_colors": AVATAR_COLORS,
+        "avatar_colors": avatar_colors,
+        "users": users,
         "fmt_date": fmt_date,
         "aggregate_burndown": aggregate_burndown,
     }
@@ -128,6 +127,15 @@ def index() -> Any:
     ctx = _build_context(data, prefix="/")
     ctx["title"] = "Kenboard"
     return render_template("index.html", **ctx)
+
+
+@bp.route("/admin/users")
+def admin_users() -> Any:
+    """Serve the user management admin page."""
+    data = _load_all_data()
+    ctx = _build_context(data, prefix="/")
+    ctx["title"] = "Utilisateurs"
+    return render_template("admin_users.html", **ctx)
 
 
 @bp.route("/cat/<cat_id>.html")

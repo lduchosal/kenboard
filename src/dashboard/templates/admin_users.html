@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block body %}
+{% include "partials/header.html" %}
+
+<div class="section" style="padding-top:0">
+  <div class="section-title"><span>Gestion des utilisateurs</span></div>
+
+  <table class="users-table" id="users-table" style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border);text-align:left">
+        <th style="padding:8px 6px">Avatar</th>
+        <th style="padding:8px 6px">Nom</th>
+        <th style="padding:8px 6px">Couleur</th>
+        <th style="padding:8px 6px">Admin</th>
+        <th style="padding:8px 6px">Mot de passe</th>
+        <th style="padding:8px 6px"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr data-user-id="{{ u.id }}" style="border-bottom:1px solid var(--border)">
+        <td style="padding:6px">
+          <div class="task-avatar" style="background:{{ u.color }};width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700">{{ u.name[0]|upper }}</div>
+        </td>
+        <td style="padding:6px"><input type="text" class="u-name" value="{{ u.name }}" style="width:100%"></td>
+        <td style="padding:6px"><input type="text" class="u-color" value="{{ u.color }}" style="width:100%"></td>
+        <td style="padding:6px;text-align:center"><input type="checkbox" class="u-admin" {% if u.is_admin %}checked{% endif %}></td>
+        <td style="padding:6px"><input type="password" class="u-password" placeholder="(inchangé)" style="width:100%"></td>
+        <td style="padding:6px;white-space:nowrap">
+          <button class="btn-edit btn-save-user" onclick="saveUser(this)">Enregistrer</button>
+          <button class="btn-edit btn-delete-user" onclick="prepareDeleteUser(this)">Supprimer</button>
+        </td>
+      </tr>
+      {% endfor %}
+      <tr id="users-add-row" style="border-bottom:1px solid var(--border);background:var(--bg)">
+        <td style="padding:6px"></td>
+        <td style="padding:6px"><input type="text" id="new-name" placeholder="Nom" style="width:100%"></td>
+        <td style="padding:6px"><input type="text" id="new-color" placeholder="#0969da ou var(--accent)" style="width:100%"></td>
+        <td style="padding:6px;text-align:center"><input type="checkbox" id="new-admin"></td>
+        <td style="padding:6px"><input type="password" id="new-password" placeholder="Mot de passe" style="width:100%"></td>
+        <td style="padding:6px"><button class="btn-edit" onclick="createUser()">Créer</button></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let _userDeleteId = null;
+
+async function saveUser(btn) {
+  const tr = btn.closest('tr');
+  const id = tr.dataset.userId;
+  const body = {
+    name: tr.querySelector('.u-name').value,
+    color: tr.querySelector('.u-color').value,
+    is_admin: tr.querySelector('.u-admin').checked,
+  };
+  const pwd = tr.querySelector('.u-password').value;
+  if (pwd) body.password = pwd;
+  const r = await fetch('/api/v1/users/' + id, {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+  });
+  if (r.ok) location.reload();
+  else alert('Erreur: ' + r.status + ' ' + (await r.text()));
+}
+
+function prepareDeleteUser(btn) {
+  _userDeleteId = btn.closest('tr').dataset.userId;
+  confirmDelete(btn, deleteUser);
+}
+
+async function deleteUser() {
+  if (!_userDeleteId) return;
+  const r = await fetch('/api/v1/users/' + _userDeleteId, {method: 'DELETE'});
+  if (r.ok) location.reload();
+  else alert('Erreur: ' + r.status);
+}
+
+async function createUser() {
+  const body = {
+    name: document.getElementById('new-name').value,
+    color: document.getElementById('new-color').value,
+    is_admin: document.getElementById('new-admin').checked,
+  };
+  const pwd = document.getElementById('new-password').value;
+  if (pwd) body.password = pwd;
+  if (!body.name || !body.color) { alert('Nom et couleur requis'); return; }
+  const r = await fetch('/api/v1/users', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+  });
+  if (r.ok) location.reload();
+  else alert('Erreur: ' + r.status + ' ' + (await r.text()));
+}
+</script>
+{% endblock %}

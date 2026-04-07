@@ -164,3 +164,137 @@ class TestTaskAPI:
         data = resp.get_json()
         assert len(data) == 1
         assert data[0]["title"] == "Test Task"
+
+
+class TestUserAPI:
+    """Test user API endpoints."""
+
+    def test_list_empty(self, client, db):
+        resp = client.get("/api/v1/users")
+        assert resp.status_code == 200
+        assert resp.get_json() == []
+
+    def test_create(self, client, db):
+        resp = client.post(
+            "/api/v1/users",
+            data=json.dumps(
+                {
+                    "name": "Q",
+                    "color": "#0969da",
+                    "password": "secret",
+                    "is_admin": True,
+                }
+            ),
+            content_type="application/json",
+        )
+        assert resp.status_code == 201
+        data = resp.get_json()
+        assert data["name"] == "Q"
+        assert data["color"] == "#0969da"
+        assert data["is_admin"] is True
+        assert "password" not in data
+        assert "password_hash" not in data
+
+    def test_create_without_password(self, client, db):
+        resp = client.post(
+            "/api/v1/users",
+            data=json.dumps({"name": "Alice", "color": "#8250df"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 201
+        assert resp.get_json()["is_admin"] is False
+
+    def test_create_duplicate_name(self, client, db):
+        client.post(
+            "/api/v1/users",
+            data=json.dumps({"name": "Bob", "color": "#bf8700"}),
+            content_type="application/json",
+        )
+        resp = client.post(
+            "/api/v1/users",
+            data=json.dumps({"name": "Bob", "color": "#000000"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 409
+
+    def test_password_is_hashed(self, client, db, queries):
+        client.post(
+            "/api/v1/users",
+            data=json.dumps(
+                {"name": "Claire", "color": "#1a7f37", "password": "topsecret"}
+            ),
+            content_type="application/json",
+        )
+        row = queries.usr_get_by_name(db, name="Claire")
+        assert row is not None
+        assert row["password_hash"] != ""
+        assert row["password_hash"] != "topsecret"
+        # Argon2 hash starts with $argon2
+        assert row["password_hash"].startswith("$argon2")
+
+    def test_update_color(self, client, db):
+        created = client.post(
+            "/api/v1/users",
+            data=json.dumps({"name": "Dave", "color": "#000000"}),
+            content_type="application/json",
+        ).get_json()
+        resp = client.patch(
+            f"/api/v1/users/{created['id']}",
+            data=json.dumps({"color": "#ffffff"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        assert resp.get_json()["color"] == "#ffffff"
+
+    def test_update_password(self, client, db, queries):
+        created = client.post(
+            "/api/v1/users",
+            data=json.dumps({"name": "Eve", "color": "#abcdef", "password": "old"}),
+            content_type="application/json",
+        ).get_json()
+        old_hash = queries.usr_get_by_name(db, name="Eve")["password_hash"]
+        client.patch(
+            f"/api/v1/users/{created['id']}",
+            data=json.dumps({"password": "new"}),
+            content_type="application/json",
+        )
+        new_hash = queries.usr_get_by_name(db, name="Eve")["password_hash"]
+        assert old_hash != new_hash
+        assert new_hash.startswith("$argon2")
+
+    def test_update_not_found(self, client, db):
+        resp = client.patch(
+            "/api/v1/users/nonexistent",
+            data=json.dumps({"name": "X"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 404
+
+    def test_update_rename_collision(self, client, db):
+        a = client.post(
+            "/api/v1/users",
+            data=json.dumps({"name": "Frank", "color": "#000"}),
+            content_type="application/json",
+        ).get_json()
+        client.post(
+            "/api/v1/users",
+            data=json.dumps({"name": "Grace", "color": "#000"}),
+            content_type="application/json",
+        )
+        resp = client.patch(
+            f"/api/v1/users/{a['id']}",
+            data=json.dumps({"name": "Grace"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 409
+
+    def test_delete(self, client, db):
+        created = client.post(
+            "/api/v1/users",
+            data=json.dumps({"name": "Heidi", "color": "#fff"}),
+            content_type="application/json",
+        ).get_json()
+        resp = client.delete(f"/api/v1/users/{created['id']}")
+        assert resp.status_code == 204
+        listing = client.get("/api/v1/users").get_json()
+        assert all(u["id"] != created["id"] for u in listing)

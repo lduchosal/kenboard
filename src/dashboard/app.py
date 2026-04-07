@@ -8,7 +8,7 @@ from flask import Flask, request
 from flask_cors import CORS
 
 from dashboard.logging import get_logger, setup_logging
-from dashboard.routes import categories_bp, projects_bp, tasks_bp
+from dashboard.routes import categories_bp, projects_bp, tasks_bp, users_bp
 from dashboard.routes.pages import bp as pages_bp
 
 log = get_logger("app")
@@ -82,6 +82,7 @@ def create_app() -> Flask:
     app.register_blueprint(categories_bp)
     app.register_blueprint(projects_bp)
     app.register_blueprint(tasks_bp)
+    app.register_blueprint(users_bp)
 
     # Convenience routes for static assets at root
     @app.route("/style.css")

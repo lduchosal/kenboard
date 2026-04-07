@@ -318,3 +318,146 @@ class TestTaskCRUD:
         expect(
             page.locator('.kanban-tasks[data-status="review"] .kanban-task')
         ).to_have_count(1)
+
+
+class TestAdminUsers:
+    """Test the /admin/users page UI."""
+
+    def test_admin_page_loads(self, live_server, clean_db, page: Page):
+        """Admin users page renders with header and empty user table."""
+        page.goto(live_server + "/admin/users")
+        expect(page).to_have_title("Utilisateurs")
+        expect(page.locator("#users-table")).to_be_visible()
+        # Empty DB → only the "add" row exists
+        expect(page.locator("#users-table tbody tr[data-user-id]")).to_have_count(0)
+        expect(page.locator("#users-add-row")).to_be_visible()
+
+    def test_create_user(self, live_server, clean_db, page: Page):
+        """Create a user via the add row at the bottom of the table."""
+        page.goto(live_server + "/admin/users")
+        page.fill("#new-name", "Dave")
+        page.fill("#new-color", "#abcdef")
+        page.click("#new-password")
+        page.fill("#new-password", "secret123")
+        page.click("#users-add-row .btn-edit")
+        page.wait_for_timeout(500)
+        page.reload()
+        rows = page.locator("#users-table tbody tr[data-user-id]")
+        expect(rows).to_have_count(1)
+        expect(rows.first.locator(".u-name")).to_have_value("Dave")
+        expect(rows.first.locator(".u-color")).to_have_value("#abcdef")
+
+    def test_create_user_admin_flag(self, live_server, clean_db, page: Page):
+        """Create a user with the admin checkbox checked."""
+        page.goto(live_server + "/admin/users")
+        page.fill("#new-name", "Eve")
+        page.fill("#new-color", "#112233")
+        page.check("#new-admin")
+        page.click("#users-add-row .btn-edit")
+        page.wait_for_timeout(500)
+        page.reload()
+        admin_checkbox = page.locator(
+            "#users-table tbody tr[data-user-id] .u-admin"
+        ).first
+        expect(admin_checkbox).to_be_checked()
+
+    def test_edit_user_color(self, live_server, clean_db, page: Page):
+        """Edit an existing user's color via the inline form."""
+        # Seed via API
+        page.goto(live_server + "/admin/users")
+        page.fill("#new-name", "Frank")
+        page.fill("#new-color", "#000000")
+        page.click("#users-add-row .btn-edit")
+        page.wait_for_timeout(500)
+        page.reload()
+
+        row = page.locator("#users-table tbody tr[data-user-id]").first
+        row.locator(".u-color").fill("#ffffff")
+        row.locator(".btn-save-user").click()
+        page.wait_for_timeout(500)
+        page.reload()
+
+        expect(
+            page.locator("#users-table tbody tr[data-user-id]").first.locator(
+                ".u-color"
+            )
+        ).to_have_value("#ffffff")
+
+    def test_toggle_admin_via_edit(self, live_server, clean_db, page: Page):
+        """Toggle is_admin from false to true via the edit form."""
+        page.goto(live_server + "/admin/users")
+        page.fill("#new-name", "Grace")
+        page.fill("#new-color", "#102030")
+        page.click("#users-add-row .btn-edit")
+        page.wait_for_timeout(500)
+        page.reload()
+
+        row = page.locator("#users-table tbody tr[data-user-id]").first
+        row.locator(".u-admin").check()
+        row.locator(".btn-save-user").click()
+        page.wait_for_timeout(500)
+        page.reload()
+
+        expect(
+            page.locator("#users-table tbody tr[data-user-id]").first.locator(
+                ".u-admin"
+            )
+        ).to_be_checked()
+
+    def test_delete_user(self, live_server, clean_db, page: Page):
+        """Delete a user via the confirm dialog."""
+        page.goto(live_server + "/admin/users")
+        page.fill("#new-name", "Heidi")
+        page.fill("#new-color", "#aabbcc")
+        page.click("#users-add-row .btn-edit")
+        page.wait_for_timeout(500)
+        page.reload()
+
+        expect(page.locator("#users-table tbody tr[data-user-id]")).to_have_count(1)
+
+        page.locator("#users-table tbody tr[data-user-id]").first.locator(
+            ".btn-delete-user"
+        ).click()
+        page.locator("#confirm-modal").wait_for(state="visible")
+        page.click("#confirm-modal-ok")
+        page.wait_for_timeout(500)
+        page.reload()
+
+        expect(page.locator("#users-table tbody tr[data-user-id]")).to_have_count(0)
+
+    def test_users_appear_in_task_who_dropdown(self, live_server, clean_db, page: Page):
+        """Created users populate the 'who' dropdown of the task modal."""
+        # Create two users via the admin page
+        page.goto(live_server + "/admin/users")
+        page.fill("#new-name", "Ivan")
+        page.fill("#new-color", "#111111")
+        page.click("#users-add-row .btn-edit")
+        page.wait_for_timeout(500)
+        page.reload()
+        page.fill("#new-name", "Judy")
+        page.fill("#new-color", "#222222")
+        page.click("#users-add-row .btn-edit")
+        page.wait_for_timeout(500)
+
+        # Now create a category + project + open the task modal
+        page.goto(live_server)
+        page.click(".cat-card-add")
+        page.fill("#cat-modal-name", "Tech")
+        page.click("#cat-modal .btn-save")
+        page.wait_for_timeout(500)
+        page.reload()
+        page.click(".cat-card")
+        page.wait_for_url("**/cat/**")
+        page.click(".cat-card-add")
+        page.fill("#new-proj-name", "Proj")
+        page.fill("#new-proj-acronym", "PROJ")
+        page.click("#project-modal .btn-save")
+        page.wait_for_timeout(500)
+        page.reload()
+        page.click(".kanban-add-btn")
+
+        # The dropdown options should match the users we created
+        options = page.locator("#task-modal-who option")
+        expect(options).to_have_count(2)
+        expect(options.nth(0)).to_have_text("Ivan")
+        expect(options.nth(1)).to_have_text("Judy")

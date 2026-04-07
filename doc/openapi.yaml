@@ -1,0 +1,269 @@
+openapi: 3.1.0
+info:
+  title: Kenboard API
+  version: 0.1.11
+  description: |
+    REST API for Kenboard, a kanban-style project management tool.
+
+    This specification currently documents the **users** endpoints only
+    (introduced in 0.1.12). The categories, projects and tasks endpoints
+    are described in `doc/api.md` but not yet specified here.
+
+    See `doc/authentication.md` for password hashing details and the
+    current limitations regarding authentication.
+
+  license:
+    name: Proprietary
+servers:
+  - url: https://www.kenboard.2113.ch
+    description: Production
+  - url: http://localhost:5000
+    description: Local development
+
+tags:
+  - name: users
+    description: User management. No authentication required at this point.
+
+paths:
+  /api/v1/users:
+    get:
+      tags: [users]
+      summary: List all users
+      description: Returns the list of users without their password hash.
+      responses:
+        "200":
+          description: Array of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+              examples:
+                two-users:
+                  value:
+                    - id: 7f1c8a9d-1234-4abc-9def-012345678901
+                      name: Q
+                      color: "#0969da"
+                      is_admin: true
+                      created_at: "2026-04-07T10:00:00"
+                      updated_at: "2026-04-07T10:00:00"
+                    - id: 8e2d9b0c-2345-4bcd-8ef0-123456789012
+                      name: Alice
+                      color: "#8250df"
+                      is_admin: false
+                      created_at: "2026-04-07T10:00:00"
+                      updated_at: "2026-04-07T10:00:00"
+
+    post:
+      tags: [users]
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+            examples:
+              with-password:
+                value:
+                  name: Dave
+                  color: "#abcdef"
+                  password: topsecret
+                  is_admin: false
+              without-password:
+                value:
+                  name: Alice
+                  color: "#8250df"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "409":
+          description: Name already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Name already exists
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/users/{user_id}:
+    parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    patch:
+      tags: [users]
+      summary: Update a user
+      description: |
+        All fields are optional; missing fields keep their current value.
+        An empty `password` field also keeps the current hash.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+            examples:
+              rename:
+                value:
+                  name: NewName
+              change-color:
+                value:
+                  color: "#ffffff"
+              change-password:
+                value:
+                  password: newsecret
+              promote-admin:
+                value:
+                  is_admin: true
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Name already taken by another user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+    delete:
+      tags: [users]
+      summary: Delete a user
+      responses:
+        "204":
+          description: User deleted (no content)
+
+components:
+  schemas:
+    User:
+      type: object
+      description: |
+        Public representation of a user. The `password_hash` column is
+        intentionally absent from this schema and is never returned by
+        the API.
+      required: [id, name, color, is_admin, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-generated UUID v4
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        color:
+          type: string
+          maxLength: 50
+          description: |
+            Avatar color, accepted as a hex string (`#0969da`) or a CSS
+            variable name (`var(--accent)`)
+        is_admin:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserCreate:
+      type: object
+      required: [name, color]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        color:
+          type: string
+          maxLength: 50
+        password:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Optional. If omitted, the password_hash stays empty.
+        is_admin:
+          type: boolean
+          default: false
+
+    UserUpdate:
+      type: object
+      description: All fields are optional; only provided fields are updated.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        color:
+          type: string
+          maxLength: 50
+        password:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: |
+            If provided and non-empty, the password is re-hashed (argon2)
+            and stored. An empty string is rejected by validation;
+            omitting the field keeps the current hash.
+        is_admin:
+          type: boolean
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    ValidationError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: Not found
+
+    ValidationError:
+      description: Pydantic validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationError"
+          example:
+            error: Validation error
+            details:
+              - loc: ["body", "name"]
+                msg: Field required
+                type: missing

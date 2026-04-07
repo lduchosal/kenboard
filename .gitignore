@@ -14,3 +14,4 @@ build/
 .tox/
 pdm.lock
 logs/
+KENBOARD.md
