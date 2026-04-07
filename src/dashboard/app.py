@@ -94,6 +94,11 @@ def create_app() -> Flask:
         """Serve JavaScript from root URL."""
         return app.send_static_file("app.js")
 
+    @app.route("/sortable.min.js")
+    def serve_sortable() -> Any:
+        """Serve vendored Sortable.js from root URL."""
+        return app.send_static_file("sortable.min.js")
+
     @app.route("/favicon.ico")
     def favicon() -> Any:
         """Return empty favicon."""
