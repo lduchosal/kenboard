@@ -196,6 +196,33 @@ class TestTaskCRUD:
         page.reload()
         expect(page.locator(".task-title").first).to_have_text("Ma Tache")
 
+    def test_task_id_visible(self, live_server, clean_db, page: Page):
+        """#21: the task id is shown on every card (#N), dimmed and right- aligned, in
+        both normal and detail mode.
+        """
+        self._setup_project(live_server, page)
+
+        # Add a task and capture its id
+        page.click(".kanban-add-btn")
+        page.fill("#task-modal-title", "WithID")
+        page.click("#task-modal .btn-save")
+        page.wait_for_timeout(500)
+        page.reload()
+
+        card = page.locator(".kanban-task").first
+        task_id = card.get_attribute("data-task-id")
+        id_label = card.locator(".task-id")
+
+        # Visible in normal mode
+        expect(id_label).to_be_visible()
+        expect(id_label).to_have_text(f"#{task_id}")
+
+        # Still visible in detail mode
+        card.click()
+        expect(card).to_have_class(re.compile(r"\bdetail-mode\b"))
+        expect(id_label).to_be_visible()
+        expect(id_label).to_have_text(f"#{task_id}")
+
     def test_task_detail_toggle(self, live_server, clean_db, page: Page):
         """Click a task to toggle detail mode."""
         self._setup_project(live_server, page)

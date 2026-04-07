@@ -643,7 +643,19 @@ body {
   gap: 8px;
 }
 .kanban-task .task-body { flex: 1; min-width: 0; }
-.kanban-task .task-title { font-weight: 600; margin-bottom: 2px; }
+.kanban-task .task-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.kanban-task .task-title { font-weight: 600; flex: 1; min-width: 0; }
+.kanban-task .task-id {
+  font-size: 10px;
+  color: var(--dimmed);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
 .kanban-task .task-desc { font-size: 11px; color: var(--dimmed); margin-bottom: 2px; display: none; }
 .kanban-task.detail-mode .task-desc,
 .kanban-task.edit-mode .task-desc { display: block; }
