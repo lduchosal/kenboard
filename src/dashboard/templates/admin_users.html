@@ -23,23 +23,24 @@
         <td style="padding:6px">
           <div class="task-avatar" style="background:{{ u.color }};width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700">{{ u.name[0]|upper }}</div>
         </td>
-        <td style="padding:6px"><input type="text" class="u-name" value="{{ u.name }}" style="width:100%"></td>
-        <td style="padding:6px"><input type="text" class="u-color" value="{{ u.color }}" style="width:100%"></td>
+        <td style="padding:6px"><input type="text" class="u-name" value="{{ u.name }}" autocomplete="off" style="width:100%"></td>
+        <td style="padding:6px"><input type="text" class="u-color" value="{{ u.color }}" autocomplete="off" style="width:100%"></td>
         <td style="padding:6px;text-align:center"><input type="checkbox" class="u-admin" {% if u.is_admin %}checked{% endif %}></td>
-        <td style="padding:6px"><input type="password" class="u-password" placeholder="(inchangé)" style="width:100%"></td>
+        <td style="padding:6px"><input type="password" class="u-password" placeholder="(inchangé)" autocomplete="new-password" style="width:100%"></td>
         <td style="padding:6px;white-space:nowrap">
           <button class="btn-edit btn-save-user" onclick="saveUser(this)">Enregistrer</button>
           <button class="btn-edit btn-delete-user" onclick="prepareDeleteUser(this)">Supprimer</button>
         </td>
       </tr>
       {% endfor %}
+      <tr style="border-top:2px solid var(--border)"><td colspan="6" style="padding:8px 6px 4px 6px;font-size:11px;color:var(--dimmed);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Nouvel utilisateur</td></tr>
       <tr id="users-add-row" style="border-bottom:1px solid var(--border);background:var(--bg)">
         <td style="padding:6px"></td>
-        <td style="padding:6px"><input type="text" id="new-name" placeholder="Nom" style="width:100%"></td>
-        <td style="padding:6px"><input type="text" id="new-color" placeholder="#0969da ou var(--accent)" style="width:100%"></td>
+        <td style="padding:6px"><input type="text" id="new-name" placeholder="Nom" autocomplete="off" style="width:100%"></td>
+        <td style="padding:6px"><input type="text" id="new-color" placeholder="#0969da ou var(--accent)" autocomplete="off" style="width:100%"></td>
         <td style="padding:6px;text-align:center"><input type="checkbox" id="new-admin"></td>
-        <td style="padding:6px"><input type="password" id="new-password" placeholder="Mot de passe" style="width:100%"></td>
-        <td style="padding:6px"><button class="btn-edit" onclick="createUser()">Créer</button></td>
+        <td style="padding:6px"><input type="password" id="new-password" placeholder="Mot de passe" autocomplete="new-password" style="width:100%"></td>
+        <td style="padding:6px"><button class="btn btn-save" id="users-create-btn" onclick="createUser()">Créer</button></td>
       </tr>
     </tbody>
   </table>

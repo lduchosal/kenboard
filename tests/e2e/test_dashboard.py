@@ -1,6 +1,10 @@
 """E2E tests for the dashboard page."""
 
-from playwright.sync_api import Page, expect
+import re
+import shutil
+import tempfile
+
+from playwright.sync_api import Page, Playwright, expect
 
 
 class TestDashboardLoads:
@@ -427,7 +431,7 @@ class TestAdminUsers:
         page.fill("#new-color", "#abcdef")
         page.click("#new-password")
         page.fill("#new-password", "secret123")
-        page.click("#users-add-row .btn-edit")
+        page.click("#users-create-btn")
         page.wait_for_timeout(500)
         page.reload()
         rows = page.locator("#users-table tbody tr[data-user-id]")
@@ -441,7 +445,7 @@ class TestAdminUsers:
         page.fill("#new-name", "Eve")
         page.fill("#new-color", "#112233")
         page.check("#new-admin")
-        page.click("#users-add-row .btn-edit")
+        page.click("#users-create-btn")
         page.wait_for_timeout(500)
         page.reload()
         admin_checkbox = page.locator(
@@ -455,7 +459,7 @@ class TestAdminUsers:
         page.goto(live_server + "/admin/users")
         page.fill("#new-name", "Frank")
         page.fill("#new-color", "#000000")
-        page.click("#users-add-row .btn-edit")
+        page.click("#users-create-btn")
         page.wait_for_timeout(500)
         page.reload()
 
@@ -476,7 +480,7 @@ class TestAdminUsers:
         page.goto(live_server + "/admin/users")
         page.fill("#new-name", "Grace")
         page.fill("#new-color", "#102030")
-        page.click("#users-add-row .btn-edit")
+        page.click("#users-create-btn")
         page.wait_for_timeout(500)
         page.reload()
 
@@ -497,7 +501,7 @@ class TestAdminUsers:
         page.goto(live_server + "/admin/users")
         page.fill("#new-name", "Heidi")
         page.fill("#new-color", "#aabbcc")
-        page.click("#users-add-row .btn-edit")
+        page.click("#users-create-btn")
         page.wait_for_timeout(500)
         page.reload()
 
@@ -513,18 +517,177 @@ class TestAdminUsers:
 
         expect(page.locator("#users-table tbody tr[data-user-id]")).to_have_count(0)
 
+    def test_create_user_does_not_modify_existing_users(
+        self, live_server, clean_db, page: Page
+    ):
+        """Regression #19: creating a new user via the admin page must not touch any
+        existing user (no name, color, or admin flag change).
+        """
+        page.goto(live_server + "/admin/users")
+        # Seed several users including an admin Q (mirroring live state)
+        for name, color, is_admin in [
+            ("Alice", "#8250df", False),
+            ("Bob", "#bf8700", False),
+            ("Q", "#0969da", True),
+        ]:
+            page.fill("#new-name", name)
+            page.fill("#new-color", color)
+            if is_admin:
+                page.check("#new-admin")
+            page.click("#users-create-btn")
+            page.wait_for_timeout(400)
+            page.reload()
+
+        # Snapshot all users before
+        snap_before = sorted(
+            page.eval_on_selector_all(
+                "#users-table tbody tr[data-user-id]",
+                """rows => rows.map(r => ({
+                    id: r.dataset.userId,
+                    name: r.querySelector('.u-name').value,
+                    color: r.querySelector('.u-color').value,
+                    is_admin: r.querySelector('.u-admin').checked,
+                }))""",
+            ),
+            key=lambda r: r["name"],
+        )
+        assert len(snap_before) == 3
+
+        # Create a new user
+        page.fill("#new-name", "Newbie")
+        page.fill("#new-color", "#abcdef")
+        page.click("#users-create-btn")
+        page.wait_for_timeout(500)
+        page.reload()
+
+        # All previously existing users must be unchanged
+        snap_after = page.eval_on_selector_all(
+            "#users-table tbody tr[data-user-id]",
+            """rows => rows.map(r => ({
+                id: r.dataset.userId,
+                name: r.querySelector('.u-name').value,
+                color: r.querySelector('.u-color').value,
+                is_admin: r.querySelector('.u-admin').checked,
+            }))""",
+        )
+        snap_after_by_id = {r["id"]: r for r in snap_after}
+        for orig in snap_before:
+            after = snap_after_by_id.get(orig["id"])
+            assert after is not None, f"User {orig['name']} disappeared"
+            assert after == orig, f"User {orig['name']} was modified: {orig} -> {after}"
+        # And the new user is there
+        assert any(r["name"] == "Newbie" for r in snap_after)
+
+    def test_create_button_visually_distinct(self, live_server, clean_db, page: Page):
+        """The create button uses .btn-save styling to be visually distinct from the
+        per-row Enregistrer/Supprimer buttons (.btn-edit).
+
+        Reduces the risk a user clicks the wrong button (#19 root-cause hypothesis).
+        """
+        page.goto(live_server + "/admin/users")
+        btn = page.locator("#users-create-btn")
+        expect(btn).to_have_class(re.compile(r"\bbtn-save\b"))
+
+    def test_firefox_create_user_no_autofill_leak(
+        self, live_server, clean_db, playwright: Playwright
+    ):
+        """Regression #19 (Firefox-specific): Firefox's form history would autofill the
+        just-typed new-user values into the .u-name / .u-color inputs of pre-existing
+        user rows after the page reloaded, making it look like Q (last user
+        alphabetically) had been overwritten. The DB was always intact — the visual
+        artifact came from form history.
+
+        Fix: autocomplete="off" on .u-name / .u-color and #new-name / #new-color.
+
+        This test launches a real Firefox with a persistent profile (so form
+        history is enabled the same way it is for end users) and asserts that
+        after creating a new user, every existing row's input still shows the
+        server-rendered value, not the freshly-typed one.
+        """
+        profile_dir = tempfile.mkdtemp(prefix="pw_ff_bug19_")
+        try:
+            ctx = playwright.firefox.launch_persistent_context(
+                profile_dir, headless=True
+            )
+            try:
+                page = ctx.new_page()
+                page.goto(live_server + "/admin/users")
+                page.wait_for_selector("#users-create-btn")
+
+                # Seed Alice + Q (admin), reloading after each
+                expected = 0
+                for name, color, is_admin in [
+                    ("Alice", "#8250df", False),
+                    ("Q", "#0969da", True),
+                ]:
+                    page.fill("#new-name", name)
+                    page.fill("#new-color", color)
+                    if is_admin:
+                        page.check("#new-admin")
+                    page.click("#users-create-btn")
+                    expected += 1
+                    expect(
+                        page.locator("#users-table tbody tr[data-user-id]")
+                    ).to_have_count(expected)
+
+                snap_before = page.eval_on_selector_all(
+                    "#users-table tbody tr[data-user-id]",
+                    """rows => rows.map(r => ({
+                        id: r.dataset.userId,
+                        name: r.querySelector('.u-name').value,
+                        color: r.querySelector('.u-color').value,
+                    }))""",
+                )
+                assert len(snap_before) == 2
+
+                # Now create a new user — Firefox MUST NOT autofill the
+                # existing rows with these typed values after reload.
+                page.fill("#new-name", "AutofillBait")
+                page.fill("#new-color", "#deadbe")
+                page.click("#users-create-btn")
+                expect(
+                    page.locator("#users-table tbody tr[data-user-id]")
+                ).to_have_count(3)
+
+                snap_after = page.eval_on_selector_all(
+                    "#users-table tbody tr[data-user-id]",
+                    """rows => rows.map(r => ({
+                        id: r.dataset.userId,
+                        name: r.querySelector('.u-name').value,
+                        color: r.querySelector('.u-color').value,
+                    }))""",
+                )
+            finally:
+                ctx.close()
+        finally:
+            shutil.rmtree(profile_dir, ignore_errors=True)
+
+        snap_after_by_id = {r["id"]: r for r in snap_after}
+        for orig in snap_before:
+            after = snap_after_by_id.get(orig["id"])
+            assert after is not None, f"User {orig['name']} disappeared"
+            assert after["name"] == orig["name"], (
+                f"Firefox autofilled {orig['name']}'s name input: "
+                f"expected {orig['name']!r}, got {after['name']!r}"
+            )
+            assert after["color"] == orig["color"], (
+                f"Firefox autofilled {orig['name']}'s color input: "
+                f"expected {orig['color']!r}, got {after['color']!r}"
+            )
+        assert any(r["name"] == "AutofillBait" for r in snap_after)
+
     def test_users_appear_in_task_who_dropdown(self, live_server, clean_db, page: Page):
         """Created users populate the 'who' dropdown of the task modal."""
         # Create two users via the admin page
         page.goto(live_server + "/admin/users")
         page.fill("#new-name", "Ivan")
         page.fill("#new-color", "#111111")
-        page.click("#users-add-row .btn-edit")
+        page.click("#users-create-btn")
         page.wait_for_timeout(500)
         page.reload()
         page.fill("#new-name", "Judy")
         page.fill("#new-color", "#222222")
-        page.click("#users-add-row .btn-edit")
+        page.click("#users-create-btn")
         page.wait_for_timeout(500)
 
         # Now create a category + project + open the task modal
