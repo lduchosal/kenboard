@@ -281,6 +281,94 @@ class TestTaskCRUD:
             page.locator('.kanban-tasks[data-status="doing"] .kanban-task')
         ).to_have_count(1)
 
+    def test_edit_modal_status_reflects_dragged_position(
+        self, live_server, clean_db, page: Page
+    ):
+        """Regression #11: after a drag&drop without reload, opening the edit modal must
+        show the task's current column status, not the stale value baked into the inline
+        onclick at render time.
+
+        The previous bug made every edited task silently revert to "A faire".
+        """
+        self._setup_project(live_server, page)
+        self._add_task(page, "Bug11")
+
+        task_id = page.locator(".kanban-task").first.get_attribute("data-task-id")
+        project_id = page.locator(".kanban").first.get_attribute("data-project-id")
+        page.evaluate(
+            """async ({ taskId, projectId }) => {
+                const card = document.querySelector(`[data-task-id="${taskId}"]`);
+                const target = document.querySelector('.kanban-tasks[data-status="doing"]');
+                target.appendChild(card);
+                await fetch(`/api/v1/tasks/${taskId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'doing', position: 0, project_id: projectId }),
+                });
+            }""",
+            {"taskId": task_id, "projectId": project_id},
+        )
+        # No reload — the onclick attribute still has render-time data
+        self._open_task_edit_modal(page)
+        assert page.eval_on_selector("#task-modal-status", "el => el.value") == "doing"
+
+        # Save without touching status, reload, the task must stay in 'doing'
+        page.click("#task-modal .btn-save")
+        page.wait_for_timeout(500)
+        page.reload()
+        expect(
+            page.locator('.kanban-tasks[data-status="doing"] .kanban-task')
+        ).to_have_count(1)
+        expect(
+            page.locator('.kanban-tasks[data-status="todo"] .kanban-task')
+        ).to_have_count(0)
+
+    def test_task_description_renders_markdown(self, live_server, clean_db, page: Page):
+        """#15: task descriptions are authored in Markdown and rendered as HTML in the
+        card body via marked.js.
+        """
+        self._setup_project(live_server, page)
+
+        page.click(".kanban-add-btn")
+        page.fill("#task-modal-title", "MD")
+        page.fill(
+            "#task-modal-desc",
+            "**bold** and *italic*\n\n- one\n- two\n\n`code`",
+        )
+        page.click("#task-modal .btn-save")
+        page.wait_for_timeout(500)
+        page.reload()
+
+        # marked.js parses the textContent into rich HTML
+        html = page.eval_on_selector(".task-desc", "el => el.innerHTML")
+        assert "<strong>bold</strong>" in html
+        assert "<em>italic</em>" in html
+        assert "<ul>" in html and "<li>one</li>" in html
+        assert "<code>code</code>" in html
+
+        # Editing must round-trip the raw markdown (not the rendered HTML) so
+        # the user keeps editing the source.
+        self._open_task_edit_modal(page)
+        textarea_value = page.eval_on_selector("#task-modal-desc", "el => el.value")
+        assert "**bold**" in textarea_value
+        assert "- one" in textarea_value
+
+    def test_auto_refresh_skips_when_modal_open(
+        self, live_server, clean_db, page: Page
+    ):
+        """#14: shouldSkipRefresh() must return true while a modal is open so the
+        periodic reload does not wipe a half-typed task.
+        """
+        self._setup_project(live_server, page)
+
+        # No modal open → refresh would proceed
+        assert page.evaluate("shouldSkipRefresh()") is False
+
+        # Open the new-task modal → refresh must be skipped
+        page.click(".kanban-add-btn")
+        page.locator("#task-modal").wait_for(state="visible")
+        assert page.evaluate("shouldSkipRefresh()") is True
+
     def test_drag_task_between_columns(self, live_server, clean_db, page: Page):
         """Move a task by drag-and-drop between kanban columns.
 

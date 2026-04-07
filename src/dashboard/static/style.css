@@ -792,8 +792,55 @@ body {
   display: block;
 }
 .kanban-task.detail-mode .task-desc {
-  white-space: pre-wrap;
+  white-space: normal;
 }
+
+/* -- Markdown rendering inside task descriptions -- */
+.task-desc p { margin: 0 0 6px 0; }
+.task-desc p:last-child { margin-bottom: 0; }
+.task-desc h1,
+.task-desc h2,
+.task-desc h3,
+.task-desc h4 {
+  font-size: 12px;
+  margin: 6px 0 3px 0;
+  color: var(--text);
+}
+.task-desc ul,
+.task-desc ol {
+  margin: 0 0 6px 18px;
+  padding: 0;
+}
+.task-desc li { margin-bottom: 2px; }
+.task-desc code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 10px;
+  background: var(--bg);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.task-desc pre {
+  background: var(--bg);
+  padding: 6px 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 0 0 6px 0;
+}
+.task-desc pre code {
+  background: none;
+  padding: 0;
+}
+.task-desc blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 8px;
+  margin: 0 0 6px 0;
+  color: var(--dimmed);
+}
+.task-desc a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.task-desc a:hover { text-decoration: underline; }
 .detail-actions {
   display: flex;
   justify-content: flex-end;

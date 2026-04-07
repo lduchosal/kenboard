@@ -163,16 +163,23 @@ function toggleDetail(el) {
   if (!wasDetail) el.classList.add('detail-mode');
 }
 
-function openEditTask(id, title, desc, who, when, status, projectId) {
+function openEditTask(btn, id, title, desc, who, when) {
+  // Read status and projectId from the live DOM (the closest column / kanban),
+  // not from inlined Jinja values: drag&drop moves the card without reloading,
+  // so the original onclick params are stale and would silently revert the
+  // task to its render-time status on save (#11).
+  const card = btn.closest('.kanban-task');
+  const status = card?.closest('.kanban-tasks')?.dataset.status || 'todo';
+  const projectId = card?.closest('.kanban')?.dataset.projectId || '';
   _taskTargetList = null;
   _taskEditId = id;
-  document.getElementById('task-modal-project-id').value = projectId || '';
+  document.getElementById('task-modal-project-id').value = projectId;
   document.getElementById('task-modal-heading').textContent = 'Editer la t\u00e2che';
   document.getElementById('task-modal-title').value = title;
   document.getElementById('task-modal-desc').value = desc;
   document.getElementById('task-modal-who').value = who;
   document.getElementById('task-modal-when').value = when;
-  document.getElementById('task-modal-status').value = status || 'todo';
+  document.getElementById('task-modal-status').value = status;
   const delBtn = document.getElementById('task-modal-delete');
   if (delBtn) delBtn.style.display = id ? '' : 'none';
   document.getElementById('task-modal').style.display = 'flex';
@@ -284,3 +291,42 @@ document.querySelectorAll('.kanban-col').forEach(col => {
     }
   });
 });
+
+// -- Markdown rendering -----------------------------------------------------
+// Task descriptions are authored in Markdown and rendered with marked.js.
+// The raw markdown lives as the textContent of `.task-desc` (escaped by Jinja
+// so reading textContent always returns the original characters). We replace
+// the innerHTML once with the parsed HTML and stash the source on a data
+// attribute so we never re-parse the same node twice.
+if (typeof marked !== 'undefined') {
+  marked.setOptions({ gfm: true, breaks: true });
+}
+function renderMarkdown(root) {
+  if (typeof marked === 'undefined') return;
+  (root || document).querySelectorAll('.task-desc').forEach(el => {
+    if (el.dataset.mdRendered === '1') return;
+    const src = el.textContent;
+    el.innerHTML = marked.parse(src);
+    el.dataset.mdRendered = '1';
+  });
+}
+renderMarkdown();
+
+// -- Auto refresh ------------------------------------------------------------
+// Reload the page once a minute so the board stays in sync with other clients.
+// Skip the reload when a modal is open (would lose user input), when the tab
+// is hidden, or when a drag is in progress.
+const AUTO_REFRESH_MS = 60_000;
+function shouldSkipRefresh() {
+  if (document.hidden) return true;
+  if (document.querySelector('.task-chosen, .task-drag')) return true;
+  const modals = document.querySelectorAll('.project-add-modal');
+  for (const m of modals) {
+    if (m.style.display && m.style.display !== 'none') return true;
+  }
+  return false;
+}
+setInterval(() => {
+  if (shouldSkipRefresh()) return;
+  window.location.reload();
+}, AUTO_REFRESH_MS);
