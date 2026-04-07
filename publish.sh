@@ -55,10 +55,19 @@ for arg in "$@"; do
 done
 
 # Set total steps based on mode
+# E2E tests are skipped in CI mode (require Playwright browsers + running DB)
 if [ "$QUALITY_ONLY" = true ]; then
-    STEPS=17
+    if [ "$CI_MODE" = true ]; then
+        STEPS=16
+    else
+        STEPS=17
+    fi
 else
-    STEPS=23
+    if [ "$CI_MODE" = true ]; then
+        STEPS=23
+    else
+        STEPS=24
+    fi
 fi
 STEP=0
 
@@ -98,12 +107,12 @@ run_command() {
 }
 
 echo "${BOLD}${BLUE}"
-echo "██████╗  █████╗ ███████╗██╗  ██╗██████╗  ██████╗  █████╗ ██████╗ ██████╗ "
-echo "██╔══██╗██╔══██╗██╔════╝██║  ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗██╔══██╗"
-echo "██║  ██║███████║███████╗███████║██████╔╝██║   ██║███████║██████╔╝██║  ██║"
-echo "██║  ██║██╔══██║╚════██║██╔══██║██╔══██╗██║   ██║██╔══██║██╔══██╗██║  ██║"
-echo "██████╔╝██║  ██║███████║██║  ██║██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝"
-echo "╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ "
+echo "██╗  ██╗███████╗███╗   ██╗██████╗  ██████╗  █████╗ ██████╗ ██████╗ "
+echo "██║ ██╔╝██╔════╝████╗  ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗██╔══██╗"
+echo "█████╔╝ █████╗  ██╔██╗ ██║██████╔╝██║   ██║███████║██████╔╝██║  ██║"
+echo "██╔═██╗ ██╔══╝  ██║╚██╗██║██╔══██╗██║   ██║██╔══██║██╔══██╗██║  ██║"
+echo "██║  ██╗███████╗██║ ╚████║██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝"
+echo "╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ "
 echo "${NC}"
 if [ "$QUALITY_ONLY" = true ]; then
     echo "${BOLD}Starting Kenboard Quality Checks...${NC}"
@@ -163,8 +172,10 @@ else
     run_command "pdm run test-quick" "Unit Tests"
 fi
 
-print_step "Running E2E Tests (playwright)"
-run_command "pdm run test-e2e" "E2E Tests"
+if [ "$CI_MODE" = false ]; then
+    print_step "Running E2E Tests (playwright)"
+    run_command "pdm run test-e2e" "E2E Tests"
+fi
 
 # Exit here if --quality flag is set
 if [ "$QUALITY_ONLY" = true ]; then
@@ -179,13 +190,16 @@ fi
 print_step "Bumping Version (pdm bump ${BUMP_TYPE})"
 run_command "pdm bump -v ${BUMP_TYPE}" "Version bump"
 
-# Sync __init__.py with pyproject.toml version
+# Sync __init__.py with pyproject.toml version (portable sed: BSD/macOS + GNU/Linux)
 VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
-sed -i '' "s/__version__ = \".*\"/__version__ = \"${VERSION}\"/" src/dashboard/__init__.py
+sed -i.bak "s/__version__ = \".*\"/__version__ = \"${VERSION}\"/" src/dashboard/__init__.py && rm src/dashboard/__init__.py.bak
 echo "${BLUE}New version: ${VERSION}${NC}"
 
 print_step "Building Package (pdm)"
 run_command "pdm build" "Package build"
+
+print_step "Publishing Package to PyPI (pdm publish)"
+run_command "pdm publish --no-build" "Package publishing"
 
 print_step "Adding All Files to Git"
 run_command "git add ." "Adding all files to git"
