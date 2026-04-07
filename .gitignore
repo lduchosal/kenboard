@@ -15,3 +15,4 @@ build/
 pdm.lock
 logs/
 KENBOARD.md
+.ken

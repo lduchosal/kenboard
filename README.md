@@ -139,6 +139,80 @@ AVATAR_COLORS = {
 }
 ```
 
+## CLI `ken`
+
+Le package PyPI `kenboard` installe deux commandes :
+
+- `kenboard` : commandes admin (`serve`, `migrate`, `build`)
+- `ken` : commandes tasks pour usage quotidien et automation par Claude Code
+
+Voir [`doc/ken-cli.md`](doc/ken-cli.md) pour la spec complete.
+
+### Bootstrap
+
+```sh
+$ pip install kenboard
+
+# Pointer le dossier courant vers un projet kenboard
+$ ken --base-url https://www.kenboard.2113.ch projects
+ID                                    ACRONYM  NAME
+76a70206-0e6a-4485-a426-d7eb5ab53aac  KEN      KENBOARD
+
+$ ken --base-url https://www.kenboard.2113.ch init 76a70206-0e6a-4485-a426-d7eb5ab53aac
+Wrote .ken (project: KENBOARD)
+Added .ken to /path/to/repo/.gitignore
+```
+
+`ken init` cree un fichier `.ken` (mode `0600`, ajoute au `.gitignore` du
+repo) qui memorise `project_id`, `base_url` et optionnellement `api_token`.
+Comme `git`, `ken` retrouve le `.ken` en remontant les parents du cwd.
+
+### Commandes
+
+```sh
+ken projects [--json]                                     # liste les projets
+ken list     [--status STATUS] [--who WHO] [--json]       # tasks du projet courant
+ken show     ID [--json]                                  # detail d'une task
+ken add      TITLE [--desc T] [--who W] [--status S] [--when YYYY-MM-DD]
+ken update   ID [--title T] [--desc D] [--status S] [--who W] [--when DATE]
+ken move     ID --to STATUS                               # raccourci status
+ken done     ID                                           # raccourci --status done
+```
+
+`STATUS` : `todo` | `doing` | `review` | `done`.
+
+### Configuration
+
+Resolution par ordre de priorite : flags > env vars > `.ken` > defauts.
+
+| Cle `.ken` / env | Defaut | Role |
+|---|---|---|
+| `project_id` / `KEN_PROJECT_ID` | (aucun) | UUID du projet |
+| `base_url` / `KEN_BASE_URL` | `http://localhost:9090` | URL de l'API kenboard |
+| `api_token` / `KEN_API_TOKEN` | aucun | Bearer token (prepare pour quand l'API aura de l'auth) |
+
+> **Securite** : `.ken` contient un token, il est cree en mode `0600` et
+> ajoute automatiquement au `.gitignore` du repo. Ne jamais committer ni
+> partager le fichier.
+
+### Exemples
+
+```sh
+# Tasks en cours
+$ ken list --status doing
+ID  STATUS  WHO     WHEN        TITLE
+8   doing   Claude  --          RC / script update dans un cron
+14  doing   Q       2026-04-12  UX / Refresh automatique
+
+# Mode JSON pour scripts
+$ ken list --json | jq '.[] | select(.status=="doing") | .title'
+
+# Workflow rapide
+$ ken add "Fix typo footer" --who Claude
+$ ken move 22 --to doing
+$ ken done 22
+```
+
 ## Dependencies
 
 - Python 3.6+
