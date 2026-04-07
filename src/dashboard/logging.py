@@ -1,8 +1,11 @@
 """Structured logging configuration."""
 
 import logging
+import logging.handlers
 import os
+import signal
 import sys
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -12,12 +15,33 @@ LOG_DIR = Path(os.getenv("LOG_DIR", "logs"))
 LOG_FILE = LOG_DIR / "dashboard.log"
 
 
+def _ignore_sighup() -> None:
+    """Ignore SIGHUP so newsyslog's post-rotate reload script does not kill us.
+
+    Default Python behaviour for SIGHUP is to terminate the process. On
+    FreeBSD (web2) newsyslog rotates ``/var/log/kenboard/kenboard.log``
+    every day at 00:00 and signals the daemon afterwards via the rc.d
+    ``reload`` script. We don't need to do anything on the signal — log
+    re-opening is handled transparently by ``WatchedFileHandler`` — so
+    we just refuse to die.
+    """
+    # SIGHUP does not exist on Windows; signal() may also fail when
+    # called from a non-main thread (e.g. tests inside a thread).
+    with suppress(AttributeError, ValueError):
+        signal.signal(signal.SIGHUP, signal.SIG_IGN)
+
+
 def setup_logging(debug: bool = False) -> None:
     """Configure structlog to output to both console and file."""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
+    _ignore_sighup()
 
-    # Configure stdlib logging as the backend
-    file_handler = logging.FileHandler(str(LOG_FILE), encoding="utf-8")
+    # WatchedFileHandler reopens the log file when its inode changes,
+    # which makes newsyslog rotation transparent: when the file is
+    # renamed/removed at midnight the next emit() opens a fresh handle
+    # at the same path. A plain FileHandler would silently keep writing
+    # to the deleted inode forever.
+    file_handler = logging.handlers.WatchedFileHandler(str(LOG_FILE), encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)
 
     console_handler = logging.StreamHandler(sys.stdout)
