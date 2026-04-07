@@ -1,6 +1,6 @@
 [project]
 name = "kenboard"
-version = "0.1.10"
+version = "0.1.11"
 description = "Project management dashboard with kanban boards, burndown charts, and category-based organization. Flask API backend with MySQL storage and static HTML generation."
 authors = [
     { name = "Q" }
@@ -69,6 +69,10 @@ dev = [
     "vulture>=2.14",
     "refurb>=2.2.0",
     "absolufy-imports>=0.3.1",
+]
+publish = [
+    "twine>=6.2.0",
+    "keyring>=25.7.0",
 ]
 
 [build-system]
