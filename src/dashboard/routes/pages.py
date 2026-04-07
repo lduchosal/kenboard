@@ -5,8 +5,11 @@ from datetime import date, datetime
 from typing import Any
 
 from flask import Blueprint, render_template
+from flask_login import login_required
 
 import dashboard.db as db
+from dashboard import __version__
+from dashboard.auth_user import admin_required
 
 bp = Blueprint("pages", __name__)
 
@@ -115,12 +118,14 @@ def _build_context(
         "color_list": COLOR_LIST,
         "avatar_colors": avatar_colors,
         "users": users,
+        "version": __version__,
         "fmt_date": fmt_date,
         "aggregate_burndown": aggregate_burndown,
     }
 
 
 @bp.route("/")
+@login_required
 def index() -> Any:
     """Serve the dashboard."""
     data = _load_all_data()
@@ -130,8 +135,10 @@ def index() -> Any:
 
 
 @bp.route("/admin/users")
+@login_required
 def admin_users() -> Any:
     """Serve the user management admin page."""
+    admin_required()
     data = _load_all_data()
     ctx = _build_context(data, prefix="/")
     ctx["title"] = "Utilisateurs"
@@ -139,8 +146,10 @@ def admin_users() -> Any:
 
 
 @bp.route("/admin/keys")
+@login_required
 def admin_keys() -> Any:
     """Serve the API keys management admin page."""
+    admin_required()
     conn = db.get_connection()
     queries = db.load_queries()
     try:
@@ -162,6 +171,7 @@ def admin_keys() -> Any:
 
 
 @bp.route("/cat/<cat_id>.html")
+@login_required
 def category(cat_id: str) -> Any:
     """Serve a category detail page."""
     data = _load_all_data()

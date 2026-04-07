@@ -20,6 +20,15 @@ class TestDashboardLoads:
         page.goto(live_server)
         expect(page.locator("h1")).to_have_text("KENBOARD")
 
+    def test_header_shows_version(self, live_server, clean_db, page: Page):
+        """#22: the kenboard version is rendered next to the title."""
+        from dashboard import __version__
+
+        page.goto(live_server)
+        badge = page.locator(".header-version")
+        expect(badge).to_be_visible()
+        expect(badge).to_have_text(f"v{__version__}")
+
     def test_add_category_button(self, live_server, clean_db, page: Page):
         """Add category card is visible."""
         page.goto(live_server)

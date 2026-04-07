@@ -8,6 +8,7 @@ from flask import Flask, request
 from flask_cors import CORS
 
 from dashboard.auth import init_auth
+from dashboard.auth_user import init_login_manager
 from dashboard.logging import get_logger, setup_logging
 from dashboard.routes import (
     categories_bp,
@@ -34,6 +35,10 @@ def create_app() -> Flask:
     )
 
     CORS(app)
+
+    # User session auth (Flask-Login). Must run before init_auth so that
+    # the API middleware can detect a logged-in user via current_user.
+    init_login_manager(app)
 
     # API key auth middleware (no-op when KENBOARD_AUTH_ENFORCED=false)
     init_auth(app)
@@ -74,6 +79,7 @@ def create_app() -> Flask:
 
     # Error handler for Pydantic validation errors
     from pydantic import ValidationError
+    from werkzeug.exceptions import HTTPException
 
     @app.errorhandler(ValidationError)
     def handle_validation_error(e: ValidationError) -> tuple[dict[str, Any], int]:
@@ -82,8 +88,14 @@ def create_app() -> Flask:
         return {"error": "Validation error", "details": e.errors()}, 422
 
     @app.errorhandler(Exception)
-    def handle_error(e: Exception) -> tuple[dict[str, str], int]:
-        """Log and return 500 for unhandled exceptions."""
+    def handle_error(e: Exception) -> Any:
+        """Log and return 500 for unhandled exceptions.
+
+        HTTPException (abort 401/403/404/...) is left to Flask's default
+        handling so the original status code propagates.
+        """
+        if isinstance(e, HTTPException):
+            return e
         log.error("unhandled_error", path=request.path, error=str(e), exc_info=True)
         return {"error": "Internal server error"}, 500
 

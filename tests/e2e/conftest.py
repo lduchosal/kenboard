@@ -118,6 +118,9 @@ def live_server(_setup_test_db):
 
     app = create_app()
     app.config["TESTING"] = True
+    # Bypass @login_required for the e2e suite by default. Tests that
+    # cover the auth flow run their own dedicated server or login.
+    app.config["LOGIN_DISABLED"] = True
 
     server = threading.Thread(
         target=lambda: app.run(port=SERVER_PORT, use_reloader=False),

@@ -31,6 +31,7 @@ import hashlib
 from typing import Any
 
 from flask import Flask, g, jsonify, request
+from flask_login import current_user
 
 import dashboard.db as db
 from dashboard.config import Config
@@ -167,6 +168,13 @@ def _enforce() -> Any:
     enforced = Config.KENBOARD_AUTH_ENFORCED
 
     g.api_auth_principal = None  # populated below if a token validates
+
+    # Logged-in user (cookie session) → full access, like admin token.
+    # Checked first so that the web UI keeps working in strict mode for
+    # any user that has signed in.
+    if current_user and current_user.is_authenticated:
+        g.api_auth_principal = f"user:{current_user.id}"
+        return None
 
     # Admin shortcut: matches the static .env key.
     if token and Config.KENBOARD_ADMIN_KEY and token == Config.KENBOARD_ADMIN_KEY:

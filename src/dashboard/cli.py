@@ -1,5 +1,6 @@
 """CLI entry point."""
 
+import sys
 from pathlib import Path
 
 import click
@@ -53,6 +54,38 @@ def migrate() -> None:
         ],
         check=True,
     )
+
+
+@cli.command()
+@click.argument("name")
+def set_password(name: str) -> None:
+    """Set or reset a user's password (prompts twice for confirmation)."""
+    import getpass
+
+    from argon2 import PasswordHasher
+
+    import dashboard.db as db_module
+
+    pw = getpass.getpass(f"New password for {name}: ")
+    pw2 = getpass.getpass("Confirm: ")
+    if pw != pw2:
+        click.echo("Passwords do not match", err=True)
+        sys.exit(1)
+    if len(pw) < 8:
+        click.echo("Password must be at least 8 characters", err=True)
+        sys.exit(1)
+    h = PasswordHasher().hash(pw)
+    conn = db_module.get_connection()
+    queries = db_module.load_queries()
+    try:
+        row = queries.usr_get_by_name(conn, name=name)
+        if not row:
+            click.echo(f"User {name} not found", err=True)
+            sys.exit(1)
+        queries.usr_update_password(conn, id=row["id"], password_hash=h)
+        click.echo(f"Password updated for {name}")
+    finally:
+        conn.close()
 
 
 @cli.command()

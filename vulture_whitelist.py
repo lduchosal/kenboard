@@ -12,3 +12,10 @@ setup_test_db  # noqa
 clean_db  # noqa
 live_server  # noqa
 _setup_test_db  # noqa
+admin_user  # noqa
+normal_user  # noqa
+seeded_admin  # noqa
+seeded_normal  # noqa
+auth_server  # noqa
+patch_db_connection  # noqa
+disable_auth_enforcement  # noqa

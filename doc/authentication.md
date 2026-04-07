@@ -158,12 +158,12 @@ d'un user qui avait des taches).
 
 | Point | Etat | Tache |
 |-------|------|-------|
-| Login form + session cookie | Pas fait | Tache "AUTH / Password authentification" sur le board |
-| Middleware exigant un user logge sur les routes ecriture | Pas fait | Idem |
-| Protection de `/admin/users` par `is_admin` | Pas fait | Idem |
-| API keys avec scopes par projet | **Fait** (mode soft) | Cf. `doc/api-keys.md`, tache #6 |
+| Login form + session cookie | **Fait** | Cf. `doc/auth-user.md`, tache #1 |
+| Middleware exigant un user logge sur les routes ecriture | **Fait** | Idem (`@login_required` sur toutes les routes pages, session cookie accept\u00e9 par le middleware api keys) |
+| Protection de `/admin/users` par `is_admin` | **Fait** | Idem (`admin_required()` helper) |
+| API keys avec scopes par projet | **Fait** | Cf. `doc/api-keys.md`, tache #6 |
 | Page de gestion des API keys `/admin/keys` | **Fait** | Cf. `doc/api-keys.md`, tache #7 |
-| Reset / changement de mot de passe par l'utilisateur lui-meme | Pas fait | A planifier (le PATCH actuel impose de connaitre l'id, accessible aux admins via UI) |
+| Reset / changement de mot de passe par l'utilisateur lui-meme | Pas fait | A planifier (le PATCH actuel impose de connaitre l'id, accessible aux admins via UI ou via la CLI `kenboard set-password`) |
 
 ## Auth API REST (Bearer keys)
 

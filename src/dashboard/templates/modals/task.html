@@ -7,7 +7,7 @@
     <div class="edit-row">
       <select id="task-modal-who">
         {% for name in avatar_colors %}
-        <option>{{ name }}</option>
+        <option {% if current_user.is_authenticated and current_user.name == name %}selected{% endif %}>{{ name }}</option>
         {% endfor %}
       </select>
       <input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none">

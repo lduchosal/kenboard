@@ -114,6 +114,21 @@ def setup_test_db():
     _ensure_test_db()
 
 
+@pytest.fixture(scope="session", autouse=True)
+def patch_db_connection(setup_test_db):
+    """Force ``dashboard.db.get_connection`` to point at the test database for the
+    entire test session, regardless of which fixtures are pulled in.
+
+    Without this, helper modules that resolve their connection at
+    call time (e.g. ``dashboard.auth``, ``dashboard.auth_user``) would
+    hit the production database when a test only requests the ``db``
+    fixture.
+    """
+    import dashboard.db as db_module
+
+    db_module.get_connection = _get_test_connection
+
+
 @pytest.fixture(autouse=True)
 def disable_auth_enforcement(monkeypatch):
     """Force KENBOARD_AUTH_ENFORCED=False for every test by default.
@@ -135,6 +150,9 @@ def app(setup_test_db):
 
     app = create_app()
     app.config["TESTING"] = True
+    # Bypass @login_required for unit tests by default. Tests that
+    # exercise the auth flow itself flip this back to False.
+    app.config["LOGIN_DISABLED"] = True
     return app
 
 

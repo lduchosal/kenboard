@@ -39,3 +39,6 @@ class Config:
     KENBOARD_AUTH_ENFORCED: bool = (
         os.getenv("KENBOARD_AUTH_ENFORCED", "false").lower() == "true"
     )
+
+    # User session authentication (cf. doc/auth-user.md)
+    KENBOARD_SECRET_KEY: str = os.getenv("KENBOARD_SECRET_KEY", "")
