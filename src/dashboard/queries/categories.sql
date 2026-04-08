@@ -2,7 +2,7 @@
 -- Get all categories ordered by position.
 SELECT id, name, color, position
 FROM categories
-ORDER BY position;
+ORDER BY position ASC;
 
 -- name: cat_get_by_id^
 -- Get a single category by id.

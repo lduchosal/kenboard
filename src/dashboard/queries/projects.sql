@@ -2,14 +2,14 @@
 -- Get all projects ordered by position.
 SELECT id, cat_id, name, acronym, status, position, default_who
 FROM projects
-ORDER BY position;
+ORDER BY position ASC;
 
 -- name: proj_get_by_cat
 -- Get projects for a category ordered by position.
 SELECT id, cat_id, name, acronym, status, position, default_who
 FROM projects
 WHERE cat_id = :cat_id
-ORDER BY position;
+ORDER BY position ASC;
 
 -- name: proj_get_by_id^
 -- Get a single project by id.

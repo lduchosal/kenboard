@@ -2,7 +2,7 @@
 -- Get all users ordered by name.
 SELECT id, name, color, is_admin, created_at, updated_at
 FROM users
-ORDER BY name;
+ORDER BY name ASC;
 
 -- name: usr_get_by_id^
 -- Get a single user by id.

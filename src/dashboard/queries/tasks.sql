@@ -4,7 +4,7 @@ SELECT id, project_id, title, description, status, who, due_date, position,
        created_at, updated_at
 FROM tasks
 WHERE project_id = :project_id
-ORDER BY position;
+ORDER BY position ASC;
 
 -- name: task_get_by_id^
 -- Get a single task by id.
