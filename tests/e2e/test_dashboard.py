@@ -585,14 +585,34 @@ class TestTaskCRUD:
         page.wait_for_timeout(500)
         page.reload()
 
-        # Open the task to render the description (renderMarkdown runs on load)
-        page.wait_for_selector(".task-desc")
-        html = page.eval_on_selector(".task-desc", "el => el.innerHTML")
+        # ``renderMarkdown`` runs on load and writes into ``.task-desc``
+        # regardless of whether the card is expanded. The element is
+        # ``display:none`` until the card flips to detail-mode, so wait for
+        # it to be attached to the DOM, not visible.
+        page.wait_for_selector(".task-desc", state="attached")
 
-        # DOMPurify strips event handlers and javascript: URLs
-        assert "onerror" not in html
-        assert "javascript:" not in html.lower()
-        assert "<script" not in html.lower()
+        # Inspect the actual DOM, not the HTML source. Marked escapes inline
+        # HTML so the substring ``onerror`` may legitimately appear as text
+        # inside ``&lt;img onerror=...&gt;`` — that's safe, the browser
+        # never executes it. What's NOT safe is an actual element carrying
+        # the attribute, or a real <script>, or an anchor whose href is
+        # ``javascript:``. Those are the conditions we assert against.
+        has_onerror = page.eval_on_selector(
+            ".task-desc",
+            "el => !!el.querySelector('[onerror], [onload], [onclick]')",
+        )
+        has_script = page.eval_on_selector(
+            ".task-desc", "el => !!el.querySelector('script')"
+        )
+        has_js_url = page.eval_on_selector(
+            ".task-desc",
+            "el => Array.from(el.querySelectorAll('a, img'))"
+            ".some(n => (n.getAttribute('href') || n.getAttribute('src') || '')"
+            ".toLowerCase().startsWith('javascript:'))",
+        )
+        assert not has_onerror, "an element carries an inline event handler"
+        assert not has_script, "a <script> element survived sanitisation"
+        assert not has_js_url, "a javascript: URL survived sanitisation"
 
         # No dialog ever fired
         assert dialogs == [], f"unexpected JS dialogs: {dialogs}"

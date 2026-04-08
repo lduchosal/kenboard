@@ -90,10 +90,20 @@ function editCat(id, name, color) {
   document.querySelector('#cat-modal h3').textContent = id ? 'Editer la cat\u00e9gorie' : 'Nouvelle cat\u00e9gorie';
   const delBtn = document.getElementById('cat-modal-delete');
   if (delBtn) delBtn.style.display = id ? '' : 'none';
+  // Mark the matching dot as selected. For a brand-new category (no color
+  // passed) we fall back to the first dot so the form always has a valid
+  // pick — the server validator (#56) refuses empty colors.
   const colors = document.getElementById('cat-modal-colors');
-  if (colors) colors.querySelectorAll('.color-dot').forEach(d => {
-    d.classList.toggle('selected', d.dataset.color === color);
-  });
+  if (colors) {
+    const dots = colors.querySelectorAll('.color-dot');
+    let any = false;
+    dots.forEach(d => {
+      const match = d.dataset.color === color;
+      d.classList.toggle('selected', match);
+      if (match) any = true;
+    });
+    if (!any && dots.length > 0) dots[0].classList.add('selected');
+  }
   const list = document.getElementById('cat-modal-projects');
   if (list) {
     list.innerHTML = '';
