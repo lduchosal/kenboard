@@ -360,8 +360,9 @@ def show(ctx: click.Context, task_id: int, json_mode: bool) -> None:
 @click.option("--status", type=click.Choice(VALID_STATUSES), default="todo")
 @click.option("--when", help="Due date YYYY-MM-DD")
 @click.option("--json", "json_mode", is_flag=True, help="Output as JSON")
+# One option per task field, by design — silence the "too many arguments" warning.
 @click.pass_context
-def add(  # noqa: PLR0913 - one option per task field, by design
+def add(  # noqa: PLR0913
     ctx: click.Context,
     title: str,
     desc: str,
@@ -393,8 +394,9 @@ def add(  # noqa: PLR0913 - one option per task field, by design
 @click.option("--status", type=click.Choice(VALID_STATUSES), help="New status")
 @click.option("--when", help="New due date YYYY-MM-DD")
 @click.option("--json", "json_mode", is_flag=True, help="Output as JSON")
+# One option per task field, by design — silence the "too many arguments" warning.
 @click.pass_context
-def update(  # noqa: PLR0913 - one option per task field, by design
+def update(  # noqa: PLR0913
     ctx: click.Context,
     task_id: int,
     title: str | None,

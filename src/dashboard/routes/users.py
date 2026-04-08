@@ -20,6 +20,8 @@ from dashboard.models.user import (
 
 bp = Blueprint("users", __name__, url_prefix="/api/v1/users")
 
+NOT_FOUND_ERROR = {"error": "Not found"}
+
 _hasher = PasswordHasher()
 
 
@@ -74,7 +76,7 @@ def update_user(user_id: str) -> Any:
     try:
         existing = queries.usr_get_by_id(conn, id=user_id)
         if not existing:
-            return jsonify({"error": "Not found"}), 404
+            return jsonify(NOT_FOUND_ERROR), 404
         new_name = data.name or existing["name"]
         # Refuse rename collision with another user
         if data.name and data.name != existing["name"]:
@@ -118,7 +120,7 @@ def change_password(user_id: str) -> Any:
     try:
         row = queries.usr_get_password_hash(conn, id=user_id)
         if not row:
-            return jsonify({"error": "Not found"}), 404
+            return jsonify(NOT_FOUND_ERROR), 404
         existing_hash = row.get("password_hash") or ""
         if not existing_hash:
             return jsonify({"error": "no password set"}), 400
@@ -149,7 +151,7 @@ def reset_password(user_id: str) -> Any:
     try:
         existing = queries.usr_get_by_id(conn, id=user_id)
         if not existing:
-            return jsonify({"error": "Not found"}), 404
+            return jsonify(NOT_FOUND_ERROR), 404
         queries.usr_update_password(
             conn, id=user_id, password_hash=_hash_password(data.new_password)
         )
