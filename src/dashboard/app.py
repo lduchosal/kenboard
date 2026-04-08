@@ -152,33 +152,35 @@ def create_app() -> Flask:
     app.register_blueprint(users_bp)
     app.register_blueprint(keys_bp)
 
-    # Convenience routes for static assets at root
-    @app.route("/style.css")
+    # Convenience routes for static assets at root. ``methods=["GET"]`` is
+    # spelled explicitly per Sonar python:S6965 — Flask defaults to GET only,
+    # but the explicit form is clearer and prevents accidental method drift.
+    @app.route("/style.css", methods=["GET"])
     def serve_css() -> Any:
         """Serve stylesheet from root URL."""
         return app.send_static_file("style.css")
 
-    @app.route("/app.js")
+    @app.route("/app.js", methods=["GET"])
     def serve_js() -> Any:
         """Serve JavaScript from root URL."""
         return app.send_static_file("app.js")
 
-    @app.route("/sortable.min.js")
+    @app.route("/sortable.min.js", methods=["GET"])
     def serve_sortable() -> Any:
         """Serve vendored Sortable.js from root URL."""
         return app.send_static_file("sortable.min.js")
 
-    @app.route("/marked.min.js")
+    @app.route("/marked.min.js", methods=["GET"])
     def serve_marked() -> Any:
         """Serve vendored marked.js from root URL."""
         return app.send_static_file("marked.min.js")
 
-    @app.route("/dompurify.min.js")
+    @app.route("/dompurify.min.js", methods=["GET"])
     def serve_dompurify() -> Any:
         """Serve vendored DOMPurify from root URL."""
         return app.send_static_file("dompurify.min.js")
 
-    @app.route("/favicon.ico")
+    @app.route("/favicon.ico", methods=["GET"])
     def favicon() -> Any:
         """Return empty favicon."""
         return "", 204

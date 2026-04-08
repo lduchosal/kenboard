@@ -123,7 +123,7 @@ def _build_context(
     }
 
 
-@bp.route("/")
+@bp.route("/", methods=["GET"])
 @login_required
 def index() -> Any:
     """Serve the dashboard."""
@@ -133,7 +133,7 @@ def index() -> Any:
     return render_template("index.html", **ctx)
 
 
-@bp.route("/admin/users")
+@bp.route("/admin/users", methods=["GET"])
 @login_required
 def admin_users() -> Any:
     """Serve the user management admin page."""
@@ -144,7 +144,7 @@ def admin_users() -> Any:
     return render_template("admin_users.html", **ctx)
 
 
-@bp.route("/admin/keys")
+@bp.route("/admin/keys", methods=["GET"])
 @login_required
 def admin_keys() -> Any:
     """Serve the API keys management admin page."""
@@ -169,7 +169,7 @@ def admin_keys() -> Any:
     return render_template("admin_keys.html", **ctx)
 
 
-@bp.route("/cat/<cat_id>.html")
+@bp.route("/cat/<cat_id>.html", methods=["GET"])
 @login_required
 def category(cat_id: str) -> Any:
     """Serve a category detail page."""
