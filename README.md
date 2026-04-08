@@ -9,8 +9,6 @@
 [![Publish](https://github.com/lduchosal/kenboard/actions/workflows/publish.yml/badge.svg)](https://github.com/lduchosal/kenboard/actions/workflows/publish.yml)
 [![codecov](https://codecov.io/gh/lduchosal/kenboard/branch/main/graph/badge.svg)](https://codecov.io/gh/lduchosal/kenboard)
 [![Docstring coverage](./interrogate_badge.svg)](./interrogate_badge.svg)
-[![Downloads](https://static.pepy.tech/badge/kenboard)](https://pepy.tech/project/kenboard)
-
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
