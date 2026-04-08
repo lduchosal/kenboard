@@ -114,12 +114,13 @@ def _ensure_test_db() -> None:
             revoked_at DATETIME NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_key_hash (key_hash),
-            INDEX idx_api_keys_user (user_id),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            CONSTRAINT fk_api_keys_user
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """)
     # api_keys.user_id was added in migration 0010. Back-fill on legacy
-    # carried-over schemas the same way we do for users.session_nonce.
+    # carried-over schemas, in two atomic steps so a partial state can
+    # converge — mirrors the idempotent pattern in the migration itself.
     cur.execute(
         "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
         "WHERE TABLE_SCHEMA = DATABASE() "
@@ -127,11 +128,17 @@ def _ensure_test_db() -> None:
         "AND COLUMN_NAME = 'user_id'"
     )
     if cur.fetchone()[0] == 0:
+        cur.execute("ALTER TABLE api_keys ADD COLUMN user_id VARCHAR(36) NULL AFTER id")
+    cur.execute(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS "
+        "WHERE TABLE_SCHEMA = DATABASE() "
+        "AND TABLE_NAME = 'api_keys' "
+        "AND CONSTRAINT_NAME = 'fk_api_keys_user' "
+        "AND CONSTRAINT_TYPE = 'FOREIGN KEY'"
+    )
+    if cur.fetchone()[0] == 0:
         cur.execute(
-            "ALTER TABLE api_keys "
-            "ADD COLUMN user_id VARCHAR(36) NULL AFTER id, "
-            "ADD INDEX idx_api_keys_user (user_id), "
-            "ADD CONSTRAINT fk_api_keys_user "
+            "ALTER TABLE api_keys ADD CONSTRAINT fk_api_keys_user "
             "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL"
         )
     cur.execute("""

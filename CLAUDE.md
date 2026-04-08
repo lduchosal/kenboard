@@ -129,6 +129,30 @@ Statuses: `todo` | `doing` | `review` | `done`. Use `--json` whenever
 parsing the output. The `ken` binary uses only the stdlib for HTTP — do not
 add `requests`/`httpx` as a runtime dep just for it.
 
+### Working a task off the board
+
+When the user asks Claude to pick up a kenboard task, follow this loop:
+
+1. `ken list --who Claude --status todo --json` to see the queue. Pick one,
+   announce the choice and why.
+2. `ken move <id> --to doing` *before* starting the implementation, so the
+   board reflects WIP and other agents/humans don't grab the same card.
+3. Implement. Run the relevant quality gates (`pdm run lint`, the matching
+   `pdm run test-*`). If pre-existing failures show up in unrelated areas
+   (e.g. WIP from another in-flight task in the working tree), confirm they
+   are not caused by your changes — `git stash && pdm run test-unit && git
+   stash pop` is the quick way to prove a clean baseline.
+4. `ken move <id> --to review` once the work is ready for the user.
+5. **Append a resolution block to the task description** with `ken update
+   <id> --desc "<original>\n\n---\n\n## Résolution\n..."`. Preserve the
+   original description verbatim, then add sections for *Modifications*
+   (file paths + one-line summary), *Comportements obtenus*, and *Garde-fous*
+   (which gates ran + their result). This is how the board accumulates an
+   audit trail — the commit message alone is not enough since not every task
+   maps 1:1 to a commit.
+
+Do **not** mark a task `done` yourself; that's the user's call after review.
+
 ## When making changes
 
 - Read the relevant `queries/*.sql` and `models/*.py` before touching a route
@@ -141,3 +165,42 @@ add `requests`/`httpx` as a runtime dep just for it.
   declaring work done.
 - Don't introduce an ORM, don't add a JS build step, don't bypass the
   Pydantic validation layer.
+
+## Writing migrations (read before adding any `migrations/*.sql`)
+
+We've been burned twice (0008 → 0009 for `session_nonce`, 0010 → 0011 for
+`api_key.user_id`) by yoyo recording a migration as applied while the DDL
+silently never persisted. To stop the bleeding, **all** new migrations
+must follow these rules:
+
+1. **Idempotent by construction.** Each DDL step must check
+   `INFORMATION_SCHEMA.COLUMNS` / `TABLE_CONSTRAINTS` before running, and
+   no-op (`DO 0`) if the change already exists. Use the
+   `PREPARE`/`EXECUTE` pattern from `0009.readd_user_session_nonce.sql` or
+   `0011.readd_api_key_user_id.sql` as a template — copy them, don't
+   reinvent.
+2. **One concern per `ALTER TABLE`.** Never combine `ADD COLUMN` +
+   `ADD CONSTRAINT` + `ADD INDEX` in a single multi-clause ALTER. Split
+   each into its own statement so a partial failure can be replayed
+   step-by-step. Multi-clause ALTERs are the failure mode that creates
+   stuck states.
+3. **Let FKs auto-create their index.** Don't add an explicit
+   `INDEX idx_xxx (col)` next to a `FOREIGN KEY (col)` — MySQL creates a
+   covering index for the FK automatically and the redundancy is the
+   kind of thing that bit us.
+4. **Never edit a migration file after it has been applied anywhere.**
+   yoyo hashes the `migration_id` (filename), not the file contents, so
+   editing an applied migration changes *nothing* on a DB that already
+   recorded it. If a previously-applied migration is broken on prod,
+   add a recovery migration `00NN.readd_<thing>.sql` that `depends:` on
+   the broken one and idempotently re-applies the change.
+5. **Every migration needs a `-- rollback` block** that is also
+   idempotent (guard each `DROP` with an `INFORMATION_SCHEMA` check) so
+   dev rollbacks from any partial state converge.
+6. **Mirror schema changes in `tests/conftest.py`.** The test DB is
+   hand-rolled, not migrated by yoyo. Add the column to the
+   `CREATE TABLE` block *and* add a back-fill `ALTER TABLE` (split into
+   atomic steps) for legacy carried-over test schemas.
+
+When in doubt, read `0011.readd_api_key_user_id.sql` end-to-end — it is
+the canonical example of every rule above applied together.

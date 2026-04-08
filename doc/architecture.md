@@ -99,6 +99,58 @@ migrations/
 
 Chaque fichier contient le SQL `CREATE` et un `-- rollback` avec le `DROP`.
 
+### Regles obligatoires pour ecrire une migration
+
+On s'est fait avoir deux fois (0008 -> 0009 pour `users.session_nonce`,
+puis 0010 -> 0011 pour `api_keys.user_id`) par yoyo qui enregistre une
+migration comme appliquee alors que le DDL n'a jamais persiste sur le
+schema. Symptome typique : `_yoyo_migration` contient le hash de la
+migration, mais `INFORMATION_SCHEMA.COLUMNS` ne voit pas la nouvelle
+colonne, et l'API plante en boucle avec `Unknown column`.
+
+Cause racine : yoyo ne hash que le `migration_id` (le nom du fichier),
+**pas le contenu**. Une fois enregistree, la migration ne sera plus
+jamais rejouee. Combine au fait que les statements DDL MySQL font un
+implicit commit qui invalide les savepoints de yoyo, un `ALTER TABLE`
+multi-clause qui echoue partiellement peut laisser la base dans un etat
+ou yoyo croit avoir reussi mais ou rien n'a vraiment ete applique.
+
+Du coup, **toutes les nouvelles migrations** doivent suivre ces regles :
+
+1. **Idempotente par construction.** Chaque etape DDL verifie
+   `INFORMATION_SCHEMA.COLUMNS` ou `TABLE_CONSTRAINTS` avant de tourner
+   et fait `DO 0` si la modification existe deja. Pattern :
+   `PREPARE`/`EXECUTE` avec une variable `@stmt` calculee par un `IF()`.
+   Voir `0009.readd_user_session_nonce.sql` ou
+   `0011.readd_api_key_user_id.sql` comme templates.
+2. **Une seule preoccupation par `ALTER TABLE`.** Jamais de combinaison
+   `ADD COLUMN` + `ADD CONSTRAINT` + `ADD INDEX` dans le meme statement.
+   On split en plusieurs `ALTER TABLE` separes pour qu'un echec partiel
+   reste rejouable etape par etape.
+3. **Pas d'index explicite a cote d'une FK sur la meme colonne.** MySQL
+   cree automatiquement un index couvrant pour chaque FK. En ajouter un
+   second en parallele est un des trucs qui a contribue au stuck state
+   de 0010.
+4. **Ne jamais editer une migration deja appliquee quelque part.** yoyo
+   ne rejouera pas le fichier modifie. Si une migration deja appliquee
+   est cassee sur prod, on ajoute une migration de recuperation
+   `00NN.readd_<truc>.sql` qui `depends:` sur la cassee et ré-applique
+   la modification de maniere idempotente. C'est exactement ce que font
+   0009 et 0011.
+5. **Le `-- rollback` est aussi idempotent.** Chaque `DROP` est garde
+   par un check `INFORMATION_SCHEMA` pour qu'un rollback depuis n'importe
+   quel etat partiel converge.
+6. **Mirroir dans `tests/conftest.py`.** La base de test est creee a la
+   main (sans yoyo), donc toute nouvelle colonne doit etre ajoutee dans
+   le `CREATE TABLE` *et* dans le bloc de back-fill (en etapes atomiques)
+   pour les schemas de test heritages d'une session precedente.
+
+Si une de ces regles parait excessive sur une migration triviale, c'est
+qu'on n'a pas encore ete brule par le bon angle — appliquer les regles
+quand meme. Le cout d'une migration verbose et idempotente est nul ; le
+cout d'une prod qui boucle en 500 sur tout `/api/v1/*` est tres
+au-dessus.
+
 ## Schema de la base de donnees
 
 ### categories
