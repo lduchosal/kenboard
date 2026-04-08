@@ -343,6 +343,93 @@ class TestTaskCRUD:
         expect(page.locator("#task-modal")).to_be_visible()
         expect(page.locator("#task-modal-duplicate")).not_to_be_visible()
 
+    def test_project_default_who_prefills_edit_modal_when_who_empty(
+        self, live_server, clean_db, page: Page
+    ):
+        """#33: when editing a task whose `who` is empty, the project's default_who is
+        used as fallback (instead of leaving the select on an arbitrary first option).
+
+        When `who` is set, it is preserved.
+        """
+        # Seed two users
+        page.goto(live_server + "/admin/users")
+        page.fill("#new-name", "Alice")
+        page.fill("#new-color", "#8250df")
+        page.click("#users-create-btn")
+        page.wait_for_timeout(400)
+        page.fill("#new-name", "Bob")
+        page.fill("#new-color", "#bf8700")
+        page.click("#users-create-btn")
+        page.wait_for_timeout(400)
+
+        _create_category_and_project(live_server, page)
+
+        # Set default_who = Bob on the project
+        page.locator(".section-title").first.hover()
+        page.locator(".section-edit-btn").first.click()
+        page.select_option("#new-proj-default-who", "Bob")
+        page.click("#project-modal .btn-save")
+        page.wait_for_timeout(500)
+        page.reload()
+
+        # Create a task WITHOUT a who (clear the dropdown)
+        page.click(".kanban-add-btn")
+        page.fill("#task-modal-title", "NoWho")
+        # Force empty who via JS (simulates an old task with no assignee)
+        page.evaluate(
+            "document.getElementById('task-modal-who').innerHTML = "
+            "'<option value=\"\"></option>' + document.getElementById('task-modal-who').innerHTML"
+        )
+        page.select_option("#task-modal-who", "")
+        page.click("#task-modal .btn-save")
+        page.wait_for_timeout(500)
+        page.reload()
+
+        # Open it for editing — `who` is empty, default_who=Bob should kick in
+        page.click(".kanban-task")
+        page.locator(".kanban-task.detail-mode .btn-edit").first.wait_for(
+            state="visible"
+        )
+        page.locator(".kanban-task.detail-mode .btn-edit").first.click()
+        page.locator("#task-modal").wait_for(state="visible")
+        expect(page.locator("#task-modal-who")).to_have_value("Bob")
+
+    def test_edit_modal_keeps_existing_who(self, live_server, clean_db, page: Page):
+        """#33 corollary: a task that already has a `who` set keeps it on edit, even if
+        the project has a different default_who.
+        """
+        page.goto(live_server + "/admin/users")
+        for name, color in [("Alice", "#8250df"), ("Bob", "#bf8700")]:
+            page.fill("#new-name", name)
+            page.fill("#new-color", color)
+            page.click("#users-create-btn")
+            page.wait_for_timeout(400)
+
+        _create_category_and_project(live_server, page)
+        page.locator(".section-title").first.hover()
+        page.locator(".section-edit-btn").first.click()
+        page.select_option("#new-proj-default-who", "Bob")
+        page.click("#project-modal .btn-save")
+        page.wait_for_timeout(500)
+        page.reload()
+
+        # Create a task explicitly assigned to Alice
+        page.click(".kanban-add-btn")
+        page.fill("#task-modal-title", "AliceTask")
+        page.select_option("#task-modal-who", "Alice")
+        page.click("#task-modal .btn-save")
+        page.wait_for_timeout(500)
+        page.reload()
+
+        # Open it: who must stay Alice, NOT switch to Bob (the project default)
+        page.click(".kanban-task")
+        page.locator(".kanban-task.detail-mode .btn-edit").first.wait_for(
+            state="visible"
+        )
+        page.locator(".kanban-task.detail-mode .btn-edit").first.click()
+        page.locator("#task-modal").wait_for(state="visible")
+        expect(page.locator("#task-modal-who")).to_have_value("Alice")
+
     def test_project_default_who_prefills_task_modal(
         self, live_server, clean_db, page: Page
     ):

@@ -1,4 +1,5 @@
-{% set who = t.get("who", "") or "?" %}
+{% set who_raw = t.get("who", "") %}
+{% set who = who_raw or "?" %}
 {% set initials = who[0].upper() %}
 {% set avatar_color = avatar_colors.get(who, "var(--dimmed)") %}
 {% set when_val = t.get("due_date") or t.get("when") %}
@@ -23,6 +24,6 @@
     {% if desc %}<div class="task-desc">{{ desc }}</div>{% endif %}
   </div>
   <div class="task-actions detail-only">
-    <button class="btn-edit" onclick="event.stopPropagation();openEditTask(this,'{{ t.get('id', '') }}','{{ t.title | jsesc }}','{{ desc | jsesc }}','{{ who | jsesc }}','{{ when_str }}')">Editer</button>
+    <button class="btn-edit" onclick="event.stopPropagation();openEditTask(this,'{{ t.get('id', '') }}','{{ t.title | jsesc }}','{{ desc | jsesc }}','{{ who_raw | jsesc }}','{{ when_str }}')">Editer</button>
   </div>
 </div>

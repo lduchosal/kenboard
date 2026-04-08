@@ -227,15 +227,26 @@ function openEditTask(btn, id, title, desc, who, when) {
   // so the original onclick params are stale and would silently revert the
   // task to its render-time status on save (#11).
   const card = btn.closest('.kanban-task');
+  const kanban = card?.closest('.kanban');
   const status = card?.closest('.kanban-tasks')?.dataset.status || 'todo';
-  const projectId = card?.closest('.kanban')?.dataset.projectId || '';
+  const projectId = kanban?.dataset.projectId || '';
+  const projectDefaultWho = kanban?.dataset.defaultWho || '';
   _taskTargetList = null;
   _taskEditId = id;
   document.getElementById('task-modal-project-id').value = projectId;
   document.getElementById('task-modal-heading').textContent = 'Editer la t\u00e2che';
   document.getElementById('task-modal-title').value = title;
   document.getElementById('task-modal-desc').value = desc;
-  document.getElementById('task-modal-who').value = who;
+  // Keep the existing assignee if set, else fall back to the project's
+  // default_who (#33). When neither is set the select stays on its
+  // server-rendered default (the logged-in user, cf. modals/task.html).
+  const whoSelect = document.getElementById('task-modal-who');
+  const effectiveWho = who || projectDefaultWho;
+  if (whoSelect && effectiveWho && [...whoSelect.options].some(o => o.value === effectiveWho)) {
+    whoSelect.value = effectiveWho;
+  } else if (whoSelect) {
+    whoSelect.value = who;
+  }
   document.getElementById('task-modal-when').value = when;
   document.getElementById('task-modal-status').value = status;
   const delBtn = document.getElementById('task-modal-delete');
