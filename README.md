@@ -11,6 +11,15 @@
 [![Docstring coverage](./interrogate_badge.svg)](./interrogate_badge.svg)
 [![Downloads](https://static.pepy.tech/badge/kenboard)](https://pepy.tech/project/kenboard)
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=bugs)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
+
 <p align="center">
   <img src="./logo.svg" alt="kenboard logo" width="480">
 </p>

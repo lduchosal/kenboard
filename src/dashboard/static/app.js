@@ -138,10 +138,13 @@ function saveCat() {
   const selected = document.querySelector('#cat-modal-colors .color-dot.selected');
   const color = selected ? selected.dataset.color : '';
   if (!name) return;
-  const projectOrder = [...document.querySelectorAll('#cat-modal-projects .cat-modal-project')].map(el => el.dataset.projectId);
+  // Field name MUST match the Pydantic schema (snake_case). Sending
+  // camelCase ``projectOrder`` here would silently drop the reorder
+  // because Pydantic v2 ignores unknown fields by default (#71).
+  const project_order = [...document.querySelectorAll('#cat-modal-projects .cat-modal-project')].map(el => el.dataset.projectId);
   const method = id ? 'PATCH' : 'POST';
   const url = id ? `${API_BASE}/categories/${id}` : `${API_BASE}/categories`;
-  apiCall(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color, projectOrder }) })
+  apiCall(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color, project_order }) })
     .then(() => window.location.reload()).catch(() => {});
   document.getElementById('cat-modal').style.display = 'none';
 }
@@ -215,8 +218,10 @@ function saveProject() {
   if (!name || !acronym) return;
   const method = id ? 'PATCH' : 'POST';
   const url = id ? `${API_BASE}/projects/${id}` : `${API_BASE}/projects`;
-  const projectOrder = [...document.querySelectorAll('#proj-modal-projects .cat-modal-project')].map(el => el.dataset.projectId);
-  apiCall(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, acronym, cat, status, default_who: defaultWho, projectOrder }) })
+  // Field name MUST match the Pydantic schema (snake_case). Sending
+  // camelCase ``projectOrder`` here would silently drop the reorder (#71).
+  const project_order = [...document.querySelectorAll('#proj-modal-projects .cat-modal-project')].map(el => el.dataset.projectId);
+  apiCall(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, acronym, cat, status, default_who: defaultWho, project_order }) })
     .then(() => window.location.reload()).catch(() => {});
   document.getElementById('project-modal').style.display = 'none';
 }

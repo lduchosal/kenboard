@@ -168,6 +168,121 @@ class TestProjectAPI:
         resp = client.delete("/api/v1/projects/test-proj")
         assert resp.status_code == 204
 
+    def test_patch_project_reorders_siblings(self, client, db, queries):
+        """#71: PATCH /projects/<id> with project_order rewrites positions."""
+        queries.cat_create(db, id="cat", name="Cat", color="r", position=0)
+        queries.proj_create(
+            db,
+            id="p-a",
+            cat_id="cat",
+            name="A",
+            acronym="A",
+            status="active",
+            position=0,
+            default_who="",
+        )
+        queries.proj_create(
+            db,
+            id="p-b",
+            cat_id="cat",
+            name="B",
+            acronym="B",
+            status="active",
+            position=1,
+            default_who="",
+        )
+        queries.proj_create(
+            db,
+            id="p-c",
+            cat_id="cat",
+            name="C",
+            acronym="C",
+            status="active",
+            position=2,
+            default_who="",
+        )
+        resp = client.patch(
+            "/api/v1/projects/p-a",
+            data=json.dumps({"project_order": ["p-c", "p-b", "p-a"]}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        rows = list(queries.proj_get_by_cat(db, cat_id="cat"))
+        assert [r["id"] for r in rows] == ["p-c", "p-b", "p-a"]
+
+
+class TestCategoryProjectReorder:
+    """#71: PATCH /categories/<id> reorders the projects it owns."""
+
+    def test_patch_category_reorders_its_projects(self, client, db, queries):
+        queries.cat_create(db, id="cat", name="Cat", color="r", position=0)
+        queries.proj_create(
+            db,
+            id="p-a",
+            cat_id="cat",
+            name="A",
+            acronym="A",
+            status="active",
+            position=0,
+            default_who="",
+        )
+        queries.proj_create(
+            db,
+            id="p-b",
+            cat_id="cat",
+            name="B",
+            acronym="B",
+            status="active",
+            position=1,
+            default_who="",
+        )
+        resp = client.patch(
+            "/api/v1/categories/cat",
+            data=json.dumps({"project_order": ["p-b", "p-a"]}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        rows = list(queries.proj_get_by_cat(db, cat_id="cat"))
+        assert [r["id"] for r in rows] == ["p-b", "p-a"]
+
+    def test_patch_category_ignores_camelcase_alias(self, client, db, queries):
+        """Sending the legacy camelCase ``projectOrder`` is silently dropped.
+
+        This is the failure mode that #71 fixed in app.js: Pydantic v2
+        ignores unknown fields, so the reorder was lost without any error.
+        The test pins the contract: the canonical field is snake_case.
+        """
+        queries.cat_create(db, id="cat", name="Cat", color="r", position=0)
+        queries.proj_create(
+            db,
+            id="p-a",
+            cat_id="cat",
+            name="A",
+            acronym="A",
+            status="active",
+            position=0,
+            default_who="",
+        )
+        queries.proj_create(
+            db,
+            id="p-b",
+            cat_id="cat",
+            name="B",
+            acronym="B",
+            status="active",
+            position=1,
+            default_who="",
+        )
+        resp = client.patch(
+            "/api/v1/categories/cat",
+            data=json.dumps({"projectOrder": ["p-b", "p-a"]}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        # Order unchanged → confirms camelCase is silently ignored.
+        rows = list(queries.proj_get_by_cat(db, cat_id="cat"))
+        assert [r["id"] for r in rows] == ["p-a", "p-b"]
+
 
 class TestTaskAPI:
     """Test task API endpoints."""
