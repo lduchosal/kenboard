@@ -188,7 +188,7 @@ if [ "$QUALITY_ONLY" = true ]; then
 fi
 
 print_step "Bumping Version (pdm bump ${BUMP_TYPE})"
-run_command "pdm bump -v ${BUMP_TYPE}" "Version bump"
+run_command "pdm bump ${BUMP_TYPE}" "Version bump"
 
 # Sync __init__.py with pyproject.toml version (portable sed: BSD/macOS + GNU/Linux)
 VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
