@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import secrets
 from datetime import timedelta
-from http import HTTPStatus
 from typing import Any
 
 from argon2 import PasswordHasher
@@ -288,7 +287,7 @@ def login_rate_limited(e: Any) -> Any:
             error="Trop de tentatives. Réessaye dans une minute.",
             next_url=next_url,
         ),
-        HTTPStatus.TOO_MANY_REQUESTS,
+        429,
     )
 
 

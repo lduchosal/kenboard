@@ -531,7 +531,7 @@ document.addEventListener('keydown', (e) => {
   );
   if (visible.length === 0) return;
   // Topmost = last in DOM order (most recently opened on top of any others).
-  _dismissModal(visible[visible.length - 1]);
+  _dismissModal(visible.at(-1));
 });
 
 // -- Auto refresh ------------------------------------------------------------

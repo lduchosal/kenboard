@@ -25,7 +25,7 @@
       {% for p in cp %}
       {% set doing = p.tasks | selectattr("status", "equalto", "doing") | list | length %}
       {% set dot_color = "#d0d7de" if doing == 0 else "color-mix(in srgb, " + c.color + " " + [30 + doing * 20, 100] | min | string + "%, white)" %}
-      <div class="cat-project" onclick="event.preventDefault();window.location='cat/{{ c.id }}.html#{{ p.id }}'">
+      <div class="cat-project" role="button" tabindex="0" onclick="event.preventDefault();window.location='cat/{{ c.id }}.html#{{ p.id }}'" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
         <span class="cat-project-dot" style="background:{{ dot_color }}"></span>
         <span class="cat-project-short">{{ p.acronym or p.name[:4] | upper }}</span>
       </div>
