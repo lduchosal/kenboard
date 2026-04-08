@@ -103,7 +103,11 @@ function editCat(id, name, color) {
       el.className = 'cat-modal-project';
       el.dataset.projectId = p.id;
       const canDelete = p.tasks === 0;
-      el.innerHTML = `<span class="grip">&#9776;</span><span class="proj-name">${p.name}</span><span class="proj-acronym">${p.acronym}</span>${canDelete ? '<span class="proj-remove" onclick="this.parentElement.remove()" title="Supprimer">&times;</span>' : ''}`;
+      // Build the row with empty placeholders, then write user-controlled
+      // strings via textContent to neutralise stored XSS via project name.
+      el.innerHTML = `<span class="grip">&#9776;</span><span class="proj-name"></span><span class="proj-acronym"></span>${canDelete ? '<span class="proj-remove" onclick="this.parentElement.remove()" title="Supprimer">&times;</span>' : ''}`;
+      el.querySelector('.proj-name').textContent = p.name;
+      el.querySelector('.proj-acronym').textContent = p.acronym;
       list.appendChild(el);
     });
     if (list._sortable) list._sortable.destroy();
@@ -175,7 +179,9 @@ function editProject(id, name, acronym, cat, status, defaultWho) {
       const el = document.createElement('div');
       el.className = 'cat-modal-project' + (p.id === id ? ' current-project' : '');
       el.dataset.projectId = p.id;
-      el.innerHTML = `<span class="grip">&#9776;</span><span class="proj-name">${p.name}</span><span class="proj-acronym">${p.acronym}</span>`;
+      el.innerHTML = `<span class="grip">&#9776;</span><span class="proj-name"></span><span class="proj-acronym"></span>`;
+      el.querySelector('.proj-name').textContent = p.name;
+      el.querySelector('.proj-acronym').textContent = p.acronym;
       list.appendChild(el);
     });
     if (list._sortable) list._sortable.destroy();
@@ -435,11 +441,15 @@ document.querySelectorAll('.kanban-col').forEach(col => {
 });
 
 // -- Markdown rendering -----------------------------------------------------
-// Task descriptions are authored in Markdown and rendered with marked.js.
+// Task descriptions are authored in Markdown and rendered with marked.js,
+// then sanitized with DOMPurify (#52) before being assigned to innerHTML.
+// marked >= 5 no longer sanitizes itself, so a description like
+// `<img src=x onerror=alert(1)>` would otherwise execute on render.
+//
 // The raw markdown lives as the textContent of `.task-desc` (escaped by Jinja
 // so reading textContent always returns the original characters). We replace
-// the innerHTML once with the parsed HTML and stash the source on a data
-// attribute so we never re-parse the same node twice.
+// the innerHTML once with the parsed+sanitized HTML and stash the source on a
+// data attribute so we never re-parse the same node twice.
 if (typeof marked !== 'undefined') {
   marked.setOptions({ gfm: true, breaks: true });
 }
@@ -448,7 +458,10 @@ function renderMarkdown(root) {
   (root || document).querySelectorAll('.task-desc').forEach(el => {
     if (el.dataset.mdRendered === '1') return;
     const src = el.textContent;
-    el.innerHTML = marked.parse(src);
+    const dirty = marked.parse(src);
+    el.innerHTML = (typeof DOMPurify !== 'undefined')
+      ? DOMPurify.sanitize(dirty)
+      : dirty;
     el.dataset.mdRendered = '1';
   });
 }

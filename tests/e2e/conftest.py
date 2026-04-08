@@ -6,11 +6,26 @@ import time
 import pymysql
 import pymysql.cursors
 import pytest
+from playwright.sync_api import Page, expect
 
 from dashboard.app import create_app
 from dashboard.config import Config
 
 SERVER_PORT = 5099
+
+# All tests run against a local Flask thread; nothing here should ever
+# legitimately take longer than a second. Default 30s Playwright timeouts
+# only serve to make a real failure painfully slow to surface.
+E2E_TIMEOUT_MS = 3000
+
+expect.set_options(timeout=E2E_TIMEOUT_MS)
+
+
+@pytest.fixture(autouse=True)
+def _e2e_short_timeouts(page: Page) -> None:
+    """Cap Playwright action and navigation timeouts at ``E2E_TIMEOUT_MS``."""
+    page.set_default_timeout(E2E_TIMEOUT_MS)
+    page.set_default_navigation_timeout(E2E_TIMEOUT_MS)
 
 
 @pytest.fixture(scope="session")
@@ -133,6 +148,9 @@ def live_server(_setup_test_db):
     # Bypass @login_required for the e2e suite by default. Tests that
     # cover the auth flow run their own dedicated server or login.
     app.config["LOGIN_DISABLED"] = True
+    # Disable flask-limiter so the brute-force unit tests don't bleed
+    # into e2e runs sharing the same module-level storage bucket.
+    app.config["RATELIMIT_ENABLED"] = False
 
     server = threading.Thread(
         target=lambda: app.run(port=SERVER_PORT, use_reloader=False),

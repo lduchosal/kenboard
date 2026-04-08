@@ -1,6 +1,5 @@
 """Page routes — serve dynamic HTML from database."""
 
-import json
 from datetime import date, datetime
 from typing import Any
 
@@ -113,7 +112,7 @@ def _build_context(
         "categories": categories,
         "projects_by_cat": projects_by_cat,
         "cat_project_counts": cat_project_counts,
-        "cat_projects_json": json.dumps(cat_projects_js),
+        "cat_projects": cat_projects_js,
         "columns": COLUMNS,
         "color_list": COLOR_LIST,
         "avatar_colors": avatar_colors,

@@ -36,9 +36,20 @@ class Config:
 
     # API key authentication (cf. doc/api-keys.md)
     KENBOARD_ADMIN_KEY: str = os.getenv("KENBOARD_ADMIN_KEY", "")
-    KENBOARD_AUTH_ENFORCED: bool = (
-        os.getenv("KENBOARD_AUTH_ENFORCED", "false").lower() == "true"
-    )
 
     # User session authentication (cf. doc/auth-user.md)
     KENBOARD_SECRET_KEY: str = os.getenv("KENBOARD_SECRET_KEY", "")
+
+    # CORS allow-list (comma-separated origins). Empty = no CORS headers,
+    # browsers fall back to same-origin policy (the secure default — the
+    # built-in templates are served by Flask itself, so cross-origin is
+    # only needed when an external client talks to the API).
+    KENBOARD_CORS_ORIGINS: list[str] = [
+        s.strip()
+        for s in os.getenv("KENBOARD_CORS_ORIGINS", "").split(",")
+        if s.strip()
+    ]
+
+    # Set to true when kenboard is served over HTTPS (directly or behind
+    # a TLS-terminating reverse proxy). Enables Secure cookies and HSTS.
+    KENBOARD_HTTPS: bool = os.getenv("KENBOARD_HTTPS", "false").lower() == "true"

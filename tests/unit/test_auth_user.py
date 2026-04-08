@@ -231,15 +231,13 @@ class TestPageProtection:
 
 
 class TestApiAcceptsSession:
-    """A logged-in user gets full access to /api/v1 even in strict mode."""
+    """A logged-in user gets full access to /api/v1.
 
-    def _enforce(self, monkeypatch):
-        from dashboard.config import Config
+    Uses ``auth_client`` (LOGIN_DISABLED=False) so the API middleware is
+    actually enforced — same conditions as production.
+    """
 
-        monkeypatch.setattr(Config, "KENBOARD_AUTH_ENFORCED", True)
-
-    def test_session_grants_api_access(self, auth_client, db, admin_user, monkeypatch):
-        self._enforce(monkeypatch)
+    def test_session_grants_api_access(self, auth_client, db, admin_user):
         # Without login, strict mode blocks
         r = auth_client.get("/api/v1/categories")
         assert r.status_code == 401
@@ -248,22 +246,106 @@ class TestApiAcceptsSession:
         r = auth_client.get("/api/v1/categories")
         assert r.status_code == 200
 
-    def test_session_grants_admin_endpoints(
-        self, auth_client, db, admin_user, monkeypatch
-    ):
-        self._enforce(monkeypatch)
+    def test_session_grants_admin_endpoints(self, auth_client, db, admin_user):
         auth_client.post("/login", data={"name": "Q", "password": "topsecret123"})
         # /api/v1/users is admin-only for api keys but a logged-in
         # user should pass.
         r = auth_client.get("/api/v1/users")
         assert r.status_code == 200
 
-    def test_normal_user_session_also_grants_api(
-        self, auth_client, db, normal_user, monkeypatch
+    def test_normal_user_session_blocked_on_admin_only_api(
+        self, auth_client, db, normal_user
     ):
-        """A non-admin logged-in user still has full API access (the is_admin check is
-        only enforced on the HTML admin pages).
+        """A non-admin logged-in user is blocked on admin-only endpoints.
+
+        Tracked by ken #48: previously the cookie auth path bypassed the admin-only
+        check, letting any logged-in user manage users / keys / categories / projects.
+        The middleware now mirrors the bearer-token rules.
         """
-        self._enforce(monkeypatch)
         auth_client.post("/login", data={"name": "Alice", "password": "alicepass"})
-        assert auth_client.get("/api/v1/categories").status_code == 200
+        # /api/v1/categories is admin-only — non-admin must get 403
+        assert auth_client.get("/api/v1/categories").status_code == 403
+        # Same for /api/v1/users
+        assert auth_client.get("/api/v1/users").status_code == 403
+
+
+# -- Rate limiting on /login --------------------------------------------------
+
+
+@pytest.fixture()
+def rate_limited_client(auth_app):
+    """Re-enable flask-limiter for one test and reset its storage."""
+    from dashboard.auth_user import limiter
+
+    prev = auth_app.config.get("RATELIMIT_ENABLED", True)
+    auth_app.config["RATELIMIT_ENABLED"] = True
+    limiter.reset()
+    yield auth_app.test_client()
+    auth_app.config["RATELIMIT_ENABLED"] = prev
+    limiter.reset()
+
+
+class TestLoginRateLimit:
+    """Flask-limiter caps brute-force on /login (cf.
+
+    #44).
+    """
+
+    def test_burst_blocked_after_5(self, rate_limited_client, db, admin_user):
+        # 5 wrong attempts in a row → all 200 (form re-rendered with error)
+        for _ in range(5):
+            r = rate_limited_client.post(
+                "/login",
+                data={"name": "Q", "password": "wrong"},
+                follow_redirects=False,
+            )
+            assert r.status_code == 200
+        # 6th → 429
+        r = rate_limited_client.post(
+            "/login",
+            data={"name": "Q", "password": "wrong"},
+            follow_redirects=False,
+        )
+        assert r.status_code == 429
+        assert "Trop de tentatives".encode("utf-8") in r.data
+
+    def test_successful_login_does_not_count(self, rate_limited_client, db, admin_user):
+        # 4 wrong attempts → still under the limit
+        for _ in range(4):
+            r = rate_limited_client.post(
+                "/login",
+                data={"name": "Q", "password": "wrong"},
+                follow_redirects=False,
+            )
+            assert r.status_code == 200
+        # Successful login on the 5th attempt: deduct_when() skips it
+        r = rate_limited_client.post(
+            "/login",
+            data={"name": "Q", "password": "topsecret123"},
+            follow_redirects=False,
+        )
+        assert r.status_code == 302
+
+    def test_get_login_not_rate_limited(self, rate_limited_client, db):
+        # GET /login is not POST, the limit only applies to POST
+        for _ in range(20):
+            r = rate_limited_client.get("/login")
+            assert r.status_code == 200
+
+    def test_429_response_includes_retry_after(
+        self, rate_limited_client, db, admin_user
+    ):
+        for _ in range(5):
+            rate_limited_client.post(
+                "/login",
+                data={"name": "Q", "password": "wrong"},
+                follow_redirects=False,
+            )
+        r = rate_limited_client.post(
+            "/login",
+            data={"name": "Q", "password": "wrong"},
+            follow_redirects=False,
+        )
+        assert r.status_code == 429
+        # flask-limiter sets these headers when headers_enabled=True
+        assert "X-RateLimit-Limit" in r.headers

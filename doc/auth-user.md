@@ -197,8 +197,40 @@ def set_password(name: str) -> None:
 
 | Variable | Défaut | Rôle |
 |---|---|---|
-| `KENBOARD_SECRET_KEY` | `""` (force fail au boot) | Secret Flask pour signer le cookie session. Généré avec `python -c 'import secrets; print(secrets.token_urlsafe(32))'`. À mettre dans le vault ansible. |
-| `KENBOARD_AUTH_ENFORCED` | `false` → **`true`** dans cette release | Switché à `true` dans le `.env` rendu par ansible en même temps que la release. |
+| `KENBOARD_SECRET_KEY` | `""` (force fail au boot quand `DEBUG=false`) | Secret Flask pour signer le cookie session. Généré avec `python -c 'import secrets; print(secrets.token_urlsafe(32))'`. À mettre dans le vault ansible. |
+
+> Note : `KENBOARD_AUTH_ENFORCED` a été supprimé (tâche #40). La middleware
+> est maintenant toujours stricte ; les tests désactivent via
+> `app.config["LOGIN_DISABLED"] = True`.
+
+## Rate limiting (#44)
+
+`POST /login` est rate-limité par IP via `flask-limiter` :
+
+- **5 requêtes / minute** (burst)
+- **20 requêtes / heure** (long terme)
+
+Les deux limites sont AND-combinées. Les logins **réussis** (302) ne
+décomptent pas du budget grâce à `deduct_when=lambda r: r.status_code != 302`,
+donc un utilisateur qui se trompe 4 fois puis tape juste à la 5e ne brûle
+pas son quota horaire.
+
+Quand la limite est dépassée :
+
+- Le browser reçoit la page `login.html` re-rendue avec le message
+  `"Trop de tentatives. Réessaye dans une minute."` et un statut HTTP 429.
+- Un événement `auth.brute_force_attempt` est loggé via structlog avec
+  l'IP et la limite touchée.
+- Les headers `X-RateLimit-*` et `Retry-After` sont émis (côté script).
+
+Stockage par défaut : in-memory (`memory://`). Une instance par worker
+Gunicorn — c'est volontairement approximatif. Pour passer à une vraie
+limite globale, définir `RATELIMIT_STORAGE_URI=redis://...` côté env
+(flask-limiter le lit automatiquement).
+
+Tests : `tests/unit/test_auth_user.py::TestLoginRateLimit`. Les autres
+tests désactivent le limiter via `app.config["RATELIMIT_ENABLED"] = False`
+(set par défaut dans `tests/conftest.py`).
 
 ## Tests
 

@@ -37,6 +37,7 @@ dependencies = [
     "python-dotenv>=1.0",
     "jinja2>=3.1",
     "argon2-cffi>=25.1.0",
+    "flask-limiter>=4.1.1",
 ]
 
 [project.scripts]
@@ -120,6 +121,7 @@ check = { composite = ["isort", "format", "docformatter", "typecheck", "flake8",
 
 # Build & generation
 build-html = "python build.py"
+screenshots = "python scripts/screenshots.py"
 clean = "rm -rf dist/ build/ .mypy_cache/ .pytest_cache/ htmlcov/ .coverage"
 
 # Install
@@ -158,10 +160,6 @@ disallow_incomplete_defs = true
 check_untyped_defs = true
 strict_equality = true
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_defs = false
 
 # -- pytest -------------------------------------------------------------------
 

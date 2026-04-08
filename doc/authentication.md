@@ -177,9 +177,9 @@ pour le detail. En resume :
 - Cle admin globale `KENBOARD_ADMIN_KEY` dans le `.env` pour les
   endpoints non scopes par projet (`/api/v1/keys`, `/api/v1/users`,
   `/api/v1/categories`, `/api/v1/projects`)
-- **Mode opt-in** : `KENBOARD_AUTH_ENFORCED=false` par defaut, le
-  middleware ne bloque rien tant que la web UI ne sait pas
-  s'authentifier (cf #1)
+- **Toujours strict** depuis #40 : middleware bloque toute requête API
+  sans token valide, sauf pour les sessions Flask-Login (web UI) et
+  les tests qui activent `LOGIN_DISABLED=True`.
 - Page d'admin `/admin/keys` calquee sur `/admin/users`
 
 Tant que ces points ne sont pas faits, considerer kenboard comme une application

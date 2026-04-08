@@ -560,6 +560,48 @@ class TestTaskCRUD:
         assert "**bold**" in textarea_value
         assert "- one" in textarea_value
 
+    def test_task_description_xss_is_sanitized(self, live_server, clean_db, page: Page):
+        """#52: marked.parse() output is run through DOMPurify before going into
+        innerHTML, so a description containing inline event handlers or <script> tags is
+        rendered as inert text/HTML, never executed.
+        """
+        self._setup_project(live_server, page)
+
+        # Trip an alert dialog if any handler fires; the page.expect_dialog
+        # context would catch it. Instead we install an unconditional
+        # listener that fails the test if any dialog appears.
+        dialogs: list[str] = []
+        page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
+
+        page.click(".kanban-add-btn")
+        page.fill("#task-modal-title", "XSS")
+        page.fill(
+            "#task-modal-desc",
+            "<img src=x onerror=alert('pwned-img')>"
+            "<script>alert('pwned-script')</script>"
+            "[link](javascript:alert('pwned-href'))",
+        )
+        page.click("#task-modal .btn-save")
+        page.wait_for_timeout(500)
+        page.reload()
+
+        # Open the task to render the description (renderMarkdown runs on load)
+        page.wait_for_selector(".task-desc")
+        html = page.eval_on_selector(".task-desc", "el => el.innerHTML")
+
+        # DOMPurify strips event handlers and javascript: URLs
+        assert "onerror" not in html
+        assert "javascript:" not in html.lower()
+        assert "<script" not in html.lower()
+
+        # No dialog ever fired
+        assert dialogs == [], f"unexpected JS dialogs: {dialogs}"
+
+        # Round-trip: the original markdown is still in the textarea on edit
+        self._open_task_edit_modal(page)
+        textarea_value = page.eval_on_selector("#task-modal-desc", "el => el.value")
+        assert "onerror" in textarea_value  # raw source preserved
+
     def test_auto_refresh_skips_when_modal_open(
         self, live_server, clean_db, page: Page
     ):

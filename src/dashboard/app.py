@@ -9,6 +9,7 @@ from flask_cors import CORS
 
 from dashboard.auth import init_auth
 from dashboard.auth_user import init_login_manager
+from dashboard.config import Config
 from dashboard.logging import get_logger, setup_logging
 from dashboard.routes import (
     categories_bp,
@@ -34,13 +35,20 @@ def create_app() -> Flask:
         static_url_path="/static",
     )
 
-    CORS(app)
+    # Only enable CORS when an explicit origin allow-list is configured.
+    # No allow-list ⇒ browsers enforce same-origin (the secure default).
+    if Config.KENBOARD_CORS_ORIGINS:
+        CORS(
+            app,
+            origins=Config.KENBOARD_CORS_ORIGINS,
+            supports_credentials=True,
+        )
 
     # User session auth (Flask-Login). Must run before init_auth so that
     # the API middleware can detect a logged-in user via current_user.
     init_login_manager(app)
 
-    # API key auth middleware (no-op when KENBOARD_AUTH_ENFORCED=false)
+    # API key auth middleware (always enforced; tests opt-out via LOGIN_DISABLED)
     init_auth(app)
 
     # Custom Jinja2 filter for JS string escaping in onclick attributes
@@ -75,6 +83,43 @@ def create_app() -> Flask:
                 status=response.status_code,
                 duration_ms=round(duration * 1000),
             )
+        return response
+
+    @app.after_request
+    def security_headers(response: Any) -> Any:
+        """Apply hardening HTTP headers to every response.
+
+        ``script-src`` and ``style-src`` keep ``'unsafe-inline'`` because
+        the templates use inline ``onclick=`` handlers and ``style=``
+        attributes throughout. The rest of the policy still blocks
+        loading external scripts, framing (clickjacking), object/embed
+        and ``<base>`` injection.
+
+        HSTS is only set when the request is observed over HTTPS so the
+        header isn't accidentally cached over plain HTTP in dev.
+        """
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data:; "
+            "font-src 'self' data:; "
+            "object-src 'none'; "
+            "base-uri 'none'; "
+            "frame-ancestors 'none'"
+        )
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "()"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        if request.is_secure:
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains"
+            )
+        # Strip the Werkzeug/Python version fingerprint.
+        response.headers["Server"] = "kenboard"
         return response
 
     # Error handler for Pydantic validation errors
@@ -127,6 +172,11 @@ def create_app() -> Flask:
     def serve_marked() -> Any:
         """Serve vendored marked.js from root URL."""
         return app.send_static_file("marked.min.js")
+
+    @app.route("/dompurify.min.js")
+    def serve_dompurify() -> Any:
+        """Serve vendored DOMPurify from root URL."""
+        return app.send_static_file("dompurify.min.js")
 
     @app.route("/favicon.ico")
     def favicon() -> Any:

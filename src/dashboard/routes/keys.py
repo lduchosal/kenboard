@@ -1,8 +1,8 @@
 """API key management routes (``/api/v1/keys``).
 
 These endpoints are reserved to ``KENBOARD_ADMIN_KEY`` (the static key from
-``.env``). The auth middleware (``dashboard.auth``) enforces this when
-``KENBOARD_AUTH_ENFORCED=true``; in opt-in mode it logs but lets through.
+``.env``) or to a logged-in Flask-Login session. The auth middleware
+(``dashboard.auth``) enforces this on every request.
 
 Creation returns the plain-text key **once**; all subsequent reads only
 expose metadata (label, scopes, timestamps).

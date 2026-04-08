@@ -5,6 +5,10 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+# Reject HTML angle brackets in the title (defense-in-depth against
+# stored XSS via task title — cf. ticket #51).
+NO_ANGLE_BRACKETS = r"^[^<>]*$"
+
 
 class _DueDateMixin:
     """Mixin for parsing due_date from dd.mm or ISO format."""
@@ -31,7 +35,7 @@ class TaskCreate(_DueDateMixin, BaseModel):
     """Input model for creating a task."""
 
     project_id: str = Field(..., min_length=1)
-    title: str = Field(..., min_length=1, max_length=250)
+    title: str = Field(..., min_length=1, max_length=250, pattern=NO_ANGLE_BRACKETS)
     description: str = ""
     status: Literal["todo", "doing", "review", "done"] = "todo"
     who: str = ""
@@ -42,7 +46,9 @@ class TaskUpdate(_DueDateMixin, BaseModel):
     """Input model for updating a task."""
 
     project_id: str | None = None
-    title: str | None = Field(None, min_length=1, max_length=250)
+    title: str | None = Field(
+        None, min_length=1, max_length=250, pattern=NO_ANGLE_BRACKETS
+    )
     description: str | None = None
     status: Literal["todo", "doing", "review", "done"] | None = None
     who: str | None = None

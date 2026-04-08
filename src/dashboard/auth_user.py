@@ -15,6 +15,7 @@ seed the first admin password.
 
 from __future__ import annotations
 
+import secrets
 from datetime import timedelta
 from typing import Any
 
@@ -30,23 +31,46 @@ from flask import (
     request,
     url_for,
 )
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_login import (
     LoginManager,
     UserMixin,
+    current_user,
     login_user,
     logout_user,
 )
 
 import dashboard.db as db
 from dashboard.config import Config
+from dashboard.logging import get_logger
 
 REMEMBER_DAYS = 30
+# Per-IP brute-force budget on /login. The two limits are AND-combined,
+# so a burst stops at 5 requests / minute and the long-term ceiling caps
+# at 20 / hour. Sized to be invisible to a real human (5 honest typos in
+# a minute = unusual) but to break credential-stuffing scripts.
+LOGIN_RATE_LIMITS = "5 per minute; 20 per hour"
+
+log = get_logger("auth_user")
 
 login_manager = LoginManager()
 login_manager.login_view = "auth_user.login"
 login_manager.session_protection = "strong"
 
 bp = Blueprint("auth_user", __name__)
+
+# Module-level limiter; bound to the app inside ``init_login_manager``.
+# Default storage is in-memory (one bucket per worker process). For prod
+# behind multiple Gunicorn workers this is approximate but still useful;
+# upgrade to Redis (``RATELIMIT_STORAGE_URI``) when single-IP slip-through
+# becomes a concern.
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=[],  # no global limit; opt-in per route
+    headers_enabled=True,
+    storage_uri="memory://",
+)
 
 _hasher = PasswordHasher()
 
@@ -60,21 +84,58 @@ class CurrentUser(UserMixin):
         self.name = row["name"]
         self.color = row.get("color", "")
         self.is_admin = bool(row.get("is_admin", False))
+        self.session_nonce = row.get("session_nonce", "") or ""
 
     def get_id(self) -> str:
-        """Return the user id (Flask-Login interface)."""
-        return str(self.id)
+        """Return the user id with the session nonce embedded.
+
+        Flask-Login stores this string in the session cookie. The user
+        loader splits it back into ``(id, nonce)`` and refuses any value
+        whose nonce doesn't match the current row in DB. That's how we
+        invalidate cookies after /logout (cf. ken #54): rotating
+        ``users.session_nonce`` makes the embedded nonce stale.
+        """
+        return f"{self.id}:{self.session_nonce}"
+
+
+def _rotate_session_nonce(user_id: str) -> str:
+    """Generate a fresh nonce, persist it on the user row, and return it."""
+    nonce = secrets.token_hex(16)  # 32 hex chars = CHAR(32)
+    conn = db.get_connection()
+    try:
+        db.load_queries().usr_rotate_session_nonce(conn, id=user_id, nonce=nonce)
+    finally:
+        conn.close()
+    return nonce
 
 
 @login_manager.user_loader
-def _load_user(user_id: str) -> CurrentUser | None:
-    """Look up a user by id, called by Flask-Login on every request."""
+def _load_user(packed_id: str) -> CurrentUser | None:
+    """Look up a user by id and verify the embedded session nonce.
+
+    ``packed_id`` is the value previously returned by ``CurrentUser.get_id``,
+    namely ``"<uuid>:<nonce>"``. We split it, fetch the user, and refuse
+    if the nonce doesn't match what's currently in DB. That's what makes
+    /logout effective despite Flask's signed-cookie sessions.
+    """
+    if ":" in packed_id:
+        user_id, nonce = packed_id.split(":", 1)
+    else:
+        # Legacy session created before the nonce field existed: only
+        # accept it if the user has no nonce yet (back-fill on first
+        # successful login → next request flips us to the new format).
+        user_id, nonce = packed_id, ""
     conn = db.get_connection()
     try:
         row = db.load_queries().usr_get_by_id(conn, id=user_id)
     finally:
         conn.close()
-    return CurrentUser(row) if row else None
+    if not row:
+        return None
+    expected = row.get("session_nonce") or ""
+    if nonce != expected:
+        return None
+    return CurrentUser(row)
 
 
 @login_manager.unauthorized_handler
@@ -92,31 +153,50 @@ def admin_required() -> None:
     To call from inside a ``@login_required`` view. Respects the Flask
     ``LOGIN_DISABLED`` config flag (used by tests) by becoming a no-op.
     """
-    from flask_login import current_user
-
     if current_app.config.get("LOGIN_DISABLED"):
         return
     if not current_user.is_authenticated or not current_user.is_admin:
         abort(403)
 
 
+def api_admin_required() -> None:
+    """Abort with 403 unless the caller is admin via cookie OR admin API key.
+
+    Use this in API routes that should be reachable both by a logged-in
+    admin user (Flask-Login session) and by the static
+    ``KENBOARD_ADMIN_KEY``. The API auth middleware sets
+    ``g.api_auth_principal == "admin"`` for the latter case.
+
+    Tests with ``LOGIN_DISABLED=True`` skip the check, mirroring how
+    ``admin_required`` and the API middleware behave.
+    """
+    from flask import g
+
+    if current_app.config.get("LOGIN_DISABLED"):
+        return
+    if g.get("api_auth_principal") == "admin":
+        return
+    if current_user.is_authenticated and current_user.is_admin:
+        return
+    abort(403)
+
+
 def init_login_manager(app: Flask) -> None:
     """Wire Flask-Login on the app and register the auth blueprint.
 
     Raises:
-        RuntimeError: when ``KENBOARD_AUTH_ENFORCED`` is true but
-            ``KENBOARD_SECRET_KEY`` is missing from the environment.
+        RuntimeError: when ``KENBOARD_SECRET_KEY`` is missing from the
+            environment outside of dev/test mode (``Config.DEBUG=False``).
     """
     if not Config.KENBOARD_SECRET_KEY:
-        # Allow boot when auth is not enforced (dev / tests). When enforced,
-        # the absence of a secret means cookie sessions can't be signed
-        # and login would silently break — fail fast instead.
-        if Config.KENBOARD_AUTH_ENFORCED:
+        # In dev/tests we tolerate a hardcoded fallback so the app boots
+        # without a real secret. In prod (DEBUG=false) the absence of a
+        # secret means cookie sessions can't be safely signed — fail fast.
+        if not Config.DEBUG:
             raise RuntimeError(
-                "KENBOARD_SECRET_KEY must be set in .env when "
-                "KENBOARD_AUTH_ENFORCED=true"
+                "KENBOARD_SECRET_KEY must be set in .env when DEBUG=false"
             )
-        app.secret_key = "dev-only-insecure-key-do-not-use-in-prod"
+        app.secret_key = "dev-only-insecure-key-do-not-use-in-prod"  # nosec B105
     else:
         app.secret_key = Config.KENBOARD_SECRET_KEY
 
@@ -124,13 +204,40 @@ def init_login_manager(app: Flask) -> None:
     app.config["REMEMBER_COOKIE_HTTPONLY"] = True
     app.config["REMEMBER_COOKIE_SAMESITE"] = "Lax"
 
+    # Session cookie hardening. SameSite=Lax blocks cross-site POSTs that
+    # would otherwise carry the cookie. HTTPS-only flags are conditional
+    # so the dev server (HTTP) can still log in.
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    if Config.KENBOARD_HTTPS:
+        app.config["SESSION_COOKIE_SECURE"] = True
+        app.config["REMEMBER_COOKIE_SECURE"] = True
+
     login_manager.init_app(app)
+    limiter.init_app(app)
     app.register_blueprint(bp)
 
 
 @bp.route("/login", methods=["GET", "POST"])
+@limiter.limit(
+    LOGIN_RATE_LIMITS,
+    methods=["POST"],
+    deduct_when=lambda response: response.status_code != 302,
+    on_breach=lambda limit: log.warning(
+        "auth.brute_force_attempt",
+        ip=get_remote_address(),
+        limit=str(limit.limit),
+        path="/login",
+    ),
+)
 def login() -> Any:
-    """Render the login form (GET) or validate credentials (POST)."""
+    """Render the login form (GET) or validate credentials (POST).
+
+    POST is rate-limited per IP via flask-limiter (cf. ``LOGIN_RATE_LIMITS``).
+    Successful logins (302 redirect) do not count against the budget so a
+    user who fat-fingers their password 4 times can still log in on the
+    5th try without burning through their hour quota.
+    """
     error = None
     next_url = request.args.get("next") or request.form.get("next") or ""
     if request.method == "POST":
@@ -138,6 +245,12 @@ def login() -> Any:
         password = request.form.get("password") or ""
         user = _verify_credentials(name, password)
         if user is not None:
+            # Seed a session nonce on first login so the cookie carries one.
+            # Pre-existing users (DB row with empty nonce) get their first
+            # nonce here. Re-logging in keeps the same nonce — it only
+            # rotates on /logout, which is what makes /logout effective.
+            if not user.session_nonce:
+                user.session_nonce = _rotate_session_nonce(user.id)
             login_user(user, remember=True, duration=timedelta(days=REMEMBER_DAYS))
             target = next_url if _is_safe_url(next_url) else url_for("pages.index")
             return redirect(target)
@@ -147,9 +260,34 @@ def login() -> Any:
 
 @bp.route("/logout", methods=["POST"])
 def logout() -> Any:
-    """Clear the session cookie and redirect to the login page."""
+    """Invalidate every existing session for this user and redirect to /login.
+
+    Rotates ``users.session_nonce`` BEFORE clearing the Flask session, so
+    that any cookie captured prior to logout (including the long-lived
+    ``remember_token``) becomes unverifiable on the next request.
+    """
+    if current_user.is_authenticated:
+        _rotate_session_nonce(current_user.id)
     logout_user()
     return redirect(url_for("auth_user.login"))
+
+
+@bp.errorhandler(429)
+def login_rate_limited(e: Any) -> Any:
+    """Re-render the login form with a friendly throttle message.
+
+    Bypassing the JSON default keeps the UX consistent for browsers while still
+    returning the 429 status so scripts notice.
+    """
+    next_url = request.args.get("next") or request.form.get("next") or ""
+    return (
+        render_template(
+            "login.html",
+            error="Trop de tentatives. Réessaye dans une minute.",
+            next_url=next_url,
+        ),
+        429,
+    )
 
 
 def _verify_credentials(name: str, password: str) -> CurrentUser | None:

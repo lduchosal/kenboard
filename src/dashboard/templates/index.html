@@ -47,5 +47,5 @@
 {% set cat_id = "" %}
 {% include "modals/project.html" %}
 {% include "modals/category.html" %}
-<script>const CAT_PROJECTS = {{ cat_projects_json | safe }};</script>
+<script>const CAT_PROJECTS = {{ cat_projects | tojson }};</script>
 {% endblock %}

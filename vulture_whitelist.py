@@ -19,3 +19,4 @@ seeded_normal  # noqa
 auth_server  # noqa
 patch_db_connection  # noqa
 disable_auth_enforcement  # noqa
+logged_in_user  # noqa

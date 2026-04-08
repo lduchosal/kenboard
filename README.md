@@ -1,6 +1,6 @@
 # KENBOARD
 
-> **Un kanban pour les Ken.**
+> **Un kanban pour les BOT.**
 
 [![PyPI version](https://img.shields.io/pypi/v/kenboard.svg)](https://pypi.org/project/kenboard/)
 [![Python versions](https://img.shields.io/pypi/pyversions/kenboard.svg)](https://pypi.org/project/kenboard/)
@@ -10,3 +10,44 @@
 [![codecov](https://codecov.io/gh/lduchosal/kenboard/branch/main/graph/badge.svg)](https://codecov.io/gh/lduchosal/kenboard)
 [![Docstring coverage](./interrogate_badge.svg)](./interrogate_badge.svg)
 [![Downloads](https://static.pepy.tech/badge/kenboard)](https://pepy.tech/project/kenboard)
+
+<p align="center">
+  <img src="./logo.svg" alt="kenboard logo" width="480">
+</p>
+
+## Usage pour les humains
+
+<p align="center">
+  <img src="./doc/images/kanban.png" alt="Vue kanban KENBOARD" width="800">
+</p>
+
+> Régénérer le screenshot après une évolution UI : `pdm run screenshots`
+
+## Usage pour les BOT
+
+KENBOARD livre `ken`, une CLI pensée pour Claude Code et autres assistants :
+output JSON, filtres natifs, exit codes propres.
+
+```sh
+# Une fois par dossier : lier le repo à un projet KENBOARD
+ken --base-url https://kenboard.example.ch init <project-id>
+
+# Workflow quotidien
+ken list --status doing --who Claude       # tâches en cours assignées au bot
+ken add "Fix login redirect" --who Claude  # créer
+ken move 42 --to review                    # déplacer
+ken done 42                                # clôturer
+```
+
+Référence complète de la CLI : [`doc/ken-cli.md`](doc/ken-cli.md).
+Pour les cas non couverts par `ken` (categories, users, delete), l'API REST
+reste disponible : [`doc/api.md`](doc/api.md), [`doc/openapi.yaml`](doc/openapi.yaml).
+
+## Installation
+
+Voir [`INSTALL.md`](INSTALL.md) pour la mise en place complète (MySQL, utilisateurs, migrations, reverse proxy).
+
+## Licence
+
+MIT — voir [`LICENSE`](LICENSE).
+

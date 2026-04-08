@@ -5,6 +5,11 @@ See ``doc/api-keys.md`` for the full spec.
 Behaviour:
 
 - Reads ``Authorization: Bearer <key>`` from the request.
+- Short-circuit: a logged-in Flask-Login session grants full access (the
+  web UI keeps working without juggling tokens). On unsafe methods this
+  short-circuit also enforces a Same-Origin check (cf. ``_origin_matches_host``)
+  to block CSRF — a malicious site can trigger an authenticated POST via
+  the user's cookie, but it cannot forge the ``Origin`` header.
 - Short-circuit: if the bearer matches ``Config.KENBOARD_ADMIN_KEY`` (the
   static admin key from ``.env``), all checks pass.
 - Otherwise, looks up the key by ``sha256(key)`` in ``api_keys`` (must not
@@ -19,25 +24,25 @@ Behaviour:
     /api/v1/keys, /api/v1/users, /api/v1/categories and are blocked here
     when the requester is not the admin key).
 
-- Rollout: if ``Config.KENBOARD_AUTH_ENFORCED`` is False, the middleware
-  validates a present token (and updates ``last_used_at``) but never
-  blocks a request that has no token. This is the deploy-without-breaking
-  mode used until the web UI itself authenticates.
+- Tests can opt-out by setting ``app.config["LOGIN_DISABLED"] = True``,
+  which mirrors how ``auth_user.admin_required`` already behaves.
 """
 
 from __future__ import annotations
 
 import hashlib
 from typing import Any
+from urllib.parse import urlparse
 
-from flask import Flask, g, jsonify, request
+from flask import Flask, current_app, g, jsonify, request
 from flask_login import current_user
 
 import dashboard.db as db
 from dashboard.config import Config
-from dashboard.logging import get_logger
 
-log = get_logger("auth")
+# HTTP methods that are conventionally safe (no side effects). CSRF
+# protection is only enforced on the others.
+SAFE_METHODS: frozenset[str] = frozenset({"GET", "HEAD", "OPTIONS"})
 
 # Endpoints that need a project_id from the request to scope the check.
 # The mapping logic itself lives in ``_resolve_project_id`` below.
@@ -50,6 +55,15 @@ ADMIN_ONLY_PREFIXES: tuple[tuple[str, frozenset[str] | None], ...] = (
     ("/api/v1/categories", None),
     # Project create / list also reserved to admin (no project_id to scope on)
     ("/api/v1/projects", frozenset({"GET", "POST"})),
+)
+
+# Endpoints under an admin-only prefix that are nonetheless reachable by a
+# non-admin **cookie** session because the route handler enforces its own
+# ownership check (#53). They are NOT exempt for bearer-token callers — the
+# admin api key still works there, normal api keys are still rejected.
+SELF_SERVICE_COOKIE_PATHS: tuple[tuple[str, str], ...] = (
+    # POST /api/v1/users/<id>/password — owner changes their own password
+    ("/api/v1/users/", "/password"),
 )
 
 
@@ -106,6 +120,18 @@ def _is_admin_only(method: str, path: str) -> bool:
     return False
 
 
+def _is_self_service_cookie_path(path: str) -> bool:
+    """Return True for paths a non-admin cookie session may reach.
+
+    The route handler is responsible for the actual ownership check
+    (e.g. verifying ``current_user.id == user_id``).
+    """
+    for prefix, suffix in SELF_SERVICE_COOKIE_PATHS:
+        if path.startswith(prefix) and path.endswith(suffix):
+            return True
+    return False
+
+
 def _lookup_api_key(token: str) -> dict[str, Any] | None:
     """Look up an api_key row by its plain-text bearer token."""
     key_hash = _hash_key(token)
@@ -152,6 +178,29 @@ def _extract_bearer() -> str | None:
     return header[len("Bearer ") :].strip() or None
 
 
+def _origin_matches_host() -> bool:
+    """Check that ``Origin`` (or ``Referer``) matches the request ``Host``.
+
+    Used as a CSRF defence on cookie-authenticated unsafe requests:
+    browsers always set ``Origin`` (or at least ``Referer``) on
+    cross-origin POST/PATCH/DELETE that carry cookies, and a malicious
+    page cannot forge either header. A request whose ``Origin`` matches
+    the server's own host is by definition same-origin and therefore
+    not a CSRF.
+    """
+    expected = request.host  # e.g. "kanban.example.com" or "localhost:5000"
+    origin = request.headers.get("Origin")
+    if origin:
+        return urlparse(origin).netloc == expected
+    referer = request.headers.get("Referer")
+    if referer:
+        return urlparse(referer).netloc == expected
+    # Modern browsers always emit at least one of those headers on
+    # cookie-bearing unsafe requests. Their joint absence is suspicious
+    # enough to refuse on principle.
+    return False
+
+
 def _enforce() -> Any:
     """Run the middleware on the current request.
 
@@ -162,17 +211,51 @@ def _enforce() -> Any:
     if not request.path.startswith("/api/v1/"):
         return None
 
+    # Tests bypass the middleware via ``LOGIN_DISABLED`` (same flag that
+    # disables Flask-Login's @login_required). Mirrors auth_user.admin_required.
+    if current_app.config.get("LOGIN_DISABLED"):
+        g.api_auth_principal = "test"
+        return None
+
     method = request.method
     path = request.path
     token = _extract_bearer()
-    enforced = Config.KENBOARD_AUTH_ENFORCED
 
     g.api_auth_principal = None  # populated below if a token validates
 
-    # Logged-in user (cookie session) → full access, like admin token.
-    # Checked first so that the web UI keeps working in strict mode for
-    # any user that has signed in.
+    # Logged-in user (cookie session) → full access on non-admin endpoints.
+    # Checked first so that the web UI keeps working without a bearer token.
     if current_user and current_user.is_authenticated:
+        # CSRF defence: cookies are auto-attached cross-origin by the
+        # browser, so we additionally require the request to be Same-Origin
+        # on any unsafe method. Bearer-token requests skip this branch.
+        if method not in SAFE_METHODS and not _origin_matches_host():
+            return (
+                jsonify(
+                    {
+                        "error": (
+                            "CSRF: Origin/Referer header is missing or "
+                            "does not match the request host"
+                        )
+                    }
+                ),
+                403,
+            )
+        # Admin-only endpoints (managing users / api_keys / categories /
+        # listing projects) require ``is_admin`` even via cookie auth.
+        # Without this, any logged-in user could PATCH themselves with
+        # ``is_admin=true``, create a new admin, or revoke another user.
+        # Self-service paths (#53: /api/v1/users/<id>/password) are
+        # exempt — the route handler enforces its own ownership check.
+        if (
+            _is_admin_only(method, path)
+            and not getattr(current_user, "is_admin", False)
+            and not _is_self_service_cookie_path(path)
+        ):
+            return (
+                jsonify({"error": "admin required for this endpoint"}),
+                403,
+            )
         g.api_auth_principal = f"user:{current_user.id}"
         return None
 
@@ -183,16 +266,11 @@ def _enforce() -> Any:
 
     # Token-less request
     if token is None:
-        if not enforced:
-            return None  # legacy open mode
         return jsonify({"error": "missing Authorization header"}), 401
 
     # Token present → validate against api_keys
     row = _lookup_api_key(token)
     if row is None:
-        if not enforced:
-            log.warning("api_key_invalid_soft", path=path)
-            return None
         return jsonify({"error": "invalid or revoked api key"}), 401
 
     api_key_id = row["id"]
@@ -202,30 +280,16 @@ def _enforce() -> Any:
     # Admin-only endpoints reject any non-admin api_key (only KENBOARD_ADMIN_KEY
     # can reach them).
     if _is_admin_only(method, path):
-        if not enforced:
-            log.warning("api_key_admin_only_soft", path=path)
-            return None
         return jsonify({"error": "admin key required for this endpoint"}), 403
 
     # Project-scoped endpoints
     project_id = _resolve_project_id(method, path)
     if project_id is None:
-        if not enforced:
-            return None
         return jsonify({"error": "cannot resolve project for scope check"}), 403
 
     actual = _project_scope_for_key(api_key_id, project_id)
     required = _required_scope(method)
     if actual is None or not _scope_satisfies(actual, required):
-        if not enforced:
-            log.warning(
-                "api_key_scope_denied_soft",
-                path=path,
-                project_id=project_id,
-                actual=actual,
-                required=required,
-            )
-            return None
         return (
             jsonify(
                 {

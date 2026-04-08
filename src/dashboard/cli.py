@@ -17,6 +17,14 @@ def cli() -> None:
 @click.option("--debug", is_flag=True, help="Enable debug mode.")
 def serve(host: str, port: int, debug: bool) -> None:
     """Start the Flask development server."""
+    if debug and host != "127.0.0.1":
+        click.echo(
+            "Refusal: --debug exposes the Werkzeug debug console (RCE risk) "
+            "and must stay local. Run without --debug or with --host 127.0.0.1.",
+            err=True,
+        )
+        sys.exit(2)
+
     from dashboard.app import create_app
 
     app = create_app()

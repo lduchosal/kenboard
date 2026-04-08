@@ -4,10 +4,19 @@ import uuid
 from typing import Any
 
 from argon2 import PasswordHasher
-from flask import Blueprint, jsonify, request
+from argon2.exceptions import VerifyMismatchError
+from flask import Blueprint, current_app, jsonify, request
+from flask_login import current_user
 
 import dashboard.db as db
-from dashboard.models.user import User, UserCreate, UserUpdate
+from dashboard.auth_user import api_admin_required
+from dashboard.models.user import (
+    PasswordChange,
+    PasswordReset,
+    User,
+    UserCreate,
+    UserUpdate,
+)
 
 bp = Blueprint("users", __name__, url_prefix="/api/v1/users")
 
@@ -58,7 +67,7 @@ def create_user() -> Any:
 
 @bp.route("/<user_id>", methods=["PATCH"])
 def update_user(user_id: str) -> Any:
-    """Update a user."""
+    """Update a user (name, color, is_admin only — passwords go elsewhere)."""
     data = UserUpdate(**request.get_json())
     conn = db.get_connection()
     queries = db.load_queries()
@@ -82,12 +91,69 @@ def update_user(user_id: str) -> Any:
             color=data.color or existing["color"],
             is_admin=is_admin_val,
         )
-        if data.password:
-            queries.usr_update_password(
-                conn, id=user_id, password_hash=_hash_password(data.password)
-            )
         row = queries.usr_get_by_id(conn, id=user_id)
         return jsonify(User(**row).model_dump(mode="json"))
+    finally:
+        conn.close()
+
+
+@bp.route("/<user_id>/password", methods=["POST"])
+def change_password(user_id: str) -> Any:
+    """Change one's own password (#53).
+
+    Requires a Flask-Login session that matches ``user_id`` and a valid
+    ``old_password``. Bots with admin API keys should use
+    ``/reset-password`` instead — they don't have a "current user".
+    """
+    # Tests with LOGIN_DISABLED=True skip ownership / authentication checks
+    # so the unit suite can exercise the route without juggling sessions.
+    if not current_app.config.get("LOGIN_DISABLED"):
+        if not current_user.is_authenticated:
+            return jsonify({"error": "login required"}), 401
+        if str(current_user.id) != user_id:
+            return jsonify({"error": "you can only change your own password"}), 403
+    data = PasswordChange(**(request.get_json() or {}))
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        row = queries.usr_get_password_hash(conn, id=user_id)
+        if not row:
+            return jsonify({"error": "Not found"}), 404
+        existing_hash = row.get("password_hash") or ""
+        if not existing_hash:
+            return jsonify({"error": "no password set"}), 400
+        try:
+            _hasher.verify(existing_hash, data.old_password)
+        except VerifyMismatchError:
+            return jsonify({"error": "wrong old password"}), 401
+        queries.usr_update_password(
+            conn, id=user_id, password_hash=_hash_password(data.new_password)
+        )
+        return "", 204
+    finally:
+        conn.close()
+
+
+@bp.route("/<user_id>/reset-password", methods=["POST"])
+def reset_password(user_id: str) -> Any:
+    """Admin reset of another user's password (#53).
+
+    Caller must be an admin (cookie session with ``is_admin=True`` or the
+    static ``KENBOARD_ADMIN_KEY``). The old password is **not** required —
+    this is the recovery path when a user forgets theirs.
+    """
+    api_admin_required()
+    data = PasswordReset(**(request.get_json() or {}))
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        existing = queries.usr_get_by_id(conn, id=user_id)
+        if not existing:
+            return jsonify({"error": "Not found"}), 404
+        queries.usr_update_password(
+            conn, id=user_id, password_hash=_hash_password(data.new_password)
+        )
+        return "", 204
     finally:
         conn.close()
 

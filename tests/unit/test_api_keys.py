@@ -181,120 +181,111 @@ class TestKeysCRUD:
 # -- Middleware enforcement ---------------------------------------------------
 
 
-class TestMiddlewareSoftMode:
-    """When KENBOARD_AUTH_ENFORCED=false, the middleware never blocks."""
+@pytest.fixture()
+def enforced_app(app):
+    """Re-enable the API auth middleware for one test (LOGIN_DISABLED=False)."""
+    prev = app.config.get("LOGIN_DISABLED", False)
+    app.config["LOGIN_DISABLED"] = False
+    yield app
+    app.config["LOGIN_DISABLED"] = prev
 
-    def test_no_token_passes(self, client, db, project):
-        r = client.get(f"/api/v1/tasks?project={project}")
-        assert r.status_code == 200
 
-    def test_invalid_token_passes(self, client, db, project):
-        r = client.get(
-            f"/api/v1/tasks?project={project}",
-            headers={"Authorization": "Bearer kb_garbage"},
+@pytest.fixture()
+def enforced_client(enforced_app):
+    """Test client wired to the auth-enforcing app."""
+    return enforced_app.test_client()
+
+
+@pytest.fixture()
+def make_api_key(db, queries):
+    """Create an api_key row directly via SQL and return ``(id, plain_key)``.
+
+    Used by enforced-mode tests because POST /api/v1/keys is itself
+    middleware-protected (admin-only) and the session-scoped app shared
+    between ``client`` and ``enforced_client`` makes the HTTP setup path
+    awkward.
+    """
+    import secrets
+    import uuid
+
+    from dashboard.auth import _hash_key
+
+    def _make(scopes: list[dict[str, str]] | None = None) -> tuple[str, str]:
+        plain = "kb_" + secrets.token_urlsafe(32)
+        key_id = str(uuid.uuid4())
+        queries.key_create(
+            db, id=key_id, key_hash=_hash_key(plain), label="test", expires_at=None
         )
-        assert r.status_code == 200
+        for s in scopes or []:
+            queries.key_scopes_add(
+                db, api_key_id=key_id, project_id=s["project_id"], scope=s["scope"]
+            )
+        return key_id, plain
 
-    def test_admin_endpoint_no_token_passes(self, client, db):
-        r = client.get("/api/v1/users")
-        assert r.status_code == 200
+    return _make
 
 
-class TestMiddlewareEnforcedMode:
-    """When KENBOARD_AUTH_ENFORCED=true, the middleware blocks per spec."""
+class TestMiddlewareEnforced:
+    """The auth middleware is always enforced when LOGIN_DISABLED is False."""
 
-    def _enforce(self, monkeypatch):
-        monkeypatch.setattr(Config, "KENBOARD_AUTH_ENFORCED", True)
-
-    def test_no_token_blocked(self, client, db, project, monkeypatch):
-        self._enforce(monkeypatch)
-        r = client.get(f"/api/v1/tasks?project={project}")
+    def test_no_token_blocked(self, enforced_client, client, db, project):
+        # Note: ``client`` is needed to keep the same DB fixture chain.
+        r = enforced_client.get(f"/api/v1/tasks?project={project}")
         assert r.status_code == 401
 
     def test_admin_key_passes_everywhere(
-        self, client, db, project, monkeypatch, admin_key
+        self, enforced_client, client, db, project, admin_key
     ):
-        self._enforce(monkeypatch)
-        r = client.get(
+        r = enforced_client.get(
             f"/api/v1/tasks?project={project}",
             headers={"Authorization": f"Bearer {admin_key}"},
         )
         assert r.status_code == 200
-        r = client.get(
+        r = enforced_client.get(
             "/api/v1/users", headers={"Authorization": f"Bearer {admin_key}"}
         )
         assert r.status_code == 200
 
-    def test_admin_endpoint_rejects_normal_key(self, client, db, monkeypatch):
-        self._enforce(monkeypatch)
-        # Create an api_key with no special privilege
-        created = client.post(
-            "/api/v1/keys",
-            data=json.dumps({"label": "k", "scopes": []}),
-            content_type="application/json",
-            headers={"Authorization": "Bearer "},  # soft mode for the create
-        )
-        # We need to create the key BEFORE enforcing. Re-do with monkeypatch off.
-        monkeypatch.setattr(Config, "KENBOARD_AUTH_ENFORCED", False)
-        created = client.post(
-            "/api/v1/keys",
-            data=json.dumps({"label": "k", "scopes": []}),
-            content_type="application/json",
-        ).get_json()
-        plain_key = created["key"]
-        self._enforce(monkeypatch)
-        # Now the normal key tries to hit /api/v1/users (admin-only)
-        r = client.get(
+    def test_admin_endpoint_rejects_normal_key(self, enforced_client, db, make_api_key):
+        _, plain_key = make_api_key()
+        r = enforced_client.get(
             "/api/v1/users",
             headers={"Authorization": f"Bearer {plain_key}"},
         )
         assert r.status_code == 403
 
-    def test_invalid_token_blocked(self, client, db, project, monkeypatch):
-        self._enforce(monkeypatch)
-        r = client.get(
+    def test_invalid_token_blocked(self, enforced_client, db, project):
+        r = enforced_client.get(
             f"/api/v1/tasks?project={project}",
             headers={"Authorization": "Bearer kb_garbage"},
         )
         assert r.status_code == 401
 
-    def test_revoked_key_blocked(self, client, db, project, monkeypatch):
-        # Create and revoke a key (soft mode)
-        created = client.post(
-            "/api/v1/keys",
-            data=json.dumps(
-                {"label": "k", "scopes": [{"project_id": project, "scope": "read"}]}
-            ),
-            content_type="application/json",
-        ).get_json()
-        plain_key = created["key"]
-        client.delete(f"/api/v1/keys/{created['id']}")
-        # Enforce
-        self._enforce(monkeypatch)
-        r = client.get(
+    def test_revoked_key_blocked(
+        self, enforced_client, db, project, queries, make_api_key
+    ):
+        key_id, plain_key = make_api_key(
+            scopes=[{"project_id": project, "scope": "read"}]
+        )
+        queries.key_revoke(db, id=key_id)
+        r = enforced_client.get(
             f"/api/v1/tasks?project={project}",
             headers={"Authorization": f"Bearer {plain_key}"},
         )
         assert r.status_code == 401
 
-    def test_read_scope_can_get_but_not_post(self, client, db, project, monkeypatch):
-        created = client.post(
-            "/api/v1/keys",
-            data=json.dumps(
-                {"label": "k", "scopes": [{"project_id": project, "scope": "read"}]}
-            ),
-            content_type="application/json",
-        ).get_json()
-        plain_key = created["key"]
-        self._enforce(monkeypatch)
+    def test_read_scope_can_get_but_not_post(
+        self, enforced_client, db, project, make_api_key
+    ):
+        _, plain_key = make_api_key(scopes=[{"project_id": project, "scope": "read"}])
         # GET with read scope → OK
-        r = client.get(
+        r = enforced_client.get(
             f"/api/v1/tasks?project={project}",
             headers={"Authorization": f"Bearer {plain_key}"},
         )
         assert r.status_code == 200
         # POST with read scope → 403
-        r = client.post(
+        r = enforced_client.post(
             "/api/v1/tasks",
             data=json.dumps({"project_id": project, "title": "X"}),
             content_type="application/json",
@@ -302,17 +293,9 @@ class TestMiddlewareEnforcedMode:
         )
         assert r.status_code == 403
 
-    def test_write_scope_can_post(self, client, db, project, monkeypatch):
-        created = client.post(
-            "/api/v1/keys",
-            data=json.dumps(
-                {"label": "k", "scopes": [{"project_id": project, "scope": "write"}]}
-            ),
-            content_type="application/json",
-        ).get_json()
-        plain_key = created["key"]
-        self._enforce(monkeypatch)
-        r = client.post(
+    def test_write_scope_can_post(self, enforced_client, db, project, make_api_key):
+        _, plain_key = make_api_key(scopes=[{"project_id": project, "scope": "write"}])
+        r = enforced_client.post(
             "/api/v1/tasks",
             data=json.dumps({"project_id": project, "title": "X"}),
             content_type="application/json",
@@ -321,7 +304,7 @@ class TestMiddlewareEnforcedMode:
         assert r.status_code == 201
 
     def test_wrong_project_scope_blocked(
-        self, client, db, project, queries, monkeypatch
+        self, enforced_client, db, project, queries, make_api_key
     ):
         # Create a second project
         queries.cat_create(db, id="cat-2", name="Other", color="#bf8700", position=1)
@@ -335,40 +318,25 @@ class TestMiddlewareEnforcedMode:
             position=0,
             default_who="",
         )
-        # Key has scope on proj-2 only
-        created = client.post(
-            "/api/v1/keys",
-            data=json.dumps(
-                {"label": "k", "scopes": [{"project_id": "proj-2", "scope": "read"}]}
-            ),
-            content_type="application/json",
-        ).get_json()
-        plain_key = created["key"]
-        self._enforce(monkeypatch)
+        _, plain_key = make_api_key(scopes=[{"project_id": "proj-2", "scope": "read"}])
         # Try to read proj-1 with proj-2 scope → 403
-        r = client.get(
+        r = enforced_client.get(
             f"/api/v1/tasks?project={project}",
             headers={"Authorization": f"Bearer {plain_key}"},
         )
         assert r.status_code == 403
 
-    def test_last_used_at_is_updated(self, client, db, project, queries, monkeypatch):
-        created = client.post(
-            "/api/v1/keys",
-            data=json.dumps(
-                {"label": "k", "scopes": [{"project_id": project, "scope": "read"}]}
-            ),
-            content_type="application/json",
-        ).get_json()
-        plain_key = created["key"]
-        # Before
-        row_before = queries.key_get_by_id(db, id=created["id"])
+    def test_last_used_at_is_updated(
+        self, enforced_client, db, project, queries, make_api_key
+    ):
+        key_id, plain_key = make_api_key(
+            scopes=[{"project_id": project, "scope": "read"}]
+        )
+        row_before = queries.key_get_by_id(db, id=key_id)
         assert row_before["last_used_at"] is None
-        # After one authenticated call
-        self._enforce(monkeypatch)
-        client.get(
+        enforced_client.get(
             f"/api/v1/tasks?project={project}",
             headers={"Authorization": f"Bearer {plain_key}"},
         )
-        row_after = queries.key_get_by_id(db, id=created["id"])
+        row_after = queries.key_get_by_id(db, id=key_id)
         assert row_after["last_used_at"] is not None

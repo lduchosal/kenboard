@@ -991,6 +991,25 @@ body {
 }
 .btn-delete:hover { background: color-mix(in srgb, var(--red) 10%, white); }
 
+/* -- Admin tables (users / API keys) -- */
+.users-table input[type="text"],
+.users-table input[type="password"],
+.users-table select {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 9px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--card);
+  outline: none;
+}
+.users-table input[type="text"]:focus,
+.users-table input[type="password"]:focus,
+.users-table select:focus {
+  border-color: var(--accent);
+}
+
 /* -- Login page -- */
 .login-body {
   display: flex;

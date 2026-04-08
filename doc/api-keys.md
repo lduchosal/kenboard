@@ -76,25 +76,24 @@ Les endpoints "admin key only" ne sont accessibles qu'avec
 `KENBOARD_ADMIN_KEY` (la clé statique du `.env`). Aucune `api_key`
 créée en DB ne peut y toucher, quel que soit son scope.
 
-## Rollout — flag opt-in
+## Mode strict (toujours actif)
 
-Variable `KENBOARD_AUTH_ENFORCED` dans le `.env`. Par défaut `false`.
+Depuis la tâche #40, le middleware est **toujours strict** :
 
-| Mode | Comportement |
-|---|---|
-| `false` (défaut) | Code et table en place, le middleware **ne bloque jamais**. Si une clé valide est présente, il met à jour `last_used_at`. Permet de déployer sans casser la web UI actuelle (qui parle à `/api/v1/*` sans token). |
-| `true` | Mode strict : 401 si pas de header, 401 si clé invalide/révoquée/expirée, 403 si scope insuffisant. |
+- 401 si pas de header `Authorization`
+- 401 si clé invalide / révoquée / expirée
+- 403 si scope insuffisant
+- 403 sur endpoint admin-only avec une clé non-admin
 
-Le flag sera basculé à `true` quand la web UI saura s'authentifier
-elle-même (cf #1, login user + cookie session). D'ici là, on peut tester
-le middleware avec des clients API tout en gardant la web UI ouverte.
+La web UI reste utilisable car le middleware court-circuite quand
+`current_user.is_authenticated` (Flask-Login session). Les tests
+contournent via `app.config["LOGIN_DISABLED"] = True`.
 
 ## Variables d'environnement
 
 | Variable | Défaut | Rôle |
 |---|---|---|
 | `KENBOARD_ADMIN_KEY` | `""` | Clé statique passe-partout. Génère-la avec `python -c 'import secrets; print("kb_" + secrets.token_urlsafe(32))'` et stocke-la dans le vault ansible. Sans cette clé, pas moyen d'accéder aux endpoints admin (`/api/v1/keys`, `/api/v1/users`, `/api/v1/categories`, `/api/v1/projects`). |
-| `KENBOARD_AUTH_ENFORCED` | `false` | Active le mode strict. |
 
 ## CRUD `/api/v1/keys`
 

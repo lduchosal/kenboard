@@ -8,6 +8,11 @@ from dashboard.app import create_app
 from dashboard.config import Config
 from dashboard.db import load_queries
 
+# Provide a deterministic secret key for the test session so that
+# init_login_manager doesn't fall back to its dev default. Set on the
+# Config class itself before any app fixture runs.
+Config.KENBOARD_SECRET_KEY = "test-secret-do-not-use-outside-tests"
+
 
 def _ensure_test_db() -> None:
     """Create the test database and tables using the test admin user."""
@@ -81,10 +86,23 @@ def _ensure_test_db() -> None:
             color VARCHAR(50) NOT NULL,
             password_hash VARCHAR(255) NOT NULL DEFAULT '',
             is_admin TINYINT(1) NOT NULL DEFAULT 0,
+            session_nonce CHAR(32) NOT NULL DEFAULT '',
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """)
+    # users.session_nonce was added in migration 0008. Existing test DBs
+    # carried over from a previous run still have the old schema; back-fill.
+    cur.execute(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+        "WHERE TABLE_SCHEMA = DATABASE() "
+        "AND TABLE_NAME = 'users' "
+        "AND COLUMN_NAME = 'session_nonce'"
+    )
+    if cur.fetchone()[0] == 0:
+        cur.execute(
+            "ALTER TABLE users " "ADD COLUMN session_nonce CHAR(32) NOT NULL DEFAULT ''"
+        )
     cur.execute("""
         CREATE TABLE IF NOT EXISTS api_keys (
             id VARCHAR(36) NOT NULL PRIMARY KEY,
@@ -144,17 +162,6 @@ def patch_db_connection(setup_test_db):
     db_module.get_connection = _get_test_connection
 
 
-@pytest.fixture(autouse=True)
-def disable_auth_enforcement(monkeypatch):
-    """Force KENBOARD_AUTH_ENFORCED=False for every test by default.
-
-    Tests that need to exercise the strict middleware re-enable it via
-    ``monkeypatch.setattr(Config, "KENBOARD_AUTH_ENFORCED", True)`` (cf.
-    ``tests/unit/test_api_keys.py::TestMiddlewareEnforcedMode``).
-    """
-    monkeypatch.setattr(Config, "KENBOARD_AUTH_ENFORCED", False)
-
-
 @pytest.fixture(scope="session")
 def app(setup_test_db):
     """Create Flask test app pointing to test database."""
@@ -165,9 +172,13 @@ def app(setup_test_db):
 
     app = create_app()
     app.config["TESTING"] = True
-    # Bypass @login_required for unit tests by default. Tests that
-    # exercise the auth flow itself flip this back to False.
+    # Bypass @login_required AND the API key middleware for unit tests by
+    # default. Tests that exercise auth (login flow, middleware enforcement)
+    # flip this back to False.
     app.config["LOGIN_DISABLED"] = True
+    # Disable flask-limiter by default. The rate-limit tests re-enable it
+    # explicitly via a fixture and reset state between subtests.
+    app.config["RATELIMIT_ENABLED"] = False
     return app
 
 
