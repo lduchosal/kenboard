@@ -250,7 +250,13 @@ def _enforce_api_key(token: str, method: str, path: str) -> Any:
         return jsonify({"error": "invalid or revoked api key"}), 401
 
     api_key_id = row["id"]
-    g.api_auth_principal = api_key_id
+    # Tag the principal with the owning user when the key is linked to one
+    # (#110, traceability "qui fait quoi"). Falls back to bare key id for
+    # legacy / unowned keys so audit logs always have *something*.
+    owner = row.get("user_id")
+    g.api_auth_principal = (
+        f"key:{api_key_id}:user:{owner}" if owner else f"key:{api_key_id}"
+    )
     _touch_last_used(api_key_id)
 
     # Admin-only endpoints reject any non-admin api_key (only

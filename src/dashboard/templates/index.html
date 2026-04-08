@@ -13,7 +13,10 @@
     <div class="doing-overview-tasks">
       {% for dt in doing_tasks %}
       {% set t = dt.task %}
-      {% set task_href = "cat/" ~ dt.cat_id ~ ".html#" ~ dt.project_id %}
+      {# Deep-link to the task itself rather than its project section: the
+         category page reads ``#ID-<id>`` and opens the matching card in
+         detail mode (#109). #}
+      {% set task_href = "cat/" ~ dt.cat_id ~ ".html#ID-" ~ t.id %}
       {% include "partials/task_card.html" %}
       {% endfor %}
     </div>

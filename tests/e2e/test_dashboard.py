@@ -271,6 +271,44 @@ class TestTaskCRUD:
         page.click(".kanban-task")
         expect(page.locator(".kanban-task.detail-mode")).to_have_count(0)
 
+    def test_task_detail_url_hash_sync(self, live_server, clean_db, page: Page):
+        """#109: detail mode is mirrored in the URL fragment as ``#ID-<id>``.
+
+        Opening a card writes the fragment, closing clears it, and a reload with the
+        fragment still present restores detail mode automatically — which makes the deep
+        links from the index "En cours" overview work and survives the 60s auto-refresh.
+        """
+        self._setup_project(live_server, page)
+
+        page.click(".kanban-add-btn")
+        page.fill("#task-modal-title", "Deep Link")
+        page.click("#task-modal .btn-save")
+        page.wait_for_timeout(500)
+        page.reload()
+
+        card = page.locator(".kanban-task").first
+        task_id = card.get_attribute("data-task-id")
+        cat_url = page.url.split("#")[0]
+
+        # Click → URL fragment is set to ``#ID-<id>``.
+        card.click()
+        expect(card).to_have_class(re.compile(r"\bdetail-mode\b"))
+        assert page.evaluate("() => window.location.hash") == f"#ID-{task_id}"
+
+        # Reload with the fragment present → detail mode is restored.
+        page.reload()
+        expect(page.locator(".kanban-task.detail-mode")).to_be_visible()
+        assert page.evaluate("() => window.location.hash") == f"#ID-{task_id}"
+
+        # Click again → fragment is cleared and detail mode collapses.
+        page.locator(".kanban-task").first.click()
+        expect(page.locator(".kanban-task.detail-mode")).to_have_count(0)
+        assert page.evaluate("() => window.location.hash") == ""
+
+        # Direct deep link from outside (e.g. the index "En cours" card).
+        page.goto(f"{cat_url}#ID-{task_id}")
+        expect(page.locator(".kanban-task.detail-mode")).to_be_visible()
+
     def _add_task(self, page: Page, title: str = "Ma Tache") -> None:
         """Helper: add a task via the kanban + button."""
         page.click(".kanban-add-btn")

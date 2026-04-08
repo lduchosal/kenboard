@@ -7,18 +7,22 @@ voir `doc/authentication.md` et la tâche #1.
 
 ## Schéma
 
-Migrations `0005.create_api_keys.sql` + `0006.create_api_key_projects.sql`.
+Migrations `0005.create_api_keys.sql`, `0006.create_api_key_projects.sql`,
+puis `0010.add_api_key_user_id.sql` (lien vers le user propriétaire, #110).
 
 ```sql
 CREATE TABLE api_keys (
     id              VARCHAR(36) NOT NULL PRIMARY KEY,
+    user_id         VARCHAR(36) NULL,                -- #110, propriétaire
     key_hash        CHAR(64)    NOT NULL UNIQUE,    -- sha256 hex
     label           VARCHAR(100) NOT NULL,
     expires_at      DATETIME    NULL,
     last_used_at    DATETIME    NULL,
     revoked_at      DATETIME    NULL,
     created_at      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_key_hash (key_hash)
+    INDEX idx_key_hash (key_hash),
+    INDEX idx_api_keys_user (user_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE api_key_projects (
@@ -98,11 +102,18 @@ contournent via `app.config["LOGIN_DISABLED"] = True`.
 ## CRUD `/api/v1/keys`
 
 ```
-POST   /api/v1/keys          {label, expires_at?, scopes:[{project_id,scope}]}
+POST   /api/v1/keys          {label, expires_at?, user_id?, scopes:[{project_id,scope}]}
 GET    /api/v1/keys           liste (sans clé en clair, jamais)
-PATCH  /api/v1/keys/<id>     {label?, expires_at?, scopes?}
+PATCH  /api/v1/keys/<id>     {label?, expires_at?, user_id?, scopes?}
 DELETE /api/v1/keys/<id>     revoke (set revoked_at = NOW())
 ```
+
+`user_id` est facultatif (#110). Quand il est fourni, l'API vérifie que
+l'utilisateur existe avant d'écrire la FK. Comme pour `expires_at`, le
+PATCH applique la convention « `null` ≡ pas de changement » : pour
+détacher un user d'une clé, il faut pour l'instant passer par SQL ou
+créer une nouvelle clé. La suppression d'un user passe la colonne à
+`NULL` via `ON DELETE SET NULL` — la clé reste mais devient orpheline.
 
 `POST` renvoie `201` avec `{"id": ..., "key": "kb_...", "scopes": [...]}`.
 La clé en clair est dans le champ `key` et n'est plus jamais renvoyée

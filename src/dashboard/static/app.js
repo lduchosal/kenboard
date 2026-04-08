@@ -250,10 +250,68 @@ function deleteProject() {
 // -- Task CRUD ---------------------------------------------------------------
 
 function toggleDetail(el) {
+  const taskId = el.dataset.taskId;
   const wasDetail = el.classList.contains('detail-mode');
   document.querySelectorAll('.kanban-task.detail-mode').forEach(t => t.classList.remove('detail-mode'));
-  if (!wasDetail) el.classList.add('detail-mode');
+  if (wasDetail) {
+    // Closing the currently open task: drop the URL fragment if it points
+    // to it, so a copy of the address bar no longer reopens it.
+    if (_taskHashId() === taskId) _clearTaskHash();
+    return;
+  }
+  el.classList.add('detail-mode');
+  // Sync the URL fragment so the detail view survives reloads (60s
+  // auto-refresh) and produces shareable deep links to the card (#109).
+  if (taskId) _setTaskHash(taskId);
 }
+
+// -- URL <-> task detail sync (#109) -----------------------------------------
+// The URL fragment doubles as task-detail state: ``#ID-<task-id>`` puts the
+// matching card into detail mode. Cards expose the id via ``data-task-id``
+// (not a real DOM ``id``) so the browser does not auto-scroll on hash
+// changes — we control scrolling explicitly.
+const _TASK_HASH_RE = /^#?ID-(\d+)$/;
+
+function _taskHashId() {
+  const m = _TASK_HASH_RE.exec(globalThis.location.hash);
+  return m ? m[1] : null;
+}
+
+function _setTaskHash(taskId) {
+  // replaceState avoids polluting the history with one entry per click.
+  // hashchange does not fire on replaceState, but toggleDetail already
+  // updated the DOM directly, so no extra work is needed here.
+  if (_taskHashId() === String(taskId)) return;
+  const url = new URL(globalThis.location.href);
+  url.hash = 'ID-' + taskId;
+  globalThis.history.replaceState(null, '', url);
+}
+
+function _clearTaskHash() {
+  if (_taskHashId() === null) return;
+  const url = new URL(globalThis.location.href);
+  globalThis.history.replaceState(null, '', url.pathname + url.search);
+}
+
+function _applyTaskHash() {
+  const id = _taskHashId();
+  document.querySelectorAll('.kanban-task.detail-mode').forEach(t => {
+    if (t.dataset.taskId !== id) t.classList.remove('detail-mode');
+  });
+  if (!id) return;
+  const card = document.querySelector(`.kanban-task[data-task-id="${id}"]`);
+  if (!card) return;  // Stale link: task no longer on this page.
+  card.classList.add('detail-mode');
+  card.scrollIntoView({ block: 'center', behavior: 'auto' });
+}
+
+// React to back/forward and direct edits of the URL fragment. We don't fire
+// this from `toggleDetail` (that path uses replaceState) so the listener
+// only handles externally-driven changes.
+globalThis.addEventListener('hashchange', _applyTaskHash);
+// Initial pass: restore detail mode from the URL on load (incl. after the
+// 60s auto-refresh, which preserves the fragment).
+_applyTaskHash();
 
 function openEditTask(btn, id, title, desc, who, when) {
   // Read status and projectId from the live DOM (the closest column / kanban),

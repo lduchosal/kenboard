@@ -10,6 +10,7 @@
     <thead>
       <tr style="border-bottom:1px solid var(--border);text-align:left">
         <th style="padding:8px 6px">Label</th>
+        <th style="padding:8px 6px">Utilisateur</th>
         <th style="padding:8px 6px">Statut</th>
         <th style="padding:8px 6px">Cr&eacute;&eacute;e</th>
         <th style="padding:8px 6px">Derni&egrave;re utilisation</th>
@@ -22,6 +23,14 @@
       {% for k in api_keys %}
       <tr data-key-id="{{ k.id }}" style="border-bottom:1px solid var(--border)">
         <td style="padding:6px"><input type="text" class="k-label" value="{{ k.label }}" autocomplete="off" style="width:100%"></td>
+        <td style="padding:6px">
+          <select class="k-user" style="width:100%;font-size:11px">
+            <option value="">&mdash;</option>
+            {% for u in key_users %}
+            <option value="{{ u.id }}" {% if u.id == k.user_id %}selected{% endif %}>{{ u.name }}</option>
+            {% endfor %}
+          </select>
+        </td>
         <td style="padding:6px">
           {% if k.revoked_at %}<span class="badge" style="background:color-mix(in srgb,var(--red) 12%,transparent);color:var(--red)">r&eacute;voqu&eacute;e</span>
           {% elif k.expires_at and k.expires_at < now %}<span class="badge" style="background:color-mix(in srgb,var(--orange) 12%,transparent);color:var(--orange)">expir&eacute;e</span>
@@ -57,9 +66,17 @@
         </td>
       </tr>
       {% endfor %}
-      <tr style="border-top:2px solid var(--border)"><td colspan="7" style="padding:8px 6px 4px 6px;font-size:11px;color:var(--dimmed);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Nouvelle cl&eacute;</td></tr>
+      <tr style="border-top:2px solid var(--border)"><td colspan="8" style="padding:8px 6px 4px 6px;font-size:11px;color:var(--dimmed);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Nouvelle cl&eacute;</td></tr>
       <tr id="keys-add-row" style="border-bottom:1px solid var(--border);background:var(--bg)">
         <td style="padding:6px"><input type="text" id="new-key-label" placeholder="Label" autocomplete="off" style="width:100%"></td>
+        <td style="padding:6px">
+          <select id="new-key-user" style="width:100%;font-size:11px">
+            <option value="">&mdash;</option>
+            {% for u in key_users %}
+            <option value="{{ u.id }}">{{ u.name }}</option>
+            {% endfor %}
+          </select>
+        </td>
         <td style="padding:6px;font-size:11px;color:var(--dimmed)">--</td>
         <td style="padding:6px;font-size:11px;color:var(--dimmed)">--</td>
         <td style="padding:6px;font-size:11px;color:var(--dimmed)">--</td>
@@ -134,6 +151,7 @@ async function saveKey(btn) {
   const body = {
     label: tr.querySelector('.k-label').value,
     expires_at: expires || null,
+    user_id: tr.querySelector('.k-user').value || null,
     scopes: _collectScopes(tr.querySelector('.k-scopes')),
   };
   try {
@@ -166,6 +184,7 @@ async function createKey() {
   const body = {
     label,
     expires_at: expires || null,
+    user_id: document.getElementById('new-key-user').value || null,
     scopes: _collectScopes(document.getElementById('new-key-scopes')),
   };
   let r;

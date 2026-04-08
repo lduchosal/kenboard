@@ -20,6 +20,7 @@ class ApiKeyCreate(BaseModel):
 
     label: str = Field(..., min_length=1, max_length=100)
     expires_at: datetime | None = None
+    user_id: str | None = Field(None, min_length=1, max_length=36)
     scopes: list[ApiKeyScope] = Field(default_factory=list)
 
 
@@ -28,6 +29,7 @@ class ApiKeyUpdate(BaseModel):
 
     label: str | None = Field(None, min_length=1, max_length=100)
     expires_at: datetime | None = None
+    user_id: str | None = Field(None, min_length=1, max_length=36)
     scopes: list[ApiKeyScope] | None = None
 
 
@@ -35,6 +37,7 @@ class ApiKey(BaseModel):
     """Public api_key model returned by the API (no key in clear, no hash)."""
 
     id: str
+    user_id: str | None = None
     label: str
     expires_at: datetime | None
     last_used_at: datetime | None

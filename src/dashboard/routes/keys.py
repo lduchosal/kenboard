@@ -73,9 +73,14 @@ def create_key() -> Any:
     conn = db.get_connection()
     queries = db.load_queries()
     try:
+        if data.user_id is not None:
+            owner = queries.usr_get_by_id(conn, id=data.user_id)
+            if not owner:
+                return jsonify({"error": "user_id does not exist"}), 400
         queries.key_create(
             conn,
             id=key_id,
+            user_id=data.user_id,
             key_hash=key_hash,
             label=data.label,
             expires_at=data.expires_at,
@@ -113,8 +118,19 @@ def update_key(key_id: str) -> Any:
         new_expires = (
             data.expires_at if data.expires_at is not None else existing["expires_at"]
         )
+        # user_id: same "None ≡ no change" convention as expires_at. Validate
+        # the new owner exists before writing the FK.
+        new_user_id = data.user_id if data.user_id is not None else existing["user_id"]
+        if data.user_id is not None and data.user_id != existing["user_id"]:
+            owner = queries.usr_get_by_id(conn, id=data.user_id)
+            if not owner:
+                return jsonify({"error": "user_id does not exist"}), 400
         queries.key_update_label_expiry(
-            conn, id=key_id, label=new_label, expires_at=new_expires
+            conn,
+            id=key_id,
+            label=new_label,
+            expires_at=new_expires,
+            user_id=new_user_id,
         )
         if data.scopes is not None:
             queries.key_scopes_clear(conn, api_key_id=key_id)

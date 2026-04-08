@@ -183,6 +183,8 @@ def admin_keys() -> Any:
     ctx["title"] = "KEN / Cles API"
     ctx["api_keys"] = api_keys
     ctx["projects"] = data["all_projects"]
+    # Users list powers the "owner" column in the admin_keys table (#110).
+    ctx["key_users"] = data["users"]
     ctx["now"] = datetime.now()
     return render_template("admin_keys.html", **ctx)
 

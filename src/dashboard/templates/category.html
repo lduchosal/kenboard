@@ -53,13 +53,27 @@
 
 {% block scripts %}
 <script>
-// Append " / <project name>" to the page title when a project anchor is targeted.
+// Append " / <project name>" to the page title when a project anchor or a
+// task deep link (#ID-<id>, #109) is targeted.
 (function () {
   const BASE_TITLE = {{ title | tojson }};
   const PROJECTS = (typeof CAT_PROJECTS !== 'undefined' && CAT_PROJECTS[{{ cat.id | tojson }}]) || [];
+  function projectFromHash() {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return null;
+    const taskMatch = /^ID-(\d+)$/.exec(hash);
+    if (taskMatch) {
+      // Task deep link: derive the project from the card's surrounding
+      // ``.section[id="<project-uuid>"]`` so the title still reflects the
+      // user's location.
+      const card = document.querySelector(`.kanban-task[data-task-id="${taskMatch[1]}"]`);
+      const projectId = card?.closest('.section')?.id;
+      return projectId ? PROJECTS.find(p => p.id === projectId) : null;
+    }
+    return PROJECTS.find(p => p.id === hash);
+  }
   function updateTitle() {
-    const id = window.location.hash.slice(1);
-    const project = id && PROJECTS.find(p => p.id === id);
+    const project = projectFromHash();
     document.title = project ? BASE_TITLE + ' / ' + project.name : BASE_TITLE;
   }
   window.addEventListener('hashchange', updateTitle);

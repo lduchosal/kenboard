@@ -178,6 +178,128 @@ class TestKeysCRUD:
         assert r.status_code == 404
 
 
+@pytest.fixture()
+def seed_owner(db, queries):
+    """Insert a user that can own an api_key, return its id."""
+    queries.usr_create(
+        db,
+        id="user-owner",
+        name="Owner",
+        color="#0969da",
+        password_hash="",
+        is_admin=0,
+    )
+    return "user-owner"
+
+
+class TestKeysOwner:
+    """An api_key may be linked to a user (#110, traceability)."""
+
+    def test_create_without_owner_defaults_to_null(self, client, db):
+        body = client.post(
+            "/api/v1/keys",
+            data=json.dumps({"label": "no-owner", "scopes": []}),
+            content_type="application/json",
+        ).get_json()
+        assert body["user_id"] is None
+
+    def test_create_with_owner(self, client, db, seed_owner):
+        r = client.post(
+            "/api/v1/keys",
+            data=json.dumps({"label": "owned", "user_id": seed_owner, "scopes": []}),
+            content_type="application/json",
+        )
+        assert r.status_code == 201
+        assert r.get_json()["user_id"] == seed_owner
+
+    def test_create_with_unknown_owner_400(self, client, db):
+        r = client.post(
+            "/api/v1/keys",
+            data=json.dumps(
+                {"label": "ghost", "user_id": "does-not-exist", "scopes": []}
+            ),
+            content_type="application/json",
+        )
+        assert r.status_code == 400
+
+    def test_list_exposes_owner(self, client, db, seed_owner):
+        client.post(
+            "/api/v1/keys",
+            data=json.dumps({"label": "owned", "user_id": seed_owner, "scopes": []}),
+            content_type="application/json",
+        )
+        rows = client.get("/api/v1/keys").get_json()
+        assert len(rows) == 1
+        assert rows[0]["user_id"] == seed_owner
+
+    def test_patch_changes_owner(self, client, db, seed_owner, queries):
+        created = client.post(
+            "/api/v1/keys",
+            data=json.dumps({"label": "k", "scopes": []}),
+            content_type="application/json",
+        ).get_json()
+        assert created["user_id"] is None
+        queries.usr_create(
+            db,
+            id="user-other",
+            name="Other",
+            color="#bf8700",
+            password_hash="",
+            is_admin=0,
+        )
+        r = client.patch(
+            f"/api/v1/keys/{created['id']}",
+            data=json.dumps({"user_id": "user-other"}),
+            content_type="application/json",
+        )
+        assert r.status_code == 200
+        assert r.get_json()["user_id"] == "user-other"
+
+    def test_patch_unknown_owner_400(self, client, db, seed_owner):
+        created = client.post(
+            "/api/v1/keys",
+            data=json.dumps({"label": "k", "scopes": []}),
+            content_type="application/json",
+        ).get_json()
+        r = client.patch(
+            f"/api/v1/keys/{created['id']}",
+            data=json.dumps({"user_id": "ghost"}),
+            content_type="application/json",
+        )
+        assert r.status_code == 400
+
+    def test_delete_user_nullifies_key_owner(self, client, db, seed_owner, queries):
+        created = client.post(
+            "/api/v1/keys",
+            data=json.dumps({"label": "k", "user_id": seed_owner, "scopes": []}),
+            content_type="application/json",
+        ).get_json()
+        queries.usr_delete(db, id=seed_owner)
+        # Key still exists, user_id is now NULL via ON DELETE SET NULL.
+        row = queries.key_get_by_id(db, id=created["id"])
+        assert row is not None
+        assert row["user_id"] is None
+
+
+class TestOwnedKeyAuthenticates:
+    """An owned api_key should authenticate exactly like an unowned one — the user_id
+    link is metadata for traceability, not an extra check.
+    """
+
+    def test_owned_key_authenticates(
+        self, enforced_client, db, project, make_api_key, seed_owner
+    ):
+        _, plain_key = make_api_key(
+            scopes=[{"project_id": project, "scope": "read"}],
+            user_id=seed_owner,
+        )
+        r = enforced_client.get(
+            f"/api/v1/tasks?project={project}",
+            headers={"Authorization": f"Bearer {plain_key}"},
+        )
+        assert r.status_code == 200
+
+
 # -- Middleware enforcement ---------------------------------------------------
 
 
@@ -210,11 +332,19 @@ def make_api_key(db, queries):
 
     from dashboard.auth import _hash_key
 
-    def _make(scopes: list[dict[str, str]] | None = None) -> tuple[str, str]:
+    def _make(
+        scopes: list[dict[str, str]] | None = None,
+        user_id: str | None = None,
+    ) -> tuple[str, str]:
         plain = "kb_" + secrets.token_urlsafe(32)
         key_id = str(uuid.uuid4())
         queries.key_create(
-            db, id=key_id, key_hash=_hash_key(plain), label="test", expires_at=None
+            db,
+            id=key_id,
+            user_id=user_id,
+            key_hash=_hash_key(plain),
+            label="test",
+            expires_at=None,
         )
         for s in scopes or []:
             queries.key_scopes_add(

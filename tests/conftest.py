@@ -106,15 +106,34 @@ def _ensure_test_db() -> None:
     cur.execute("""
         CREATE TABLE IF NOT EXISTS api_keys (
             id VARCHAR(36) NOT NULL PRIMARY KEY,
+            user_id VARCHAR(36) NULL,
             key_hash CHAR(64) NOT NULL UNIQUE,
             label VARCHAR(100) NOT NULL,
             expires_at DATETIME NULL,
             last_used_at DATETIME NULL,
             revoked_at DATETIME NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_key_hash (key_hash)
+            INDEX idx_key_hash (key_hash),
+            INDEX idx_api_keys_user (user_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """)
+    # api_keys.user_id was added in migration 0010. Back-fill on legacy
+    # carried-over schemas the same way we do for users.session_nonce.
+    cur.execute(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+        "WHERE TABLE_SCHEMA = DATABASE() "
+        "AND TABLE_NAME = 'api_keys' "
+        "AND COLUMN_NAME = 'user_id'"
+    )
+    if cur.fetchone()[0] == 0:
+        cur.execute(
+            "ALTER TABLE api_keys "
+            "ADD COLUMN user_id VARCHAR(36) NULL AFTER id, "
+            "ADD INDEX idx_api_keys_user (user_id), "
+            "ADD CONSTRAINT fk_api_keys_user "
+            "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL"
+        )
     cur.execute("""
         CREATE TABLE IF NOT EXISTS api_key_projects (
             api_key_id VARCHAR(36) NOT NULL,

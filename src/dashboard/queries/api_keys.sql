@@ -1,19 +1,19 @@
 -- name: key_get_all
 -- Get all api_keys (without project scopes) ordered by created_at desc.
-SELECT id, key_hash, label, expires_at, last_used_at, revoked_at, created_at
+SELECT id, user_id, key_hash, label, expires_at, last_used_at, revoked_at, created_at
 FROM api_keys
 ORDER BY created_at DESC;
 
 -- name: key_get_by_id^
 -- Get a single api_key by id.
-SELECT id, key_hash, label, expires_at, last_used_at, revoked_at, created_at
+SELECT id, user_id, key_hash, label, expires_at, last_used_at, revoked_at, created_at
 FROM api_keys
 WHERE id = :id;
 
 -- name: key_get_by_hash^
 -- Lookup an api_key by its sha256 hash, used by the auth middleware.
 -- Returns the row only if not revoked and not expired.
-SELECT id, key_hash, label, expires_at, last_used_at, revoked_at, created_at
+SELECT id, user_id, key_hash, label, expires_at, last_used_at, revoked_at, created_at
 FROM api_keys
 WHERE key_hash = :key_hash
   AND revoked_at IS NULL
@@ -21,13 +21,13 @@ WHERE key_hash = :key_hash
 
 -- name: key_create!
 -- Create a new api_key.
-INSERT INTO api_keys (id, key_hash, label, expires_at)
-VALUES (:id, :key_hash, :label, :expires_at);
+INSERT INTO api_keys (id, user_id, key_hash, label, expires_at)
+VALUES (:id, :user_id, :key_hash, :label, :expires_at);
 
 -- name: key_update_label_expiry!
--- Update label and/or expires_at of an api_key.
+-- Update label, expires_at and/or owning user of an api_key.
 UPDATE api_keys
-SET label = :label, expires_at = :expires_at
+SET label = :label, expires_at = :expires_at, user_id = :user_id
 WHERE id = :id;
 
 -- name: key_revoke!

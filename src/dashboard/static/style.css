@@ -883,9 +883,11 @@ button:where(.badge-menu-toggle, .avatar-btn, .kanban-add-task, .show-more,
   text-align: inherit;
   cursor: pointer;
 }
-/* Show-more and standalone cat-card-add need to span full width like the
-   <div> they replaced (button defaults to inline-block). */
+/* Show-more, kanban-add-task and standalone cat-card-add need to span full
+   width like the <div> they replaced (button defaults to inline-block, and
+   even with display:flex the UA intrinsic sizing keeps it content-sized). */
 button.show-more,
+button.kanban-add-task,
 button.cat-card-add {
   width: 100%;
 }
