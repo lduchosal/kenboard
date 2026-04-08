@@ -129,7 +129,25 @@ def index() -> Any:
     """Serve the dashboard."""
     data = _load_all_data()
     ctx = _build_context(data, prefix="/")
-    ctx["title"] = "Kenboard"
+    ctx["title"] = "KEN"
+    # Flat overview of all "doing" tasks across every project, with the
+    # cat/project context needed to build deep links back to the kanban.
+    cat_by_id = {c["id"]: c for c in data["categories"]}
+    doing_tasks: list[dict[str, Any]] = []
+    for p in data["all_projects"]:
+        cat = cat_by_id.get(p["cat_id"])
+        if not cat:
+            continue
+        for t in p.get("tasks", []):
+            if t.get("status") == "doing":
+                doing_tasks.append(
+                    {
+                        "task": t,
+                        "cat_id": cat["id"],
+                        "project_id": p["id"],
+                    }
+                )
+    ctx["doing_tasks"] = doing_tasks
     return render_template("index.html", **ctx)
 
 
@@ -140,7 +158,7 @@ def admin_users() -> Any:
     admin_required()
     data = _load_all_data()
     ctx = _build_context(data, prefix="/")
-    ctx["title"] = "Utilisateurs"
+    ctx["title"] = "KEN / Utilisateurs"
     return render_template("admin_users.html", **ctx)
 
 
@@ -162,7 +180,7 @@ def admin_keys() -> Any:
         conn.close()
     data = _load_all_data()
     ctx = _build_context(data, prefix="/")
-    ctx["title"] = "Cles API"
+    ctx["title"] = "KEN / Cles API"
     ctx["api_keys"] = api_keys
     ctx["projects"] = data["all_projects"]
     ctx["now"] = datetime.now()
@@ -179,7 +197,7 @@ def category(cat_id: str) -> Any:
         return "Not found", 404
     ctx = _build_context(data, prefix="/", current_cat=cat)
     cp = [p for p in data["all_projects"] if p["cat_id"] == cat_id]
-    ctx["title"] = cat["name"]
+    ctx["title"] = f"KEN / {cat['name']}"
     ctx["cat"] = cat
     ctx["active_projects"] = [p for p in cp if p.get("status", "active") == "active"]
     ctx["archived_projects"] = [p for p in cp if p.get("status") == "archived"]

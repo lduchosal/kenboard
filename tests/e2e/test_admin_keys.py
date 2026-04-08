@@ -8,7 +8,7 @@ class TestAdminKeysPage:
 
     def test_page_loads_empty(self, live_server, clean_db, page: Page):
         page.goto(live_server + "/admin/keys")
-        expect(page).to_have_title("Cles API")
+        expect(page).to_have_title("KEN / Cles API")
         expect(page.locator("#keys-table")).to_be_visible()
         expect(page.locator("#keys-table tbody tr[data-key-id]")).to_have_count(0)
         expect(page.locator("#keys-add-row")).to_be_visible()

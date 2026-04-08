@@ -754,6 +754,48 @@ body {
   min-height: 20px;
 }
 
+/* -- "En cours" overview card on the index page --
+ * Aggregates every task currently in the "doing" status across all
+ * projects. Each card reuses .kanban-task styling and links back to the
+ * project's section in its category page.
+ */
+.doing-overview {
+  background: var(--card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  padding: 14px 16px;
+}
+.doing-overview-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.doing-overview-title {
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--cyan);
+}
+.doing-overview-count {
+  background: var(--border);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+.doing-overview-tasks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px;
+}
+.doing-overview-tasks .kanban-task {
+  margin-bottom: 0;
+}
+
 /* -- Add task button in header -- */
 .kanban-add-btn {
   margin-left: auto;

@@ -13,7 +13,7 @@ class TestDashboardLoads:
     def test_title(self, live_server, clean_db, page: Page):
         """Dashboard page has correct title."""
         page.goto(live_server)
-        expect(page).to_have_title("Kenboard")
+        expect(page).to_have_title("KEN")
 
     def test_header_visible(self, live_server, clean_db, page: Page):
         """Header with KENBOARD title is visible."""
@@ -122,7 +122,7 @@ class TestCategoryDetail:
         # Navigate
         page.click(".cat-card")
         page.wait_for_url("**/cat/**")
-        expect(page).to_have_title("Tech")
+        expect(page).to_have_title("KEN / Tech")
 
     def test_add_project(self, live_server, clean_db, page: Page):
         """Create a project in the category detail."""
@@ -683,7 +683,7 @@ class TestAdminUsers:
     def test_admin_page_loads(self, live_server, clean_db, page: Page):
         """Admin users page renders with header and empty user table."""
         page.goto(live_server + "/admin/users")
-        expect(page).to_have_title("Utilisateurs")
+        expect(page).to_have_title("KEN / Utilisateurs")
         expect(page.locator("#users-table")).to_be_visible()
         # Empty DB → only the "add" row exists
         expect(page.locator("#users-table tbody tr[data-user-id]")).to_have_count(0)

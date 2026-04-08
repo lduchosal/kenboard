@@ -50,3 +50,20 @@
 {% include "modals/project.html" %}
 <script>const CAT_PROJECTS = {{ cat_projects | tojson }};</script>
 {% endblock %}
+
+{% block scripts %}
+<script>
+// Append " / <project name>" to the page title when a project anchor is targeted.
+(function () {
+  const BASE_TITLE = {{ title | tojson }};
+  const PROJECTS = (typeof CAT_PROJECTS !== 'undefined' && CAT_PROJECTS[{{ cat.id | tojson }}]) || [];
+  function updateTitle() {
+    const id = window.location.hash.slice(1);
+    const project = id && PROJECTS.find(p => p.id === id);
+    document.title = project ? BASE_TITLE + ' / ' + project.name : BASE_TITLE;
+  }
+  window.addEventListener('hashchange', updateTitle);
+  updateTitle();
+})();
+</script>
+{% endblock %}

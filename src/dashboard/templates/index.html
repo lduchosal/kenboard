@@ -3,6 +3,24 @@
 {% block body %}
 {% include "partials/header.html" %}
 
+{% if doing_tasks %}
+<div class="section">
+  <div class="doing-overview">
+    <div class="doing-overview-header">
+      <span class="doing-overview-title">En cours</span>
+      <span class="doing-overview-count">{{ doing_tasks | length }}</span>
+    </div>
+    <div class="doing-overview-tasks">
+      {% for dt in doing_tasks %}
+      {% set t = dt.task %}
+      {% set task_href = "cat/" ~ dt.cat_id ~ ".html#" ~ dt.project_id %}
+      {% include "partials/task_card.html" %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <div class="section"><div class="cat-grid">
   {% for c in categories %}
   {% set cp = projects_by_cat[c.id] %}
