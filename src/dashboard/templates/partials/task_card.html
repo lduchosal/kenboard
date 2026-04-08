@@ -6,7 +6,7 @@
 {% set when_str = fmt_date(when_val | string) if when_val else "" %}
 {% set desc = t.get("description", "") or t.get("desc", "") %}
 {% set _task_href = task_href | default('', true) %}
-<div class="kanban-task{{ ' task-hidden' if is_hidden else '' }}" data-task-id="{{ t.get('id', '') }}" role="button" tabindex="0" onclick="{% if _task_href %}window.location='{{ _task_href | jsesc }}'{% else %}toggleDetail(this){% endif %}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+<div class="kanban-task{{ ' task-hidden' if is_hidden else '' }}" data-task-id="{{ t.get('id', '') }}" role="button" tabindex="0" onclick="{% if _task_href %}window.location='{{ _task_href | jsesc }}'{% else %}toggleDetail(this,event){% endif %}"{% if not _task_href %} ondblclick="openEditTask(this,'{{ t.get('id', '') }}','{{ t.title | jsesc }}','{{ desc | jsesc }}','{{ who_raw | jsesc }}','{{ when_str }}')"{% endif %} onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
   {# .task-right comes BEFORE .task-body so the float:right (in detail
      mode) is anchored at the top of the card and the body text wraps
      around it. The Editer button lives in .task-actions at the bottom

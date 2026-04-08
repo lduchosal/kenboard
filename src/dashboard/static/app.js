@@ -249,7 +249,12 @@ function deleteProject() {
 
 // -- Task CRUD ---------------------------------------------------------------
 
-function toggleDetail(el) {
+function toggleDetail(el, event) {
+  // The 2nd click of a double-click reaches us with `event.detail === 2`
+  // (browser-set click count). Bail so the matching `dblclick` handler can
+  // open the edit modal without us toggling the detail view back off
+  // underneath it (#111).
+  if (event && event.detail > 1) return;
   const taskId = el.dataset.taskId;
   const wasDetail = el.classList.contains('detail-mode');
   document.querySelectorAll('.kanban-task.detail-mode').forEach(t => t.classList.remove('detail-mode'));
