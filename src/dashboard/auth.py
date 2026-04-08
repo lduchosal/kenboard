@@ -201,74 +201,50 @@ def _origin_matches_host() -> bool:
     return False
 
 
-def _enforce() -> Any:
-    """Run the middleware on the current request.
+def _enforce_cookie_session(method: str, path: str) -> Any:
+    """Validate a cookie-authenticated request: CSRF + admin scope.
 
-    Returns a Flask response (tuple) to short-circuit if denied, or
-    ``None`` to let the request through.
+    Returns a Flask response tuple to deny, or ``None`` to let it through.
     """
-    # Only API requests are subject to the middleware.
-    if not request.path.startswith("/api/v1/"):
-        return None
+    # CSRF defence: cookies are auto-attached cross-origin by the
+    # browser, so we additionally require the request to be Same-Origin
+    # on any unsafe method. Bearer-token requests skip this branch.
+    if method not in SAFE_METHODS and not _origin_matches_host():
+        return (
+            jsonify(
+                {
+                    "error": (
+                        "CSRF: Origin/Referer header is missing or "
+                        "does not match the request host"
+                    )
+                }
+            ),
+            403,
+        )
+    # Admin-only endpoints (managing users / api_keys / categories /
+    # listing projects) require ``is_admin`` even via cookie auth.
+    # Without this, any logged-in user could PATCH themselves with
+    # ``is_admin=true``, create a new admin, or revoke another user.
+    # Self-service paths (#53: /api/v1/users/<id>/password) are
+    # exempt — the route handler enforces its own ownership check.
+    if (
+        _is_admin_only(method, path)
+        and not getattr(current_user, "is_admin", False)
+        and not _is_self_service_cookie_path(path)
+    ):
+        return (
+            jsonify({"error": "admin required for this endpoint"}),
+            403,
+        )
+    g.api_auth_principal = f"user:{current_user.id}"
+    return None
 
-    # Tests bypass the middleware via ``LOGIN_DISABLED`` (same flag that
-    # disables Flask-Login's @login_required). Mirrors auth_user.admin_required.
-    if current_app.config.get("LOGIN_DISABLED"):
-        g.api_auth_principal = "test"
-        return None
 
-    method = request.method
-    path = request.path
-    token = _extract_bearer()
+def _enforce_api_key(token: str, method: str, path: str) -> Any:
+    """Validate a bearer-token request and check its scope.
 
-    g.api_auth_principal = None  # populated below if a token validates
-
-    # Logged-in user (cookie session) → full access on non-admin endpoints.
-    # Checked first so that the web UI keeps working without a bearer token.
-    if current_user and current_user.is_authenticated:
-        # CSRF defence: cookies are auto-attached cross-origin by the
-        # browser, so we additionally require the request to be Same-Origin
-        # on any unsafe method. Bearer-token requests skip this branch.
-        if method not in SAFE_METHODS and not _origin_matches_host():
-            return (
-                jsonify(
-                    {
-                        "error": (
-                            "CSRF: Origin/Referer header is missing or "
-                            "does not match the request host"
-                        )
-                    }
-                ),
-                403,
-            )
-        # Admin-only endpoints (managing users / api_keys / categories /
-        # listing projects) require ``is_admin`` even via cookie auth.
-        # Without this, any logged-in user could PATCH themselves with
-        # ``is_admin=true``, create a new admin, or revoke another user.
-        # Self-service paths (#53: /api/v1/users/<id>/password) are
-        # exempt — the route handler enforces its own ownership check.
-        if (
-            _is_admin_only(method, path)
-            and not getattr(current_user, "is_admin", False)
-            and not _is_self_service_cookie_path(path)
-        ):
-            return (
-                jsonify({"error": "admin required for this endpoint"}),
-                403,
-            )
-        g.api_auth_principal = f"user:{current_user.id}"
-        return None
-
-    # Admin shortcut: matches the static .env key.
-    if token and Config.KENBOARD_ADMIN_KEY and token == Config.KENBOARD_ADMIN_KEY:
-        g.api_auth_principal = "admin"
-        return None
-
-    # Token-less request
-    if token is None:
-        return jsonify({"error": "missing Authorization header"}), 401
-
-    # Token present → validate against api_keys
+    Returns a Flask response tuple to deny, or ``None`` to let it through.
+    """
     row = _lookup_api_key(token)
     if row is None:
         return jsonify({"error": "invalid or revoked api key"}), 401
@@ -277,12 +253,11 @@ def _enforce() -> Any:
     g.api_auth_principal = api_key_id
     _touch_last_used(api_key_id)
 
-    # Admin-only endpoints reject any non-admin api_key (only KENBOARD_ADMIN_KEY
-    # can reach them).
+    # Admin-only endpoints reject any non-admin api_key (only
+    # KENBOARD_ADMIN_KEY can reach them).
     if _is_admin_only(method, path):
         return jsonify({"error": "admin key required for this endpoint"}), 403
 
-    # Project-scoped endpoints
     project_id = _resolve_project_id(method, path)
     if project_id is None:
         return jsonify({"error": "cannot resolve project for scope check"}), 403
@@ -302,6 +277,44 @@ def _enforce() -> Any:
         )
 
     return None
+
+
+def _enforce() -> Any:
+    """Run the middleware on the current request.
+
+    Returns a Flask response (tuple) to short-circuit if denied, or
+    ``None`` to let the request through.
+    """
+    # Only API requests are subject to the middleware.
+    if not request.path.startswith("/api/v1/"):
+        return None
+
+    # Tests bypass the middleware via ``LOGIN_DISABLED`` (same flag that
+    # disables Flask-Login's @login_required). Mirrors auth_user.admin_required.
+    if current_app.config.get("LOGIN_DISABLED"):
+        g.api_auth_principal = "test"
+        return None
+
+    method = request.method
+    path = request.path
+    g.api_auth_principal = None  # populated below if a token validates
+
+    # Logged-in user (cookie session) → full access on non-admin endpoints.
+    # Checked first so that the web UI keeps working without a bearer token.
+    if current_user and current_user.is_authenticated:
+        return _enforce_cookie_session(method, path)
+
+    token = _extract_bearer()
+
+    # Admin shortcut: matches the static .env key.
+    if token and Config.KENBOARD_ADMIN_KEY and token == Config.KENBOARD_ADMIN_KEY:
+        g.api_auth_principal = "admin"
+        return None
+
+    if token is None:
+        return jsonify({"error": "missing Authorization header"}), 401
+
+    return _enforce_api_key(token, method, path)
 
 
 def init_auth(app: Flask) -> None:

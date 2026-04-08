@@ -54,6 +54,78 @@ def create_task() -> Any:
         conn.close()
 
 
+def _apply_position_change(
+    queries: Any,
+    conn: Any,
+    task_id: int,
+    data: TaskUpdate,
+    existing: dict[str, Any],
+) -> None:
+    """Apply project move / status / position changes from a PATCH payload."""
+    # Move to different project (drag between kanbans)
+    if data.project_id is not None:
+        queries.task_move(
+            conn,
+            id=task_id,
+            project_id=data.project_id,
+            status=data.status or existing["status"],
+            position=(
+                data.position if data.position is not None else existing["position"]
+            ),
+        )
+        return
+    # Status + position change (drag within kanban)
+    if data.status is not None and data.position is not None:
+        queries.task_update_status(
+            conn, id=task_id, status=data.status, position=data.position
+        )
+        return
+    if data.status is not None or data.position is not None:
+        queries.task_update_status(
+            conn,
+            id=task_id,
+            status=data.status or existing["status"],
+            position=(
+                data.position if data.position is not None else existing["position"]
+            ),
+        )
+
+
+def _has_field_updates(data: TaskUpdate) -> bool:
+    """Return True if the payload has any plain-field update."""
+    return any(
+        [
+            data.title,
+            data.description is not None,
+            data.who is not None,
+            data.parsed_due_date(),
+        ]
+    )
+
+
+def _apply_field_updates(
+    queries: Any,
+    conn: Any,
+    task_id: int,
+    data: TaskUpdate,
+    existing: dict[str, Any],
+) -> None:
+    """Apply title/description/who/due_date updates from a PATCH payload."""
+    queries.task_update(
+        conn,
+        id=task_id,
+        title=data.title or existing["title"],
+        description=(
+            data.description
+            if data.description is not None
+            else existing["description"]
+        ),
+        status=data.status or existing["status"],
+        who=data.who if data.who is not None else existing["who"],
+        due_date=data.parsed_due_date() or existing["due_date"],
+    )
+
+
 @bp.route("/<int:task_id>", methods=["PATCH"])
 def update_task(task_id: int) -> Any:
     """Update a task."""
@@ -65,54 +137,9 @@ def update_task(task_id: int) -> Any:
         if not existing:
             return jsonify({"error": "Not found"}), 404
 
-        # Move to different project (drag between kanbans)
-        if data.project_id is not None:
-            queries.task_move(
-                conn,
-                id=task_id,
-                project_id=data.project_id,
-                status=data.status or existing["status"],
-                position=(
-                    data.position if data.position is not None else existing["position"]
-                ),
-            )
-        # Status + position change (drag within kanban)
-        elif data.status is not None and data.position is not None:
-            queries.task_update_status(
-                conn, id=task_id, status=data.status, position=data.position
-            )
-        elif data.status is not None or data.position is not None:
-            queries.task_update_status(
-                conn,
-                id=task_id,
-                status=data.status or existing["status"],
-                position=(
-                    data.position if data.position is not None else existing["position"]
-                ),
-            )
-
-        # Field updates
-        if any(
-            [
-                data.title,
-                data.description is not None,
-                data.who is not None,
-                data.parsed_due_date(),
-            ]
-        ):
-            queries.task_update(
-                conn,
-                id=task_id,
-                title=data.title or existing["title"],
-                description=(
-                    data.description
-                    if data.description is not None
-                    else existing["description"]
-                ),
-                status=data.status or existing["status"],
-                who=data.who if data.who is not None else existing["who"],
-                due_date=data.parsed_due_date() or existing["due_date"],
-            )
+        _apply_position_change(queries, conn, task_id, data, existing)
+        if _has_field_updates(data):
+            _apply_field_updates(queries, conn, task_id, data, existing)
 
         row = queries.task_get_by_id(conn, id=task_id)
         return jsonify(Task(**row).model_dump(mode="json"))

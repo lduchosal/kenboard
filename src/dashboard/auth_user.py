@@ -51,11 +51,12 @@ REMEMBER_DAYS = 30
 # at 20 / hour. Sized to be invisible to a real human (5 honest typos in
 # a minute = unusual) but to break credential-stuffing scripts.
 LOGIN_RATE_LIMITS = "5 per minute; 20 per hour"
+LOGIN_VIEW_ENDPOINT = "auth_user.login"
 
 log = get_logger("auth_user")
 
 login_manager = LoginManager()
-login_manager.login_view = "auth_user.login"
+login_manager.login_view = LOGIN_VIEW_ENDPOINT
 login_manager.session_protection = "strong"
 
 bp = Blueprint("auth_user", __name__)
@@ -144,7 +145,7 @@ def _unauthorized() -> Any:
     next_url = request.full_path if request.method == "GET" else None
     if next_url and next_url.endswith("?"):
         next_url = next_url[:-1]
-    return redirect(url_for("auth_user.login", next=next_url))
+    return redirect(url_for(LOGIN_VIEW_ENDPOINT, next=next_url))
 
 
 def admin_required() -> None:
@@ -269,7 +270,7 @@ def logout() -> Any:
     if current_user.is_authenticated:
         _rotate_session_nonce(current_user.id)
     logout_user()
-    return redirect(url_for("auth_user.login"))
+    return redirect(url_for(LOGIN_VIEW_ENDPOINT))
 
 
 @bp.errorhandler(429)

@@ -169,6 +169,31 @@ function addProjectInCatModal() {
 
 // -- Project CRUD ------------------------------------------------------------
 
+function renderProjectSibling(p, currentId) {
+  const el = document.createElement('div');
+  el.className = 'cat-modal-project' + (p.id === currentId ? ' current-project' : '');
+  el.dataset.projectId = p.id;
+  el.innerHTML = `<span class="grip">&#9776;</span><span class="proj-name"></span><span class="proj-acronym"></span>`;
+  el.querySelector('.proj-name').textContent = p.name;
+  el.querySelector('.proj-acronym').textContent = p.acronym;
+  return el;
+}
+
+function populateProjectSiblings(list, label, cat, currentId) {
+  if (!list) return;
+  if (!cat) {
+    list.innerHTML = '';
+    if (label) label.style.display = 'none';
+    return;
+  }
+  list.innerHTML = '';
+  const projs = (typeof CAT_PROJECTS !== 'undefined') ? (CAT_PROJECTS[cat] || []) : [];
+  projs.forEach(p => list.appendChild(renderProjectSibling(p, currentId)));
+  if (list._sortable) list._sortable.destroy();
+  list._sortable = new Sortable(list, { animation: 150, ghostClass: 'task-ghost' });
+  if (label) label.style.display = projs.length > 0 ? '' : 'none';
+}
+
 function editProject(id, name, acronym, cat, status, defaultWho) {
   const modal = document.getElementById('project-modal');
   if (!modal) return;
@@ -182,28 +207,12 @@ function editProject(id, name, acronym, cat, status, defaultWho) {
   const dwSelect = document.getElementById('new-proj-default-who');
   if (dwSelect) dwSelect.value = defaultWho || '';
 
-  // Populate sibling projects list
-  const list = document.getElementById('proj-modal-projects');
-  const label = document.getElementById('proj-modal-projects-label');
-  if (list && cat) {
-    list.innerHTML = '';
-    const projs = (typeof CAT_PROJECTS !== 'undefined') ? (CAT_PROJECTS[cat] || []) : [];
-    projs.forEach(p => {
-      const el = document.createElement('div');
-      el.className = 'cat-modal-project' + (p.id === id ? ' current-project' : '');
-      el.dataset.projectId = p.id;
-      el.innerHTML = `<span class="grip">&#9776;</span><span class="proj-name"></span><span class="proj-acronym"></span>`;
-      el.querySelector('.proj-name').textContent = p.name;
-      el.querySelector('.proj-acronym').textContent = p.acronym;
-      list.appendChild(el);
-    });
-    if (list._sortable) list._sortable.destroy();
-    list._sortable = new Sortable(list, { animation: 150, ghostClass: 'task-ghost' });
-    if (label) label.style.display = projs.length > 0 ? '' : 'none';
-  } else if (list) {
-    list.innerHTML = '';
-    if (label) label.style.display = 'none';
-  }
+  populateProjectSiblings(
+    document.getElementById('proj-modal-projects'),
+    document.getElementById('proj-modal-projects-label'),
+    cat,
+    id,
+  );
 
   modal.style.display = 'flex';
 }
