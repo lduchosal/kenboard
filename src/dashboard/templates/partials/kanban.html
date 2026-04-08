@@ -11,7 +11,7 @@
     {% for t in col_tasks %}
     {% include "partials/task_card.html" %}
     {% endfor %}
-    <div class="kanban-add-task" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'), '{{ project_id | default('', true) }}')"><span style="font-size:18px">+</span> Ajouter une t&acirc;che</div>
+    <button type="button" class="kanban-add-task" onclick="openTaskModal(this.closest('.kanban-col').querySelector('.kanban-tasks'), '{{ project_id | default('', true) }}')"><span style="font-size:18px">+</span> Ajouter une t&acirc;che</button>
   </div>
 </div>
 
@@ -47,7 +47,7 @@
       {% include "partials/task_card.html" %}
       {% endfor %}
       {% if col_tasks | length > max_visible %}
-      <div class="show-more" onclick="this.parentElement.querySelectorAll('.task-hidden').forEach(t=>t.classList.remove('task-hidden'));this.remove()">+ {{ col_tasks | length - max_visible }} autres</div>
+      <button type="button" class="show-more" onclick="this.parentElement.querySelectorAll('.task-hidden').forEach(t=>t.classList.remove('task-hidden'));this.remove()">+ {{ col_tasks | length - max_visible }} autres</button>
       {% endif %}
     </div>
   </div>

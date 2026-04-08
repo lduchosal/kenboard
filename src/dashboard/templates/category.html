@@ -17,16 +17,16 @@
 {% endfor %}
 
 <div class="section" style="padding-top:0">
-  <div class="cat-card-add" onclick="editProject('','','','{{ cat.id }}','active')" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--dimmed)">
+  <button type="button" class="cat-card-add" onclick="editProject('','','','{{ cat.id }}','active')" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--dimmed)">
     <span style="font-size:18px">+</span> Ajouter un projet
-  </div>
+  </button>
 </div>
 
 {% if archived_projects %}
 <div class="section" style="padding-top:0">
-  <div class="archived-toggle" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('span').textContent=this.nextElementSibling.style.display==='none'?'+':'-'">
+  <button type="button" class="archived-toggle" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('span').textContent=this.nextElementSibling.style.display==='none'?'+':'-'">
     <span>+</span> Afficher les projets archiv&eacute;s ({{ archived_projects | length }})
-  </div>
+  </button>
   <div class="archived-list" style="display:none">
     {% for p in archived_projects %}
     <div class="section archived-project" id="{{ p.id }}" style="padding-top:0;opacity:0.5">

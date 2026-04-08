@@ -11,7 +11,7 @@ function showError(title, body) {
   if (!modal) {
     // Fallback for pages that didn't include the partial (shouldn't happen,
     // it's in base.html).
-    window.alert(`${title}\n\n${body}`);
+    globalThis.alert(`${title}\n\n${body}`);
     return;
   }
   document.getElementById('error-modal-title').textContent = title;
@@ -24,7 +24,7 @@ async function apiCall(url, opts = {}) {
   try {
     r = await fetch(url, opts);
   } catch (err) {
-    showError('Erreur réseau', err && err.message ? err.message : String(err));
+    showError('Erreur réseau', err?.message || String(err));
     throw err;
   }
   if (!r.ok) {
@@ -33,7 +33,11 @@ async function apiCall(url, opts = {}) {
     try {
       const parsed = JSON.parse(text);
       detail = parsed.error || parsed.detail || text;
-    } catch (_) { /* not json, keep raw */ }
+    } catch (parseErr) {
+      // Body wasn't JSON; keep the raw text. Logged at debug so it doesn't
+      // pollute the console but is available when troubleshooting.
+      console.debug('apiCall: response body is not JSON', parseErr);
+    }
     let title;
     if (r.status === 401) {
       title = 'Non authentifié';
@@ -145,7 +149,7 @@ function saveCat() {
   const method = id ? 'PATCH' : 'POST';
   const url = id ? `${API_BASE}/categories/${id}` : `${API_BASE}/categories`;
   apiCall(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color, project_order }) })
-    .then(() => window.location.reload()).catch(() => {});
+    .then(() => globalThis.location.reload()).catch(() => {});
   document.getElementById('cat-modal').style.display = 'none';
 }
 
@@ -153,7 +157,7 @@ function deleteCat() {
   const id = document.getElementById('cat-modal-id').value;
   if (!id) return;
   apiCall(`${API_BASE}/categories/${id}`, { method: 'DELETE' })
-    .then(() => window.location.reload()).catch(() => {});
+    .then(() => globalThis.location.reload()).catch(() => {});
   document.getElementById('cat-modal').style.display = 'none';
 }
 
@@ -187,7 +191,7 @@ function populateProjectSiblings(list, label, cat, currentId) {
     return;
   }
   list.innerHTML = '';
-  const projs = (typeof CAT_PROJECTS !== 'undefined') ? (CAT_PROJECTS[cat] || []) : [];
+  const projs = (typeof CAT_PROJECTS === 'undefined') ? [] : (CAT_PROJECTS[cat] || []);
   projs.forEach(p => list.appendChild(renderProjectSibling(p, currentId)));
   if (list._sortable) list._sortable.destroy();
   list._sortable = new Sortable(list, { animation: 150, ghostClass: 'task-ghost' });
@@ -231,7 +235,7 @@ function saveProject() {
   // camelCase ``projectOrder`` here would silently drop the reorder (#71).
   const project_order = [...document.querySelectorAll('#proj-modal-projects .cat-modal-project')].map(el => el.dataset.projectId);
   apiCall(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, acronym, cat, status, default_who: defaultWho, project_order }) })
-    .then(() => window.location.reload()).catch(() => {});
+    .then(() => globalThis.location.reload()).catch(() => {});
   document.getElementById('project-modal').style.display = 'none';
 }
 
@@ -239,7 +243,7 @@ function deleteProject() {
   const id = document.getElementById('new-proj-id').value;
   if (!id) return;
   apiCall(`${API_BASE}/projects/${id}`, { method: 'DELETE' })
-    .then(() => window.location.reload()).catch(() => {});
+    .then(() => globalThis.location.reload()).catch(() => {});
   document.getElementById('project-modal').style.display = 'none';
 }
 
@@ -328,11 +332,11 @@ function saveTaskModal() {
   if (_taskEditId) {
     // Update existing task
     apiCall(`${API_BASE}/tasks/${_taskEditId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description: desc, who, due_date: when || null, status }) })
-      .then(() => window.location.reload()).catch(() => {});
+      .then(() => globalThis.location.reload()).catch(() => {});
   } else {
     // Create new task
     apiCall(`${API_BASE}/tasks`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ project_id: projectId, title, description: desc, who, due_date: when || null, status }) })
-      .then(() => window.location.reload()).catch(() => {});
+      .then(() => globalThis.location.reload()).catch(() => {});
   }
   document.getElementById('task-modal').style.display = 'none';
 }
@@ -340,7 +344,7 @@ function saveTaskModal() {
 function deleteTask() {
   if (!_taskEditId) return;
   apiCall(`${API_BASE}/tasks/${_taskEditId}`, { method: 'DELETE' })
-    .then(() => window.location.reload()).catch(() => {});
+    .then(() => globalThis.location.reload()).catch(() => {});
   document.getElementById('task-modal').style.display = 'none';
 }
 
@@ -369,7 +373,11 @@ async function duplicateTask() {
         status,
       }),
     });
-  } catch (e) { return; }
+  } catch (e) {
+    // apiCall already surfaced the error popup; bail out of the duplicate.
+    console.debug('duplicateTask: apiCall failed', e);
+    return;
+  }
   const created = await r.json();
   // Re-bind the modal to the new task. The user keeps editing in place.
   _taskEditId = created.id;
@@ -400,10 +408,11 @@ function confirmDelete(btn, callback) {
     modal.style.display = 'none';
     if (parentModal) parentModal.style.display = 'flex';
   };
-  modal.onclick = () => {
-    modal.style.display = 'none';
-    if (parentModal) parentModal.style.display = 'flex';
-  };
+  // Backdrop click and Escape dismissal also reopen the parent: stash the
+  // reference so the generic dismissal handler below picks it up. Replaces
+  // the previous modal.onclick handler that depended on stopPropagation
+  // from the inner card (Sonar a11y, #83).
+  modal._reopenParent = parentModal;
   modal.style.display = 'flex';
 }
 
@@ -415,7 +424,7 @@ function confirmDelete(btn, callback) {
 // the Sortable instance so the behaviour switches as the viewport changes.
 const catGrid = document.querySelector('.cat-grid');
 let _catSortable = null;
-const _mobileCatMq = window.matchMedia('(max-width: 480px)');
+const _mobileCatMq = globalThis.matchMedia('(max-width: 480px)');
 
 function _initCatSortable() {
   if (!catGrid) return;
@@ -483,13 +492,47 @@ function renderMarkdown(root) {
     if (el.dataset.mdRendered === '1') return;
     const src = el.textContent;
     const dirty = marked.parse(src);
-    el.innerHTML = (typeof DOMPurify !== 'undefined')
-      ? DOMPurify.sanitize(dirty)
-      : dirty;
+    el.innerHTML = (typeof DOMPurify === 'undefined')
+      ? dirty
+      : DOMPurify.sanitize(dirty);
     el.dataset.mdRendered = '1';
   });
 }
 renderMarkdown();
+
+// -- Modal dismissal ---------------------------------------------------------
+// Generic Escape + click-outside dismissal for .project-add-modal. Replaces
+// the inline `onclick="this.style.display='none'"` on backdrops and the
+// `event.stopPropagation()` on inner cards (Sonar S6848: clickable element
+// without keyboard equivalent, #83). Modals with `data-no-dismiss="1"` are
+// excluded — used by the API key reveal modal which must be acknowledged
+// explicitly because the secret is shown only once.
+function _dismissModal(modal) {
+  modal.style.display = 'none';
+  // confirmDelete stashes the parent modal so backdrop/Escape dismissal
+  // re-opens it (matches the cancel button behaviour).
+  if (modal._reopenParent) {
+    modal._reopenParent.style.display = 'flex';
+    modal._reopenParent = null;
+  }
+}
+document.querySelectorAll('.project-add-modal').forEach(modal => {
+  if (modal.dataset.noDismiss === '1') return;
+  modal.addEventListener('click', (e) => {
+    // Only fire when the click landed on the backdrop itself, not on any
+    // child — clicks inside the inner card must not dismiss the modal.
+    if (e.target === modal) _dismissModal(modal);
+  });
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const visible = [...document.querySelectorAll('.project-add-modal')].filter(
+    m => m.style.display && m.style.display !== 'none' && m.dataset.noDismiss !== '1',
+  );
+  if (visible.length === 0) return;
+  // Topmost = last in DOM order (most recently opened on top of any others).
+  _dismissModal(visible[visible.length - 1]);
+});
 
 // -- Auto refresh ------------------------------------------------------------
 // Reload the page once a minute so the board stays in sync with other clients.
@@ -507,5 +550,5 @@ function shouldSkipRefresh() {
 }
 setInterval(() => {
   if (shouldSkipRefresh()) return;
-  window.location.reload();
+  globalThis.location.reload();
 }, AUTO_REFRESH_MS);

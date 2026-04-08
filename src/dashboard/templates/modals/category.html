@@ -1,12 +1,12 @@
-<div class="project-add-modal" id="cat-modal" style="display:none" onclick="this.style.display='none'">
-  <div class="project-add-card" onclick="event.stopPropagation()">
+<div class="project-add-modal" id="cat-modal" style="display:none">
+  <div class="project-add-card">
     <button class="modal-close" onclick="this.closest('.project-add-modal').style.display='none'">&times;</button>
     <h3>Editer la cat&eacute;gorie</h3>
     <div class="edit-row"><input type="text" id="cat-modal-name" placeholder="Nom de la cat&eacute;gorie" style="font-weight:600;font-size:14px"></div>
     <div class="edit-row">
       <div class="color-field cat-modal-colors" id="cat-modal-colors">
         {% for name, value in color_list %}
-        <span class="color-dot" data-color="{{ value }}" style="background:{{ value }}" onclick="event.stopPropagation();selectCatColor(this)"></span>
+        <button type="button" class="color-dot" data-color="{{ value }}" style="background:{{ value }}" onclick="selectCatColor(this)" aria-label="Couleur {{ name }}"></button>
         {% endfor %}
       </div>
     </div>

@@ -11,9 +11,9 @@
     {% if categories %}
     {% set act = current_cat or categories[0] %}
     {% set act_count = cat_project_counts[act.id] %}
-    <div class="badge-menu-toggle" onclick="this.parentElement.classList.toggle('open')">
+    <button type="button" class="badge-menu-toggle" onclick="this.parentElement.classList.toggle('open')">
       <span class="badge" style="background:color-mix(in srgb, {{ act.color }} 12%, transparent);color:{{ act.color }};text-decoration:none">{{ act.name }} {{ act_count }} <span class="badge-chevron">&#9662;</span></span>
-    </div>
+    </button>
     <div class="badge-menu-dropdown">
       {% for c in categories %}
       {% set count = cat_project_counts[c.id] %}
@@ -26,7 +26,7 @@
   <div class="avatar-menu">
     {% set u_name = current_user.name if current_user.is_authenticated else 'Q' %}
     {% set u_color = avatar_colors.get(u_name, 'var(--accent)') %}
-    <div class="avatar-btn" onclick="this.parentElement.classList.toggle('open')" style="width:28px;height:28px;border-radius:50%;background:{{ u_color }};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;cursor:pointer" title="{{ u_name }}">{{ u_name[0]|upper }}</div>
+    <button type="button" class="avatar-btn" onclick="this.parentElement.classList.toggle('open')" style="width:28px;height:28px;border-radius:50%;background:{{ u_color }};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;cursor:pointer" title="{{ u_name }}">{{ u_name[0]|upper }}</button>
     <div class="avatar-dropdown">
       {% if current_user.is_authenticated and current_user.is_admin %}
       <a href="{{ prefix }}admin/users">Utilisateurs</a>

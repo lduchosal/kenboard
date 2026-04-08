@@ -45,11 +45,11 @@
                 <option value="write" {% if s.scope == 'write' %}selected{% endif %}>write</option>
                 <option value="admin" {% if s.scope == 'admin' %}selected{% endif %}>admin</option>
               </select>
-              <span class="k-scope-remove" onclick="this.parentElement.remove()" style="cursor:pointer;color:var(--dimmed)">&times;</span>
+              <button type="button" class="k-scope-remove" onclick="this.parentElement.remove()" style="cursor:pointer;color:var(--dimmed)">&times;</button>
             </div>
             {% endfor %}
           </div>
-          <span class="k-scope-add" onclick="addScopeRow(this)" style="cursor:pointer;font-size:11px;color:var(--accent)">+ ajouter scope</span>
+          <button type="button" class="k-scope-add" onclick="addScopeRow(this)" style="cursor:pointer;font-size:11px;color:var(--accent)">+ ajouter scope</button>
         </td>
         <td style="padding:6px;white-space:nowrap">
           <button class="btn-edit btn-save-key" onclick="saveKey(this)">Enregistrer</button>
@@ -66,7 +66,7 @@
         <td style="padding:6px"><input type="text" id="new-key-expires" placeholder="YYYY-MM-DDTHH:MM" autocomplete="off" style="width:140px"></td>
         <td style="padding:6px">
           <div id="new-key-scopes"></div>
-          <span onclick="addNewScopeRow()" style="cursor:pointer;font-size:11px;color:var(--accent)">+ ajouter scope</span>
+          <button type="button" class="k-scope-add" onclick="addNewScopeRow()" style="cursor:pointer;font-size:11px;color:var(--accent)">+ ajouter scope</button>
         </td>
         <td style="padding:6px"><button class="btn btn-save" id="keys-create-btn" onclick="createKey()">Cr&eacute;er</button></td>
       </tr>
@@ -74,8 +74,8 @@
   </table>
 </div>
 
-<div class="project-add-modal" id="key-shown-modal" style="display:none">
-  <div class="project-add-card" onclick="event.stopPropagation()">
+<div class="project-add-modal" id="key-shown-modal" style="display:none" data-no-dismiss="1">
+  <div class="project-add-card">
     <h3>Cl&eacute; cr&eacute;&eacute;e &mdash; copie-la maintenant</h3>
     <p style="font-size:11px;color:var(--dimmed);margin-bottom:10px">
       Cette cl&eacute; ne sera plus jamais affich&eacute;e. Si tu la perds, il faudra en cr&eacute;er une nouvelle.
@@ -104,7 +104,7 @@ function _scopeRowHtml(selectedProjectId, selectedScope) {
   return `<div class="k-scope-row" style="display:flex;gap:4px;margin-bottom:2px;font-size:11px;align-items:center">
     <select class="k-scope-project" style="flex:1;font-size:11px">${opts}</select>
     <select class="k-scope-level" style="font-size:11px">${levelOpts}</select>
-    <span class="k-scope-remove" onclick="this.parentElement.remove()" style="cursor:pointer;color:var(--dimmed)">&times;</span>
+    <button type="button" class="k-scope-remove" onclick="this.parentElement.remove()" style="cursor:pointer;color:var(--dimmed)">&times;</button>
   </div>`;
 }
 

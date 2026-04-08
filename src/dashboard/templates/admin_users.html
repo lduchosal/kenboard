@@ -69,7 +69,9 @@ async function saveUser(btn) {
       body: JSON.stringify(body),
     });
     location.reload();
-  } catch (e) { /* error popup already shown by apiCall */ }
+  } catch (e) {
+    console.debug('saveUser: apiCall failed, popup already shown', e);
+  }
 }
 
 function prepareDeleteUser(btn) {
@@ -82,7 +84,9 @@ async function deleteUser() {
   try {
     await apiCall('/api/v1/users/' + _userDeleteId, {method: 'DELETE'});
     location.reload();
-  } catch (e) { /* popup shown */ }
+  } catch (e) {
+    console.debug('deleteUser: apiCall failed, popup already shown', e);
+  }
 }
 
 async function createUser() {
@@ -104,7 +108,9 @@ async function createUser() {
       body: JSON.stringify(body),
     });
     location.reload();
-  } catch (e) { /* popup shown */ }
+  } catch (e) {
+    console.debug('createUser: apiCall failed, popup already shown', e);
+  }
 }
 </script>
 {% endblock %}

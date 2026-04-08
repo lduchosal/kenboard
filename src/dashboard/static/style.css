@@ -823,6 +823,31 @@ body {
 }
 .show-more:hover { color: var(--text); }
 
+/* -- Button reset for elements that look like divs/spans ------------------
+   These elements are now <button type="button"> for keyboard accessibility
+   (Sonar S6848, #84) but should look identical to their previous div/span
+   form. :where() keeps the reset at specificity 0 so existing class styles
+   still win. The browser default focus outline is intentionally preserved
+   so keyboard users can see where focus lives. */
+button:where(.badge-menu-toggle, .avatar-btn, .kanban-add-task, .show-more,
+             .k-scope-remove, .k-scope-add, .cat-card-add, .archived-toggle,
+             .color-dot) {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+/* Show-more and standalone cat-card-add need to span full width like the
+   <div> they replaced (button defaults to inline-block). */
+button.show-more,
+button.cat-card-add {
+  width: 100%;
+}
+
 /* -- Drag & drop states -- */
 .task-ghost {
   opacity: 0.4;
