@@ -873,7 +873,7 @@ body {
    so keyboard users can see where focus lives. */
 button:where(.badge-menu-toggle, .avatar-btn, .kanban-add-task, .show-more,
              .k-scope-remove, .k-scope-add, .cat-card-add, .archived-toggle,
-             .color-dot) {
+             .color-dot, .cat-project) {
   border: none;
   background: transparent;
   padding: 0;

@@ -26,6 +26,7 @@ from flask import (
     Flask,
     abort,
     current_app,
+    make_response,
     redirect,
     render_template,
     request,
@@ -281,7 +282,10 @@ def login_rate_limited(e: Any) -> Any:
     returning the 429 status so scripts notice.
     """
     next_url = request.args.get("next") or request.form.get("next") or ""
-    return (
+    # Use ``make_response`` so the 429 status is attached to an explicit
+    # Response object — sonar python:S6863 does not recognise the
+    # ``(body, status)`` tuple shortcut as explicit enough for error handlers.
+    return make_response(
         render_template(
             "login.html",
             error="Trop de tentatives. Réessaye dans une minute.",
