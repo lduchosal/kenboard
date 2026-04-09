@@ -40,6 +40,13 @@ dependencies = [
     "flask-limiter>=4.1.1",
 ]
 
+[project.optional-dependencies]
+# Production WSGI server. Pulled in via ``pip install "kenboard[prod]"``
+# so users who only need the CLI (``ken``) or the static build pipeline
+# don't carry the dependency. Consumed by the ``kenboard prod`` command
+# in ``src/dashboard/cli.py``.
+prod = ["gunicorn>=21.0"]
+
 [project.scripts]
 kenboard = "dashboard.cli:cli"
 ken = "dashboard.ken:cli"
@@ -73,6 +80,10 @@ dev = [
     "vulture>=2.14",
     "refurb>=2.2.0",
     "absolufy-imports>=0.3.1",
+    # Production WSGI server — needed in dev to test the `kenboard prod`
+    # command end-to-end (it's an optional runtime dep, see
+    # `[project.optional-dependencies] prod`).
+    "gunicorn>=21.0",
 ]
 publish = [
     "twine>=6.2.0",
@@ -120,7 +131,6 @@ refurb = "refurb src/"
 check = { composite = ["isort", "format", "docformatter", "typecheck", "flake8", "interrogate", "refurb", "lint", "vulture", "test-quick"] }
 
 # Build & generation
-build-html = "python build.py"
 screenshots = "python scripts/screenshots.py"
 clean = "rm -rf dist/ build/ .mypy_cache/ .pytest_cache/ htmlcov/ .coverage"
 

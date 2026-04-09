@@ -239,11 +239,33 @@ Le serveur demarre sur http://127.0.0.1:5000
 
 Connecte-toi avec `Q` + le mot de passe defini a l'etape 6.
 
+> `kenboard serve` refuse de demarrer sans `--debug` : c'est le serveur
+> Werkzeug, mono-thread et non-hardene, conçu uniquement pour le dev local.
+> Pour la production, voir ci-dessous.
+
 ### Production
 
+Installer kenboard avec l'extra `prod` (gunicorn) puis lancer en mode prod :
+
 ```sh
-pip install gunicorn
-gunicorn "dashboard.app:create_app()" --bind 0.0.0.0:8080 --workers 4
+pip install "kenboard[prod]"
+kenboard prod
+```
+
+Defaut : `--bind 0.0.0.0:8080 --workers 4`. Surchargeable :
+
+```sh
+kenboard prod --bind 127.0.0.1:9090 --workers 8
+```
+
+Sous le capot, `kenboard prod` lance gunicorn avec
+`dashboard.app:create_app()` comme cible WSGI. Si tu as besoin d'options
+gunicorn avancees (config file, hooks, logs structures), tu peux toujours
+appeler gunicorn directement :
+
+```sh
+gunicorn "dashboard.app:create_app()" --bind 0.0.0.0:8080 --workers 4 \
+  --access-logfile - --error-logfile -
 ```
 
 ## 8. Tests
@@ -261,13 +283,7 @@ Verifier la qualite complete :
 sh publish.sh --quality
 ```
 
-## 9. Generer les pages statiques (optionnel)
-
-```sh
-kenboard build
-```
-
-## 10. Reverse proxy (Nginx)
+## 9. Reverse proxy (Nginx)
 
 ```nginx
 server {
@@ -292,7 +308,7 @@ server {
 }
 ```
 
-## 11. Verification
+## 10. Verification
 
 ```sh
 curl http://localhost:5000/api/v1/categories

@@ -25,8 +25,7 @@ See `doc/architecture.md` for the full picture. Hard rules from that doc:
   connection with autocommit.
 - **Flask blueprints** under `src/dashboard/routes/` (categories, projects,
   tasks, users, keys, pages). App factory is `dashboard.app:create_app`.
-- **Jinja2 templates** in `src/dashboard/templates/` are shared by Flask and by
-  the static `build.py` generator.
+- **Jinja2 templates** in `src/dashboard/templates/` are rendered by Flask.
 - **Frontend** is vanilla JS + SortableJS, no build step. Single `app.js`.
 
 ## Layout

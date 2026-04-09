@@ -16,8 +16,28 @@ def cli() -> None:
 @click.option("--port", default=5000, help="Port to bind to.")
 @click.option("--debug", is_flag=True, help="Enable debug mode.")
 def serve(host: str, port: int, debug: bool) -> None:
-    """Start the Flask development server."""
-    if debug and host != "127.0.0.1":
+    """Start the Flask development server (local dev only).
+
+    Refuses to run without ``--debug`` to make it impossible to
+    accidentally serve production traffic from Werkzeug — that's the
+    server that prints "WARNING: This is a development server. Do not
+    use it in a production deployment." For prod, use a real WSGI
+    server (gunicorn, see INSTALL.md).
+    """
+    if not debug:
+        click.echo(
+            "Refusal: `kenboard serve` runs the Werkzeug development "
+            "server, which is single-threaded, unhardened, and not "
+            "intended for production traffic.\n"
+            "  - For local development:  kenboard serve --debug\n"
+            "  - For production:         "
+            'gunicorn "dashboard.app:create_app()" '
+            "--bind 0.0.0.0:8080 --workers 4\n"
+            "See INSTALL.md section 7 for the full production setup.",
+            err=True,
+        )
+        sys.exit(2)
+    if host != "127.0.0.1":
         click.echo(
             "Refusal: --debug exposes the Werkzeug debug console (RCE risk) "
             "and must stay local. Run without --debug or with --host 127.0.0.1.",
@@ -32,12 +52,48 @@ def serve(host: str, port: int, debug: bool) -> None:
 
 
 @cli.command()
-def build() -> None:
-    """Generate static HTML pages from data.json."""
-    import subprocess
-    import sys
+@click.option(
+    "--bind",
+    default="0.0.0.0:8080",
+    help="Address to bind to (host:port). Default 0.0.0.0:8080.",
+)
+@click.option(
+    "--workers",
+    default=4,
+    type=int,
+    help="Number of gunicorn worker processes. Default 4.",
+)
+def prod(bind: str, workers: int) -> None:
+    """Start kenboard in production mode via gunicorn.
 
-    subprocess.run([sys.executable, "build.py"], check=True)
+    Wraps gunicorn so the operator does not need to remember the WSGI
+    target string. Requires the optional ``prod`` extra:
+    ``pip install "kenboard[prod]"``.
+    """
+    try:
+        from gunicorn.app.wsgiapp import WSGIApplication
+    except ImportError:
+        click.echo(
+            "Refusal: gunicorn is not installed. Install the prod extra:\n"
+            '    pip install "kenboard[prod]"\n'
+            "Then re-run `kenboard prod`.",
+            err=True,
+        )
+        sys.exit(2)
+
+    # gunicorn's WSGIApplication reads from sys.argv. Rebuild it as if
+    # the operator had typed `gunicorn --bind … --workers … dashboard.app:create_app()`
+    # so all the standard gunicorn flags remain reachable via env vars
+    # / config files for advanced users.
+    sys.argv = [
+        "gunicorn",
+        "--bind",
+        bind,
+        "--workers",
+        str(workers),
+        "dashboard.app:create_app()",
+    ]
+    WSGIApplication().run()
 
 
 @cli.command()

@@ -227,15 +227,6 @@ PATCH  /api/v1/tasks/:id               Modifier (titre, statut, position...)
 DELETE /api/v1/tasks/:id               Supprimer
 ```
 
-## Generation statique vs dynamique
-
-Le meme jeu de templates Jinja2 sert pour :
-
-1. **build.py** : lit `data.json`, rend les templates, ecrit des fichiers `.html`
-2. **Flask** : lit MySQL, rend les memes templates, sert dynamiquement
-
-A terme, `data.json` disparait. Le build statique devient optionnel (export/backup).
-
 ## Choix explicites
 
 - **Pas d'ORM** : le SQL est ecrit a la main, visible, testable
