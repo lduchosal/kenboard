@@ -479,3 +479,27 @@ class TestCliMutations:
         assert result.exit_code == 0, result.output
         assert "Hello" in result.output
         assert "2026-04-15" in result.output
+
+
+class TestCliHelp:
+    """`ken help` ships the agent best-practice guide as packaged data (#118)."""
+
+    def test_help_prints_agent_guide(self, runner):
+        """`ken help` reads the bundled markdown and echoes it verbatim."""
+        result = runner.invoke(ken.cli, ["help"])
+        assert result.exit_code == 0, result.output
+        # Section headings from agent_guide.md
+        assert "kenboard agent guide" in result.output
+        assert "The loop" in result.output
+        # The four-step workflow markers
+        assert "todo → doing → review → done" in result.output
+        assert "ken move <id> --to doing" in result.output
+        assert "ken move <id> --to review" in result.output
+        assert "ken update <id> --desc" in result.output
+
+    def test_help_subcommand_listed_in_main_help(self, runner):
+        """`ken --help` advertises the new ``help`` subcommand."""
+        result = runner.invoke(ken.cli, ["--help"])
+        assert result.exit_code == 0
+        assert "help" in result.output
+        assert "agent guide" in result.output

@@ -12,6 +12,7 @@ import json as json_lib
 import os
 import sys
 from dataclasses import dataclass
+from importlib import resources
 from pathlib import Path
 from typing import Any
 from urllib import error as urllib_error
@@ -457,3 +458,20 @@ def done(ctx: click.Context, task_id: int) -> None:
     cfg: KenConfig = ctx.obj["cfg"]
     task = _request(cfg, "PATCH", f"/api/v1/tasks/{task_id}", body={"status": "done"})
     click.echo(f"Task #{task['id']} → {task['status']}")
+
+
+@cli.command(name="help")
+def help_cmd() -> None:
+    """Print the agent guide (kenboard best practices for LLM agents).
+
+    Loads ``agent_guide.md`` from the installed package via
+    ``importlib.resources`` so the doc travels with the wheel and stays
+    in sync with the CLI version. Pair with ``ken --help`` for the
+    auto-generated command reference.
+    """
+    text = (
+        resources.files("dashboard")
+        .joinpath("agent_guide.md")
+        .read_text(encoding="utf-8")
+    )
+    click.echo(text)
