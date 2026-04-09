@@ -8,22 +8,27 @@
 </head>
 <body class="login-body">
   <div class="login-card">
-    <h1 class="login-title">KENBOARD</h1>
-    <form method="post" action="/login" class="login-form" autocomplete="off">
-      <input type="hidden" name="next" value="{{ next_url }}">
-      <label class="login-label">
-        Nom
-        <input type="text" name="name" autofocus required autocomplete="username">
-      </label>
-      <label class="login-label">
-        Mot de passe
-        <input type="password" name="password" required autocomplete="current-password">
-      </label>
-      {% if error %}
-      <div class="login-error">{{ error }}</div>
-      {% endif %}
-      <button type="submit" class="btn btn-save login-submit">Se connecter</button>
-    </form>
+    <div class="login-logo-panel">
+      <img src="/static/logo.svg" alt="Kenboard" class="login-logo">
+    </div>
+    <div class="login-form-panel">
+      <h1 class="login-title">KENBOARD</h1>
+      <form method="post" action="/login" class="login-form" autocomplete="off">
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <label class="login-label">
+          Nom
+          <input type="text" name="name" autofocus required autocomplete="username">
+        </label>
+        <label class="login-label">
+          Mot de passe
+          <input type="password" name="password" required autocomplete="current-password">
+        </label>
+        {% if error %}
+        <div class="login-error">{{ error }}</div>
+        {% endif %}
+        <button type="submit" class="btn btn-save login-submit">Se connecter</button>
+      </form>
+    </div>
   </div>
 </body>
 </html>

@@ -1095,7 +1095,7 @@ button.cat-card-add {
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-  padding: 32px 36px;
+  padding: 32px 36px 32px 36px;
   width: 320px;
 }
 .login-title {
@@ -1148,6 +1148,70 @@ button.cat-card-add {
   margin-top: 4px;
   padding: 8px 14px;
   font-size: 12px;
+}
+
+/* Two-panel layout for the login page: square logo on the left, form
+   on the right. Uses CSS Grid (not Flexbox) so the column geometry is
+   deterministic — flex-basis + flex-shrink interactions had a habit of
+   collapsing the form panel under the logo on certain viewports. */
+.login-card-split {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  width: 640px;
+  max-width: 95vw;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.login-logo-panel {
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  position: relative;
+}
+/* Inset shadow overlaid on the logo panel to make the logo look like it
+   sits below the surface of the card. ``::after`` is used because
+   ``box-shadow: inset`` does not work directly on <img> elements (the
+   image content is rendered over the inset shadow). */
+.login-logo-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.22),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+}
+.login-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.login-form-panel {
+  padding: 32px 36px 32px 54px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+@media (max-width: 640px) {
+  .login-card-split {
+    grid-template-columns: 1fr;
+    width: auto;
+  }
+  .login-logo-panel {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    aspect-ratio: auto;
+  }
+  .login-form-panel {
+    padding: 24px 28px;
+  }
 }
 
 /* Logout button styled as a link inside the avatar dropdown */

@@ -128,6 +128,22 @@ class TestLoginFlow:
         assert b'name="name"' in r.data
         assert b'name="password"' in r.data
 
+    def test_get_login_renders_logo_panel(self, auth_client):
+        """#133: the login page has a logo panel alongside the form."""
+        r = auth_client.get("/login")
+        assert r.status_code == 200
+        assert b"login-card" in r.data
+        assert b"login-logo-panel" in r.data
+        assert b'src="/static/logo.svg"' in r.data
+
+    def test_logo_static_asset_is_served(self, auth_client):
+        """The logo file is reachable at /static/logo.svg."""
+        r = auth_client.get("/static/logo.svg")
+        assert r.status_code == 200
+        # Confirm it's actually an SVG, not an HTML 404 page or empty body.
+        body = r.data.decode("utf-8", errors="replace")
+        assert "<svg" in body
+
     def test_post_bad_credentials(self, auth_client, db, admin_user):
         r = auth_client.post(
             "/login",
