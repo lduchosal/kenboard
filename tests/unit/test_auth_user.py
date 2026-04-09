@@ -257,12 +257,14 @@ class TestAgentOnboardingHints:
         assert r.headers.get("WWW-Authenticate", "").startswith("Bearer")
         body = r.get_data(as_text=True)
         assert "pip install kenboard" in body
-        # Cat id from the URL is interpolated into the init command
-        assert "ken init 0ee51b6f-81b8-4da0-9efc-0bd9e01f9e4f" in body
+        # Cat id from the path is rendered in the .ken file template
+        assert "cat_id=0ee51b6f-81b8-4da0-9efc-0bd9e01f9e4f" in body
+        # Project id is a placeholder — server cannot see the URL fragment
+        assert "project_id=<UUID after `#` in the original URL>" in body
         assert "/admin/keys" in body
 
     def test_agent_on_root_falls_back_to_placeholder(self, auth_client, db):
-        """No cat id in the URL → ``ken init <category-id>`` placeholder."""
+        """No cat id in the URL → both ids are placeholders in the runbook."""
         r = auth_client.get(
             "/",
             headers={"Accept": "*/*"},
@@ -270,7 +272,8 @@ class TestAgentOnboardingHints:
         )
         assert r.status_code == 401
         body = r.get_data(as_text=True)
-        assert "ken init <category-id>" in body
+        assert "cat_id=<paste the UUID between /cat/ and .html>" in body
+        assert "project_id=<UUID after `#` in the original URL>" in body
 
     def test_api_missing_token_returns_onboarding_json(self, auth_client, db):
         """``/api/v1/*`` without token → JSON 401 with the same runbook."""
@@ -279,8 +282,15 @@ class TestAgentOnboardingHints:
         payload = r.get_json()
         assert payload["error"] == "unauthorized"
         assert payload["onboarding"]["install"] == "pip install kenboard"
-        assert payload["onboarding"]["init"] == "ken init <category-id>"
         assert payload["onboarding"]["get_api_key"] == "/admin/keys"
+        # The .ken file template carries both ids — cat_id is null on
+        # /api/* paths (no /cat/<id>.html match) and project_id is always
+        # a placeholder because the server never sees the URL fragment.
+        assert payload["onboarding"]["cat_id"] is None
+        lines = payload["onboarding"]["ken_file"]["lines"]
+        assert any(line.startswith("cat_id=") for line in lines)
+        assert any(line.startswith("project_id=") for line in lines)
+        assert any(line.startswith("api_token=") for line in lines)
 
 
 # -- API middleware bridges to user session -----------------------------------

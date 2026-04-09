@@ -247,6 +247,42 @@ function deleteProject() {
   document.getElementById('project-modal').style.display = 'none';
 }
 
+// Copy a deep-link onboarding URL (cat_id in path + project_id in fragment)
+// to the clipboard so the user can paste it to an LLM agent. The agent then
+// hits the URL, the server replies 401 with the runbook from
+// dashboard.onboarding (#117) and the agent has both ids it needs to write
+// its `.ken` file.
+function copyOnboardLink(btn, catId, projectId) {
+  const url = `${globalThis.location.origin}/cat/${catId}.html#${projectId}`;
+  const restore = btn.textContent;
+  const flash = (label) => {
+    btn.textContent = label;
+    setTimeout(() => { btn.textContent = restore; }, 1500);
+  };
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(url).then(
+      () => flash('Copied!'),
+      () => flash('Copy failed'),
+    );
+  } else {
+    // Fallback for older browsers / non-secure contexts.
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      flash('Copied!');
+    } catch {
+      flash('Copy failed');
+    } finally {
+      ta.remove();
+    }
+  }
+}
+
 // -- Task CRUD ---------------------------------------------------------------
 
 function toggleDetail(el, event) {

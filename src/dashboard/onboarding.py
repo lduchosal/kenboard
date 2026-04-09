@@ -26,10 +26,12 @@ _CAT_URL_RE = re.compile(r"^/cat/([^/]+)\.html$")
 def cat_id_from_path(path: str) -> str | None:
     """Return the category id embedded in a ``/cat/<id>.html`` path, or None.
 
-    Used to interpolate the right ``ken init <id>`` command into the
-    onboarding hint when the agent landed on a category page directly. Any
-    other path (api endpoints, admin pages, root) yields ``None`` and the
-    rendered command falls back to the ``<category-id>`` placeholder.
+    Used to render an explicit ``cat_id=<uuid>`` line in the onboarding
+    runbook when the agent landed on a category page directly. The matching
+    ``project_id`` lives in the URL fragment which the server never receives
+    (HTTP clients drop ``#fragment`` before sending), so the runbook
+    instructs the agent to copy the project id from the original URL the
+    user shared with it.
     """
     m = _CAT_URL_RE.match(path)
     return m.group(1) if m else None
@@ -54,28 +56,49 @@ def wants_machine_response(request_obj: Request) -> bool:
 
 
 def onboarding_text(cat_id: str | None) -> str:
-    """Render the agent-facing 401 body as plain text."""
-    init_arg = cat_id or "<category-id>"
+    """Render the agent-facing 401 body as plain text.
+
+    The runbook lists *both* identifiers — ``cat_id`` (which the server
+    sees in the path and can interpolate) and ``project_id`` (which lives
+    in the URL fragment and must be copied by the agent from the original
+    URL the user shared). The agent is then instructed to write a 4-line
+    ``.ken`` file directly, side-stepping ``ken init`` (which is admin-only
+    on the listing endpoint and would fail for a per-project token).
+    """
+    cat_value = cat_id or "<paste the UUID between /cat/ and .html>"
     return (
         "Unauthorized — you are accessing a kenboard project board "
         "without credentials.\n"
         "\n"
-        "To use this board programmatically, install and configure the "
-        "ken CLI:\n"
+        "The URL the user gave you has the form:\n"
+        "    https://<host>/cat/<CAT_ID>.html#<PROJECT_ID>\n"
+        f"      cat_id     = {cat_value}\n"
+        "      project_id = <UUID after `#` in the original URL>\n"
+        "\n"
+        "HTTP clients drop the URL fragment before sending the request, so\n"
+        "this server only sees the cat_id; the project_id must be read\n"
+        "from the original URL the user shared with you.\n"
+        "\n"
+        "To use this board programmatically:\n"
         "\n"
         "  1. Install the kenboard package (ships the `ken` binary):\n"
-        "     pip install kenboard\n"
+        "         pip install kenboard\n"
         "\n"
-        f"  2. Initialise this project (writes a `.ken` file mode 0600):\n"
-        f"     ken init {init_arg}\n"
+        "  2. Create a `.ken` file (mode 0600) in your project root with:\n"
         "\n"
-        "  3. Ask the user for an API key generated at /admin/keys and\n"
-        "     paste it into `.ken` next to `api_token=`.\n"
+        f"         cat_id={cat_value}\n"
+        "         project_id=<UUID after `#` in the original URL>\n"
+        "         base_url=https://www.kenboard.2113.ch\n"
+        "         api_token=<API key the user generates at /admin/keys>\n"
+        "\n"
+        "  3. Ask the user to generate an API key at /admin/keys (with at\n"
+        "     least `read` scope on this project) and paste it into the\n"
+        "     `api_token=` line.\n"
         "\n"
         "  4. Then query the board:\n"
-        "     ken list --status todo --json\n"
-        "     ken show <id> --json\n"
-        "     ken add 'Title' --desc '...' --who Claude --status todo\n"
+        "         ken list --status todo --json\n"
+        "         ken show <id> --json\n"
+        "         ken add 'Title' --desc '...' --who Claude --status todo\n"
         "\n"
         "Browser users: log in at /login.\n"
     )
@@ -85,20 +108,38 @@ def onboarding_json(cat_id: str | None) -> dict[str, Any]:
     """Render the agent-facing 401 body as a JSON-friendly dict.
 
     Same content as ``onboarding_text`` but structured so an SDK can
-    extract individual fields without parsing free-form prose.
+    extract individual fields without parsing free-form prose. The
+    ``project_id`` field is intentionally a placeholder string instead of
+    ``null`` so a naïve JSON-to-template substitution still produces a
+    visible marker the user notices and replaces.
     """
-    init_arg = cat_id or "<category-id>"
+    cat_value = cat_id or "<paste the UUID between /cat/ and .html>"
     return {
         "error": "unauthorized",
         "message": (
             "kenboard requires authentication for programmatic access — "
-            "see `onboarding` below for the install / init runbook"
+            "see `onboarding` below for the runbook"
         ),
         "onboarding": {
+            "url_format": "https://<host>/cat/<CAT_ID>.html#<PROJECT_ID>",
+            "note": (
+                "HTTP clients drop the URL fragment, so this server only "
+                "sees the cat_id; copy the project_id from the original "
+                "URL the user shared with you (the part after `#`)."
+            ),
             "install": "pip install kenboard",
-            "init": f"ken init {init_arg}",
+            "ken_file": {
+                "path": ".ken (mode 0600 in your project root)",
+                "lines": [
+                    f"cat_id={cat_value}",
+                    "project_id=<UUID after `#` in the original URL>",
+                    "base_url=https://www.kenboard.2113.ch",
+                    "api_token=<API key from /admin/keys>",
+                ],
+            },
+            "cat_id": cat_id,
+            "project_id": "<UUID after `#` in the original URL>",
             "get_api_key": "/admin/keys",
-            "category_id": cat_id,
             "next_steps": [
                 "ken list --status todo --json",
                 "ken show <id> --json",

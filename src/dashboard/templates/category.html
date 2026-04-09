@@ -7,6 +7,7 @@
 <div class="section" id="{{ p.id }}" style="padding-top:0">
   <div class="section-title">
     <span>{{ p.acronym or p.name[:4] | upper }} / {{ p.name }}</span>
+    <button type="button" class="btn-edit section-onboard-btn" title="Copy onboarding URL (cat_id + project_id) to clipboard so an LLM agent can self-onboard via the 401 runbook" onclick="copyOnboardLink(this, '{{ cat.id }}', '{{ p.id }}')">Copy onboard link</button>
     <button class="btn-edit section-edit-btn" onclick="editProject('{{ p.id }}','{{ p.name | jsesc }}','{{ (p.acronym or '') | jsesc }}','{{ cat.id }}','{{ p.get('status', 'active') }}','{{ p.get('default_who', '') | jsesc }}')">Editer</button>
   </div>
   {% set tasks = p.tasks %}
