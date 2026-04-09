@@ -265,21 +265,10 @@ function copyOnboardLink(btn, catId, projectId) {
       () => flash('Copy failed'),
     );
   } else {
-    // Fallback for older browsers / non-secure contexts.
-    const ta = document.createElement('textarea');
-    ta.value = url;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    try {
-      document.execCommand('copy');
-      flash('Copied!');
-    } catch {
-      flash('Copy failed');
-    } finally {
-      ta.remove();
-    }
+    // navigator.clipboard requires HTTPS or localhost. Anything else
+    // (legacy IE, prehistoric Safari, etc.) is out of support — kenboard
+    // targets modern browsers, the user can copy from the URL bar instead.
+    flash('Copy unsupported');
   }
 }
 

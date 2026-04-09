@@ -239,10 +239,21 @@ def init_login_manager(app: Flask) -> None:
     app.register_blueprint(bp)
 
 
-@bp.route("/login", methods=["GET", "POST"])
+@bp.route("/login", methods=["GET"])
+def login() -> Any:
+    """Render the login form (GET only).
+
+    Split from the POST handler (cf. sonar python:S3752) so each route
+    has a single HTTP method. The POST handler ``login_post`` lives just
+    below and is the only one wearing the brute-force rate limit.
+    """
+    next_url = request.args.get("next") or ""
+    return render_template("login.html", error=None, next_url=next_url)
+
+
+@bp.route("/login", methods=["POST"])
 @limiter.limit(
     LOGIN_RATE_LIMITS,
-    methods=["POST"],
     deduct_when=lambda response: response.status_code != 302,
     on_breach=lambda limit: log.warning(
         "auth.brute_force_attempt",
@@ -251,32 +262,31 @@ def init_login_manager(app: Flask) -> None:
         path="/login",
     ),
 )
-def login() -> Any:
-    """Render the login form (GET) or validate credentials (POST).
+def login_post() -> Any:
+    """Validate credentials submitted by the login form (POST only).
 
-    POST is rate-limited per IP via flask-limiter (cf. ``LOGIN_RATE_LIMITS``).
-    Successful logins (302 redirect) do not count against the budget so a
-    user who fat-fingers their password 4 times can still log in on the
-    5th try without burning through their hour quota.
+    Rate-limited per IP via flask-limiter (cf. ``LOGIN_RATE_LIMITS``).
+    Successful logins (302 redirect) do not count against the budget so
+    a user who fat-fingers their password 4 times can still log in on
+    the 5th try without burning through their hour quota.
     """
-    error = None
     next_url = request.args.get("next") or request.form.get("next") or ""
-    if request.method == "POST":
-        name = (request.form.get("name") or "").strip()
-        password = request.form.get("password") or ""
-        user = _verify_credentials(name, password)
-        if user is not None:
-            # Seed a session nonce on first login so the cookie carries one.
-            # Pre-existing users (DB row with empty nonce) get their first
-            # nonce here. Re-logging in keeps the same nonce — it only
-            # rotates on /logout, which is what makes /logout effective.
-            if not user.session_nonce:
-                user.session_nonce = _rotate_session_nonce(user.id)
-            login_user(user, remember=True, duration=timedelta(days=REMEMBER_DAYS))
-            target = next_url if _is_safe_url(next_url) else url_for("pages.index")
-            return redirect(target)
-        error = "Identifiants invalides"
-    return render_template("login.html", error=error, next_url=next_url)
+    name = (request.form.get("name") or "").strip()
+    password = request.form.get("password") or ""
+    user = _verify_credentials(name, password)
+    if user is not None:
+        # Seed a session nonce on first login so the cookie carries one.
+        # Pre-existing users (DB row with empty nonce) get their first
+        # nonce here. Re-logging in keeps the same nonce — it only
+        # rotates on /logout, which is what makes /logout effective.
+        if not user.session_nonce:
+            user.session_nonce = _rotate_session_nonce(user.id)
+        login_user(user, remember=True, duration=timedelta(days=REMEMBER_DAYS))
+        target = next_url if _is_safe_url(next_url) else url_for("pages.index")
+        return redirect(target)
+    return render_template(
+        "login.html", error="Identifiants invalides", next_url=next_url
+    )
 
 
 @bp.route("/logout", methods=["POST"])

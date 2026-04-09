@@ -28,7 +28,15 @@ def create_app() -> Flask:
     debug = os.getenv("DEBUG", "false").lower() == "true"
     setup_logging(debug=debug)
 
-    app = Flask(
+    # CSRF strategy (cf. sonar python:S4502): kenboard does not use
+    # Flask-WTF CSRFProtect. Cookie-authenticated unsafe requests are
+    # protected by an Origin/Referer same-host check in the API auth
+    # middleware (see ``dashboard.auth._enforce_cookie_session`` and
+    # ``dashboard.auth._origin_matches_host``). Bearer-token requests
+    # do not need CSRF protection because the token is never sent
+    # automatically by the browser. Both flows are covered by
+    # ``tests/unit/test_csrf.py``.
+    app = Flask(  # NOSONAR(python:S4502): CSRF via Origin check, see auth.py
         __name__,
         template_folder=os.path.join(os.path.dirname(__file__), "templates"),
         static_folder=os.path.join(os.path.dirname(__file__), "static"),
