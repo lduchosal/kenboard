@@ -5,10 +5,14 @@ These tests run with ``LOGIN_DISABLED=False`` so they actually exercise
 check helper. They use the Flask test client (no Playwright).
 """
 
+import json
+
 import pytest
 from argon2 import PasswordHasher
 
 from dashboard.auth_user import _is_safe_url, _verify_credentials
+
+SAME_ORIGIN = {"Origin": "http://localhost"}
 
 
 @pytest.fixture()
@@ -190,6 +194,116 @@ class TestLoginFlow:
         r = auth_client.get("/", follow_redirects=False)
         assert r.status_code == 302
         assert "/login" in r.location
+
+    def test_login_works_for_email_named_user(self, auth_client, db, queries):
+        """#132: any user with a non-empty password_hash can log in.
+
+        The login flow has nothing Q-specific — it's just a name lookup
+        followed by an argon2 verify. Names containing ``@`` are valid.
+        """
+        h = PasswordHasher().hash("validpass")
+        queries.usr_create(
+            db,
+            id="user-email",
+            name="user@example.com",
+            color="#abcdef",
+            password_hash=h,
+            is_admin=0,
+        )
+        r = auth_client.post(
+            "/login",
+            data={"name": "user@example.com", "password": "validpass"},
+            follow_redirects=False,
+        )
+        assert r.status_code == 302
+        assert r.location.endswith("/")
+
+    def test_admin_ui_patch_password_silently_dropped(
+        self, auth_client, db, admin_user
+    ):
+        """#132 regression: PATCH-with-password is a no-op so login still fails.
+
+        Reproduces the user-facing scenario: admin Q creates a passwordless
+        user via the /admin/users panel, then types a password into the
+        existing row's password input and clicks Enregistrer. The JS sends
+        ``password`` in the PATCH body but ``UserUpdate(extra="ignore")``
+        drops it (cf. ``test_patch_ignores_password_field``). The user
+        looks "saved" in the UI but the next login attempt fails.
+        """
+        # Login as admin
+        auth_client.post("/login", data={"name": "Q", "password": "topsecret123"})
+        # Create a passwordless user
+        create = auth_client.post(
+            "/api/v1/users",
+            data=json.dumps(
+                {"name": "user@example.com", "color": "#abc", "is_admin": False}
+            ),
+            content_type="application/json",
+            headers=SAME_ORIGIN,
+        )
+        assert create.status_code == 201
+        new_id = create.get_json()["id"]
+        # Mimic admin_users.html saveUser(): PATCH with a password field
+        patch = auth_client.patch(
+            f"/api/v1/users/{new_id}",
+            data=json.dumps(
+                {
+                    "name": "user@example.com",
+                    "color": "#abc",
+                    "is_admin": False,
+                    "password": "secret123",
+                }
+            ),
+            content_type="application/json",
+            headers=SAME_ORIGIN,
+        )
+        assert patch.status_code == 200  # backend returns OK, silently drops password
+        # Logout admin so we can attempt login as the affected user
+        auth_client.post("/logout")
+        # Login attempt with the password the admin THOUGHT they set → fails
+        login = auth_client.post(
+            "/login",
+            data={"name": "user@example.com", "password": "secret123"},
+            follow_redirects=False,
+        )
+        assert login.status_code == 200  # form re-rendered with error
+        assert "Identifiants invalides".encode("utf-8") in login.data
+
+    def test_admin_reset_password_endpoint_enables_login(
+        self, auth_client, db, admin_user
+    ):
+        """#132 fix path: POST /api/v1/users/<id>/reset-password actually works.
+
+        This is the call admin_users.html JS must make instead of (or in addition to)
+        the PATCH when the password input is filled. After the reset, the affected user
+        can log in normally.
+        """
+        auth_client.post("/login", data={"name": "Q", "password": "topsecret123"})
+        create = auth_client.post(
+            "/api/v1/users",
+            data=json.dumps(
+                {"name": "user@example.com", "color": "#abc", "is_admin": False}
+            ),
+            content_type="application/json",
+            headers=SAME_ORIGIN,
+        )
+        assert create.status_code == 201
+        new_id = create.get_json()["id"]
+        reset = auth_client.post(
+            f"/api/v1/users/{new_id}/reset-password",
+            data=json.dumps({"new_password": "secret123"}),
+            content_type="application/json",
+            headers=SAME_ORIGIN,
+        )
+        assert reset.status_code == 204
+        auth_client.post("/logout")
+        login = auth_client.post(
+            "/login",
+            data={"name": "user@example.com", "password": "secret123"},
+            follow_redirects=False,
+        )
+        assert login.status_code == 302
+        assert login.location.endswith("/")
 
 
 # -- Page protection ----------------------------------------------------------

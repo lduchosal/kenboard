@@ -39,7 +39,10 @@ from flask_login import current_user
 
 import dashboard.db as db
 from dashboard.config import Config
+from dashboard.logging import get_logger
 from dashboard.onboarding import cat_id_from_path, onboarding_json
+
+log = get_logger("auth")
 
 # HTTP methods that are conventionally safe (no side effects). CSRF
 # protection is only enforced on the others.
@@ -211,6 +214,15 @@ def _enforce_cookie_session(method: str, path: str) -> Any:
     # browser, so we additionally require the request to be Same-Origin
     # on any unsafe method. Bearer-token requests skip this branch.
     if method not in SAFE_METHODS and not _origin_matches_host():
+        log.warning(
+            "auth.cookie.csrf_rejected",
+            method=method,
+            path=path,
+            host=request.host,
+            origin=request.headers.get("Origin"),
+            referer=request.headers.get("Referer"),
+            user_id=getattr(current_user, "id", None),
+        )
         return (
             jsonify(
                 {
@@ -233,6 +245,14 @@ def _enforce_cookie_session(method: str, path: str) -> Any:
         and not getattr(current_user, "is_admin", False)
         and not _is_self_service_cookie_path(path)
     ):
+        log.warning(
+            "auth.cookie.admin_required",
+            method=method,
+            path=path,
+            user_id=getattr(current_user, "id", None),
+            user_name=getattr(current_user, "name", None),
+            is_admin=getattr(current_user, "is_admin", None),
+        )
         return (
             jsonify({"error": "admin required for this endpoint"}),
             403,

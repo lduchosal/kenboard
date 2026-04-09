@@ -210,3 +210,21 @@ class TestAdminOnlyAsAdminUser:
             headers=SAME_ORIGIN,
         )
         assert r.status_code == 201
+
+    def test_patch_user_allowed(self, admin_client, normal_user, db):
+        """Regression #131: admin must be able to PATCH another user."""
+        r = admin_client.patch(
+            "/api/v1/users/user-norm",
+            data=json.dumps({"color": "#abcdef"}),
+            content_type="application/json",
+            headers=SAME_ORIGIN,
+        )
+        assert r.status_code == 200, r.get_data(as_text=True)
+
+    def test_delete_user_allowed(self, admin_client, normal_user, db):
+        """Regression #131: admin must be able to DELETE another user."""
+        r = admin_client.delete(
+            "/api/v1/users/user-norm",
+            headers=SAME_ORIGIN,
+        )
+        assert r.status_code == 204, r.get_data(as_text=True)

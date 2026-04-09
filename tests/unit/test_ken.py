@@ -481,6 +481,235 @@ class TestCliMutations:
         assert "2026-04-15" in result.output
 
 
+class TestSyncHelpers:
+    """Pure helpers used by ``ken sync``."""
+
+    def test_sanitize_strips_invalid_chars(self):
+        out = ken._sanitize_filename('a/b\\c:d*e?f"g<h>i|j')
+        assert "/" not in out
+        assert "\\" not in out
+        assert ":" not in out
+        assert "*" not in out
+
+    def test_sanitize_collapses_whitespace(self):
+        assert ken._sanitize_filename("  hello   world  ") == "hello world"
+
+    def test_sanitize_trims_trailing_dots_and_spaces(self):
+        assert ken._sanitize_filename("hello...   ") == "hello"
+
+    def test_sanitize_falls_back_to_untitled(self):
+        assert ken._sanitize_filename("") == "untitled"
+        assert ken._sanitize_filename("   ") == "untitled"
+        assert ken._sanitize_filename("...") == "untitled"
+
+    def test_sync_filename_zero_pads_id(self):
+        assert ken._sync_filename({"id": 7, "title": "Hi"}) == "0007 - Hi.md"
+
+    def test_sync_filename_uses_sanitized_title(self):
+        assert (
+            ken._sync_filename({"id": 42, "title": "AGENT / CLI / Foo"})
+            == "0042 - AGENT _ CLI _ Foo.md"
+        )
+
+    def test_format_markdown_includes_frontmatter_and_body(self):
+        out = ken._format_sync_markdown(
+            {
+                "id": 1,
+                "status": "todo",
+                "who": "Claude",
+                "due_date": None,
+                "position": 0,
+                "created_at": "2026-04-09T15:00:00",
+                "updated_at": "2026-04-09T15:30:00",
+                "title": "Hello",
+                "description": "body text",
+            }
+        )
+        assert out.startswith("---\n")
+        assert "id: 1" in out
+        assert "status: todo" in out
+        assert "due_date: \n" in out  # None → empty
+        assert "# Hello" in out
+        assert "body text" in out
+
+    def test_resolve_sync_dir_relative_to_ken(self, tmp_path):
+        (tmp_path / ".ken").write_text("project_id=p\n")
+        cfg = ken.KenConfig(
+            project_id="p",
+            base_url="http://x",
+            api_token=None,
+            ken_file=tmp_path / ".ken",
+            sync_dir="doc/kenboard",
+        )
+        assert ken._resolve_sync_dir(cfg) == tmp_path / "doc" / "kenboard"
+
+    def test_resolve_sync_dir_absolute_kept_as_is(self, tmp_path):
+        absolute = tmp_path / "abs"
+        cfg = ken.KenConfig(
+            project_id="p",
+            base_url="http://x",
+            api_token=None,
+            ken_file=tmp_path / ".ken",
+            sync_dir=str(absolute),
+        )
+        assert ken._resolve_sync_dir(cfg) == absolute
+
+
+class TestCliSync:
+    """`ken sync` mirrors tasks to a directory and persists sync_dir."""
+
+    def _setup(self, cwd_tmp):
+        (cwd_tmp / ".ken").write_text("project_id=p1\n")
+        os.chmod(cwd_tmp / ".ken", 0o600)
+
+    def test_no_project_fails(self, cwd_tmp, runner):
+        result = runner.invoke(ken.cli, ["sync"])
+        assert result.exit_code != 0
+        assert "no project configured" in result.output
+
+    def test_writes_one_file_per_task(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        ctx, _ = _patch_responses(
+            [
+                (
+                    "GET",
+                    "/api/v1/tasks?project=p1",
+                    [
+                        {
+                            "id": 1,
+                            "status": "todo",
+                            "who": "Q",
+                            "due_date": None,
+                            "position": 0,
+                            "created_at": "2026-04-09T10:00:00",
+                            "updated_at": "2026-04-09T10:00:00",
+                            "title": "First",
+                            "description": "alpha",
+                        },
+                        {
+                            "id": 42,
+                            "status": "doing",
+                            "who": "Claude",
+                            "due_date": "2026-04-15",
+                            "position": 1,
+                            "created_at": "2026-04-09T11:00:00",
+                            "updated_at": "2026-04-09T12:00:00",
+                            "title": "AGENT / CLI / sync",
+                            "description": "beta",
+                        },
+                    ],
+                )
+            ]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["sync"])
+        assert result.exit_code == 0, result.output
+        target = cwd_tmp / "doc" / "kenboard"
+        assert (target / "0001 - First.md").exists()
+        assert (target / "0042 - AGENT _ CLI _ sync.md").exists()
+        body = (target / "0042 - AGENT _ CLI _ sync.md").read_text()
+        assert "id: 42" in body
+        assert "# AGENT / CLI / sync" in body
+        assert "beta" in body
+        assert "Synced 2 task(s)" in result.output
+
+    def test_persists_sync_dir_to_ken(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        ctx, _ = _patch_responses([("GET", "/api/v1/tasks?project=p1", [])])
+        with ctx:
+            result = runner.invoke(ken.cli, ["sync"])
+        assert result.exit_code == 0, result.output
+        ken_text = (cwd_tmp / ".ken").read_text()
+        assert "sync_dir=doc/kenboard" in ken_text
+
+    def test_does_not_duplicate_sync_dir_line(self, cwd_tmp, runner):
+        (cwd_tmp / ".ken").write_text("project_id=p1\nsync_dir=custom/path\n")
+        os.chmod(cwd_tmp / ".ken", 0o600)
+        ctx, _ = _patch_responses([("GET", "/api/v1/tasks?project=p1", [])])
+        with ctx:
+            result = runner.invoke(ken.cli, ["sync"])
+        assert result.exit_code == 0, result.output
+        ken_text = (cwd_tmp / ".ken").read_text()
+        assert ken_text.count("sync_dir=") == 1
+        # Custom path was used, not the default
+        assert (cwd_tmp / "custom" / "path").is_dir()
+
+    def test_renames_file_when_title_changes(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        target = cwd_tmp / "doc" / "kenboard"
+        target.mkdir(parents=True)
+        stale = target / "0005 - Old Title.md"
+        stale.write_text("stale\n")
+        ctx, _ = _patch_responses(
+            [
+                (
+                    "GET",
+                    "/api/v1/tasks?project=p1",
+                    [{"id": 5, "title": "New Title", "description": ""}],
+                )
+            ]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["sync"])
+        assert result.exit_code == 0, result.output
+        assert not stale.exists()
+        assert (target / "0005 - New Title.md").exists()
+
+    def test_removes_stale_files(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        target = cwd_tmp / "doc" / "kenboard"
+        target.mkdir(parents=True)
+        ghost = target / "0099 - Removed.md"
+        ghost.write_text("ghost\n")
+        ctx, _ = _patch_responses(
+            [
+                (
+                    "GET",
+                    "/api/v1/tasks?project=p1",
+                    [{"id": 1, "title": "Kept", "description": ""}],
+                )
+            ]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["sync"])
+        assert result.exit_code == 0, result.output
+        assert not ghost.exists()
+        assert (target / "0001 - Kept.md").exists()
+        assert "Removed 1 stale file(s)" in result.output
+
+    def test_leaves_unrelated_files_alone(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        target = cwd_tmp / "doc" / "kenboard"
+        target.mkdir(parents=True)
+        readme = target / "README.md"
+        readme.write_text("hand-written\n")
+        ctx, _ = _patch_responses([("GET", "/api/v1/tasks?project=p1", [])])
+        with ctx:
+            result = runner.invoke(ken.cli, ["sync"])
+        assert result.exit_code == 0, result.output
+        assert readme.exists()
+        assert readme.read_text() == "hand-written\n"
+
+    def test_json_output_lists_changes(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        ctx, _ = _patch_responses(
+            [
+                (
+                    "GET",
+                    "/api/v1/tasks?project=p1",
+                    [{"id": 1, "title": "Hi", "description": ""}],
+                )
+            ]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["sync", "--json"])
+        assert result.exit_code == 0, result.output
+        payload = json.loads(result.output)
+        assert payload["written"] == ["0001 - Hi.md"]
+        assert payload["deleted"] == []
+        assert "doc/kenboard" in payload["target"]
+
+
 class TestCliHelp:
     """`ken help` ships the agent best-practice guide as packaged data (#118)."""
 

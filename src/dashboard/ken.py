@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json as json_lib
 import os
+import re
 import sys
 from dataclasses import dataclass
 from importlib import resources
@@ -21,6 +22,7 @@ from urllib import request as urllib_request
 import click
 
 DEFAULT_BASE_URL = "http://localhost:9090"
+DEFAULT_SYNC_DIR = "doc/kenboard"
 KEN_FILE = ".ken"
 VALID_STATUSES = ("todo", "doing", "review", "done")
 TASK_COLUMNS = [
@@ -31,6 +33,11 @@ TASK_COLUMNS = [
     ("TITLE", "title"),
 ]
 
+# Filenames written by ``ken sync`` look like ``0042 - Title.md``.
+_SYNC_FILENAME_RE = re.compile(r"^(\d+) - .+\.md$")
+# Characters that are illegal (or risky) in filenames on common file systems.
+_SYNC_INVALID_CHARS = re.compile(r'[\\/:*?"<>|\x00-\x1f]')
+
 
 @dataclass
 class KenConfig:
@@ -40,6 +47,7 @@ class KenConfig:
     base_url: str
     api_token: str | None
     ken_file: Path | None
+    sync_dir: str = DEFAULT_SYNC_DIR
 
 
 def _find_file_upwards(start: Path, name: str) -> Path | None:
@@ -110,11 +118,15 @@ def _load_config(
         or file_data.get("api_token")
         or None
     )
+    sync_dir = (
+        os.environ.get("KEN_SYNC_DIR") or file_data.get("sync_dir") or DEFAULT_SYNC_DIR
+    )
     return KenConfig(
         project_id=project_id,
         base_url=base_url,
         api_token=api_token,
         ken_file=ken_path if ken_path is not None and ken_path.is_file() else None,
+        sync_dir=sync_dir,
     )
 
 
@@ -209,6 +221,82 @@ def _add_to_gitignore(cwd: Path) -> None:
     sep = "" if existing.endswith("\n") or not existing else "\n"
     gitignore.write_text(existing + sep + KEN_FILE + "\n", encoding="utf-8")
     click.echo(f"Added {KEN_FILE} to {gitignore}")
+
+
+def _sanitize_filename(title: str) -> str:
+    r"""Replace filesystem-invalid characters in a task title.
+
+    Strips ``/ \ : * ? " < > |`` and control characters, collapses
+    whitespace runs, and trims trailing dots/spaces (which Windows rejects).
+    Returns ``"untitled"`` if nothing usable is left.
+    """
+    cleaned = " ".join(_SYNC_INVALID_CHARS.sub("_", title).split()).rstrip(". ")
+    return cleaned or "untitled"
+
+
+def _sync_filename(task: dict[str, Any]) -> str:
+    """Build the on-disk filename for a synced task (``NNNN - Title.md``)."""
+    return f"{int(task['id']):04d} - {_sanitize_filename(task.get('title') or '')}.md"
+
+
+def _format_sync_markdown(task: dict[str, Any]) -> str:
+    """Render a task as markdown with a YAML frontmatter header.
+
+    The frontmatter holds the structured fields (id, status, who, dates,
+    position) so the body stays focused on the human-authored title and
+    description. ``None`` values render as empty strings to keep the
+    frontmatter parseable.
+    """
+    fields = (
+        "id",
+        "status",
+        "who",
+        "due_date",
+        "position",
+        "created_at",
+        "updated_at",
+    )
+    lines = ["---"]
+    for field in fields:
+        value = task.get(field)
+        lines.append(f"{field}: {value if value is not None else ''}")
+    lines.extend(
+        (
+            "---",
+            "",
+            f"# {task.get('title') or ''}",
+            "",
+            task.get("description") or "",
+            "",
+        )
+    )
+    return "\n".join(lines)
+
+
+def _resolve_sync_dir(cfg: KenConfig) -> Path:
+    """Resolve ``sync_dir`` to an absolute path.
+
+    A relative ``sync_dir`` is anchored on the directory containing
+    ``.ken`` (so ``ken sync`` works from any subdirectory of the project),
+    falling back to the current working directory when no ``.ken`` exists.
+    """
+    path = Path(cfg.sync_dir)
+    if path.is_absolute():
+        return path
+    base = cfg.ken_file.parent if cfg.ken_file is not None else Path.cwd()
+    return base / path
+
+
+def _persist_sync_dir(cfg: KenConfig) -> None:
+    """Append ``sync_dir=<value>`` to ``.ken`` if not already recorded."""
+    if cfg.ken_file is None:
+        return
+    text = cfg.ken_file.read_text(encoding="utf-8")
+    for line in text.splitlines():
+        if line.strip().startswith("sync_dir="):
+            return
+    sep = "" if not text or text.endswith("\n") else "\n"
+    cfg.ken_file.write_text(text + sep + f"sync_dir={cfg.sync_dir}\n", encoding="utf-8")
 
 
 # -- Click commands -----------------------------------------------------------
@@ -458,6 +546,71 @@ def done(ctx: click.Context, task_id: int) -> None:
     cfg: KenConfig = ctx.obj["cfg"]
     task = _request(cfg, "PATCH", f"/api/v1/tasks/{task_id}", body={"status": "done"})
     click.echo(f"Task #{task['id']} → {task['status']}")
+
+
+@cli.command()
+@click.option("--json", "json_mode", is_flag=True, help="Output as JSON")
+@click.pass_context
+def sync(ctx: click.Context, json_mode: bool) -> None:
+    """Mirror the project's tasks into ``sync_dir`` as one markdown file each.
+
+    For every task in the configured project, writes
+    ``<sync_dir>/<id> - <title>.md`` with a YAML frontmatter header.
+    Files corresponding to tasks that no longer exist on the board are
+    deleted, and title changes are handled by removing the old file
+    before writing the new one. ``sync_dir`` defaults to ``doc/kenboard``
+    and is persisted into ``.ken`` on first use.
+    """
+    cfg: KenConfig = ctx.obj["cfg"]
+    project_id = _require_project(cfg)
+    target = _resolve_sync_dir(cfg)
+    target.mkdir(parents=True, exist_ok=True)
+    _persist_sync_dir(cfg)
+
+    tasks = _request(cfg, "GET", f"/api/v1/tasks?project={project_id}")
+    desired: dict[int, tuple[str, str]] = {
+        int(t["id"]): (_sync_filename(t), _format_sync_markdown(t)) for t in tasks
+    }
+
+    existing: dict[int, Path] = {}
+    for entry in target.iterdir():
+        if not entry.is_file():
+            continue
+        match = _SYNC_FILENAME_RE.match(entry.name)
+        if match:
+            existing[int(match.group(1))] = entry
+
+    written: list[str] = []
+    deleted: list[str] = []
+    for task_id, (filename, content) in desired.items():
+        new_path = target / filename
+        old = existing.get(task_id)
+        if old is not None and old != new_path:
+            old.unlink()
+            deleted.append(old.name)
+        new_path.write_text(content, encoding="utf-8")
+        written.append(filename)
+
+    for task_id, path in existing.items():
+        if task_id not in desired:
+            path.unlink()
+            deleted.append(path.name)
+
+    if json_mode:
+        click.echo(
+            json_lib.dumps(
+                {
+                    "target": str(target),
+                    "written": sorted(written),
+                    "deleted": sorted(deleted),
+                },
+                indent=2,
+            )
+        )
+        return
+    click.echo(f"Synced {len(written)} task(s) to {target}")
+    if deleted:
+        click.echo(f"Removed {len(deleted)} stale file(s)")
 
 
 @cli.command(name="help")

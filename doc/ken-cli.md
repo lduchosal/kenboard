@@ -25,6 +25,7 @@ ken add      TITLE [--desc TEXT] [--who WHO] [--status STATUS] [--when YYYY-MM-D
 ken update   ID [--title T] [--desc D] [--status S] [--who W] [--when YYYY-MM-DD] [--json]
 ken move     ID --to STATUS                          # raccourci status
 ken done     ID                                      # raccourci `update ID --status done`
+ken sync     [--json]                                # mirror les tasks dans sync_dir
 ```
 
 `STATUS` ∈ `todo|doing|review|done` (les 4 colonnes kanban).
@@ -70,6 +71,10 @@ $ ken add "Fix le typo dans le footer" --who Claude
 # Déplacer
 $ ken move 22 --to doing
 $ ken done 22
+
+# Synchroniser le board dans doc/kenboard/ (un .md par task)
+$ ken sync
+Synced 14 task(s) to /repo/doc/kenboard
 ```
 
 ## Architecture
@@ -159,6 +164,7 @@ Lecture par ordre de priorité (le premier qui résout l'emporte) :
 | `base_url` / `KEN_BASE_URL` | `http://localhost:9090` | URL de l'API kenboard. **Choix** : 9090 = port d'écoute kenboard sur web2 (cf `KENBOARD.md`), cohérent prod ↔ dev. |
 | `project_id` / `KEN_PROJECT_ID` | (aucun) | UUID du projet ciblé. |
 | `api_token` / `KEN_API_TOKEN` | aucun | Bearer token. **Choix** : préparé maintenant, envoyé en header `Authorization` dès qu'il est défini, même si l'API ne le lit pas encore (cf #6). |
+| `sync_dir` / `KEN_SYNC_DIR` | `doc/kenboard` | Dossier cible de `ken sync`. Chemin relatif résolu par rapport au dossier qui contient `.ken`. La clé est ajoutée automatiquement au `.ken` lors du premier `ken sync`. |
 
 Si après cette résolution `project_id` est toujours absent et qu'aucun
 `--project` n'est passé, `ken` échoue avec :

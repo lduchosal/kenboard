@@ -61,13 +61,25 @@ async function saveUser(btn) {
     is_admin: tr.querySelector('.u-admin').checked,
   };
   const pwd = tr.querySelector('.u-password').value;
-  if (pwd) body.password = pwd;
   try {
     await apiCall('/api/v1/users/' + id, {
       method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body),
     });
+    // Password changes deliberately don't go through PATCH (cf. #53,
+    // models/user.py UserUpdate has extra="ignore" so a stray `password`
+    // field is silently dropped as a defence against mass-assignment).
+    // The dedicated admin endpoint enforces argon2 hashing and the 8-char
+    // minimum. Without this second call the input would look like it
+    // saved but the password would never actually change (#132).
+    if (pwd) {
+      await apiCall('/api/v1/users/' + id + '/reset-password', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({new_password: pwd}),
+      });
+    }
     location.reload();
   } catch (e) {
     console.debug('saveUser: apiCall failed, popup already shown', e);

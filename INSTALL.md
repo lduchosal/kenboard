@@ -194,7 +194,40 @@ yoyo rollback --batch \
   migrations/
 ```
 
-## 6. Lancer le serveur
+## 6. Initialiser le mot de passe de l'admin
+
+La migration `0004.create_users.sql` insere quatre utilisateurs de
+demonstration (`Q`, `Alice`, `Bob`, `Claire`) avec un `password_hash`
+vide. Tant qu'aucun mot de passe n'a ete defini, **personne ne peut se
+loguer** sur la web UI : `kenboard set-password` est l'unique facon
+d'amorcer le premier admin.
+
+`Q` est l'utilisateur admin (`is_admin=1`), c'est lui qu'il faut
+initialiser en premier :
+
+```sh
+kenboard set-password Q
+```
+
+La commande prompt deux fois (saisie + confirmation) et refuse les mots
+de passe de moins de 8 caracteres. Le hash est calcule en argon2 et
+ecrit dans `users.password_hash`.
+
+```
+$ kenboard set-password Q
+New password for Q: ********
+Confirm: ********
+Password updated for Q
+```
+
+La meme commande sert plus tard pour reinitialiser n'importe quel autre
+utilisateur (`kenboard set-password Alice`, ...) ou pour changer son
+propre mot de passe en CLI sans passer par la web UI.
+
+> Si tu vois `User Q not found`, c'est que les migrations n'ont pas ete
+> appliquees — repasser par l'etape 5.
+
+## 7. Lancer le serveur
 
 ### Developpement
 
@@ -204,6 +237,8 @@ kenboard serve --debug
 
 Le serveur demarre sur http://127.0.0.1:5000
 
+Connecte-toi avec `Q` + le mot de passe defini a l'etape 6.
+
 ### Production
 
 ```sh
@@ -211,7 +246,7 @@ pip install gunicorn
 gunicorn "dashboard.app:create_app()" --bind 0.0.0.0:8080 --workers 4
 ```
 
-## 7. Tests
+## 8. Tests
 
 Les tests utilisent la base `dashboard_test` et ne touchent jamais
 a la base de production.
@@ -226,13 +261,13 @@ Verifier la qualite complete :
 sh publish.sh --quality
 ```
 
-## 8. Generer les pages statiques (optionnel)
+## 9. Generer les pages statiques (optionnel)
 
 ```sh
 kenboard build
 ```
 
-## 9. Reverse proxy (Nginx)
+## 10. Reverse proxy (Nginx)
 
 ```nginx
 server {
@@ -257,7 +292,7 @@ server {
 }
 ```
 
-## 10. Verification
+## 11. Verification
 
 ```sh
 curl http://localhost:5000/api/v1/categories
