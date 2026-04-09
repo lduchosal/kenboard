@@ -45,6 +45,11 @@ from flask_login import (
 import dashboard.db as db
 from dashboard.config import Config
 from dashboard.logging import get_logger
+from dashboard.onboarding import (
+    cat_id_from_path,
+    onboarding_text,
+    wants_machine_response,
+)
 
 REMEMBER_DAYS = 30
 # Per-IP brute-force budget on /login. The two limits are AND-combined,
@@ -142,7 +147,21 @@ def _load_user(packed_id: str) -> CurrentUser | None:
 
 @login_manager.unauthorized_handler
 def _unauthorized() -> Any:
-    """Redirect anonymous requests to the login page with a ``next`` arg."""
+    """Redirect browsers to login; serve an onboarding runbook to agents.
+
+    Browser callers (``Accept`` includes ``text/html``) get the original
+    302 → /login redirect so the cookie flow stays unchanged. CLI tools
+    and LLM agents instead receive a 401 with a plain-text body explaining
+    how to ``pip install kenboard`` and ``ken init <category-id>`` (#117).
+    The category id, when present in the URL, is interpolated into the
+    init command so the agent can copy-paste it.
+    """
+    if wants_machine_response(request):
+        cat_id = cat_id_from_path(request.path)
+        response = make_response(onboarding_text(cat_id), 401)
+        response.headers["Content-Type"] = "text/plain; charset=utf-8"
+        response.headers["WWW-Authenticate"] = 'Bearer realm="kenboard"'
+        return response
     next_url = request.full_path if request.method == "GET" else None
     if next_url and next_url.endswith("?"):
         next_url = next_url[:-1]

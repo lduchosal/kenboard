@@ -39,6 +39,7 @@ from flask_login import current_user
 
 import dashboard.db as db
 from dashboard.config import Config
+from dashboard.onboarding import cat_id_from_path, onboarding_json
 
 # HTTP methods that are conventionally safe (no side effects). CSRF
 # protection is only enforced on the others.
@@ -318,7 +319,10 @@ def _enforce() -> Any:
         return None
 
     if token is None:
-        return jsonify({"error": "missing Authorization header"}), 401
+        # Embed the install / init runbook so an LLM agent that hits an
+        # API endpoint without credentials learns how to self-onboard
+        # instead of just seeing a one-line "missing header" error (#117).
+        return jsonify(onboarding_json(cat_id_from_path(path))), 401
 
     return _enforce_api_key(token, method, path)
 

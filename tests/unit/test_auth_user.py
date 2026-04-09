@@ -227,6 +227,62 @@ class TestPageProtection:
         assert r.status_code == 403
 
 
+class TestAgentOnboardingHints:
+    """#117: serve a copy-pasteable runbook to non-browser callers.
+
+    Browsers (``Accept: text/html``) keep getting the existing 302
+    redirect; CLI tools and LLM agents land on a 401 with the install /
+    init steps so they can self-onboard without scraping the login page.
+    """
+
+    def test_browser_still_redirects_to_login(self, auth_client, db):
+        """Real browser requests must keep the cookie redirect flow."""
+        r = auth_client.get(
+            "/cat/abc-123.html",
+            headers={"Accept": "text/html,application/xhtml+xml"},
+            follow_redirects=False,
+        )
+        assert r.status_code == 302
+        assert "/login" in r.location
+
+    def test_agent_gets_text_runbook_with_cat_id(self, auth_client, db):
+        """``Accept: */*`` (curl, requests, fetch) → 401 plain-text runbook."""
+        r = auth_client.get(
+            "/cat/0ee51b6f-81b8-4da0-9efc-0bd9e01f9e4f.html",
+            headers={"Accept": "*/*"},
+            follow_redirects=False,
+        )
+        assert r.status_code == 401
+        assert r.headers["Content-Type"].startswith("text/plain")
+        assert r.headers.get("WWW-Authenticate", "").startswith("Bearer")
+        body = r.get_data(as_text=True)
+        assert "pip install kenboard" in body
+        # Cat id from the URL is interpolated into the init command
+        assert "ken init 0ee51b6f-81b8-4da0-9efc-0bd9e01f9e4f" in body
+        assert "/admin/keys" in body
+
+    def test_agent_on_root_falls_back_to_placeholder(self, auth_client, db):
+        """No cat id in the URL → ``ken init <category-id>`` placeholder."""
+        r = auth_client.get(
+            "/",
+            headers={"Accept": "*/*"},
+            follow_redirects=False,
+        )
+        assert r.status_code == 401
+        body = r.get_data(as_text=True)
+        assert "ken init <category-id>" in body
+
+    def test_api_missing_token_returns_onboarding_json(self, auth_client, db):
+        """``/api/v1/*`` without token → JSON 401 with the same runbook."""
+        r = auth_client.get("/api/v1/tasks?project=anything")
+        assert r.status_code == 401
+        payload = r.get_json()
+        assert payload["error"] == "unauthorized"
+        assert payload["onboarding"]["install"] == "pip install kenboard"
+        assert payload["onboarding"]["init"] == "ken init <category-id>"
+        assert payload["onboarding"]["get_api_key"] == "/admin/keys"
+
+
 # -- API middleware bridges to user session -----------------------------------
 
 
