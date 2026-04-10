@@ -193,9 +193,15 @@ must follow these rules:
    recorded it. If a previously-applied migration is broken on prod,
    add a recovery migration `00NN.readd_<thing>.sql` that `depends:` on
    the broken one and idempotently re-applies the change.
-5. **Every migration needs a `-- rollback` block** that is also
-   idempotent (guard each `DROP` with an `INFORMATION_SCHEMA` check) so
-   dev rollbacks from any partial state converge.
+5. **Every migration needs a `-- rollback` block**, but it **MUST be a
+   no-op** (`SELECT 1`). yoyo's SQL parser may fail to split at the
+   `-- rollback` marker and execute the **entire file** in one pass.
+   A destructive rollback (`DROP COLUMN`) after an `ADD COLUMN` in the
+   same file = the column is added then immediately dropped, while yoyo
+   records the migration as "applied". This is exactly what broke 0012
+   (the `DROP COLUMN email` rollback fired during forward apply).
+   If you need a real rollback, write it as a **separate forward
+   migration** (`00NN.drop_<thing>.sql`).
 6. **Mirror schema changes in `tests/conftest.py`.** The test DB is
    hand-rolled, not migrated by yoyo. Add the column to the
    `CREATE TABLE` block *and* add a back-fill `ALTER TABLE` (split into
