@@ -254,7 +254,7 @@ def login() -> Any:
     below and is the only one wearing the brute-force rate limit.
     """
     next_url = request.args.get("next") or ""
-    return render_template("login.html", error=None, next_url=next_url)
+    return render_template(_LOGIN_TEMPLATE, error=None, next_url=next_url)
 
 
 @bp.route("/login", methods=["POST"])
@@ -276,7 +276,7 @@ def login_post() -> Any:
     a user who fat-fingers their password 4 times can still log in on
     the 5th try without burning through their hour quota.
     """
-    next_url = request.args.get("next") or request.form.get("next") or ""
+    next_url = request.form.get("next") or ""
     name = (request.form.get("name") or "").strip()
     password = request.form.get("password") or ""
     user = _verify_credentials(name, password)
@@ -316,7 +316,7 @@ def login_rate_limited(e: Any) -> Any:
     Bypassing the JSON default keeps the UX consistent for browsers while still
     returning the 429 status so scripts notice.
     """
-    next_url = request.args.get("next") or request.form.get("next") or ""
+    next_url = request.form.get("next") or ""
     # Use ``make_response`` so the 429 status is attached to an explicit
     # Response object — sonar python:S6863 does not recognise the
     # ``(body, status)`` tuple shortcut as explicit enough for error handlers.
