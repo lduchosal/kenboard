@@ -37,12 +37,22 @@ def create_app() -> Flask:
     # do not need CSRF protection because the token is never sent
     # automatically by the browser. Both flows are covered by
     # ``tests/unit/test_csrf.py``.
-    app = Flask(
+    app = Flask(  # NOSONAR(python:S4502): CSRF via Origin check, see auth.py
         __name__,
         template_folder=os.path.join(os.path.dirname(__file__), "templates"),
         static_folder=os.path.join(os.path.dirname(__file__), "static"),
         static_url_path="/static",
     )
+
+    # Trust the X-Forwarded-* headers set by the nginx reverse proxy so
+    # that url_for(_external=True) generates https:// URLs (needed for
+    # OIDC redirect_uri) and request.remote_addr reflects the real client
+    # IP (needed for rate limiting). x_for=1 x_proto=1 x_host=1 means
+    # "trust exactly one proxy hop" — matching the nginx → gunicorn setup
+    # in INSTALL.md section 9.
+    from werkzeug.middleware.proxy_fix import ProxyFix
+
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)  # type: ignore[assignment]
 
     # Only enable CORS when an explicit origin allow-list is configured.
     # No allow-list ⇒ browsers enforce same-origin (the secure default).
