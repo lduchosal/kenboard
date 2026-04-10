@@ -243,8 +243,49 @@ reverse proxy est sur 443.
 **Fix** :
 - Vérifier que le serveur kenboard peut joindre le serveur ADFS :
   `curl -s https://<adfs-host>/adfs/discovery/keys`
-- Vérifier que le certificat TLS ADFS est valide (pas auto-signé, ou
-  ajouté au trust store Python)
+- Vérifier que le certificat TLS ADFS est valide (voir ci-dessous)
+
+### `SSLCertVerificationError` / `certificate verify failed`
+
+**Cause** : le serveur ADFS utilise un certificat signé par une CA
+interne (Root CA d'entreprise) qui n'est pas dans le trust store
+Python. Authlib utilise `requests` qui s'appuie sur le bundle
+`certifi` pour vérifier les certificats TLS.
+
+**Fix** : ajouter le certificat root CA au bundle `certifi` du venv :
+
+```sh
+# 1. Trouver le bundle certifi
+CERTIFI=$(python3 -c "import certifi; print(certifi.where())")
+echo $CERTIFI
+# → /usr/local/kenboard/venv/lib/python3.11/site-packages/certifi/cacert.pem
+
+# 2. Récupérer le root CA (format PEM) depuis le serveur ADFS
+#    ou depuis l'admin qui gère la PKI interne
+#    Le fichier doit ressembler à :
+#    -----BEGIN CERTIFICATE-----
+#    MIIFxTCC...
+#    -----END CERTIFICATE-----
+
+# 3. Ajouter le root CA à la fin du bundle
+cat /path/to/enterprise-root-ca.pem >> $CERTIFI
+
+# 4. Vérifier que ça fonctionne
+python3 -c "import requests; r = requests.get('https://<adfs-host>/adfs/.well-known/openid-configuration'); print(r.status_code)"
+# → 200
+```
+
+**Alternative** : définir la variable d'env `REQUESTS_CA_BUNDLE` pour
+pointer vers un fichier PEM custom sans modifier certifi :
+
+```sh
+# Dans .env ou rc.conf
+REQUESTS_CA_BUNDLE=/usr/local/kenboard/enterprise-root-ca.pem
+```
+
+> **Attention** : `pip install --upgrade certifi` écrase le bundle et
+> perd le certificat ajouté. Après chaque upgrade de certifi, re-ajouter
+> le root CA. La variable `REQUESTS_CA_BUNDLE` est plus durable.
 
 ### `Token expired` / `token is not valid yet`
 
