@@ -34,6 +34,25 @@ _CAT_URL_RE = re.compile(r"^/cat/([^/]+)\.html$")
 _SAFE_ID_RE = re.compile(r"[^a-zA-Z0-9\-]")
 
 
+def derive_base_url() -> str:
+    """Return the public base URL of this kenboard instance.
+
+    Uses ``request.host_url`` (which respects ProxyFix when nginx sends
+    ``X-Forwarded-Proto``). As a fallback for proxies that do NOT forward
+    the header, ``Config.KENBOARD_HTTPS`` forces the scheme to ``https``
+    so the onboarding runbook and OIDC redirect_uri are always correct
+    behind a TLS-terminating reverse proxy (#147).
+    """
+    from flask import request
+
+    from dashboard.config import Config
+
+    url = request.host_url.rstrip("/")
+    if Config.KENBOARD_HTTPS and url.startswith("http://"):
+        url = "https://" + url[7:]
+    return url
+
+
 def _sanitize_id(value: str) -> str:
     """Strip non-UUID characters from a user-supplied identifier.
 
@@ -158,12 +177,9 @@ def onboard_route(cat_id: str, project_id: str) -> Any:
     4xx responses can still read the runbook. The copy-onboard-link
     button in ``category.html`` generates a URL pointing here.
     """
-    from flask import request
-
     safe_cat = _sanitize_id(cat_id)
     safe_project = _sanitize_id(project_id)
-    base_url = request.host_url.rstrip("/")
-    body = onboarding_text_full(safe_cat, safe_project, base_url)
+    body = onboarding_text_full(safe_cat, safe_project, derive_base_url())
     response = make_response(body, 200)
     response.headers["Content-Type"] = "text/plain; charset=utf-8"
     return response

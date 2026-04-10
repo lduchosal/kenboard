@@ -164,8 +164,9 @@ def _unauthorized() -> Any:
     """
     if wants_machine_response(request) or "onboard" in request.args:
         cat_id = cat_id_from_path(request.path)
-        base_url = request.host_url.rstrip("/")
-        response = make_response(onboarding_text(cat_id, base_url), 401)
+        from dashboard.onboarding import derive_base_url
+
+        response = make_response(onboarding_text(cat_id, derive_base_url()), 401)
         response.headers["Content-Type"] = "text/plain; charset=utf-8"
         response.headers["WWW-Authenticate"] = 'Bearer realm="kenboard"'
         return response
