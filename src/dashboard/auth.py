@@ -342,7 +342,8 @@ def _enforce() -> Any:
         # Embed the install / init runbook so an LLM agent that hits an
         # API endpoint without credentials learns how to self-onboard
         # instead of just seeing a one-line "missing header" error (#117).
-        return jsonify(onboarding_json(cat_id_from_path(path))), 401
+        base_url = request.host_url.rstrip("/")
+        return jsonify(onboarding_json(cat_id_from_path(path), base_url)), 401
 
     return _enforce_api_key(token, method, path)
 

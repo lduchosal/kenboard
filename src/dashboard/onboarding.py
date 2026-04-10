@@ -61,12 +61,12 @@ def wants_machine_response(request_obj: Request) -> bool:
     return "text/html" not in accept
 
 
-def onboarding_text(cat_id: str | None) -> str:
+def onboarding_text(cat_id: str | None, base_url: str) -> str:
     """Render the agent-facing 401 body as plain text.
 
-    This version only has the ``cat_id`` (from the URL path). The
-    ``project_id`` lives in the URL fragment which the server never sees,
-    so the agent must copy it from the original URL the user shared.
+    ``base_url`` is derived from ``request.host_url`` by the caller so
+    the runbook works on any self-hosted instance, not just the hardcoded
+    ``www.kenboard.2113.ch``.
     """
     cat_value = cat_id or "<UUID entre /cat/ et .html dans l'URL>"
     return (
@@ -76,8 +76,8 @@ def onboarding_text(cat_id: str | None) -> str:
         "\n"
         "2. Créer un fichier .ken (mode 0600) dans votre projet :\n"
         "\n"
-        f"   project_id=<UUID après # dans l'URL que l'utilisateur vous a donnée>\n"
-        "   base_url=https://www.kenboard.2113.ch\n"
+        "   project_id=<UUID après # dans l'URL que l'utilisateur vous a donnée>\n"
+        f"   base_url={base_url}\n"
         "   api_token=<API key — voir étape 3>\n"
         "\n"
         "3. Demander à l'utilisateur de générer une API key sur\n"
@@ -95,10 +95,11 @@ def onboarding_text(cat_id: str | None) -> str:
     )
 
 
-def onboarding_json(cat_id: str | None) -> dict[str, Any]:
+def onboarding_json(cat_id: str | None, base_url: str) -> dict[str, Any]:
     """Render the agent-facing 401 body as a JSON-friendly dict.
 
     Same 3-step structure as ``onboarding_text`` but machine-parseable.
+    ``base_url`` is derived from ``request.host_url`` by the caller.
     """
     return {
         "error": "unauthorized",
@@ -114,7 +115,7 @@ def onboarding_json(cat_id: str | None) -> dict[str, Any]:
                 "path": ".ken (mode 0600)",
                 "lines": [
                     "project_id=<UUID après # dans l'URL>",
-                    "base_url=https://www.kenboard.2113.ch",
+                    f"base_url={base_url}",
                     "api_token=<API key de /admin/keys>",
                 ],
             },
@@ -143,38 +144,40 @@ def onboard_route(cat_id: str, project_id: str) -> Any:
     4xx responses can still read the runbook. The copy-onboard-link
     button in ``category.html`` generates a URL pointing here.
     """
-    body = onboarding_text_full(cat_id, project_id)
+    from flask import request
+
+    base_url = request.host_url.rstrip("/")
+    body = onboarding_text_full(cat_id, project_id, base_url)
     response = make_response(body, 200)
     response.headers["Content-Type"] = "text/plain; charset=utf-8"
     return response
 
 
-def onboarding_text_full(cat_id: str, project_id: str) -> str:
-    """Render the onboarding runbook with both IDs resolved.
+def onboarding_text_full(cat_id: str, project_id: str, base_url: str) -> str:
+    """Render the onboarding runbook with both IDs and base_url resolved.
 
-    Unlike ``onboarding_text`` (which only has the cat_id from the
-    server-visible path), this version receives both IDs from the
-    dedicated ``/onboard/cat/<cat_id>/project/<project_id>`` route.
+    ``base_url`` comes from ``request.host_url`` (respects ProxyFix) so
+    the runbook works on any self-hosted instance.
     """
     return (
         "KENBOARD — Pour accéder à ce board, 3 étapes :\n"
         "\n"
         "1. pip install kenboard\n"
         "\n"
-        f"2. Créer un fichier .ken (mode 0600) dans votre projet :\n"
+        "2. Créer un fichier .ken (mode 0600) dans votre projet :\n"
         "\n"
         f"   project_id={project_id}\n"
-        f"   base_url=https://www.kenboard.2113.ch\n"
-        f"   api_token=<API key — voir étape 3>\n"
+        f"   base_url={base_url}\n"
+        "   api_token=<API key — voir étape 3>\n"
         "\n"
         "3. Demander à l'utilisateur de générer une API key sur\n"
         "   /admin/keys (avec au moins le scope 'read' sur ce projet)\n"
         "   et de la coller dans la ligne api_token= du fichier .ken\n"
         "\n"
         "Ensuite :\n"
-        f"   ken list --status todo --json\n"
-        f"   ken show <id> --json\n"
-        f'   ken add "Titre" --desc "..." --who Claude --status todo\n'
+        "   ken list --status todo --json\n"
+        "   ken show <id> --json\n"
+        '   ken add "Titre" --desc "..." --who Claude --status todo\n'
         "\n"
         "Infos :\n"
         f"   cat_id     = {cat_id}\n"
