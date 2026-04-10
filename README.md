@@ -50,9 +50,26 @@ Référence complète de la CLI : [`doc/ken-cli.md`](doc/ken-cli.md).
 Pour les cas non couverts par `ken` (categories, users, delete), l'API REST
 reste disponible : [`doc/api.md`](doc/api.md), [`doc/openapi.yaml`](doc/openapi.yaml).
 
+## Entreprise
+
+KENBOARD est concu pour un deploiement self-hosted en entreprise :
+
+- **Authentification OIDC** — connexion via un Identity Provider
+  d'entreprise (Microsoft ADFS, Google Workspace, Authentik, Keycloak,
+  etc.) en complement ou remplacement du login par mot de passe.
+  Voir [`doc/oidc-adfs.md`](doc/oidc-adfs.md) pour le guide ADFS.
+- **Self-hosted** — aucune dependance cloud. MySQL + Flask + gunicorn
+  sur votre infrastructure, derriere votre reverse proxy / WAF.
+- **API keys par projet** — chaque agent ou integration recoit un
+  token scope (read/write) sur un projet specifique. Les agents IA
+  s'auto-onboardent via le runbook servi par le serveur.
+- **Support commercial** — accompagnement a la mise en place,
+  integration IdP, et support operationnel disponibles sur demande.
+  Contact : [2113.ch](https://www.2113.ch)
+
 ## Installation
 
-Voir [`INSTALL.md`](INSTALL.md) pour la mise en place complète (MySQL, utilisateurs, migrations, reverse proxy).
+Voir [`INSTALL.md`](INSTALL.md) pour la mise en place complète (MySQL, utilisateurs, migrations, reverse proxy, OIDC).
 
 ## Licence
 
