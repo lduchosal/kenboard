@@ -72,6 +72,11 @@ class Config:
         os.getenv("OIDC_REQUIRE_EMAIL_VERIFIED", "true").lower() == "true"
     )
 
+    # OIDC scopes to request. Default works for Google/Authentik. For ADFS
+    # use "openid profile allatclaims" (ADFS has no `email` scope — the
+    # email claim comes from Issuance Transform Rules instead).
+    OIDC_SCOPES: str = os.getenv("OIDC_SCOPES", "openid email profile")
+
     # Derived: True when all three required OIDC vars are set.
     OIDC_ENABLED: bool = bool(
         os.getenv("OIDC_DISCOVERY_URL")

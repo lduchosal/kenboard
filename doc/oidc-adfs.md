@@ -46,7 +46,15 @@ Add-AdfsWebApiApplication `
     -ApplicationGroupIdentifier $appGroupName `
     -Identifier $clientId
 
-# 2. Issuance Transform Rules — mapper les attributs AD en claims OIDC
+# 2. Autoriser le Server Application à accéder à la Web API
+#    Sans ce grant, ADFS retourne "The client is not allowed to access
+#    the requested resource" au moment du token exchange.
+Grant-AdfsApplicationPermission `
+    -ClientRoleIdentifier $clientId `
+    -ServerRoleIdentifier $clientId `
+    -ScopeNames "openid", "email", "profile"
+
+# 3. Issuance Transform Rules — mapper les attributs AD en claims OIDC
 #    Sans cette étape, le id_token ne contient PAS de claim `email` ni `name`.
 $rules = @"
 @RuleTemplate = "LdapClaims"
@@ -92,6 +100,10 @@ OIDC_CLIENT_SECRET=<secret généré>
 
 # ADFS ne renvoie PAS le claim email_verified → désactiver le check
 OIDC_REQUIRE_EMAIL_VERIFIED=false
+
+# ADFS n'a pas de scope "email" — utiliser allatclaims pour récupérer
+# tous les claims configurés dans les Issuance Transform Rules
+OIDC_SCOPES=openid profile allatclaims
 
 # Optionnel : restreindre aux emails du domaine AD
 OIDC_ALLOWED_EMAIL_DOMAIN=example.local

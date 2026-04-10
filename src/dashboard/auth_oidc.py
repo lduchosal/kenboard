@@ -57,7 +57,7 @@ def init_oidc(app: Flask) -> None:
         client_id=Config.OIDC_CLIENT_ID,
         client_secret=Config.OIDC_CLIENT_SECRET,
         client_kwargs={
-            "scope": "openid email profile",
+            "scope": Config.OIDC_SCOPES,
             "code_challenge_method": "S256",
         },
     )
