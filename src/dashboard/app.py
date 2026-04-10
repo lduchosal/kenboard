@@ -8,6 +8,7 @@ from flask import Flask, request
 from flask_cors import CORS
 
 from dashboard.auth import init_auth
+from dashboard.auth_oidc import init_oidc
 from dashboard.auth_user import init_login_manager
 from dashboard.config import Config
 from dashboard.logging import get_logger, setup_logging
@@ -36,7 +37,7 @@ def create_app() -> Flask:
     # do not need CSRF protection because the token is never sent
     # automatically by the browser. Both flows are covered by
     # ``tests/unit/test_csrf.py``.
-    app = Flask(  # NOSONAR(python:S4502): CSRF via Origin check, see auth.py
+    app = Flask(
         __name__,
         template_folder=os.path.join(os.path.dirname(__file__), "templates"),
         static_folder=os.path.join(os.path.dirname(__file__), "static"),
@@ -55,6 +56,10 @@ def create_app() -> Flask:
     # User session auth (Flask-Login). Must run before init_auth so that
     # the API middleware can detect a logged-in user via current_user.
     init_login_manager(app)
+
+    # OIDC auth (optional, cf. auth_oidc.py). Silent no-op when the
+    # OIDC_* env vars are not set. Registers /oidc/login + /oidc/callback.
+    init_oidc(app)
 
     # API key auth middleware (always enforced; tests opt-out via LOGIN_DISABLED)
     init_auth(app)

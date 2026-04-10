@@ -1,25 +1,31 @@
 -- name: usr_get_all
 -- Get all users ordered by name.
-SELECT id, name, color, is_admin, created_at, updated_at
+SELECT id, name, email, color, is_admin, created_at, updated_at
 FROM users
 ORDER BY name ASC;
 
 -- name: usr_get_by_id^
 -- Get a single user by id.
-SELECT id, name, color, is_admin, session_nonce, created_at, updated_at
+SELECT id, name, email, color, is_admin, session_nonce, created_at, updated_at
 FROM users
 WHERE id = :id;
 
 -- name: usr_get_by_name^
--- Get a single user by name (used for authentication).
-SELECT id, name, color, password_hash, is_admin, session_nonce, created_at, updated_at
+-- Get a single user by name (used for password authentication).
+SELECT id, name, email, color, password_hash, is_admin, session_nonce, created_at, updated_at
 FROM users
 WHERE name = :name;
 
+-- name: usr_get_by_email^
+-- Get a single user by email (used for OIDC authentication, cf. #126).
+SELECT id, name, email, color, password_hash, is_admin, session_nonce, created_at, updated_at
+FROM users
+WHERE email = :email;
+
 -- name: usr_create!
 -- Create a new user.
-INSERT INTO users (id, name, color, password_hash, is_admin)
-VALUES (:id, :name, :color, :password_hash, :is_admin);
+INSERT INTO users (id, name, email, color, password_hash, is_admin)
+VALUES (:id, :name, :email, :color, :password_hash, :is_admin);
 
 -- name: usr_update!
 -- Update a user's name, color and admin flag.

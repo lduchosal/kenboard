@@ -1149,6 +1149,28 @@ button.cat-card-add {
   padding: 8px 14px;
   font-size: 12px;
 }
+.login-separator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 10px;
+  color: var(--dimmed);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.login-separator::before,
+.login-separator::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--border);
+}
+.login-oidc-btn {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  margin-top: 0;
+}
 
 /* Two-panel layout for the login page: square logo on the left, form
    on the right. Uses CSS Grid (not Flexbox) so the column geometry is

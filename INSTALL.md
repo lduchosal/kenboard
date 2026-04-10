@@ -308,7 +308,37 @@ server {
 }
 ```
 
-## 10. Verification
+## 10. OIDC (optionnel)
+
+Pour activer l'authentification via un fournisseur OIDC (Google,
+Authentik, Keycloak, ADFS, ...), ajouter dans `.env` :
+
+```env
+OIDC_DISCOVERY_URL=https://idp.example.com/.well-known/openid-configuration
+OIDC_CLIENT_ID=<client_id>
+OIDC_CLIENT_SECRET=<client_secret>
+```
+
+La page `/login` affichera un bouton « Sign in with OIDC » en dessous
+du formulaire password. Si les variables ne sont pas definies, kenboard
+reste en mode password-only.
+
+Options supplementaires :
+
+```env
+# Restreindre aux emails d'un domaine
+OIDC_ALLOWED_EMAIL_DOMAIN=example.com
+
+# ADFS ne renvoie pas email_verified, desactiver le check
+OIDC_REQUIRE_EMAIL_VERIFIED=false
+```
+
+Ne pas oublier d'enregistrer le redirect URI cote IdP :
+`https://kenboard.<domaine>/oidc/callback`
+
+Voir `doc/auth-user.md` section OIDC pour le detail du flow.
+
+## 11. Verification
 
 ```sh
 curl http://localhost:5000/api/v1/categories

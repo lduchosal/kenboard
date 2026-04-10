@@ -39,6 +39,7 @@ def logged_in_user(db, queries):
         db,
         id="user-csrf",
         name="csrf_test",
+        email=None,
         color="#888",
         password_hash=h,
         is_admin=1,

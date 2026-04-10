@@ -53,3 +53,28 @@ class Config:
     # Set to true when kenboard is served over HTTPS (directly or behind
     # a TLS-terminating reverse proxy). Enables Secure cookies and HSTS.
     KENBOARD_HTTPS: bool = os.getenv("KENBOARD_HTTPS", "false").lower() == "true"
+
+    # -- OIDC (optional, cf. doc/auth-user.md) --------------------------------
+    # When all three are set, the login page shows a "Sign in with OIDC"
+    # button and the /oidc/login + /oidc/callback routes become active.
+    # If any is missing, OIDC is silently disabled (fail-soft).
+    OIDC_DISCOVERY_URL: str = os.getenv("OIDC_DISCOVERY_URL", "")
+    OIDC_CLIENT_ID: str = os.getenv("OIDC_CLIENT_ID", "")
+    OIDC_CLIENT_SECRET: str = os.getenv("OIDC_CLIENT_SECRET", "")
+
+    # Optional: restrict OIDC logins to emails matching this domain.
+    # Empty = any email accepted (the IdP controls who authenticates).
+    OIDC_ALLOWED_EMAIL_DOMAIN: str = os.getenv("OIDC_ALLOWED_EMAIL_DOMAIN", "")
+
+    # ADFS does not emit the `email_verified` claim. Set to "false" to
+    # skip the check and trust the IdP's email unconditionally (#127).
+    OIDC_REQUIRE_EMAIL_VERIFIED: bool = (
+        os.getenv("OIDC_REQUIRE_EMAIL_VERIFIED", "true").lower() == "true"
+    )
+
+    # Derived: True when all three required OIDC vars are set.
+    OIDC_ENABLED: bool = bool(
+        os.getenv("OIDC_DISCOVERY_URL")
+        and os.getenv("OIDC_CLIENT_ID")
+        and os.getenv("OIDC_CLIENT_SECRET")
+    )

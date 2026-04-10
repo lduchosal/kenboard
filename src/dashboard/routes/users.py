@@ -57,6 +57,7 @@ def create_user() -> Any:
             conn,
             id=user_id,
             name=data.name,
+            email=data.email,
             color=data.color,
             password_hash=password_hash,
             is_admin=int(data.is_admin),

@@ -83,12 +83,14 @@ def _ensure_test_db() -> None:
         CREATE TABLE IF NOT EXISTS users (
             id VARCHAR(36) NOT NULL PRIMARY KEY,
             name VARCHAR(100) NOT NULL UNIQUE,
+            email VARCHAR(255) NULL,
             color VARCHAR(50) NOT NULL,
             password_hash VARCHAR(255) NOT NULL DEFAULT '',
             is_admin TINYINT(1) NOT NULL DEFAULT 0,
             session_nonce CHAR(32) NOT NULL DEFAULT '',
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE INDEX uq_users_email (email)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """)
     # users.session_nonce was added in migration 0008. Existing test DBs
@@ -103,6 +105,24 @@ def _ensure_test_db() -> None:
         cur.execute(
             "ALTER TABLE users " "ADD COLUMN session_nonce CHAR(32) NOT NULL DEFAULT ''"
         )
+    # users.email was added in migration 0012 (#126, OIDC). Back-fill for
+    # legacy test DBs that predate the column.
+    cur.execute(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+        "WHERE TABLE_SCHEMA = DATABASE() "
+        "AND TABLE_NAME = 'users' "
+        "AND COLUMN_NAME = 'email'"
+    )
+    if cur.fetchone()[0] == 0:
+        cur.execute("ALTER TABLE users ADD COLUMN email VARCHAR(255) NULL AFTER name")
+        cur.execute(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS "
+            "WHERE TABLE_SCHEMA = DATABASE() "
+            "AND TABLE_NAME = 'users' "
+            "AND INDEX_NAME = 'uq_users_email'"
+        )
+        if cur.fetchone()[0] == 0:
+            cur.execute("ALTER TABLE users ADD UNIQUE INDEX uq_users_email (email)")
     cur.execute("""
         CREATE TABLE IF NOT EXISTS api_keys (
             id VARCHAR(36) NOT NULL PRIMARY KEY,

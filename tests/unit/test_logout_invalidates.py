@@ -41,6 +41,7 @@ def seeded_user(db, queries):
         db,
         id="user-logout",
         name="logout_test",
+        email=None,
         color="#888",
         password_hash=h,
         is_admin=1,

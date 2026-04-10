@@ -28,6 +28,10 @@
         {% endif %}
         <button type="submit" class="btn btn-save login-submit">Se connecter</button>
       </form>
+      {% if config.get("OIDC_ENABLED") %}
+      <div class="login-separator"><span>ou</span></div>
+      <a href="/oidc/login" class="btn btn-save login-submit login-oidc-btn">Sign in with OIDC</a>
+      {% endif %}
     </div>
   </div>
 </body>

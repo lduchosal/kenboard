@@ -297,3 +297,96 @@ curl -i https://www.kenboard.2113.ch/login   # → 200 page login
 Si ça ne marche pas, rollback : flip `KENBOARD_AUTH_ENFORCED=false`
 dans le `.env` ansible et redéployer (`ansible-playbook
 ~/ansible/kenboard.yml --tags dotenv`).
+
+## OIDC (optionnel, #126)
+
+Kenboard supporte l'authentification via un fournisseur OIDC
+(Google, Authentik, Keycloak, Microsoft ADFS, ...) **en complément**
+du login user/password. L'OIDC est opt-in : si les variables d'env ne
+sont pas renseignées, kenboard reste en mode password-only.
+
+### Activation
+
+Renseigner dans `.env` (cf. `.env.example`) :
+
+```env
+OIDC_DISCOVERY_URL=https://idp.example.com/.well-known/openid-configuration
+OIDC_CLIENT_ID=<client_id>
+OIDC_CLIENT_SECRET=<client_secret>
+```
+
+Options supplémentaires :
+
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `OIDC_DISCOVERY_URL` | (vide) | URL du discovery document OIDC |
+| `OIDC_CLIENT_ID` | (vide) | Client ID enregistré côté IdP |
+| `OIDC_CLIENT_SECRET` | (vide) | Client secret |
+| `OIDC_ALLOWED_EMAIL_DOMAIN` | (vide = tout) | Restreindre aux emails d'un domaine |
+| `OIDC_REQUIRE_EMAIL_VERIFIED` | `true` | Mettre à `false` pour ADFS (pas de claim `email_verified`) |
+
+Quand les trois variables requises sont définies, la page `/login`
+affiche un bouton « Sign in with OIDC » sous le formulaire password.
+
+### Flow
+
+1. Le user clique « Sign in with OIDC ».
+2. Kenboard redirige vers l'IdP (`/oidc/login` → IdP authorize endpoint).
+3. L'IdP authentifie le user et redirige vers `/oidc/callback` avec un
+   authorization code.
+4. Kenboard échange le code contre un `id_token` via Authlib (PKCE S256).
+5. Le callback vérifie :
+   - `email` présent dans le token (sinon erreur)
+   - `email_verified` (sauf si `OIDC_REQUIRE_EMAIL_VERIFIED=false`)
+   - domaine email (si `OIDC_ALLOWED_EMAIL_DOMAIN` est défini)
+6. Lookup `users.email` :
+   - Si trouvé → login avec le user existant
+   - Si absent → lazy-create un user (nom = claim `name`, `is_admin=false`,
+     couleur aléatoire, `password_hash` vide)
+7. Rotation `session_nonce`, `login_user(user, remember=True)`.
+8. Redirect vers la page d'origine.
+
+### Coexistence avec le login password
+
+- Le flow password (`/login` POST) est **inchangé** : mêmes routes,
+  même rate limit, même `session_nonce`.
+- `/logout` invalide la session kenboard (rotation nonce) mais ne
+  déconnecte PAS côté IdP (`end_session_endpoint` hors scope v1).
+- L'API bearer-token (`auth.py`) n'est **pas touchée** : les api_keys
+  et le `KENBOARD_ADMIN_KEY` fonctionnent comme avant.
+- Si l'IdP est down ou mal configuré, le bouton OIDC ne fonctionne
+  pas mais le login password reste disponible (fail-soft).
+
+### Migration DB
+
+La migration `0012.add_users_email.sql` ajoute une colonne `email
+VARCHAR(255) NULL` à la table `users` avec un index unique (NULLs
+autorisés pour les users existants créés par password).
+
+Appliquer : `kenboard migrate` (production) ou `kenboard migrate-test`
+(test).
+
+### Tests
+
+- **Unit** (`tests/unit/test_auth_oidc.py`) : 9 tests, mock du client
+  Authlib. Couvre : OIDC disabled → 404, login user existant, lazy-create,
+  email_verified rejeté/accepté, domaine rejeté, pas d'email, rotation
+  nonce.
+- **Intégration** (`tests/integration/test_auth_oidc.py`) : 2 tests avec
+  `oidc-provider-mock` (mock IdP Python en thread, pas de Docker).
+  Couvre : redirect vers IdP, callback complet avec token → session.
+
+### Fournisseurs testés
+
+| IdP | Discovery URL | Notes |
+|---|---|---|
+| `oidc-provider-mock` | `http://localhost:<port>/.well-known/...` | Tests intégration |
+| Microsoft ADFS | `https://<host>/adfs/.well-known/...` | Cf. tâche #127, doc `doc/oidc-adfs.md` (à créer) |
+
+### Hors scope v1
+
+- Multi-IdP simultané (un seul `oauth.register` en v1)
+- Logout côté IdP (`end_session_endpoint`)
+- Mapping groupes IdP → `is_admin`
+- Refresh token (la session Flask-Login a sa propre durée de vie)
+- SCIM / sync profil / photo

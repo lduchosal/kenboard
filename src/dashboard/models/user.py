@@ -9,6 +9,7 @@ class UserCreate(BaseModel):
     """Input model for creating a user."""
 
     name: str = Field(..., min_length=1, max_length=100)
+    email: str | None = Field(None, max_length=255)
     color: str = Field(..., max_length=50)
     password: str | None = Field(None, min_length=1, max_length=200)
     is_admin: bool = False
@@ -55,6 +56,7 @@ class User(BaseModel):
 
     id: str
     name: str
+    email: str | None = None
     color: str
     is_admin: bool
     created_at: datetime
