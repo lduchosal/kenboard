@@ -8,6 +8,11 @@ payloads built here are returned by both the cookie auth handler
 (``auth_user._unauthorized``) and the API auth middleware (``auth._enforce``)
 so an agent that hits *any* protected URL gets a copy-pasteable runbook
 instead of a useless redirect or a one-line ``"missing Authorization"``.
+
+The dedicated ``/onboard/cat/<cat_id>/project/<project_id>`` route (#137)
+always returns 200 text/plain so that WebFetch and similar high-level
+HTTP tools (which discard the body of 4xx responses) can read the
+runbook without hitting the 401 problem.
 """
 
 from __future__ import annotations
@@ -15,6 +20,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from flask import Blueprint, make_response
 from flask.wrappers import Request
 
 # UUID-ish pattern is loose on purpose: we only use the captured value as a
@@ -58,92 +64,121 @@ def wants_machine_response(request_obj: Request) -> bool:
 def onboarding_text(cat_id: str | None) -> str:
     """Render the agent-facing 401 body as plain text.
 
-    The runbook lists *both* identifiers — ``cat_id`` (which the server
-    sees in the path and can interpolate) and ``project_id`` (which lives
-    in the URL fragment and must be copied by the agent from the original
-    URL the user shared). The agent is then instructed to write a 4-line
-    ``.ken`` file directly, side-stepping ``ken init`` (which is admin-only
-    on the listing endpoint and would fail for a per-project token).
+    This version only has the ``cat_id`` (from the URL path). The
+    ``project_id`` lives in the URL fragment which the server never sees,
+    so the agent must copy it from the original URL the user shared.
     """
-    cat_value = cat_id or "<paste the UUID between /cat/ and .html>"
+    cat_value = cat_id or "<UUID entre /cat/ et .html dans l'URL>"
     return (
-        "Unauthorized — you are accessing a kenboard project board "
-        "without credentials.\n"
+        "KENBOARD — Pour accéder à ce board, 3 étapes :\n"
         "\n"
-        "The URL the user gave you has the form:\n"
-        "    https://<host>/cat/<CAT_ID>.html#<PROJECT_ID>\n"
-        f"      cat_id     = {cat_value}\n"
-        "      project_id = <UUID after `#` in the original URL>\n"
+        "1. pip install kenboard\n"
         "\n"
-        "HTTP clients drop the URL fragment before sending the request, so\n"
-        "this server only sees the cat_id; the project_id must be read\n"
-        "from the original URL the user shared with you.\n"
+        "2. Créer un fichier .ken (mode 0600) dans votre projet :\n"
         "\n"
-        "To use this board programmatically:\n"
+        f"   project_id=<UUID après # dans l'URL que l'utilisateur vous a donnée>\n"
+        "   base_url=https://www.kenboard.2113.ch\n"
+        "   api_token=<API key — voir étape 3>\n"
         "\n"
-        "  1. Install the kenboard package (ships the `ken` binary):\n"
-        "         pip install kenboard\n"
+        "3. Demander à l'utilisateur de générer une API key sur\n"
+        "   /admin/keys (avec au moins le scope 'read' sur ce projet)\n"
+        "   et de la coller dans la ligne api_token= du fichier .ken\n"
         "\n"
-        "  2. Create a `.ken` file (mode 0600) in your project root with:\n"
+        "Ensuite :\n"
+        "   ken list --status todo --json\n"
+        "   ken show <id> --json\n"
+        '   ken add "Titre" --desc "..." --who Claude --status todo\n'
         "\n"
-        f"         cat_id={cat_value}\n"
-        "         project_id=<UUID after `#` in the original URL>\n"
-        "         base_url=https://www.kenboard.2113.ch\n"
-        "         api_token=<API key the user generates at /admin/keys>\n"
+        f"Info : cat_id = {cat_value}\n"
         "\n"
-        "  3. Ask the user to generate an API key at /admin/keys (with at\n"
-        "     least `read` scope on this project) and paste it into the\n"
-        "     `api_token=` line.\n"
-        "\n"
-        "  4. Then query the board:\n"
-        "         ken list --status todo --json\n"
-        "         ken show <id> --json\n"
-        "         ken add 'Title' --desc '...' --who Claude --status todo\n"
-        "\n"
-        "Browser users: log in at /login.\n"
+        "Browser : se connecter sur /login\n"
     )
 
 
 def onboarding_json(cat_id: str | None) -> dict[str, Any]:
     """Render the agent-facing 401 body as a JSON-friendly dict.
 
-    Same content as ``onboarding_text`` but structured so an SDK can
-    extract individual fields without parsing free-form prose. The
-    ``project_id`` field is intentionally a placeholder string instead of
-    ``null`` so a naïve JSON-to-template substitution still produces a
-    visible marker the user notices and replaces.
+    Same 3-step structure as ``onboarding_text`` but machine-parseable.
     """
-    cat_value = cat_id or "<paste the UUID between /cat/ and .html>"
     return {
         "error": "unauthorized",
-        "message": (
-            "kenboard requires authentication for programmatic access — "
-            "see `onboarding` below for the runbook"
-        ),
+        "message": "Pour accéder à ce board, 3 étapes — voir onboarding.",
         "onboarding": {
-            "url_format": "https://<host>/cat/<CAT_ID>.html#<PROJECT_ID>",
-            "note": (
-                "HTTP clients drop the URL fragment, so this server only "
-                "sees the cat_id; copy the project_id from the original "
-                "URL the user shared with you (the part after `#`)."
-            ),
+            "steps": [
+                "pip install kenboard",
+                "Créer un fichier .ken avec project_id, base_url, api_token",
+                "Demander à l'utilisateur une API key sur /admin/keys",
+            ],
             "install": "pip install kenboard",
             "ken_file": {
-                "path": ".ken (mode 0600 in your project root)",
+                "path": ".ken (mode 0600)",
                 "lines": [
-                    f"cat_id={cat_value}",
-                    "project_id=<UUID after `#` in the original URL>",
+                    "project_id=<UUID après # dans l'URL>",
                     "base_url=https://www.kenboard.2113.ch",
-                    "api_token=<API key from /admin/keys>",
+                    "api_token=<API key de /admin/keys>",
                 ],
             },
             "cat_id": cat_id,
-            "project_id": "<UUID after `#` in the original URL>",
             "get_api_key": "/admin/keys",
             "next_steps": [
                 "ken list --status todo --json",
                 "ken show <id> --json",
-                "ken add 'Title' --desc '...' --who Claude --status todo",
+                'ken add "Titre" --desc "..." --who Claude --status todo',
             ],
         },
     }
+
+
+# -- Public onboarding route (#137) ------------------------------------------
+
+onboard_bp = Blueprint("onboard", __name__)
+
+
+@onboard_bp.route("/onboard/cat/<cat_id>/project/<project_id>", methods=["GET"])
+def onboard_route(cat_id: str, project_id: str) -> Any:
+    """Serve the onboarding runbook as 200 text/plain.
+
+    This route has **no authentication**. It exists so that high-level
+    HTTP tools (WebFetch, requests.get, etc.) that discard the body of
+    4xx responses can still read the runbook. The copy-onboard-link
+    button in ``category.html`` generates a URL pointing here.
+    """
+    body = onboarding_text_full(cat_id, project_id)
+    response = make_response(body, 200)
+    response.headers["Content-Type"] = "text/plain; charset=utf-8"
+    return response
+
+
+def onboarding_text_full(cat_id: str, project_id: str) -> str:
+    """Render the onboarding runbook with both IDs resolved.
+
+    Unlike ``onboarding_text`` (which only has the cat_id from the
+    server-visible path), this version receives both IDs from the
+    dedicated ``/onboard/cat/<cat_id>/project/<project_id>`` route.
+    """
+    return (
+        "KENBOARD — Pour accéder à ce board, 3 étapes :\n"
+        "\n"
+        "1. pip install kenboard\n"
+        "\n"
+        f"2. Créer un fichier .ken (mode 0600) dans votre projet :\n"
+        "\n"
+        f"   project_id={project_id}\n"
+        f"   base_url=https://www.kenboard.2113.ch\n"
+        f"   api_token=<API key — voir étape 3>\n"
+        "\n"
+        "3. Demander à l'utilisateur de générer une API key sur\n"
+        "   /admin/keys (avec au moins le scope 'read' sur ce projet)\n"
+        "   et de la coller dans la ligne api_token= du fichier .ken\n"
+        "\n"
+        "Ensuite :\n"
+        f"   ken list --status todo --json\n"
+        f"   ken show <id> --json\n"
+        f'   ken add "Titre" --desc "..." --who Claude --status todo\n'
+        "\n"
+        "Infos :\n"
+        f"   cat_id     = {cat_id}\n"
+        f"   project_id = {project_id}\n"
+        "\n"
+        "Browser : se connecter sur /login\n"
+    )

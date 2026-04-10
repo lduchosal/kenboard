@@ -160,16 +160,24 @@ body {
   align-items: center;
   gap: 8px;
 }
-.section-edit-btn,
-.section-onboard-btn {
+.section-edit-btn {
   padding: 1px 8px;
   font-size: 9px;
   line-height: 1;
   opacity: 0;
   transition: opacity 0.15s;
 }
-.section-title:hover .section-edit-btn,
-.section-title:hover .section-onboard-btn {
+.section-onboard-btn {
+  padding: 1px 8px;
+  font-size: 9px;
+  line-height: 1;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+.section-title:hover .section-edit-btn {
+  opacity: 1;
+}
+.section-onboard-btn:hover {
   opacity: 1;
 }
 .section-edit-btn:hover,

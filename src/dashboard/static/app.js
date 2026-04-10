@@ -253,7 +253,7 @@ function deleteProject() {
 // dashboard.onboarding (#117) and the agent has both ids it needs to write
 // its `.ken` file.
 function copyOnboardLink(btn, catId, projectId) {
-  const url = `${globalThis.location.origin}/cat/${catId}.html?onboard#${projectId}`;
+  const url = `${globalThis.location.origin}/onboard/cat/${catId}/project/${projectId}`;
   const restore = btn.textContent;
   const flash = (label) => {
     btn.textContent = label;

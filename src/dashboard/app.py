@@ -167,6 +167,13 @@ def create_app() -> Flask:
         log.error("unhandled_error", path=request.path, error=str(e), exc_info=True)
         return {"error": "Internal server error"}, 500
 
+    # Public onboarding route (no auth, returns 200 text/plain so
+    # WebFetch and similar tools can read the body). Registered before
+    # the auth middleware so it is never intercepted.
+    from dashboard.onboarding import onboard_bp
+
+    app.register_blueprint(onboard_bp)
+
     # Register blueprints
     app.register_blueprint(pages_bp)
     app.register_blueprint(categories_bp)
