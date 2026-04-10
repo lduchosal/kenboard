@@ -52,7 +52,7 @@ Add-AdfsWebApiApplication `
 Grant-AdfsApplicationPermission `
     -ClientRoleIdentifier $clientId `
     -ServerRoleIdentifier $clientId `
-    -ScopeNames "openid"
+    -ScopeNames "allatclaims", "openid", "profile", "email"
 
 # 3. Autoriser un groupe AD à utiliser l'application
 #    Sans cette Issuance Authorization Rule, ADFS refuse l'accès à tous
@@ -125,9 +125,9 @@ OIDC_CLIENT_SECRET=<secret généré>
 # ADFS ne renvoie PAS le claim email_verified → désactiver le check
 OIDC_REQUIRE_EMAIL_VERIFIED=false
 
-# ADFS n'a pas de scope "email" — utiliser allatclaims pour récupérer
-# tous les claims configurés dans les Issuance Transform Rules
-OIDC_SCOPES=openid profile allatclaims
+# Scopes OIDC — fonctionne avec ADFS quand les scopes allatclaims,
+# openid, profile et email sont grantés côté Application Group.
+OIDC_SCOPES=openid profile email
 
 # Optionnel : restreindre aux emails du domaine AD
 OIDC_ALLOWED_EMAIL_DOMAIN=example.local
@@ -207,7 +207,7 @@ cette version d'ADFS (MSIS9605/MSIS9622).
 Grant-AdfsApplicationPermission `
     -ClientRoleIdentifier $clientId `
     -ServerRoleIdentifier $clientId `
-    -ScopeNames "openid"
+    -ScopeNames "allatclaims", "openid", "profile", "email"
 ```
 
 ### `Access denied` après authentification réussie
