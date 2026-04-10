@@ -20,20 +20,25 @@ Server 2016+).
 ### Via PowerShell (recommandé)
 
 ```powershell
-# 1. Créer l'Application Group avec un Server Application + Web API
+# 0. Créer l'Application Group (conteneur)
 $appGroupName = "kenboard"
 $redirectUri   = "https://kenboard.<domaine>/oidc/callback"
 
-# Server Application (génère un client_id + client_secret)
+New-AdfsApplicationGroup -Name $appGroupName -ApplicationGroupIdentifier $appGroupName
+
+# 1. Générer un Client ID (GUID) puis créer le Server Application
+$clientId = [guid]::NewGuid().ToString()
+
+# Server Application (génère un client_secret)
 Add-AdfsServerApplication `
     -Name "$appGroupName - Server" `
     -ApplicationGroupIdentifier $appGroupName `
+    -Identifier $clientId `
     -RedirectUri $redirectUri `
     -GenerateClientSecret
 
-# Prendre note du ClientId (GUID) et du Secret affichés.
-# Le ClientId est aussi l'Identifier de la Web API ci-dessous.
-$clientId = "<GUID affiché>"
+# Prendre note du Secret affiché → OIDC_CLIENT_SECRET dans .env
+# Le $clientId généré plus haut → OIDC_CLIENT_ID dans .env
 
 # Web API (scopes OIDC)
 Add-AdfsWebApiApplication `
