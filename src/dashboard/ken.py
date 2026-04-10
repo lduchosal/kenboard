@@ -75,7 +75,15 @@ def _parse_ken_file(path: Path) -> dict[str, str]:
 
 
 def _check_ken_permissions(path: Path) -> None:
-    """Warn on stderr if ``.ken`` is readable by group/other."""
+    """Warn on stderr if ``.ken`` is readable by group/other.
+
+    Skipped on Windows where POSIX permission bits are meaningless —
+    ``os.stat().st_mode`` always reports 0o666 and ``os.chmod(0o600)``
+    is a no-op. Windows relies on NTFS ACLs instead, and the user
+    profile directory is already protected by default (#146).
+    """
+    if sys.platform == "win32":
+        return
     try:
         mode = path.stat().st_mode & 0o777
     except OSError:
