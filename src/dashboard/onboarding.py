@@ -28,6 +28,20 @@ from flask.wrappers import Request
 # only buys us a worse user experience on copy-pasted weird IDs.
 _CAT_URL_RE = re.compile(r"^/cat/([^/]+)\.html$")
 
+# Strip anything that is not alphanumeric or a hyphen to prevent reflected
+# XSS / injection when interpolating user-controlled path segments into
+# the onboarding response body (cf. sonar pythonsecurity:S5131).
+_SAFE_ID_RE = re.compile(r"[^a-zA-Z0-9\-]")
+
+
+def _sanitize_id(value: str) -> str:
+    """Strip non-UUID characters from a user-supplied identifier.
+
+    Prevents reflected XSS when the value is interpolated into the onboarding response
+    body (pythonsecurity:S5131).
+    """
+    return _SAFE_ID_RE.sub("", value)
+
 
 def cat_id_from_path(path: str) -> str | None:
     """Return the category id embedded in a ``/cat/<id>.html`` path, or None.
@@ -146,8 +160,10 @@ def onboard_route(cat_id: str, project_id: str) -> Any:
     """
     from flask import request
 
+    safe_cat = _sanitize_id(cat_id)
+    safe_project = _sanitize_id(project_id)
     base_url = request.host_url.rstrip("/")
-    body = onboarding_text_full(cat_id, project_id, base_url)
+    body = onboarding_text_full(safe_cat, safe_project, base_url)
     response = make_response(body, 200)
     response.headers["Content-Type"] = "text/plain; charset=utf-8"
     return response

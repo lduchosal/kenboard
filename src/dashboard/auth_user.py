@@ -289,10 +289,11 @@ def login_post() -> Any:
         if not user.session_nonce:
             user.session_nonce = _rotate_session_nonce(user.id)
         login_user(user, remember=True, duration=timedelta(days=REMEMBER_DAYS))
-        target = next_url if _is_safe_url(next_url) else url_for("pages.index")
-        return redirect(target)
+        if _is_safe_url(next_url):
+            return redirect(next_url)
+        return redirect(url_for("pages.index"))
     return render_template(
-        "login.html", error="Identifiants invalides", next_url=next_url
+        _LOGIN_TEMPLATE, error="Identifiants invalides", next_url=next_url
     )
 
 
@@ -323,7 +324,7 @@ def login_rate_limited(e: Any) -> Any:
     # ``(body, status)`` tuple shortcut as explicit enough for error handlers.
     return make_response(
         render_template(
-            "login.html",
+            _LOGIN_TEMPLATE,
             error="Trop de tentatives. Réessaye dans une minute.",
             next_url=next_url,
         ),

@@ -116,7 +116,7 @@ def oidc_callback() -> Any:
             )
             return (
                 render_template(
-                    "login.html",
+                    _LOGIN_TEMPLATE,
                     error=f"Le domaine {domain} n'est pas autorisé.",
                     next_url="",
                 ),
