@@ -376,12 +376,12 @@ Appliquer : `kenboard migrate` (production) ou `kenboard migrate-test`
   `oidc-provider-mock` (mock IdP Python en thread, pas de Docker).
   Couvre : redirect vers IdP, callback complet avec token → session.
 
-### Fournisseurs testés
+### Fournisseurs documentés
 
-| IdP | Discovery URL | Notes |
+| IdP | Discovery URL | Doc |
 |---|---|---|
 | `oidc-provider-mock` | `http://localhost:<port>/.well-known/...` | Tests intégration |
-| Microsoft ADFS | `https://<host>/adfs/.well-known/...` | Cf. tâche #127, doc `doc/oidc-adfs.md` (à créer) |
+| Microsoft ADFS | `https://<host>/adfs/.well-known/...` | [`doc/oidc-adfs.md`](oidc-adfs.md) |
 
 ### Hors scope v1
 

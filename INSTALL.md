@@ -336,6 +336,9 @@ OIDC_REQUIRE_EMAIL_VERIFIED=false
 Ne pas oublier d'enregistrer le redirect URI cote IdP :
 `https://kenboard.<domaine>/oidc/callback`
 
+Pour Microsoft ADFS specifiquement, voir `doc/oidc-adfs.md` (provisioning
+PowerShell, Issuance Transform Rules, troubleshooting).
+
 Voir `doc/auth-user.md` section OIDC pour le detail du flow.
 
 ## 11. Verification
