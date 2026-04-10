@@ -5,6 +5,14 @@ from pathlib import Path
 
 import click
 
+# Force UTF-8 on Windows so kenboard CLI output (migration logs, error
+# messages) does not crash on non-ASCII characters (#148).
+if sys.platform == "win32":  # pragma: no cover
+    for _stream_name in ("stdout", "stderr"):
+        _stream = getattr(sys, _stream_name)
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
+
 
 @click.group()
 def cli() -> None:

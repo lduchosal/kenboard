@@ -8,10 +8,27 @@ dependency).
 
 from __future__ import annotations
 
+import io
 import json as json_lib
 import os
 import re
 import sys
+
+# Windows uses cp1252 (or the system locale) for stdout/stderr by default.
+# Characters like → or accented letters in task descriptions cause
+# UnicodeEncodeError. Force UTF-8 so `ken` works plug-and-play without
+# requiring PYTHONUTF8=1 in the environment (#148).
+if sys.platform == "win32":  # pragma: no cover
+    for _stream_name in ("stdout", "stderr"):
+        _stream = getattr(sys, _stream_name)
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(encoding="utf-8")
+        elif not isinstance(_stream, io.TextIOWrapper):
+            setattr(
+                sys,
+                _stream_name,
+                io.TextIOWrapper(_stream.buffer, encoding="utf-8", errors="replace"),
+            )
 from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
