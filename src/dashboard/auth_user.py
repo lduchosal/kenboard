@@ -155,8 +155,13 @@ def _unauthorized() -> Any:
     how to ``pip install kenboard`` and ``ken init <category-id>`` (#117).
     The category id, when present in the URL, is interpolated into the
     init command so the agent can copy-paste it.
+
+    The ``?onboard`` query parameter forces the machine response regardless
+    of the ``Accept`` header. This is what the copy-onboard-link button
+    generates, so that agents using WebFetch (which sends ``Accept:
+    text/html``) still receive the runbook instead of the login page.
     """
-    if wants_machine_response(request):
+    if wants_machine_response(request) or "onboard" in request.args:
         cat_id = cat_id_from_path(request.path)
         response = make_response(onboarding_text(cat_id), 401)
         response.headers["Content-Type"] = "text/plain; charset=utf-8"
