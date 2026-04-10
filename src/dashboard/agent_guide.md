@@ -70,6 +70,30 @@ Always pass `--json` when parsing the output programmatically.
     ken move <id> --to doing
     ken done <id>          # avoid; let the user mark done after review
 
+## Task title convention
+
+Every task title **must** follow the format `MODULE / Titre` where
+`MODULE` is a short uppercase tag indicating the area of the codebase:
+
+    AUTH / Login OIDC via Authlib
+    BUG / Remove user fails with 403
+    CLEAN / Remove dead kenboard build command
+    SEC / Sanitize reflected data in onboarding
+    UI / Logo on login page
+    DOC / INSTALL update for set-password
+    QUALITY / Sonarcloud issues
+    AGENT / CLI / Sync tasks to folder
+    ONBOARDING / WebFetch returns 200
+
+Common modules: `AUTH`, `BUG`, `CLEAN`, `SEC`, `UI`, `DOC`, `QUALITY`,
+`AGENT`, `ONBOARDING`, `FIX`. Sub-modules are separated by ` / `
+(e.g. `AGENT / CLI / Sync`). Keep titles short — details go in the
+description.
+
+Example:
+
+    ken add "SEC / XSS sanitize onboarding IDs" --desc "..." --who Claude
+
 ## Other practices
 
 - The `ken` binary uses only the stdlib for HTTP. Do **not** add
