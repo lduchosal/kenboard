@@ -52,9 +52,33 @@ Add-AdfsWebApiApplication `
 Grant-AdfsApplicationPermission `
     -ClientRoleIdentifier $clientId `
     -ServerRoleIdentifier $clientId `
-    -ScopeNames "openid", "email", "profile"
+    -ScopeNames "openid"
 
-# 3. Issuance Transform Rules — mapper les attributs AD en claims OIDC
+# 3. Autoriser un groupe AD à utiliser l'application
+#    Sans cette Issuance Authorization Rule, ADFS refuse l'accès à tous
+#    les utilisateurs ("access denied"). Remplacer <NOM_DU_GROUPE> par
+#    le groupe AD autorisé (ex: "Domain Users" pour tous, ou un groupe
+#    spécifique comme "Kenboard_Users").
+$groupName = "<NOM_DU_GROUPE>"
+$authzRules = @"
+@RuleTemplate = "Authorization"
+@RuleName = "Permit $groupName"
+exists([Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/groupsid",
+        Value =~ "(?i)$groupName"])
+=> issue(Type = "http://schemas.microsoft.com/authorization/claims/permit",
+         Value = "true");
+"@
+
+# Alternative : autoriser tout le monde (moins restrictif)
+# $authzRules = '@RuleTemplate = "AllowAllAuthzRule"
+# => issue(Type = "http://schemas.microsoft.com/authorization/claims/permit",
+#          Value = "true");'
+
+Set-AdfsWebApiApplication `
+    -TargetIdentifier $clientId `
+    -IssuanceAuthorizationRules $authzRules
+
+# 4. Issuance Transform Rules — mapper les attributs AD en claims OIDC
 #    Sans cette étape, le id_token ne contient PAS de claim `email` ni `name`.
 $rules = @"
 @RuleTemplate = "LdapClaims"
@@ -170,6 +194,36 @@ curl -s "https://<adfs-host>/adfs/.well-known/openid-configuration" | python3 -m
 
 Si `claims_supported` ne liste pas `email`, les Issuance Rules ne sont
 pas en place.
+
+### `The client is not allowed to access the requested resource`
+
+**Cause** : le `Grant-AdfsApplicationPermission` n'a pas été exécuté,
+ou le scope demandé (`email`, `allatclaims`) n'est pas reconnu par
+cette version d'ADFS (MSIS9605/MSIS9622).
+
+**Fix** : exécuter le Grant avec le scope minimal `openid` :
+
+```powershell
+Grant-AdfsApplicationPermission `
+    -ClientRoleIdentifier $clientId `
+    -ServerRoleIdentifier $clientId `
+    -ScopeNames "openid"
+```
+
+### `Access denied` après authentification réussie
+
+**Cause** : pas d'Issuance Authorization Rule sur la Web API. ADFS
+refuse l'accès par défaut si aucune règle n'autorise les utilisateurs.
+
+**Fix** : ajouter une règle d'autorisation (cf. étape 3 du provisioning
+PowerShell). Pour autoriser tout le monde en urgence :
+
+```powershell
+$authzRules = '@RuleTemplate = "AllowAllAuthzRule"
+=> issue(Type = "http://schemas.microsoft.com/authorization/claims/permit",
+         Value = "true");'
+Set-AdfsWebApiApplication -TargetIdentifier $clientId -IssuanceAuthorizationRules $authzRules
+```
 
 ### `MismatchingStateError` ou `state parameter mismatch`
 
