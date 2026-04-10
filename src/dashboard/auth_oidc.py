@@ -37,6 +37,8 @@ from dashboard.logging import get_logger
 
 log = get_logger("auth_oidc")
 
+_LOGIN_TEMPLATE = "login.html"
+
 bp = Blueprint("auth_oidc", __name__)
 oauth = OAuth()
 
@@ -91,7 +93,7 @@ def oidc_callback() -> Any:
     if not email:
         log.warning("auth_oidc.no_email", userinfo=userinfo)
         return render_template(
-            "login.html",
+            _LOGIN_TEMPLATE,
             error="Le fournisseur OIDC n'a pas retourné d'adresse email.",
             next_url="",
         )
@@ -99,7 +101,7 @@ def oidc_callback() -> Any:
     if Config.OIDC_REQUIRE_EMAIL_VERIFIED and not userinfo.get("email_verified"):
         log.warning("auth_oidc.email_not_verified", email=email)
         return render_template(
-            "login.html",
+            _LOGIN_TEMPLATE,
             error="L'adresse email n'est pas vérifiée côté fournisseur.",
             next_url="",
         )

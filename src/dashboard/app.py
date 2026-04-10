@@ -37,7 +37,7 @@ def create_app() -> Flask:
     # do not need CSRF protection because the token is never sent
     # automatically by the browser. Both flows are covered by
     # ``tests/unit/test_csrf.py``.
-    app = Flask(  # NOSONAR(python:S4502): CSRF via Origin check, see auth.py
+    app = Flask(  # NOSONAR — CSRF via Origin/Referer check in auth.py, not Flask-WTF
         __name__,
         template_folder=os.path.join(os.path.dirname(__file__), "templates"),
         static_folder=os.path.join(os.path.dirname(__file__), "static"),

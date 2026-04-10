@@ -58,6 +58,7 @@ REMEMBER_DAYS = 30
 # a minute = unusual) but to break credential-stuffing scripts.
 LOGIN_RATE_LIMITS = "5 per minute; 20 per hour"
 LOGIN_VIEW_ENDPOINT = "auth_user.login"
+_LOGIN_TEMPLATE = "login.html"
 
 log = get_logger("auth_user")
 
