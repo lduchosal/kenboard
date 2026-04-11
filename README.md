@@ -19,7 +19,7 @@
 [![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
 
 <p align="center">
-  <img src="./logo-robot.svg" alt="kenboard logo" width="120">
+  <img src="./logo.svg" alt="kenboard logo" width="160">
 </p>
 
 ## Usage pour les humains
