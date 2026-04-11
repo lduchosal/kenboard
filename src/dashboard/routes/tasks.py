@@ -25,6 +25,20 @@ def list_tasks() -> Any:
         conn.close()
 
 
+@bp.route("/<int:task_id>", methods=["GET"])
+def get_task(task_id: int) -> Any:
+    """Get a single task by id (#168)."""
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        row = queries.task_get_by_id(conn, id=task_id)
+        if not row:
+            return jsonify({"error": "Not found"}), 404
+        return jsonify(Task(**row).model_dump(mode="json"))
+    finally:
+        conn.close()
+
+
 @bp.route("", methods=["POST"])
 def create_task() -> Any:
     """Create a new task."""

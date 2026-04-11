@@ -144,14 +144,15 @@ When the user asks Claude to pick up a kenboard task, follow this loop:
    (e.g. WIP from another in-flight task in the working tree), confirm they
    are not caused by your changes — `git stash && pdm run test-unit && git
    stash pop` is the quick way to prove a clean baseline.
-4. `ken move <id> --to review` once the work is ready for the user.
-5. **Append a resolution block to the task description** with `ken update
-   <id> --desc "<original>\n\n---\n\n## Résolution\n..."`. Preserve the
-   original description verbatim, then add sections for *Modifications*
-   (file paths + one-line summary), *Comportements obtenus*, and *Garde-fous*
-   (which gates ran + their result). This is how the board accumulates an
-   audit trail — the commit message alone is not enough since not every task
-   maps 1:1 to a commit.
+4. **Update the task description BEFORE moving to review.** Append a
+   resolution block with `ken update <id> --desc "<original>\n\n---\n\n
+   ## Résolution\n..."`. Preserve the original description verbatim,
+   then add sections for *Modifications* (file paths + one-line
+   summary), *Comportements obtenus*, and *Garde-fous* (which gates ran
+   + their result). This is how the board accumulates an audit trail —
+   the commit message alone is not enough since not every task maps 1:1
+   to a commit.
+5. `ken move <id> --to review` once the description is updated.
 
 Do **not** mark a task `done` yourself; that's the user's call after review.
 

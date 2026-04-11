@@ -277,7 +277,29 @@ async function copyOnboardLink(btn, catId, projectId) {
 
 // -- Fullscreen task view (#155) ----------------------------------------------
 
-function openFullscreen(btn, id, title, desc, who, when, avatarColor) {
+async function openFullscreen(btn, id, title, desc, who, when, avatarColor) {
+  // Show the modal immediately with the data we have from the DOM
+  _populateFullscreen(id, title, desc, who, when, avatarColor, btn);
+  document.getElementById('task-fullscreen').style.display = 'flex';
+  document.body.style.overflow = 'hidden'; // #169: prevent background scroll
+
+  // Then refresh from the API for up-to-date content (#168)
+  try {
+    const r = await fetch(`${API_BASE}/tasks/${id}`);
+    if (r.ok) {
+      const t = await r.json();
+      _populateFullscreen(
+        t.id, t.title, t.description || '', t.who || '',
+        t.due_date || '', avatarColor, btn
+      );
+    }
+  } catch (e) {
+    // API call failed — keep the DOM-sourced content, no error popup
+    console.debug('openFullscreen: API refresh failed', e);
+  }
+}
+
+function _populateFullscreen(id, title, desc, who, when, avatarColor, btn) {
   document.getElementById('fs-id').textContent = '#' + id;
   document.getElementById('fs-title').textContent = title;
   document.getElementById('fs-who').textContent = who || '—';
@@ -287,12 +309,10 @@ function openFullscreen(btn, id, title, desc, who, when, avatarColor) {
   avatar.textContent = (who || '?')[0].toUpperCase();
   avatar.style.background = avatarColor || 'var(--dimmed)';
 
-  // Read status from the live DOM (same approach as openEditTask)
   const card = btn.closest('.kanban-task');
   const status = card?.closest('.kanban-tasks')?.dataset.status || '';
   document.getElementById('fs-status').textContent = status;
 
-  // Render markdown description via marked + DOMPurify (both already loaded)
   const descEl = document.getElementById('fs-desc');
   if (desc && typeof marked !== 'undefined') {
     const raw = marked.parse(desc);
@@ -301,17 +321,15 @@ function openFullscreen(btn, id, title, desc, who, when, avatarColor) {
     descEl.textContent = desc || '(pas de description)';
   }
 
-  // Wire the "Editer" button to open the edit modal and close fullscreen
   document.getElementById('fs-edit-btn').onclick = function () {
     closeFullscreen();
     openEditTask(btn, id, title, desc, who, when);
   };
-
-  document.getElementById('task-fullscreen').style.display = 'flex';
 }
 
 function closeFullscreen() {
   document.getElementById('task-fullscreen').style.display = 'none';
+  document.body.style.overflow = ''; // #169: restore background scroll
 }
 
 // Close fullscreen on Escape key

@@ -23,17 +23,9 @@ with the package and printed by `ken help`.
    pre-existing failure shows up in an unrelated area, confirm it is
    not caused by your change before proceeding.
 
-4. **Move to REVIEW, not done.** Once the work is ready for the user
-   to look at:
-
-       ken move <id> --to review
-
-   Do **not** mark a task `done` yourself. That is the user's call
-   after review.
-
-5. **Append a resolution block** to the task description so the board
-   accumulates an audit trail (commit messages alone are not enough —
-   not every task maps 1:1 to a commit):
+4. **Update the task description BEFORE moving to review.** Append a
+   resolution block so the board accumulates an audit trail (commit
+   messages alone are not enough — not every task maps 1:1 to a commit):
 
        ken update <id> --desc "<original>\n\n---\n\n## Résolution\n..."
 
@@ -42,6 +34,13 @@ with the package and printed by `ken help`.
    - **Modifications** — file paths + a one-line summary each
    - **Comportements obtenus** — what now works that did not before
    - **Garde-fous** — which gates ran and their result
+
+5. **Then move to REVIEW.**
+
+       ken move <id> --to review
+
+   Do **not** mark a task `done` yourself. That is the user's call
+   after review.
 
 ## Statuses and ownership
 
