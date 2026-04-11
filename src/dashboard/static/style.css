@@ -256,14 +256,12 @@ body {
  * drag-and-drop (#161). Same pattern as .cat-drag-handle. */
 .task-drag-handle {
   display: none;
-  font-size: 14px;
+  font-size: 12px;
   color: var(--dimmed);
   cursor: grab;
-  padding: 2px 6px;
+  padding: 0 4px 0 0;
   touch-action: none;
-  position: absolute;
-  top: 4px;
-  left: 4px;
+  flex-shrink: 0;
 }
 .task-drag-handle:active { cursor: grabbing; }
 
@@ -802,7 +800,6 @@ body {
   /* flow-root contains the floated .task-right (in detail mode) so the
    * card height grows with the float instead of collapsing. */
   display: flow-root;
-  position: relative;
 }
 .kanban-task .task-title-row {
   display: flex;

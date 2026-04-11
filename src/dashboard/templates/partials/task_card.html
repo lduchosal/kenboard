@@ -22,9 +22,9 @@
     <div class="task-avatar" style="background:{{ avatar_color }}" title="{{ who }}">{{ initials }}</div>
     {% if when_str %}<div class="task-when">{{ when_str }}</div>{% endif %}
   </div>
-  <span class="task-drag-handle" title="Drag">&#x2630;</span>
   <div class="task-body">
     <div class="task-title-row">
+      <span class="task-drag-handle" title="Drag">&#x2630;</span>
       <span class="task-title">{{ t.title }}</span>
       <span class="task-id">#{{ t.get('id', '') }}</span>
     </div>
