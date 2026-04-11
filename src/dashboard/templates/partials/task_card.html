@@ -17,6 +17,7 @@
      of the card, below the float, so it always sits flush at the
      bottom regardless of how short the description is. #}
   <div class="task-right">
+    <button class="btn-edit btn-fullscreen detail-only" onclick="event.stopPropagation();openFullscreen(this,'{{ t.get('id', '') }}','{{ t.title | jsesc }}','{{ desc | jsesc }}','{{ who_raw | jsesc }}','{{ when_str }}','{{ avatar_color }}')">&#x2922;</button>
     <div class="task-id-detail">#{{ t.get('id', '') }}</div>
     <div class="task-avatar" style="background:{{ avatar_color }}" title="{{ who }}">{{ initials }}</div>
     {% if when_str %}<div class="task-when">{{ when_str }}</div>{% endif %}
@@ -29,7 +30,6 @@
     {% if desc %}<div class="task-desc">{{ desc }}</div>{% endif %}
   </div>
   <div class="task-actions detail-only">
-    <button class="btn-edit btn-fullscreen" onclick="event.stopPropagation();openFullscreen(this,'{{ t.get('id', '') }}','{{ t.title | jsesc }}','{{ desc | jsesc }}','{{ who_raw | jsesc }}','{{ when_str }}','{{ avatar_color }}')">&#x2922;</button>
     <button class="btn-edit" onclick="event.stopPropagation();openEditTask(this,'{{ t.get('id', '') }}','{{ t.title | jsesc }}','{{ desc | jsesc }}','{{ who_raw | jsesc }}','{{ when_str }}')">Editer</button>
   </div>
 </div>
