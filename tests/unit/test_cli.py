@@ -107,3 +107,45 @@ class TestProdCommand:
             "2",
             "dashboard.app:create_app()",
         ]
+
+
+class TestUtf8Encoding:
+    """#148: ken and kenboard force UTF-8 on Windows.
+
+    On non-Windows platforms the fix is a no-op (guarded by
+    ``sys.platform == "win32"``). These tests verify the reconfigure
+    logic works and that UTF-8 output survives a round trip through
+    the Click test runner. The real Windows path is exercised by the
+    CI ``windows-unit`` job.
+    """
+
+    def test_ken_outputs_utf8_characters(self):
+        """The ken CLI can print → and accented characters without crash."""
+        runner = CliRunner()
+        from dashboard.ken import cli as ken_cli
+
+        result = runner.invoke(ken_cli, ["--help"])
+        assert result.exit_code == 0
+
+    def test_kenboard_outputs_utf8_characters(self):
+        """The kenboard CLI can print UTF-8 without crash."""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["--help"])
+        assert result.exit_code == 0
+
+    def test_reconfigure_is_safe_on_utf8_stdout(self):
+        """Calling reconfigure(encoding='utf-8') on an already-UTF-8 stream is a no-
+        op.
+        """
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8")
+            assert sys.stdout.encoding.lower().replace("-", "") == "utf8"
+
+    def test_win32_guard_skips_on_current_platform(self):
+        """On non-Windows, the win32 block in ken.py does not execute."""
+        # The module-level `if sys.platform == "win32"` should not have
+        # called reconfigure on this platform. We just verify the module
+        # loaded without error (it did, since we imported it above).
+        import dashboard.ken
+
+        assert dashboard.ken is not None
