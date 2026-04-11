@@ -318,12 +318,19 @@ class TestTaskCRUD:
         page.reload()
 
     def _open_task_edit_modal(self, page: Page) -> None:
-        """Helper: click a task to enter detail mode then click its edit button."""
+        """Helper: click a task to enter detail mode then click its edit button.
+
+        The selector explicitly excludes ``.btn-fullscreen`` (#155) which
+        also has ``.btn-edit`` for visual styling but opens the fullscreen
+        modal instead of the edit modal.
+        """
         page.click(".kanban-task")
-        page.locator(".kanban-task.detail-mode .btn-edit").first.wait_for(
-            state="visible"
-        )
-        page.locator(".kanban-task.detail-mode .btn-edit").first.click()
+        page.locator(
+            ".kanban-task.detail-mode .btn-edit:not(.btn-fullscreen)"
+        ).first.wait_for(state="visible")
+        page.locator(
+            ".kanban-task.detail-mode .btn-edit:not(.btn-fullscreen)"
+        ).first.click()
         page.locator("#task-modal").wait_for(state="visible")
 
     def test_edit_task(self, live_server, clean_db, page: Page):
@@ -424,12 +431,7 @@ class TestTaskCRUD:
         page.reload()
 
         # Open it for editing — `who` is empty, default_who=Bob should kick in
-        page.click(".kanban-task")
-        page.locator(".kanban-task.detail-mode .btn-edit").first.wait_for(
-            state="visible"
-        )
-        page.locator(".kanban-task.detail-mode .btn-edit").first.click()
-        page.locator("#task-modal").wait_for(state="visible")
+        self._open_task_edit_modal(page)
         expect(page.locator("#task-modal-who")).to_have_value("Bob")
 
     def test_edit_modal_keeps_existing_who(self, live_server, clean_db, page: Page):
@@ -460,12 +462,7 @@ class TestTaskCRUD:
         page.reload()
 
         # Open it: who must stay Alice, NOT switch to Bob (the project default)
-        page.click(".kanban-task")
-        page.locator(".kanban-task.detail-mode .btn-edit").first.wait_for(
-            state="visible"
-        )
-        page.locator(".kanban-task.detail-mode .btn-edit").first.click()
-        page.locator("#task-modal").wait_for(state="visible")
+        self._open_task_edit_modal(page)
         expect(page.locator("#task-modal-who")).to_have_value("Alice")
 
     def test_project_default_who_prefills_task_modal(
