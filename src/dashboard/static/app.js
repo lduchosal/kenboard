@@ -272,6 +272,52 @@ function copyOnboardLink(btn, catId, projectId) {
   }
 }
 
+// -- Fullscreen task view (#155) ----------------------------------------------
+
+function openFullscreen(btn, id, title, desc, who, when, avatarColor) {
+  document.getElementById('fs-id').textContent = '#' + id;
+  document.getElementById('fs-title').textContent = title;
+  document.getElementById('fs-who').textContent = who || '—';
+  document.getElementById('fs-when').textContent = when || '';
+
+  const avatar = document.getElementById('fs-avatar');
+  avatar.textContent = (who || '?')[0].toUpperCase();
+  avatar.style.background = avatarColor || 'var(--dimmed)';
+
+  // Read status from the live DOM (same approach as openEditTask)
+  const card = btn.closest('.kanban-task');
+  const status = card?.closest('.kanban-tasks')?.dataset.status || '';
+  document.getElementById('fs-status').textContent = status;
+
+  // Render markdown description via marked + DOMPurify (both already loaded)
+  const descEl = document.getElementById('fs-desc');
+  if (desc && typeof marked !== 'undefined') {
+    const raw = marked.parse(desc);
+    descEl.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(raw) : raw;
+  } else {
+    descEl.textContent = desc || '(pas de description)';
+  }
+
+  // Wire the "Editer" button to open the edit modal and close fullscreen
+  document.getElementById('fs-edit-btn').onclick = function () {
+    closeFullscreen();
+    openEditTask(btn, id, title, desc, who, when);
+  };
+
+  document.getElementById('task-fullscreen').style.display = 'flex';
+}
+
+function closeFullscreen() {
+  document.getElementById('task-fullscreen').style.display = 'none';
+}
+
+// Close fullscreen on Escape key
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && document.getElementById('task-fullscreen').style.display === 'flex') {
+    closeFullscreen();
+  }
+});
+
 // -- Task CRUD ---------------------------------------------------------------
 
 function toggleDetail(el, event) {

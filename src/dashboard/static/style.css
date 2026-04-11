@@ -472,6 +472,107 @@ body {
 .modal-close:hover {
   color: var(--text);
 }
+
+/* -- Fullscreen task modal (#155) -- */
+.fullscreen-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+.fullscreen-card {
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+  padding: 32px 36px;
+  width: 90vw;
+  max-width: 860px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+.fullscreen-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.fullscreen-id {
+  font-size: 12px;
+  color: var(--dimmed);
+  font-weight: 600;
+}
+.fullscreen-status {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--dimmed);
+  background: var(--bg);
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+.fullscreen-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  line-height: 1.3;
+}
+.fullscreen-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+.fullscreen-desc {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  min-height: 120px;
+}
+.fullscreen-desc h1, .fullscreen-desc h2, .fullscreen-desc h3 {
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+.fullscreen-desc pre {
+  background: var(--bg);
+  border-radius: 4px;
+  padding: 12px;
+  overflow-x: auto;
+  font-size: 12px;
+}
+.fullscreen-desc code {
+  background: var(--bg);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 12px;
+}
+.fullscreen-desc ul, .fullscreen-desc ol {
+  padding-left: 20px;
+}
+.fullscreen-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 640px) {
+  .fullscreen-card {
+    width: 98vw;
+    padding: 20px;
+    border-radius: 6px;
+  }
+  .fullscreen-title {
+    font-size: 18px;
+  }
+}
+
 .project-add-card h3 {
   font-size: 14px;
   margin-bottom: 18px;

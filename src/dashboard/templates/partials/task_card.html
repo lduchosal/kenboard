@@ -29,6 +29,7 @@
     {% if desc %}<div class="task-desc">{{ desc }}</div>{% endif %}
   </div>
   <div class="task-actions detail-only">
+    <button class="btn-edit" onclick="event.stopPropagation();openFullscreen(this,'{{ t.get('id', '') }}','{{ t.title | jsesc }}','{{ desc | jsesc }}','{{ who_raw | jsesc }}','{{ when_str }}','{{ avatar_color }}')">&#x2922;</button>
     <button class="btn-edit" onclick="event.stopPropagation();openEditTask(this,'{{ t.get('id', '') }}','{{ t.title | jsesc }}','{{ desc | jsesc }}','{{ who_raw | jsesc }}','{{ when_str }}')">Editer</button>
   </div>
 </div>
