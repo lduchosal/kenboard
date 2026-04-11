@@ -1245,7 +1245,6 @@ button.cat-card-add {
   flex-shrink: 0;
 }
 .board-cat-name {
-  flex: 1;
 }
 .board-drag-handle {
   cursor: grab;
