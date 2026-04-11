@@ -44,6 +44,11 @@ body {
 }
 .header h1 { font-size: 16px; font-weight: 700; }
 .header .meta { color: var(--dimmed); font-size: 11px; }
+.header-add-project {
+  font-size: 11px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
 .header-version {
   font-size: 10px;
   color: var(--dimmed);
