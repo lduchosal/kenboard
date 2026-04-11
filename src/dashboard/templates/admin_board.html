@@ -16,7 +16,7 @@
         <button class="btn-edit" onclick="editCategory('{{ cat.id }}','{{ cat.name | jsesc }}','{{ cat.color | jsesc }}')">Editer</button>
       </div>
       <div class="board-projects" data-cat-id="{{ cat.id }}">
-        {% for p in all_projects if p.cat == cat.id %}
+        {% for p in all_projects if p.cat_id == cat.id %}
         <div class="board-project" data-project-id="{{ p.id }}" data-cat-id="{{ cat.id }}">
           <span class="board-drag-handle" title="Drag">&#x2630;</span>
           <span class="board-project-acronym">{{ p.acronym or p.name[:4] | upper }}</span>
