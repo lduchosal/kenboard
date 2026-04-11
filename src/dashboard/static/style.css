@@ -251,6 +251,22 @@ body {
 }
 .cat-drag-handle:active { cursor: grabbing; }
 
+/* Task drag handle — hidden on desktop (full card is draggable), shown
+ * on mobile so the user can scroll without accidentally triggering
+ * drag-and-drop (#161). Same pattern as .cat-drag-handle. */
+.task-drag-handle {
+  display: none;
+  font-size: 14px;
+  color: var(--dimmed);
+  cursor: grab;
+  padding: 2px 6px;
+  touch-action: none;
+  position: absolute;
+  top: 4px;
+  left: 4px;
+}
+.task-drag-handle:active { cursor: grabbing; }
+
 .cat-kpis { display: flex; gap: 16px; margin-left: auto; }
 .cat-kpi { text-align: center; }
 .cat-kpi .value { font-size: 20px; font-weight: 700; }
@@ -786,6 +802,7 @@ body {
   /* flow-root contains the floated .task-right (in detail mode) so the
    * card height grows with the float instead of collapsing. */
   display: flow-root;
+  position: relative;
 }
 .kanban-task .task-title-row {
   display: flex;
@@ -1459,6 +1476,11 @@ button.cat-card-add {
    * by Sortable taking over the whole card. The handle is the only
    * draggable area in mobile mode (cf. js/Sortable handle option). */
   .cat-drag-handle {
+    display: inline-block;
+  }
+  /* Same pattern for task cards: show the drag handle so scroll works
+   * on touch devices without accidentally triggering drag-and-drop (#161). */
+  .task-drag-handle {
     display: inline-block;
   }
 }
