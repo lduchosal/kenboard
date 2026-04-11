@@ -117,22 +117,25 @@ with `ken init <project-id>`, which writes `.ken` (mode 0600) and adds it to
 
 ```sh
 ken list --who Claude --status doing   # always use native filters
-ken show <id> --json
+ken show <id>                          # human-readable by default
 ken add "Title" --desc "..." --who Claude --status todo --json
-ken update <id> --status review --json
+ken update <id> --status review
 ken move <id> --to doing
 ken done <id>
 ```
 
-Statuses: `todo` | `doing` | `review` | `done`. Use `--json` whenever
-parsing the output. The `ken` binary uses only the stdlib for HTTP — do not
-add `requests`/`httpx` as a runtime dep just for it.
+Statuses: `todo` | `doing` | `review` | `done`. Prefer the human-readable
+output (no `--json`) for `list` and `show` — the text format is compact and
+directly readable. Only add `--json` when you need to capture a value as
+input to another command (e.g. `ken add --json` to get the new task ID).
+The `ken` binary uses only the stdlib for HTTP — do not add
+`requests`/`httpx` as a runtime dep just for it.
 
 ### Working a task off the board
 
 When the user asks Claude to pick up a kenboard task, follow this loop:
 
-1. `ken list --who Claude --status todo --json` to see the queue. Pick one,
+1. `ken list --who Claude --status todo` to see the queue. Pick one,
    announce the choice and why.
 2. `ken move <id> --to doing` *before* starting the implementation, so the
    board reflects WIP and other agents/humans don't grab the same card.

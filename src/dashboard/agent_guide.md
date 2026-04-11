@@ -10,7 +10,7 @@ with the package and printed by `ken help`.
    based on its title + description. Announce the choice and the reason
    in chat *before* doing anything else:
 
-       ken list --who <YourName> --status todo --json
+       ken list --who <YourName> --status todo
 
 2. **Mark it WIP before starting.** Move the chosen task to `doing` so
    the board reflects work-in-progress and other agents/humans don't
@@ -50,22 +50,25 @@ with the package and printed by `ken help`.
 The agent owns transitions `todo → doing → review`. The user owns the
 `review → done` transition.
 
-## Filters and parsing
+## Filters and output
 
-Always use the native filters; never pipe `ken list --json` through
-jq, awk, or Python:
+Always use the native filters; never pipe through jq, awk, or Python:
 
-    ken list --who Claude --status doing --json   # good
-    ken list --json | jq '.[] | select(...)'      # bad
+    ken list --who Claude --status doing   # good — human-readable table
+    ken list --json | jq '.[] | ...'       # bad — verbose and pointless
 
-Always pass `--json` when parsing the output programmatically.
+**Use the human-readable output by default.** The text format from
+`ken list` (aligned table) and `ken show` (key-value pairs) is compact
+and directly readable by an LLM — no post-processing needed. Only add
+`--json` when you need machine-parseable output as input to another
+command (e.g. `ken add --json` to capture the created task ID).
 
 ## Quick reference
 
-    ken list --who Claude --status todo --json
-    ken show <id> --json
+    ken list --who Claude --status todo
+    ken show <id>
     ken add "Title" --desc "..." --who Claude --status todo --json
-    ken update <id> --status review --json
+    ken update <id> --status review
     ken update <id> --desc "<original>\n\n---\n\n## Résolution\n..."
     ken move <id> --to doing
     ken done <id>          # avoid; let the user mark done after review

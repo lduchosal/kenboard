@@ -1,11 +1,11 @@
+# KENBOARD
+
+> **Un kanban pour les BOT.**
+
 <table>
 <tr>
-<td width="200" align="center">
+<td width="33%" align="center">
 <img src="./logo.svg" alt="kenboard logo" width="160">
-<br><br>
-<strong>KENBOARD</strong>
-<br>
-<em>Un kanban pour les BOT.</em>
 </td>
 <td>
 
