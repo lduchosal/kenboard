@@ -189,6 +189,19 @@ def admin_keys() -> Any:
     return render_template("admin_keys.html", **ctx)
 
 
+@bp.route("/admin/board", methods=["GET"])
+@login_required
+def admin_board() -> Any:
+    """Serve the category/project management admin page (#162)."""
+    admin_required()
+    data = _load_all_data()
+    ctx = _build_context(data, prefix="/")
+    ctx["title"] = "KEN / Board"
+    ctx["all_categories"] = data["categories"]
+    ctx["all_projects"] = data["all_projects"]
+    return render_template("admin_board.html", **ctx)
+
+
 @bp.route("/cat/<cat_id>.html", methods=["GET"])
 @login_required
 def category(cat_id: str) -> Any:

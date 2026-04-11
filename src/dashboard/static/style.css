@@ -1216,6 +1216,80 @@ button.cat-card-add {
   border-color: var(--accent);
 }
 
+/* -- Admin board (#162) -- */
+.board-admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.board-cat {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  overflow: hidden;
+}
+.board-cat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 13px;
+}
+.board-cat-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.board-cat-name {
+  flex: 1;
+}
+.board-drag-handle {
+  cursor: grab;
+  color: var(--dimmed);
+  font-size: 14px;
+  padding: 0 4px;
+  touch-action: none;
+}
+.board-drag-handle:active { cursor: grabbing; }
+.board-projects {
+  display: flex;
+  flex-direction: column;
+  min-height: 24px;
+}
+.board-project {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 28px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.board-project:last-child {
+  border-bottom: none;
+}
+.board-project-acronym {
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--accent);
+  min-width: 40px;
+}
+.board-project-name {
+  flex: 1;
+}
+.board-project-status {
+  font-size: 10px;
+  color: var(--dimmed);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.board-project-status.archived {
+  color: var(--red);
+}
+
 /* -- Login page -- */
 .login-body {
   display: flex;

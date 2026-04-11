@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block body %}
+{% include "partials/header.html" %}
+
+<div class="section" style="padding-top:0">
+  <div class="section-title"><span>Gestion du board</span></div>
+
+  <div id="board-admin-list" class="board-admin-list">
+    {% for cat in all_categories %}
+    <div class="board-cat" data-cat-id="{{ cat.id }}">
+      <div class="board-cat-header">
+        <span class="board-drag-handle" title="Drag">&#x2630;</span>
+        <span class="board-cat-color" style="background:{{ cat.color }}"></span>
+        <span class="board-cat-name">{{ cat.name }}</span>
+        <button class="btn-edit" onclick="editCategory('{{ cat.id }}','{{ cat.name | jsesc }}','{{ cat.color | jsesc }}')">Editer</button>
+      </div>
+      <div class="board-projects" data-cat-id="{{ cat.id }}">
+        {% for p in all_projects if p.cat == cat.id %}
+        <div class="board-project" data-project-id="{{ p.id }}" data-cat-id="{{ cat.id }}">
+          <span class="board-drag-handle" title="Drag">&#x2630;</span>
+          <span class="board-project-acronym">{{ p.acronym or p.name[:4] | upper }}</span>
+          <span class="board-project-name">{{ p.name }}</span>
+          <span class="board-project-status {{ 'archived' if p.get('status') == 'archived' else '' }}">{{ p.get('status', 'active') }}</span>
+          <button class="btn-edit" onclick="editProject('{{ p.id }}','{{ p.name | jsesc }}','{{ (p.acronym or '') | jsesc }}','{{ cat.id }}','{{ p.get('status', 'active') }}','{{ p.get('default_who', '') | jsesc }}')">Editer</button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div style="margin-top:16px;display:flex;gap:8px">
+    <button type="button" class="btn btn-save" onclick="editCategory('','','')">+ Cat&eacute;gorie</button>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block modals %}
+{% include "modals/category.html" %}
+{% set cat_id = '' %}
+{% include "modals/project.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// -- Drag & drop categories --------------------------------------------------
+const boardList = document.getElementById('board-admin-list');
+if (boardList) {
+  new Sortable(boardList, {
+    animation: 150,
+    handle: '.board-cat-header .board-drag-handle',
+    draggable: '.board-cat',
+    ghostClass: 'task-ghost',
+    onEnd: (evt) => {
+      apiCall('/api/v1/categories/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: evt.oldIndex, to: evt.newIndex }),
+      }).catch(() => {});
+    }
+  });
+}
+
+// -- Drag & drop projects (within and between categories) ---------------------
+document.querySelectorAll('.board-projects').forEach(container => {
+  new Sortable(container, {
+    group: 'board-projects',
+    animation: 150,
+    handle: '.board-drag-handle',
+    draggable: '.board-project',
+    ghostClass: 'task-ghost',
+    onEnd: (evt) => {
+      const projectId = evt.item.dataset.projectId;
+      const newCatId = evt.to.dataset.catId;
+      if (!projectId) return;
+      // Collect the new project order in the target category
+      const project_order = [...evt.to.querySelectorAll('.board-project')].map(el => el.dataset.projectId);
+      // Update the project's category + reorder
+      apiCall('/api/v1/projects/' + projectId, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cat: newCatId, project_order }),
+      }).catch(() => {});
+    }
+  });
+});
+</script>
+{% endblock %}
