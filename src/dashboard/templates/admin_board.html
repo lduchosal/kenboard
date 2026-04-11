@@ -4,7 +4,10 @@
 {% include "partials/header.html" %}
 
 <div class="section" style="padding-top:0">
-  <div class="section-title"><span>Gestion du board</span></div>
+  <div class="section-title">
+    <span>Gestion du board</span>
+    <button type="button" class="btn-edit section-onboard-btn" onclick="editCat('','','')">+ Cat&eacute;gorie</button>
+  </div>
 
   <div id="board-admin-list" class="board-admin-list">
     {% for cat in all_categories %}
@@ -30,9 +33,6 @@
     {% endfor %}
   </div>
 
-  <div style="margin-top:16px;display:flex;gap:8px">
-    <button type="button" class="btn btn-save" onclick="editCat('','','')">+ Cat&eacute;gorie</button>
-  </div>
 </div>
 
 {% endblock %}
