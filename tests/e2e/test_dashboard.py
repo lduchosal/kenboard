@@ -59,7 +59,9 @@ class TestCategoryCRUD:
         page.wait_for_timeout(500)
         page.reload()
 
-        page.locator(".board-cat-header .btn-edit:not(.section-onboard-btn)").first.click()
+        page.locator(
+            ".board-cat-header .btn-edit:not(.section-onboard-btn)"
+        ).first.click()
         page.locator("#cat-modal").wait_for(state="visible")
         page.fill("#cat-modal-name", "New Name")
         page.click("#cat-modal .btn-save")
@@ -77,7 +79,9 @@ class TestCategoryCRUD:
         page.wait_for_timeout(500)
         page.reload()
 
-        page.locator(".board-cat-header .btn-edit:not(.section-onboard-btn)").first.click()
+        page.locator(
+            ".board-cat-header .btn-edit:not(.section-onboard-btn)"
+        ).first.click()
         page.locator("#cat-modal").wait_for(state="visible")
         page.click("#cat-modal-delete")
         page.locator("#confirm-modal").wait_for(state="visible")
