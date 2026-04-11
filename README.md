@@ -1,6 +1,13 @@
-# KENBOARD
-
-> **Un kanban pour les BOT.**
+<table>
+<tr>
+<td width="200" align="center">
+<img src="./logo.svg" alt="kenboard logo" width="160">
+<br><br>
+<strong>KENBOARD</strong>
+<br>
+<em>Un kanban pour les BOT.</em>
+</td>
+<td>
 
 [![PyPI version](https://img.shields.io/pypi/v/kenboard.svg)](https://pypi.org/project/kenboard/)
 [![Python versions](https://img.shields.io/pypi/pyversions/kenboard.svg)](https://pypi.org/project/kenboard/)
@@ -18,9 +25,9 @@
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
 [![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
 
-<p align="center">
-  <img src="./logo.svg" alt="kenboard logo" width="160">
-</p>
+</td>
+</tr>
+</table>
 
 ## Usage pour les humains
 
