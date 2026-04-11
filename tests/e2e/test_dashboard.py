@@ -29,81 +29,62 @@ class TestDashboardLoads:
         expect(badge).to_be_visible()
         expect(badge).to_have_text(f"v{__version__}")
 
-    def test_cat_drag_handle_present(self, live_server, clean_db, page: Page):
-        """#28: each category card has a `.cat-drag-handle` element used as the only
-        draggable area in mobile mode (hidden by CSS on desktop).
-        """
-        # Seed a category so the grid has at least one card
-        page.goto(live_server)
-        page.click(".cat-card-add")
-        page.fill("#cat-modal-name", "Tech")
-        page.click("#cat-modal .btn-save")
-        page.wait_for_timeout(500)
-        page.reload()
-        # Handle exists in DOM (desktop hides it via CSS, mobile shows it)
-        expect(page.locator(".cat-card .cat-drag-handle")).to_have_count(1)
-
-    def test_add_category_button(self, live_server, clean_db, page: Page):
-        """Add category card is visible."""
-        page.goto(live_server)
-        expect(page.locator(".cat-card-add")).to_be_visible()
+    def test_add_category_via_admin(self, live_server, clean_db, page: Page):
+        """#162: categories are managed via /admin/board."""
+        page.goto(live_server + "/admin/board")
+        expect(page.locator(".section-onboard-btn")).to_be_visible()
 
 
 class TestCategoryCRUD:
-    """Test category create, edit, delete via UI."""
+    """Test category create, edit, delete via /admin/board (#162)."""
 
     def test_create_category(self, live_server, clean_db, page: Page):
-        """Create a category via the modal."""
-        page.goto(live_server)
-        page.click(".cat-card-add")
+        """Create a category via admin board."""
+        page.goto(live_server + "/admin/board")
+        page.locator(".section-title .section-onboard-btn").click()
+        page.locator("#cat-modal").wait_for(state="visible")
         page.fill("#cat-modal-name", "Technique")
         page.click("#cat-modal .btn-save")
         page.wait_for_timeout(500)
         page.reload()
-        expect(page.locator(".cat-name")).to_have_text("Technique")
+        expect(page.locator(".board-cat-name")).to_contain_text("Technique")
 
     def test_edit_category(self, live_server, clean_db, page: Page):
-        """Edit a category name."""
-        # Create first
-        page.goto(live_server)
-        page.click(".cat-card-add")
+        """Edit a category name via admin board."""
+        page.goto(live_server + "/admin/board")
+        page.locator(".section-title .section-onboard-btn").click()
+        page.locator("#cat-modal").wait_for(state="visible")
         page.fill("#cat-modal-name", "Old Name")
         page.click("#cat-modal .btn-save")
         page.wait_for_timeout(500)
         page.reload()
 
-        # Edit — hover to reveal button, then click
-        page.locator(".cat-card").first.hover()
-        page.locator(".cat-edit-btn").first.wait_for(state="visible")
-        page.locator(".cat-edit-btn").first.click()
+        page.locator(".board-cat-header .btn-edit:not(.section-onboard-btn)").first.click()
+        page.locator("#cat-modal").wait_for(state="visible")
         page.fill("#cat-modal-name", "New Name")
         page.click("#cat-modal .btn-save")
         page.wait_for_timeout(500)
         page.reload()
-        expect(page.locator(".cat-name")).to_have_text("New Name")
+        expect(page.locator(".board-cat-name")).to_contain_text("New Name")
 
     def test_delete_category(self, live_server, clean_db, page: Page):
-        """Delete a category via the modal + confirm dialog."""
-        # Create first
-        page.goto(live_server)
-        page.click(".cat-card-add")
+        """Delete a category via admin board."""
+        page.goto(live_server + "/admin/board")
+        page.locator(".section-title .section-onboard-btn").click()
+        page.locator("#cat-modal").wait_for(state="visible")
         page.fill("#cat-modal-name", "ToDelete")
         page.click("#cat-modal .btn-save")
         page.wait_for_timeout(500)
         page.reload()
 
-        # Open edit modal
-        page.locator(".cat-card").first.hover()
-        page.locator(".cat-edit-btn").first.wait_for(state="visible")
-        page.locator(".cat-edit-btn").first.click()
-
-        # Trigger delete -> confirm
+        page.locator(".board-cat-header .btn-edit:not(.section-onboard-btn)").first.click()
+        page.locator("#cat-modal").wait_for(state="visible")
         page.click("#cat-modal-delete")
         page.locator("#confirm-modal").wait_for(state="visible")
         page.click("#confirm-modal-ok")
         page.wait_for_timeout(500)
         page.reload()
-        expect(page.locator(".cat-card:not(.cat-card-add)")).to_have_count(0)
+        expect(page.locator(".board-cat")).to_have_count(0)
 
 
 class TestCategoryDetail:
@@ -111,92 +92,87 @@ class TestCategoryDetail:
 
     def test_navigate_to_detail(self, live_server, clean_db, page: Page):
         """Click a category card to navigate to detail."""
-        # Create category
+        _create_category_via_admin(live_server, page)
         page.goto(live_server)
-        page.click(".cat-card-add")
-        page.fill("#cat-modal-name", "Tech")
-        page.click("#cat-modal .btn-save")
-        page.wait_for_timeout(500)
-        page.reload()
-
-        # Navigate
         page.click(".cat-card")
         page.wait_for_url("**/cat/**")
         expect(page).to_have_title("KEN / Tech")
 
     def test_add_project(self, live_server, clean_db, page: Page):
-        """Create a project in the category detail."""
-        # Create category
-        page.goto(live_server)
-        page.click(".cat-card-add")
-        page.fill("#cat-modal-name", "Tech")
-        page.click("#cat-modal .btn-save")
-        page.wait_for_timeout(500)
-        page.reload()
-
-        # Navigate to detail
-        page.click(".cat-card")
-        page.wait_for_url("**/cat/**")
-
-        # Add project
-        page.click(".cat-card-add")
-        page.fill("#new-proj-name", "Mon Projet")
-        page.fill("#new-proj-acronym", "PROJ")
-        page.click("#project-modal .btn-save")
-        page.wait_for_timeout(500)
-        page.reload()
+        """Create a project via admin board, verify on category page."""
+        _create_category_and_project(live_server, page)
         expect(page.locator(".section-title")).to_contain_text("PROJ")
 
 
+def _create_category_via_admin(live_server, page: Page) -> None:
+    """Helper: create a category via /admin/board."""
+    page.goto(live_server + "/admin/board")
+    page.locator(".section-title .section-onboard-btn").click()
+    page.fill("#cat-modal-name", "Tech")
+    page.click("#cat-modal .btn-save")
+    page.wait_for_timeout(500)
+
+
 def _create_category_and_project(live_server, page: Page) -> None:
-    """Helper: create a category, navigate to its detail page, add a project."""
-    page.goto(live_server)
-    page.click(".cat-card-add")
+    """Helper: create a category + project via /admin/board, then navigate to the category page."""
+    # Create category via admin board
+    page.goto(live_server + "/admin/board")
+    page.click(".section-onboard-btn")  # "+ Catégorie"
     page.fill("#cat-modal-name", "Tech")
     page.click("#cat-modal .btn-save")
     page.wait_for_timeout(500)
     page.reload()
 
-    page.click(".cat-card")
-    page.wait_for_url("**/cat/**")
-
-    page.click(".cat-card-add")
+    # Create project via admin board
+    page.locator(".board-cat-header .section-onboard-btn").first.click()  # "+ Projet"
     page.fill("#new-proj-name", "Projet")
     page.fill("#new-proj-acronym", "PROJ")
     page.click("#project-modal .btn-save")
     page.wait_for_timeout(500)
-    page.reload()
+
+    # Navigate to the category detail page
+    page.goto(live_server)
+    page.click(".cat-card")
+    page.wait_for_url("**/cat/**")
 
 
 class TestProjectCRUD:
     """Test project edit and delete via UI."""
 
     def test_edit_project(self, live_server, clean_db, page: Page):
-        """Edit a project's name and acronym."""
+        """Edit a project's name and acronym via admin board."""
         _create_category_and_project(live_server, page)
 
-        # Open the project editor via the section edit button
-        page.locator(".section-title").first.hover()
-        page.locator(".section-edit-btn").first.click()
+        # Open the project editor via admin board
+        page.goto(live_server + "/admin/board")
+        page.locator(".board-project .btn-edit").first.click()
         page.fill("#new-proj-name", "Projet Modifie")
         page.fill("#new-proj-acronym", "MOD")
         page.click("#project-modal .btn-save")
         page.wait_for_timeout(500)
-        page.reload()
+
+        # Verify on category page
+        page.goto(live_server)
+        page.click(".cat-card")
+        page.wait_for_url("**/cat/**")
         expect(page.locator(".section-title").first).to_contain_text("MOD")
         expect(page.locator(".section-title").first).to_contain_text("Projet Modifie")
 
     def test_delete_project(self, live_server, clean_db, page: Page):
-        """Delete an empty project via the modal + confirm dialog."""
+        """Delete an empty project via admin board."""
         _create_category_and_project(live_server, page)
 
-        page.locator(".section-title").first.hover()
-        page.locator(".section-edit-btn").first.click()
+        page.goto(live_server + "/admin/board")
+        page.locator(".board-project .btn-edit").first.click()
         page.click("#proj-modal-delete")
         page.locator("#confirm-modal").wait_for(state="visible")
         page.click("#confirm-modal-ok")
         page.wait_for_timeout(500)
-        page.reload()
+
+        # Verify on category page
+        page.goto(live_server)
+        page.click(".cat-card")
+        page.wait_for_url("**/cat/**")
         expect(page.locator(".section-title")).to_have_count(0)
 
 
@@ -409,13 +385,18 @@ class TestTaskCRUD:
 
         _create_category_and_project(live_server, page)
 
-        # Set default_who = Bob on the project
-        page.locator(".section-title").first.hover()
-        page.locator(".section-edit-btn").first.click()
+        # Set default_who = Bob on the project via admin board
+        page.goto(live_server + "/admin/board")
+        page.locator(".board-project .btn-edit").first.click()
+        page.locator("#project-modal").wait_for(state="visible")
         page.select_option("#new-proj-default-who", "Bob")
         page.click("#project-modal .btn-save")
         page.wait_for_timeout(500)
-        page.reload()
+
+        # Go back to the category page
+        page.goto(live_server)
+        page.click(".cat-card")
+        page.wait_for_url("**/cat/**")
 
         # Create a task WITHOUT a who (clear the dropdown)
         page.click(".kanban-add-btn")
@@ -446,12 +427,17 @@ class TestTaskCRUD:
             page.wait_for_timeout(400)
 
         _create_category_and_project(live_server, page)
-        page.locator(".section-title").first.hover()
-        page.locator(".section-edit-btn").first.click()
+        page.goto(live_server + "/admin/board")
+        page.locator(".board-project .btn-edit").first.click()
+        page.locator("#project-modal").wait_for(state="visible")
         page.select_option("#new-proj-default-who", "Bob")
         page.click("#project-modal .btn-save")
         page.wait_for_timeout(500)
-        page.reload()
+
+        # Go back to the category page
+        page.goto(live_server)
+        page.click(".cat-card")
+        page.wait_for_url("**/cat/**")
 
         # Create a task explicitly assigned to Alice
         page.click(".kanban-add-btn")
@@ -485,13 +471,18 @@ class TestTaskCRUD:
         # Setup project
         _create_category_and_project(live_server, page)
 
-        # Edit the project, set default_who = Bob
-        page.locator(".section-title").first.hover()
-        page.locator(".section-edit-btn").first.click()
+        # Edit the project, set default_who = Bob via admin board
+        page.goto(live_server + "/admin/board")
+        page.locator(".board-project .btn-edit").first.click()
+        page.locator("#project-modal").wait_for(state="visible")
         page.select_option("#new-proj-default-who", "Bob")
         page.click("#project-modal .btn-save")
         page.wait_for_timeout(500)
-        page.reload()
+
+        # Go back to the category page
+        page.goto(live_server)
+        page.click(".cat-card")
+        page.wait_for_url("**/cat/**")
 
         # Open the new task modal — `who` should be pre-filled to Bob
         page.click(".kanban-add-btn")
@@ -990,21 +981,8 @@ class TestAdminUsers:
         page.click("#users-create-btn")
         page.wait_for_timeout(500)
 
-        # Now create a category + project + open the task modal
-        page.goto(live_server)
-        page.click(".cat-card-add")
-        page.fill("#cat-modal-name", "Tech")
-        page.click("#cat-modal .btn-save")
-        page.wait_for_timeout(500)
-        page.reload()
-        page.click(".cat-card")
-        page.wait_for_url("**/cat/**")
-        page.click(".cat-card-add")
-        page.fill("#new-proj-name", "Proj")
-        page.fill("#new-proj-acronym", "PROJ")
-        page.click("#project-modal .btn-save")
-        page.wait_for_timeout(500)
-        page.reload()
+        # Now create a category + project via admin board
+        _create_category_and_project(live_server, page)
         page.click(".kanban-add-btn")
 
         # The dropdown options should match the users we created

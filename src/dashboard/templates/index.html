@@ -35,8 +35,6 @@
     <div class="cat-header">
       <div class="cat-dot" style="background:{{ c.color }}"></div>
       <span class="cat-name">{{ c.name }}</span>
-      <span class="cat-drag-handle" title="D&eacute;placer" aria-label="D&eacute;placer cette cat&eacute;gorie">&#9776;</span>
-      <button class="btn-edit cat-edit-btn" onclick="event.preventDefault();editCat('{{ c.id }}','{{ c.name | jsesc }}','{{ c.color }}')">Editer</button>
       <div class="cat-kpis"><div class="cat-kpi">
         <div class="value" style="color:var(--text)">{{ total_tasks - total_done }}</div>
         <div class="label">Ouvertes</div>
@@ -58,15 +56,6 @@
   </a>
   {% endfor %}
 
-  <button type="button" class="cat-card cat-card-add" onclick="editCat('','','')">
-    <span class="cat-add-plus"><span style="font-size:18px">+</span> Ajouter une cat&eacute;gorie</span>
-  </button>
 </div></div>
 {% endblock %}
 
-{% block modals %}
-{% set cat_id = "" %}
-{% include "modals/project.html" %}
-{% include "modals/category.html" %}
-<script>const CAT_PROJECTS = {{ cat_projects | tojson }};</script>
-{% endblock %}

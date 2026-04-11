@@ -555,42 +555,6 @@ function confirmDelete(btn, callback) {
 
 // -- Drag & drop -------------------------------------------------------------
 
-// On mobile (≤ 480px), restrict the draggable area of category cards to a
-// dedicated handle so vertical scrolling stays smooth. On desktop the whole
-// card stays draggable. We re-evaluate the matchMedia on resize and rebuild
-// the Sortable instance so the behaviour switches as the viewport changes.
-const catGrid = document.querySelector('.cat-grid');
-let _catSortable = null;
-const _mobileCatMq = globalThis.matchMedia('(max-width: 480px)');
-
-function _initCatSortable() {
-  if (!catGrid) return;
-  if (_catSortable) {
-    _catSortable.destroy();
-    _catSortable = null;
-  }
-  const opts = {
-    animation: 150,
-    draggable: '.cat-card:not(.cat-card-add)',
-    ghostClass: 'task-ghost',
-    chosenClass: 'task-chosen',
-    filter: '.cat-card-add',
-    onEnd: (evt) => {
-      apiCall(`${API_BASE}/categories/reorder`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: evt.oldIndex, to: evt.newIndex }),
-      }).catch(() => {});
-    },
-  };
-  if (_mobileCatMq.matches) {
-    opts.handle = '.cat-drag-handle';
-  }
-  _catSortable = new Sortable(catGrid, opts);
-}
-_initCatSortable();
-_mobileCatMq.addEventListener('change', _initCatSortable);
-
 // Task card drag-and-drop. On mobile (≤480px) a drag handle is used so
 // vertical scroll is not blocked by Sortable (#161, same pattern as
 // the category grid's .cat-drag-handle).

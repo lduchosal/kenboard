@@ -22,9 +22,6 @@
     </div>
     {% endif %}
   </div>
-  {% if current_cat %}
-  <button type="button" class="btn-edit header-add-project" onclick="editProject('','','','{{ current_cat.id }}','active')">+ Projet</button>
-  {% endif %}
   <span style="flex:1"></span>
   <div class="avatar-menu">
     {% set u_name = current_user.name if current_user.is_authenticated else 'Q' %}

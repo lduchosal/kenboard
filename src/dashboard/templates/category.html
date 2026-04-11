@@ -8,7 +8,6 @@
   <div class="section-title">
     <span>{{ p.acronym or p.name[:4] | upper }} / {{ p.name }}</span>
     <button type="button" class="btn-edit section-onboard-btn" title="Copy onboarding URL (cat_id + project_id) to clipboard so an LLM agent can self-onboard via the 401 runbook" onclick="copyOnboardLink(this, '{{ cat.id }}', '{{ p.id }}')">Copy onboard link</button>
-    <button class="btn-edit section-edit-btn" onclick="editProject('{{ p.id }}','{{ p.name | jsesc }}','{{ (p.acronym or '') | jsesc }}','{{ cat.id }}','{{ p.get('status', 'active') }}','{{ p.get('default_who', '') | jsesc }}')">Editer</button>
   </div>
   {% set tasks = p.tasks %}
   {% set project_id = p.id %}
@@ -17,11 +16,6 @@
 </div>
 {% endfor %}
 
-<div class="section" style="padding-top:0">
-  <button type="button" class="cat-card-add" onclick="editProject('','','','{{ cat.id }}','active')" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--dimmed)">
-    <span style="font-size:18px">+</span> Ajouter un projet
-  </button>
-</div>
 
 {% if archived_projects %}
 <div class="section" style="padding-top:0">
@@ -33,7 +27,6 @@
     <div class="section archived-project" id="{{ p.id }}" style="padding-top:0;opacity:0.5">
       <div class="section-title">
         <span>{{ p.acronym or p.name[:4] | upper }} / {{ p.name }}</span>
-        <button class="btn-edit section-edit-btn" onclick="editProject('{{ p.id }}','{{ p.name | jsesc }}','{{ (p.acronym or '') | jsesc }}','{{ cat.id }}','{{ p.get('status', 'active') }}','{{ p.get('default_who', '') | jsesc }}')">Editer</button>
       </div>
       {% set tasks = p.tasks %}
       {% set project_id = p.id %}
@@ -47,8 +40,6 @@
 {% endblock %}
 
 {% block modals %}
-{% set cat_id = cat.id %}
-{% include "modals/project.html" %}
 <script>const CAT_PROJECTS = {{ cat_projects | tojson }};</script>
 {% endblock %}
 

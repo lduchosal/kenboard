@@ -43,6 +43,7 @@
 {% include "modals/category.html" %}
 {% set cat_id = '' %}
 {% include "modals/project.html" %}
+<script>const CAT_PROJECTS = {{ cat_projects | tojson }};</script>
 {% endblock %}
 
 {% block scripts %}
