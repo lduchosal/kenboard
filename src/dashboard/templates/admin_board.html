@@ -16,6 +16,7 @@
         <span class="board-drag-handle" title="Drag">&#x2630;</span>
         <span class="board-cat-color" style="background:{{ cat.color }}"></span>
         <span class="board-cat-name">{{ cat.name }}</span>
+        <button class="btn-edit section-onboard-btn" onclick="editProject('','','','{{ cat.id }}','active')">+ Projet</button>
         <button class="btn-edit" onclick="editCat('{{ cat.id }}','{{ cat.name | jsesc }}','{{ cat.color | jsesc }}')">Editer</button>
       </div>
       <div class="board-projects" data-cat-id="{{ cat.id }}">
