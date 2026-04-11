@@ -53,6 +53,14 @@ def derive_base_url() -> str:
     return url
 
 
+def _sanitize_token(value: str) -> str:
+    """Strip anything that is not a valid kenboard token character.
+
+    Tokens are ``kb_`` + base64url (alphanumeric, ``-``, ``_``).
+    """
+    return re.sub(r"[^a-zA-Z0-9_\-]", "", value)
+
+
 def _sanitize_id(value: str) -> str:
     """Strip non-UUID characters from a user-supplied identifier.
 
@@ -176,21 +184,45 @@ def onboard_route(cat_id: str, project_id: str) -> Any:
     HTTP tools (WebFetch, requests.get, etc.) that discard the body of
     4xx responses can still read the runbook. The copy-onboard-link
     button in ``category.html`` generates a URL pointing here.
+
+    When ``?token=`` is present (#159), the runbook includes the token
+    in the ``.ken`` file so the agent can start immediately without
+    asking the user for an API key.
     """
+    from flask import request as flask_request
+
     safe_cat = _sanitize_id(cat_id)
     safe_project = _sanitize_id(project_id)
-    body = onboarding_text_full(safe_cat, safe_project, derive_base_url())
+    token = flask_request.args.get("token", "")
+    body = onboarding_text_full(safe_cat, safe_project, derive_base_url(), token)
     response = make_response(body, 200)
     response.headers["Content-Type"] = "text/plain; charset=utf-8"
     return response
 
 
-def onboarding_text_full(cat_id: str, project_id: str, base_url: str) -> str:
+def onboarding_text_full(
+    cat_id: str, project_id: str, base_url: str, token: str = ""
+) -> str:
     """Render the onboarding runbook with both IDs and base_url resolved.
 
     ``base_url`` comes from ``request.host_url`` (respects ProxyFix) so
-    the runbook works on any self-hosted instance.
+    the runbook works on any self-hosted instance. When ``token`` is
+    provided (#159), the ``.ken`` file is complete and the agent can
+    start immediately.
     """
+    if token:
+        token_line = f"   api_token={_sanitize_token(token)}\n"
+        step3 = (
+            "3. Le token API est déjà inclus ci-dessus. Vous pouvez\n"
+            "   commencer à travailler immédiatement.\n"
+        )
+    else:
+        token_line = "   api_token=<API key — voir étape 3>\n"
+        step3 = (
+            "3. Demander à l'utilisateur de générer une API key sur\n"
+            "   /admin/keys (avec au moins le scope 'read' sur ce projet)\n"
+            "   et de la coller dans la ligne api_token= du fichier .ken\n"
+        )
     return (
         "KENBOARD — Pour accéder à ce board, 3 étapes :\n"
         "\n"
@@ -199,13 +231,7 @@ def onboarding_text_full(cat_id: str, project_id: str, base_url: str) -> str:
         "2. Créer un fichier .ken (mode 0600) dans votre projet :\n"
         "\n"
         f"   project_id={project_id}\n"
-        f"   base_url={base_url}\n"
-        "   api_token=<API key — voir étape 3>\n"
-        "\n"
-        "3. Demander à l'utilisateur de générer une API key sur\n"
-        "   /admin/keys (avec au moins le scope 'read' sur ce projet)\n"
-        "   et de la coller dans la ligne api_token= du fichier .ken\n"
-        "\n"
+        f"   base_url={base_url}\n" + token_line + "\n" + step3 + "\n"
         "## Commandes principales\n"
         "\n"
         "   ken list --who Claude --status todo --json\n"

@@ -81,6 +81,7 @@ def create_key() -> Any:
             conn,
             id=key_id,
             user_id=data.user_id,
+            key_type=None,
             key_hash=key_hash,
             label=data.label,
             expires_at=data.expires_at,
@@ -96,6 +97,65 @@ def create_key() -> Any:
         merged = _row_with_scopes(conn, queries, row)
         merged["key"] = plain
         return jsonify(ApiKeyCreated(**merged).model_dump(mode="json")), 201
+    finally:
+        conn.close()
+
+
+@bp.route("/onboard", methods=["POST"])
+def create_onboard_token() -> Any:
+    """Create (or replace) an onboarding token for a project (#159).
+
+    If an active onboarding token already exists for the project, it is revoked and a
+    fresh one is created (we cannot recover the plain-text key from the hash, so
+    replacement is the only way to return a usable link). At most one active onboarding
+    token exists per project at any time.
+
+    Returns the plain-text key and the full onboard URL so the JS can copy it to the
+    clipboard.
+    """
+    body = request.get_json() or {}
+    project_id = body.get("project_id", "")
+    cat_id = body.get("cat_id", "")
+    if not project_id:
+        return jsonify({"error": "project_id is required"}), 400
+
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        # Revoke any existing onboarding token for this project
+        existing = queries.key_get_onboarding_for_project(conn, project_id=project_id)
+        if existing:
+            queries.key_revoke(conn, id=existing["id"])
+
+        # Create a new onboarding token
+        plain = _generate_key()
+        key_hash = _hash_key(plain)
+        key_id = str(uuid.uuid4())
+        queries.key_create(
+            conn,
+            id=key_id,
+            user_id=None,
+            key_type="onboarding",
+            key_hash=key_hash,
+            label=f"onboarding:{project_id[:8]}",
+            expires_at=None,
+        )
+        queries.key_scopes_add(
+            conn,
+            api_key_id=key_id,
+            project_id=project_id,
+            scope="write",
+        )
+        return (
+            jsonify(
+                {
+                    "key": plain,
+                    "cat_id": cat_id,
+                    "project_id": project_id,
+                }
+            ),
+            201,
+        )
     finally:
         conn.close()
 

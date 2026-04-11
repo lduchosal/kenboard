@@ -344,6 +344,7 @@ def make_api_key(db, queries):
             db,
             id=key_id,
             user_id=user_id,
+            key_type=None,
             key_hash=_hash_key(plain),
             label="test",
             expires_at=None,

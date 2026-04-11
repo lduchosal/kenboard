@@ -247,28 +247,31 @@ function deleteProject() {
   document.getElementById('project-modal').style.display = 'none';
 }
 
-// Copy a deep-link onboarding URL (cat_id in path + project_id in fragment)
-// to the clipboard so the user can paste it to an LLM agent. The agent then
-// hits the URL, the server replies 401 with the runbook from
-// dashboard.onboarding (#117) and the agent has both ids it needs to write
-// its `.ken` file.
-function copyOnboardLink(btn, catId, projectId) {
-  const url = `${globalThis.location.origin}/onboard/cat/${catId}/project/${projectId}`;
+// Create an onboarding token (or replace an existing one) via the API, then
+// copy the full onboard URL (with token embedded) to clipboard. The agent
+// can start immediately: pip install kenboard, create .ken, ken list (#159).
+async function copyOnboardLink(btn, catId, projectId) {
   const restore = btn.textContent;
   const flash = (label) => {
     btn.textContent = label;
-    setTimeout(() => { btn.textContent = restore; }, 1500);
+    setTimeout(() => { btn.textContent = restore; }, 2500);
   };
-  if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(url).then(
-      () => flash('Copied!'),
-      () => flash('Copy failed'),
-    );
-  } else {
-    // navigator.clipboard requires HTTPS or localhost. Anything else
-    // (legacy IE, prehistoric Safari, etc.) is out of support — kenboard
-    // targets modern browsers, the user can copy from the URL bar instead.
-    flash('Copy unsupported');
+  try {
+    const r = await apiCall(`${API_BASE}/keys/onboard`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cat_id: catId, project_id: projectId }),
+    });
+    const data = await r.json();
+    const url = `${globalThis.location.origin}/onboard/cat/${catId}/project/${projectId}?token=${data.key}`;
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+      flash('Copied!');
+    } else {
+      flash('Copy unsupported');
+    }
+  } catch (e) {
+    console.debug('copyOnboardLink: apiCall failed', e);
   }
 }
 

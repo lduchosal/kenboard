@@ -174,6 +174,16 @@ def _touch_last_used(api_key_id: str) -> None:
         conn.close()
 
 
+def _promote_onboarding_key(api_key_id: str) -> None:
+    """Promote an onboarding token to onboarded on first use (#159)."""
+    conn = db.get_connection()
+    try:
+        db.load_queries().key_update_type(conn, id=api_key_id, key_type="onboarded")
+    finally:
+        conn.close()
+    log.info("auth.onboarding_promoted", api_key_id=api_key_id)
+
+
 def _extract_bearer() -> str | None:
     """Extract a bearer token from the Authorization header."""
     header = request.headers.get("Authorization", "")
@@ -302,6 +312,12 @@ def _enforce_api_key(token: str, method: str, path: str) -> Any:
             ),
             403,
         )
+
+    # #159: on first successful use of an onboarding token, promote it to
+    # "onboarded" so the copy-onboard-link button can create a fresh one
+    # for the next agent.
+    if row.get("key_type") == "onboarding":
+        _promote_onboarding_key(api_key_id)
 
     return None
 

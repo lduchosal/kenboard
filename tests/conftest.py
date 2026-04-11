@@ -127,6 +127,7 @@ def _ensure_test_db() -> None:
         CREATE TABLE IF NOT EXISTS api_keys (
             id VARCHAR(36) NOT NULL PRIMARY KEY,
             user_id VARCHAR(36) NULL,
+            key_type VARCHAR(20) NULL,
             key_hash CHAR(64) NOT NULL UNIQUE,
             label VARCHAR(100) NOT NULL,
             expires_at DATETIME NULL,
@@ -160,6 +161,17 @@ def _ensure_test_db() -> None:
         cur.execute(
             "ALTER TABLE api_keys ADD CONSTRAINT fk_api_keys_user "
             "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL"
+        )
+    # api_keys.key_type was added in migration 0014 (#159, onboarding tokens).
+    cur.execute(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+        "WHERE TABLE_SCHEMA = DATABASE() "
+        "AND TABLE_NAME = 'api_keys' "
+        "AND COLUMN_NAME = 'key_type'"
+    )
+    if cur.fetchone()[0] == 0:
+        cur.execute(
+            "ALTER TABLE api_keys ADD COLUMN key_type VARCHAR(20) NULL AFTER user_id"
         )
     cur.execute("""
         CREATE TABLE IF NOT EXISTS api_key_projects (

@@ -13,7 +13,7 @@ WHERE id = :id;
 -- name: key_get_by_hash^
 -- Lookup an api_key by its sha256 hash, used by the auth middleware.
 -- Returns the row only if not revoked and not expired.
-SELECT id, user_id, key_hash, label, expires_at, last_used_at, revoked_at, created_at
+SELECT id, user_id, key_type, key_hash, label, expires_at, last_used_at, revoked_at, created_at
 FROM api_keys
 WHERE key_hash = :key_hash
   AND revoked_at IS NULL
@@ -21,8 +21,8 @@ WHERE key_hash = :key_hash
 
 -- name: key_create!
 -- Create a new api_key.
-INSERT INTO api_keys (id, user_id, key_hash, label, expires_at)
-VALUES (:id, :user_id, :key_hash, :label, :expires_at);
+INSERT INTO api_keys (id, user_id, key_type, key_hash, label, expires_at)
+VALUES (:id, :user_id, :key_type, :key_hash, :label, :expires_at);
 
 -- name: key_update_label_expiry!
 -- Update label, expires_at and/or owning user of an api_key.
@@ -68,3 +68,19 @@ WHERE api_key_id = :api_key_id;
 -- Insert one (api_key_id, project_id, scope) row.
 INSERT INTO api_key_projects (api_key_id, project_id, scope)
 VALUES (:api_key_id, :project_id, :scope);
+
+-- name: key_get_onboarding_for_project^
+-- Find an active (not revoked, not expired) onboarding token for a project.
+SELECT ak.id, ak.key_type
+FROM api_keys ak
+JOIN api_key_projects akp ON akp.api_key_id = ak.id
+WHERE akp.project_id = :project_id
+  AND ak.key_type = 'onboarding'
+  AND ak.revoked_at IS NULL
+  AND (ak.expires_at IS NULL OR ak.expires_at > NOW());
+
+-- name: key_update_type!
+-- Change the key_type (e.g. onboarding → onboarded on first use).
+UPDATE api_keys
+SET key_type = :key_type
+WHERE id = :id;
