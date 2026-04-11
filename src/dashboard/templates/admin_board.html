@@ -68,7 +68,7 @@ if (boardList) {
 
 // -- Drag & drop projects (within and between categories) ---------------------
 document.querySelectorAll('.board-projects').forEach(container => {
-  new Sortable(container, {
+  container._sortable = new Sortable(container, {
     group: 'board-projects',
     animation: 150,
     handle: '.board-drag-handle',

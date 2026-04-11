@@ -1244,8 +1244,6 @@ button.cat-card-add {
   border-radius: 3px;
   flex-shrink: 0;
 }
-.board-cat-name {
-}
 .board-drag-handle {
   cursor: grab;
   color: var(--dimmed);

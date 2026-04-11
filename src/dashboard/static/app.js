@@ -296,7 +296,7 @@ function openFullscreen(btn, id, title, desc, who, when, avatarColor) {
   const descEl = document.getElementById('fs-desc');
   if (desc && typeof marked !== 'undefined') {
     const raw = marked.parse(desc);
-    descEl.innerHTML = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(raw) : raw;
+    descEl.innerHTML = typeof DOMPurify === 'undefined' ? raw : DOMPurify.sanitize(raw);
   } else {
     descEl.textContent = desc || '(pas de description)';
   }
