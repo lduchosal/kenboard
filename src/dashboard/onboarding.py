@@ -236,11 +236,7 @@ def onboarding_text_full(
         "\n"
         f"cat_id={cat_id}\n"
         f"project_id={project_id}\n"
-        f"base_url={base_url}\n"
-        + token_line.lstrip()
-        + "\n"
-        + step3
-        + "\n"
+        f"base_url={base_url}\n" + token_line.lstrip() + "\n" + step3 + "\n"
         "## 3. Travailler\n"
         "\n"
         "   ken list --who Claude --status todo --json\n"
