@@ -19,7 +19,7 @@
 [![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=lduchosal_kenboard&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=lduchosal_kenboard)
 
 <p align="center">
-  <img src="./logo.svg" alt="kenboard logo" width="480">
+  <img src="./logo-robot.svg" alt="kenboard logo" width="120">
 </p>
 
 ## Usage pour les humains
@@ -28,27 +28,41 @@
   <img src="./doc/images/kanban.png" alt="Vue kanban KENBOARD" width="800">
 </p>
 
-> Régénérer le screenshot après une évolution UI : `pdm run screenshots`
+> Regenerer le screenshot apres une evolution UI : `pdm run screenshots`
 
 ## Usage pour les BOT
 
-KENBOARD livre `ken`, une CLI pensée pour Claude Code et autres assistants :
+KENBOARD livre `ken`, une CLI pensee pour Claude Code et autres assistants :
 output JSON, filtres natifs, exit codes propres.
 
-```sh
-# Une fois par dossier : lier le repo à un projet KENBOARD
-ken --base-url https://kenboard.example.ch init <project-id>
+### Onboarding automatique
 
-# Workflow quotidien
-ken list --status doing --who Claude       # tâches en cours assignées au bot
-ken add "Fix login redirect" --who Claude  # créer
-ken move 42 --to review                    # déplacer
-ken done 42                                # clôturer
+1. Un admin clique **Copy onboard link** sur un projet dans le kenboard
+2. Le lien est donne a l'agent (Claude Code, GPT, etc.)
+3. L'agent ouvre le lien et recoit un fichier `.ken` complet avec un
+   token API pre-rempli — zero interaction humaine pour l'API key
+4. L'agent fait `pip install kenboard`, cree le `.ken`, et commence a
+   travailler immediatement
+
+### Workflow quotidien
+
+```sh
+ken list --status todo --who Claude --json   # taches assignees
+ken show <id> --json                         # detail d'une tache
+ken move <id> --to doing                     # passer en cours
+ken add "MODULE / Titre" --desc "..." --who Claude  # creer
+ken move <id> --to review                    # soumettre
 ```
 
-Référence complète de la CLI : [`doc/ken-cli.md`](doc/ken-cli.md).
-Pour les cas non couverts par `ken` (categories, users, delete), l'API REST
-reste disponible : [`doc/api.md`](doc/api.md), [`doc/openapi.yaml`](doc/openapi.yaml).
+Le workflow complet : `todo` → `doing` → `review` → `done`.
+L'agent gere `todo` → `doing` → `review`. Seul l'utilisateur passe
+`review` → `done`.
+
+### References
+
+- CLI complete : [`doc/ken-cli.md`](doc/ken-cli.md)
+- Guide agent : `ken help`
+- API REST : [`doc/api.md`](doc/api.md), [`doc/openapi.yaml`](doc/openapi.yaml)
 
 ## Entreprise
 
