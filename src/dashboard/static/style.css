@@ -498,15 +498,22 @@ body {
   color: var(--text);
 }
 
-/* -- Fullscreen task modal (#155) -- */
+/* -- Fullscreen task modal (#155) — uses native <dialog> for
+   accessibility (S6819). ::backdrop replaces the old overlay div. */
 .fullscreen-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  border: none;
+  padding: 0;
+  background: transparent;
+  max-width: none;
+  max-height: none;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 200;
+}
+.fullscreen-modal::backdrop {
+  background: rgba(0, 0, 0, 0.45);
 }
 .fullscreen-card {
   background: var(--card);

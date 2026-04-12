@@ -1,11 +1,11 @@
-<div class="fullscreen-modal" id="task-fullscreen" role="dialog" aria-modal="true" aria-label="Task detail" style="display:none" onclick="if(event.target===this)closeFullscreen()" onkeydown="if(event.key==='Escape')closeFullscreen()">
+<dialog class="fullscreen-modal" id="task-fullscreen" aria-label="Task detail">
   <div class="fullscreen-card">
     <div class="fullscreen-header">
       <span class="fullscreen-id" id="fs-id"></span>
       <span class="fullscreen-status" id="fs-status"></span>
       <button class="modal-close" onclick="closeFullscreen()">&times;</button>
     </div>
-    <h2 class="fullscreen-title" id="fs-title" aria-label="Task title"></h2>
+    <h2 class="fullscreen-title" id="fs-title">&nbsp;</h2>
     <div class="fullscreen-meta">
       <div class="task-avatar" id="fs-avatar" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700"></div>
       <span id="fs-who" style="font-weight:600"></span>
@@ -17,4 +17,4 @@
       <button class="btn btn-cancel" onclick="closeFullscreen()">Fermer</button>
     </div>
   </div>
-</div>
+</dialog>

@@ -280,8 +280,7 @@ async function copyOnboardLink(btn, catId, projectId) {
 async function openFullscreen(btn, id, title, desc, who, when, avatarColor) {
   // Show the modal immediately with the data we have from the DOM
   _populateFullscreen(id, title, desc, who, when, avatarColor, btn);
-  document.getElementById('task-fullscreen').style.display = 'flex';
-  document.body.style.overflow = 'hidden'; // #169: prevent background scroll
+  document.getElementById('task-fullscreen').showModal();
 
   // Then refresh from the API for up-to-date content (#168)
   try {
@@ -328,15 +327,13 @@ function _populateFullscreen(id, title, desc, who, when, avatarColor, btn) {
 }
 
 function closeFullscreen() {
-  document.getElementById('task-fullscreen').style.display = 'none';
-  document.body.style.overflow = ''; // #169: restore background scroll
+  document.getElementById('task-fullscreen').close();
 }
 
-// Close fullscreen on Escape key
-document.addEventListener('keydown', function (e) {
-  if (e.key === 'Escape' && document.getElementById('task-fullscreen').style.display === 'flex') {
-    closeFullscreen();
-  }
+// Native <dialog> handles Escape key automatically. Backdrop click
+// needs manual handling (click on the dialog element itself, not its children).
+document.getElementById('task-fullscreen')?.addEventListener('click', function (e) {
+  if (e.target === this) this.close();
 });
 
 // -- Task CRUD ---------------------------------------------------------------
