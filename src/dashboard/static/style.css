@@ -1260,9 +1260,17 @@ button.cat-card-add {
   padding: 48px 24px;
   color: var(--dimmed);
   font-size: 13px;
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+.empty-state h3 {
+  font-size: 16px;
+  color: var(--text);
+  margin-bottom: 12px;
 }
 .empty-state p {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .board-drag-handle {
