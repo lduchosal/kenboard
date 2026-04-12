@@ -24,6 +24,9 @@
 </div>
 {% endif %}
 
+{% if not categories %}
+{% include "partials/empty_state_welcome.html" %}
+{% else %}
 <div class="section"><div class="cat-grid">
   {% for c in categories %}
   {% set cp = projects_by_cat[c.id] %}
@@ -56,9 +59,7 @@
   </a>
   {% endfor %}
 
-  {% if not categories %}
-  {% include "partials/empty_state_welcome.html" %}
-  {% endif %}
 </div></div>
+{% endif %}
 {% endblock %}
 
