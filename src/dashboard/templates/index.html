@@ -58,11 +58,12 @@
 
   {% if not categories %}
   <div class="empty-state">
+    <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
     <h3>Bienvenue sur KENBOARD</h3>
     <p>Le board est organis&eacute; en <strong>Cat&eacute;gories</strong> &rarr; <strong>Projets</strong> &rarr; <strong>T&acirc;ches</strong>.</p>
     <p>Chaque cat&eacute;gorie regroupe des projets. Chaque projet contient un kanban avec 4 colonnes : &Agrave; faire, En cours, Revue, Fait.</p>
     <p>Pour commencer, cr&eacute;ez une cat&eacute;gorie et un projet dans la page d'administration.</p>
-    <a href="/admin/board" class="btn btn-save">Configurer le board</a>
+    <a href="/admin/board" class="btn btn-save empty-state-btn">Configurer le board</a>
   </div>
   {% endif %}
 </div></div>

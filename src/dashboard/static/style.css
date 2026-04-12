@@ -1264,6 +1264,12 @@ button.cat-card-add {
   margin: 0 auto;
   line-height: 1.6;
 }
+.empty-state-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--border);
+  margin-bottom: 16px;
+}
 .empty-state h3 {
   font-size: 16px;
   color: var(--text);
@@ -1271,6 +1277,13 @@ button.cat-card-add {
 }
 .empty-state p {
   margin-bottom: 8px;
+}
+.empty-state-btn {
+  display: inline-block;
+  margin-top: 16px;
+  text-decoration: none;
+  padding: 8px 20px;
+  font-size: 13px;
 }
 
 .board-drag-handle {
