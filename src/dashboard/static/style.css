@@ -1254,7 +1254,146 @@ button.cat-card-add {
   border-radius: 3px;
   flex-shrink: 0;
 }
-/* -- Empty state (#174) -- */
+/* -- Welcome / empty state editorial layout (#174) -- */
+.welcome {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+.welcome-hero {
+  text-align: center;
+  padding: 48px 24px 32px;
+}
+.welcome-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #5D2A8E;
+  background: #f0dbff;
+  padding: 4px 14px;
+  border-radius: 999px;
+  margin-bottom: 16px;
+}
+.welcome-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #002e60;
+  line-height: 1.15;
+  margin-bottom: 12px;
+}
+.welcome-accent { color: #7846aa; }
+.welcome-subtitle {
+  font-size: 14px;
+  color: #4b4451;
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.welcome-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 32px 0;
+}
+.welcome-card {
+  background: #faf1fa;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+.welcome-card-raised {
+  background: #ffffff;
+  box-shadow: 0 12px 32px -4px rgba(30, 26, 33, 0.06);
+}
+.welcome-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #002e60;
+  margin-bottom: 8px;
+}
+.welcome-card p {
+  font-size: 12px;
+  color: #4b4451;
+  line-height: 1.6;
+  flex: 1;
+}
+.welcome-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.welcome-card-icon svg { width: 22px; height: 22px; }
+.welcome-card-icon-blue { background: #002e60; color: white; }
+.welcome-card-icon-purple { background: #7846aa; color: white; }
+.welcome-card-icon-amber { background: #5f3f00; color: white; }
+.welcome-card-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7846aa;
+  margin-top: 12px;
+}
+.welcome-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+.welcome-col {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 6px 8px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.welcome-cta {
+  text-align: center;
+  background: #002e60;
+  color: white;
+  border-radius: 24px;
+  padding: 48px 32px;
+  margin-top: 32px;
+}
+.welcome-cta h2 {
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.welcome-cta p {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-bottom: 20px;
+}
+.welcome-cta-btn {
+  display: inline-block;
+  background: white !important;
+  color: #002e60 !important;
+  font-weight: 700;
+  padding: 12px 32px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 14px;
+}
+.welcome-cta-btn:hover { opacity: 0.9; }
+
+@media (max-width: 640px) {
+  .welcome-cards { grid-template-columns: 1fr; }
+  .welcome-title { font-size: 24px; }
+  .welcome-cta { padding: 32px 20px; border-radius: 16px; }
+}
+
+/* -- Simple empty state (category page, admin board) -- */
 .empty-state {
   text-align: center;
   padding: 48px 24px;

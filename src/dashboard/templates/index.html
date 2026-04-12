@@ -57,16 +57,7 @@
   {% endfor %}
 
   {% if not categories %}
-  {% set empty_icon = '<path d="M15 3h6v6"/><path d="M21 3l-7 7"/><circle cx="12" cy="12" r="1"/><path d="M12 17v4"/><path d="M8 21h8"/>' %}
-  {% set empty_title = "Bienvenue sur KENBOARD" %}
-  {% set empty_lines = [
-    "Le board est organisé en <strong>Catégories</strong> → <strong>Projets</strong> → <strong>Tâches</strong>.",
-    "Chaque catégorie regroupe des projets. Chaque projet contient un kanban avec 4 colonnes : À faire, En cours, Revue, Fait.",
-    "Cliquez sur votre avatar en haut à droite, puis <strong>Board</strong> pour configurer."
-  ] %}
-  {% set empty_btn_label = "Configurer le board" %}
-  {% set empty_btn_href = "/admin/board" %}
-  {% include "partials/empty_state.html" %}
+  {% include "partials/empty_state_welcome.html" %}
   {% endif %}
 </div></div>
 {% endblock %}
