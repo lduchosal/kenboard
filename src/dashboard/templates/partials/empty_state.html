@@ -1,0 +1,18 @@
+{# Reusable empty state block.
+   Variables:
+     - empty_icon: SVG path content (inside a 24x24 viewBox)
+     - empty_title: heading text
+     - empty_lines: list of paragraph strings (HTML safe)
+     - empty_btn_label: button text (optional)
+     - empty_btn_href: button URL (optional)
+#}
+<div class="empty-state">
+  <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">{{ empty_icon }}</svg>
+  <h3>{{ empty_title }}</h3>
+  {% for line in empty_lines %}
+  <p>{{ line }}</p>
+  {% endfor %}
+  {% if empty_btn_label %}
+  <a href="{{ empty_btn_href }}" class="btn btn-save empty-state-btn">{{ empty_btn_label }}</a>
+  {% endif %}
+</div>

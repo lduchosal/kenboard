@@ -33,6 +33,18 @@
       </div>
     </div>
     {% endfor %}
+
+    {% if not all_categories %}
+    {% set empty_icon = '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>' %}
+    {% set empty_title = "Le board est vide" %}
+    {% set empty_lines = [
+      "Commencez par créer une <strong>catégorie</strong> avec le bouton <strong>+ Catégorie</strong> ci-dessus.",
+      "Ensuite ajoutez des <strong>projets</strong> dans chaque catégorie.",
+      "Chaque projet est un kanban avec 4 colonnes : À faire, En cours, Revue, Fait.",
+      "Les <strong>tâches</strong> sont créées directement dans le kanban de chaque projet."
+    ] %}
+    {% include "partials/empty_state.html" %}
+    {% endif %}
   </div>
 
 </div>
