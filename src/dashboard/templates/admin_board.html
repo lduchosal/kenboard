@@ -3,12 +3,10 @@
 {% block body %}
 {% include "partials/header.html" %}
 
-<div class="welcome">
-  <div class="welcome-hero" style="padding-bottom:16px">
-    <span class="welcome-badge">Administration</span>
-    <h1 class="welcome-title">Gestion du <span class="welcome-accent">Board</span></h1>
-    <p class="welcome-subtitle">Organisez vos cat&eacute;gories et projets. Glissez-d&eacute;posez pour r&eacute;ordonner.</p>
-    <button type="button" class="btn btn-save welcome-cta-btn" style="margin-top:16px;background:linear-gradient(135deg,#002e60,#004489) !important;color:white !important;border:none" onclick="editCat('','','')">+ Cat&eacute;gorie</button>
+<div class="section" style="padding-top:0">
+  <div class="section-title">
+    <span>Gestion du board</span>
+    <button type="button" class="btn-edit section-onboard-btn" onclick="editCat('','','')">+ Cat&eacute;gorie</button>
   </div>
 
   <div id="board-admin-list" class="board-admin-list">
@@ -35,33 +33,8 @@
       </div>
     </div>
     {% endfor %}
-
-    {% if not all_categories %}
-    <div class="welcome-cards" style="margin-top:0">
-      <div class="welcome-card">
-        <div class="welcome-card-icon welcome-card-icon-blue">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v6m0 0l3-3m-3 3L9 5"/><rect x="3" y="10" width="7" height="5" rx="1"/><rect x="14" y="10" width="7" height="5" rx="1"/><rect x="8.5" y="17" width="7" height="5" rx="1"/></svg>
-        </div>
-        <h3>1. Cat&eacute;gorie</h3>
-        <p>Cliquez <strong>+ Cat&eacute;gorie</strong> pour cr&eacute;er votre premier groupe th&eacute;matique.</p>
-      </div>
-      <div class="welcome-card welcome-card-raised">
-        <div class="welcome-card-icon welcome-card-icon-purple">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="4" height="18" rx="1"/><rect x="8" y="3" width="4" height="12" rx="1"/><rect x="14" y="3" width="4" height="15" rx="1"/><rect x="20" y="3" width="2" height="8" rx="1"/></svg>
-        </div>
-        <h3>2. Projets</h3>
-        <p>Ajoutez des <strong>projets</strong> dans chaque cat&eacute;gorie. Chacun sera un kanban ind&eacute;pendant.</p>
-      </div>
-      <div class="welcome-card">
-        <div class="welcome-card-icon welcome-card-icon-amber">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/></svg>
-        </div>
-        <h3>3. T&acirc;ches</h3>
-        <p>Les t&acirc;ches sont cr&eacute;&eacute;es directement dans le kanban de chaque projet (4 colonnes).</p>
-      </div>
-    </div>
-    {% endif %}
   </div>
+
 </div>
 
 {% endblock %}

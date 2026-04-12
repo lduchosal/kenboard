@@ -3,21 +3,6 @@
 {% block body %}
 {% include "partials/header.html" %}
 
-{% if not active_projects and not archived_projects %}
-<div class="section" style="padding-top:0">
-  {% set empty_icon = '<path d="M15 3h6v6"/><path d="M21 3l-7 7"/><circle cx="12" cy="12" r="1"/><path d="M12 17v4"/><path d="M8 21h8"/>' %}
-  {% set empty_title = "Catégorie vide" %}
-  {% set empty_lines = [
-    "Cette catégorie ne contient pas encore de projet.",
-    "Un <strong>projet</strong> est un kanban avec 4 colonnes (À faire, En cours, Revue, Fait) dans lequel vous créez des tâches.",
-    "Cliquez sur votre avatar en haut à droite, puis <strong>Board</strong> pour ajouter un projet."
-  ] %}
-  {% set empty_btn_label = "Configurer le board" %}
-  {% set empty_btn_href = "/admin/board" %}
-  {% include "partials/empty_state.html" %}
-</div>
-{% endif %}
-
 {% for p in active_projects %}
 <div class="section" id="{{ p.id }}" style="padding-top:0">
   <div class="section-title">
