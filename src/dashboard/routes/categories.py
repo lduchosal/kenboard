@@ -24,14 +24,18 @@ def list_categories() -> Any:
 
 @bp.route("", methods=["POST"])
 def create_category() -> Any:
-    """Create a new category."""
+    """Create a new category.
+
+    Automatically creates a first project "Project <name>" inside
+    the new category so the board is immediately usable (#175).
+    """
     data = CategoryCreate(**request.get_json())
     conn = db.get_connection()
     queries = db.load_queries()
     try:
-        max_pos = queries.cat_max_position(conn)
         import uuid
 
+        max_pos = queries.cat_max_position(conn)
         cat_id = str(uuid.uuid4())
         queries.cat_create(
             conn,
@@ -39,6 +43,19 @@ def create_category() -> Any:
             name=data.name,
             color=data.color,
             position=max_pos + 1,
+        )
+        # Auto-create a first project (#175)
+        proj_id = str(uuid.uuid4())
+        acronym = data.name[:4].upper() if data.name else "PROJ"
+        queries.proj_create(
+            conn,
+            id=proj_id,
+            cat_id=cat_id,
+            name=f"Project {data.name}",
+            acronym=acronym,
+            status="active",
+            position=0,
+            default_who="",
         )
         row = queries.cat_get_by_id(conn, id=cat_id)
         return jsonify(Category(**row).model_dump()), 201
