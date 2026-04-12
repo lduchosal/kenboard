@@ -3,6 +3,18 @@
 {% block body %}
 {% include "partials/header.html" %}
 
+{% if not active_projects and not archived_projects %}
+{% set es_badge = "Catégorie" %}
+{% set es_title = "Aucun projet" %}
+{% set es_subtitle = "Cette catégorie ne contient pas encore de projet. Ajoutez-en un depuis la page d'administration." %}
+{% set es_cards = [
+  {"icon": '<rect x="2" y="3" width="4" height="18" rx="1"/><rect x="8" y="3" width="4" height="12" rx="1"/><rect x="14" y="3" width="4" height="15" rx="1"/><rect x="20" y="3" width="2" height="8" rx="1"/>', "color": "purple", "title": "Projet = Kanban", "text": "Un projet contient un kanban avec 4 colonnes : À faire, En cours, Revue, Fait."},
+  {"icon": '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/>', "color": "amber", "title": "Tâches", "text": "Les tâches sont créées directement dans le kanban de chaque projet."}
+] %}
+{% set es_cta = {"label": "Configurer le board", "href": "/admin/board"} %}
+{% include "partials/empty_state.html" %}
+{% endif %}
+
 {% for p in active_projects %}
 <div class="section" id="{{ p.id }}" style="padding-top:0">
   <div class="section-title">

@@ -24,6 +24,18 @@
 </div>
 {% endif %}
 
+{% if not categories %}
+{% set es_badge = "Plateforme Kanban" %}
+{% set es_title = "Bienvenue sur KENBOARD" %}
+{% set es_subtitle = "Organisez vos projets et vos tâches avec clarté. Conçu pour les équipes et les agents IA." %}
+{% set es_cards = [
+  {"icon": '<path d="M12 2v6m0 0l3-3m-3 3L9 5"/><rect x="3" y="10" width="7" height="5" rx="1"/><rect x="14" y="10" width="7" height="5" rx="1"/><rect x="8.5" y="17" width="7" height="5" rx="1"/>', "color": "blue", "title": "1. Catégories", "text": "Regroupez vos projets par thème. Chaque catégorie est une vue d'ensemble.", "tag": "Hiérarchie"},
+  {"icon": '<rect x="2" y="3" width="4" height="18" rx="1"/><rect x="8" y="3" width="4" height="12" rx="1"/><rect x="14" y="3" width="4" height="15" rx="1"/><rect x="20" y="3" width="2" height="8" rx="1"/>', "color": "purple", "title": "2. Projets", "text": "Chaque projet est un kanban avec 4 colonnes : À faire, En cours, Revue, Fait."},
+  {"icon": '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/>', "color": "amber", "title": "3. Tâches", "text": "Créez des tâches dans chaque projet, assignez-les, suivez leur progression.", "tag": "Drag & drop"}
+] %}
+{% set es_cta = {"label": "Configurer le board", "href": "/admin/board"} %}
+{% include "partials/empty_state.html" %}
+{% else %}
 <div class="section"><div class="cat-grid">
   {% for c in categories %}
   {% set cp = projects_by_cat[c.id] %}
@@ -57,5 +69,6 @@
   {% endfor %}
 
 </div></div>
+{% endif %}
 {% endblock %}
 

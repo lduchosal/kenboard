@@ -1297,6 +1297,116 @@ button.cat-card-add {
   color: var(--red);
 }
 
+/* -- Empty state — editorial style (doc/uxui/empty) -- */
+.es {
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 32px 16px 48px;
+}
+.es-hero {
+  text-align: center;
+  padding: 32px 24px 24px;
+}
+.es-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #5D2A8E;
+  background: #f0dbff;
+  padding: 4px 14px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+.es-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #002e60;
+  line-height: 1.2;
+  margin-bottom: 10px;
+}
+.es-subtitle {
+  font-size: 13px;
+  color: #4b4451;
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+.es-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin: 24px 0;
+}
+.es-card {
+  background: #faf1fa;
+  border-radius: 16px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+}
+.es-card-raised {
+  background: #ffffff;
+  box-shadow: 0 12px 32px -4px rgba(30, 26, 33, 0.06);
+}
+.es-card h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #002e60;
+  margin-bottom: 6px;
+}
+.es-card p {
+  font-size: 12px;
+  color: #4b4451;
+  line-height: 1.6;
+  flex: 1;
+}
+.es-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.es-card-icon svg { width: 20px; height: 20px; }
+.es-card-icon-blue { background: #002e60; color: white; }
+.es-card-icon-purple { background: #7846aa; color: white; }
+.es-card-icon-amber { background: #5f3f00; color: white; }
+.es-card-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7846aa;
+  margin-top: 10px;
+}
+.es-cta {
+  text-align: center;
+  margin-top: 24px;
+}
+.es-cta-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #002e60, #004489);
+  color: white;
+  font-weight: 700;
+  padding: 10px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+}
+.es-cta-btn:hover { opacity: 0.9; }
+@media (max-width: 640px) {
+  .es-cards { grid-template-columns: 1fr; }
+  .es-title { font-size: 22px; }
+}
+
 /* -- Login page -- */
 .login-body {
   display: flex;

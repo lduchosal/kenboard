@@ -18,6 +18,18 @@
       </tr>
     </thead>
     <tbody>
+      {% if not users %}
+      <tr><td colspan="6">
+        {% set es_badge = "Utilisateurs" %}
+        {% set es_title = "Aucun utilisateur" %}
+        {% set es_subtitle = "Créez un utilisateur avec le formulaire ci-dessous. Utilisez <code>kenboard set-password</code> pour définir un mot de passe en CLI." %}
+        {% set es_cards = [
+          {"icon": '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>', "color": "blue", "title": "Utilisateurs", "text": "Chaque utilisateur a un nom, une couleur d'avatar et un rôle (admin ou non)."},
+          {"icon": '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>', "color": "purple", "title": "Mot de passe", "text": "Le mot de passe est haché en argon2. Utilisez le formulaire ou <code>kenboard set-password</code>."}
+        ] %}
+        {% include "partials/empty_state.html" %}
+      </td></tr>
+      {% endif %}
       {% for u in users %}
       <tr data-user-id="{{ u.id }}" style="border-bottom:1px solid var(--border)">
         <td style="padding:6px">

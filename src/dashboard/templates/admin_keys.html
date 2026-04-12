@@ -20,6 +20,19 @@
       </tr>
     </thead>
     <tbody>
+      {% if not api_keys %}
+      <tr><td colspan="8">
+        {% set es_badge = "API" %}
+        {% set es_title = "Aucune clé API" %}
+        {% set es_subtitle = "Créez une clé pour permettre aux agents et intégrations d'accéder au board." %}
+        {% set es_cards = [
+          {"icon": '<path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>', "color": "blue", "title": "Token par projet", "text": "Chaque clé a un scope (read/write) sur un ou plusieurs projets."},
+          {"icon": '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>', "color": "purple", "title": "Sécurité", "text": "Le token est affiché une seule fois à la création. Il est haché en SHA-256 en base."},
+          {"icon": '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>', "color": "amber", "title": "Expiration", "text": "Optionnelle. Les clés expirées sont automatiquement refusées par le middleware."}
+        ] %}
+        {% include "partials/empty_state.html" %}
+      </td></tr>
+      {% endif %}
       {% for k in api_keys %}
       <tr data-key-id="{{ k.id }}" style="border-bottom:1px solid var(--border)">
         <td style="padding:6px"><input type="text" class="k-label" value="{{ k.label }}" autocomplete="off" style="width:100%"></td>

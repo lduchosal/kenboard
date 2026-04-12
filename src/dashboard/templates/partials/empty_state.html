@@ -1,0 +1,36 @@
+{# Reusable empty state block — editorial style from doc/uxui/empty.
+   Variables:
+     - es_badge:    short uppercase label (e.g. "Plateforme Kanban")
+     - es_title:    main heading (HTML safe)
+     - es_subtitle: paragraph under the heading
+     - es_cards:    list of dicts {icon, title, text, tag} — 1 to 3 cards
+     - es_cta:      optional dict {label, href} for the bottom CTA
+#}
+<div class="es">
+  <div class="es-hero">
+    {% if es_badge %}<span class="es-badge">{{ es_badge }}</span>{% endif %}
+    <h2 class="es-title">{{ es_title }}</h2>
+    {% if es_subtitle %}<p class="es-subtitle">{{ es_subtitle }}</p>{% endif %}
+  </div>
+
+  {% if es_cards %}
+  <div class="es-cards">
+    {% for c in es_cards %}
+    <div class="es-card{{ ' es-card-raised' if loop.index == 2 and es_cards | length == 3 else '' }}">
+      <div class="es-card-icon es-card-icon-{{ c.color | default('blue') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">{{ c.icon }}</svg>
+      </div>
+      <h3>{{ c.title }}</h3>
+      <p>{{ c.text }}</p>
+      {% if c.tag %}<span class="es-card-tag">{{ c.tag }}</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if es_cta %}
+  <div class="es-cta">
+    <a href="{{ es_cta.href }}" class="es-cta-btn">{{ es_cta.label }}</a>
+  </div>
+  {% endif %}
+</div>
