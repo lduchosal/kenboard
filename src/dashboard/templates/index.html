@@ -56,6 +56,12 @@
   </a>
   {% endfor %}
 
+  {% if not categories %}
+  <div class="empty-state">
+    <p>Aucune cat&eacute;gorie pour le moment.</p>
+    <a href="/admin/board" class="btn btn-save">Configurer le board</a>
+  </div>
+  {% endif %}
 </div></div>
 {% endblock %}
 

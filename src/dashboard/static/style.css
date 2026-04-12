@@ -1254,6 +1254,17 @@ button.cat-card-add {
   border-radius: 3px;
   flex-shrink: 0;
 }
+/* -- Empty state (#174) -- */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--dimmed);
+  font-size: 13px;
+}
+.empty-state p {
+  margin-bottom: 12px;
+}
+
 .board-drag-handle {
   cursor: grab;
   color: var(--dimmed);
