@@ -26,8 +26,8 @@ def list_categories() -> Any:
 def create_category() -> Any:
     """Create a new category.
 
-    Automatically creates a first project "Project <name>" inside
-    the new category so the board is immediately usable (#175).
+    Automatically creates a first project "Project <name>" inside the new category so
+    the board is immediately usable (#175).
     """
     data = CategoryCreate(**request.get_json())
     conn = db.get_connection()
