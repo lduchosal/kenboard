@@ -661,6 +661,30 @@ def sync(ctx: click.Context, json_mode: bool) -> None:
         click.echo(f"Removed {len(deleted)} stale file(s)")
 
 
+@cli.command(name="self-update")
+def self_update() -> None:
+    """Upgrade kenboard to the latest version from PyPI.
+
+    Runs ``pip install --upgrade kenboard`` using the same Python
+    that is running this CLI. The new version is available on the
+    next ``ken`` invocation.
+    """
+    import subprocess
+
+    from dashboard import __version__
+
+    click.echo(f"Current version: {__version__}")
+    click.echo("Upgrading kenboard from PyPI...")
+    result = subprocess.run(
+        [sys.executable, "-m", "pip", "install", "--upgrade", "kenboard"],
+        check=False,
+    )
+    if result.returncode != 0:
+        click.echo("Error: upgrade failed", err=True)
+        sys.exit(1)
+    click.echo("Done. Run `ken --help` to verify the new version.")
+
+
 @cli.command(name="help")
 def help_cmd() -> None:
     """Print the agent guide (kenboard best practices for LLM agents).
