@@ -155,6 +155,29 @@ def _load_config(
     )
 
 
+def _ssl_context() -> Any:
+    """Build an SSL context using certifi's CA bundle.
+
+    Python installed via python.org on macOS ships without a CA bundle
+    (the user must run ``Install Certificates.command`` manually). Using
+    ``certifi.where()`` as the CA file makes ``ken`` work plug-and-play
+    on any Python installation. ``certifi`` is a transitive dependency
+    (via ``requests``) and updates its CA bundle automatically on
+    ``pip install --upgrade kenboard``.
+    """
+    import ssl
+
+    try:
+        import certifi
+
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        return None
+
+
+_SSL_CTX = _ssl_context()
+
+
 def _request(
     cfg: KenConfig,
     method: str,
@@ -170,7 +193,7 @@ def _request(
         headers["Authorization"] = f"Bearer {cfg.api_token}"
     req = urllib_request.Request(url, data=data, headers=headers, method=method)
     try:
-        with urllib_request.urlopen(req) as resp:  # noqa: S310 - http(s) only
+        with urllib_request.urlopen(req, context=_SSL_CTX) as resp:  # noqa: S310
             raw = resp.read()
             if not raw:
                 return None
