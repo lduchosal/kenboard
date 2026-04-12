@@ -1002,6 +1002,25 @@ body {
   opacity: 1;
 }
 
+.kanban-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 12px;
+  text-align: center;
+  opacity: 0.35;
+  gap: 6px;
+}
+.kanban-empty svg {
+  width: 28px;
+  height: 28px;
+}
+.kanban-empty span {
+  font-size: 11px;
+  font-weight: 500;
+}
+
 .task-hidden { display: none; }
 .show-more {
   text-align: center;

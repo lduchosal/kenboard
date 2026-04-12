@@ -28,6 +28,12 @@
         {% for t in col_tasks %}
         {% include "partials/task_card.html" %}
         {% endfor %}
+        {% if not col_tasks %}
+        <div class="kanban-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l1.5 3.2 3.5.5-2.5 2.5.6 3.5L12 11l-3.1 1.7.6-3.5L7 6.7l3.5-.5z"/><path d="M5 19h14"/></svg>
+          <span>Tout est clair pour le moment</span>
+        </div>
+        {% endif %}
       </div>
     </div>
     {% endfor %}
@@ -48,6 +54,12 @@
       {% endfor %}
       {% if col_tasks | length > max_visible %}
       <button type="button" class="show-more" onclick="this.parentElement.querySelectorAll('.task-hidden').forEach(t=>t.classList.remove('task-hidden'));this.remove()">+ {{ col_tasks | length - max_visible }} autres</button>
+      {% endif %}
+      {% if not col_tasks %}
+      <div class="kanban-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l1.5 3.2 3.5.5-2.5 2.5.6 3.5L12 11l-3.1 1.7.6-3.5L7 6.7l3.5-.5z"/><path d="M5 19h14"/></svg>
+        <span>Tout est clair pour le moment</span>
+      </div>
       {% endif %}
     </div>
   </div>
