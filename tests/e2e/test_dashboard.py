@@ -103,9 +103,9 @@ class TestCategoryDetail:
         expect(page).to_have_title("KEN / Tech")
 
     def test_add_project(self, live_server, clean_db, page: Page):
-        """Create a project via admin board, verify on category page."""
+        """#175: creating a category auto-creates a project."""
         _create_category_and_project(live_server, page)
-        expect(page.locator(".section-title")).to_contain_text("PROJ")
+        expect(page.locator(".section-title")).to_contain_text("TECH")
 
 
 def _create_category_via_admin(live_server, page: Page) -> None:
@@ -118,21 +118,12 @@ def _create_category_via_admin(live_server, page: Page) -> None:
 
 
 def _create_category_and_project(live_server, page: Page) -> None:
-    """Helper: create a category + project via /admin/board, then navigate to the category page."""
-    # Create category via admin board
-    page.goto(live_server + "/admin/board")
-    page.click(".section-onboard-btn")  # "+ Catégorie"
-    page.fill("#cat-modal-name", "Tech")
-    page.click("#cat-modal .btn-save")
-    page.wait_for_timeout(500)
-    page.reload()
+    """Helper: create a category via /admin/board, then navigate to the category page.
 
-    # Create project via admin board
-    page.locator(".board-cat-header .section-onboard-btn").first.click()  # "+ Projet"
-    page.fill("#new-proj-name", "Projet")
-    page.fill("#new-proj-acronym", "PROJ")
-    page.click("#project-modal .btn-save")
-    page.wait_for_timeout(500)
+    Since #175, creating a category auto-creates a first project
+    "Project <name>" inside it, so no manual project creation needed.
+    """
+    _create_category_via_admin(live_server, page)
 
     # Navigate to the category detail page
     page.goto(live_server)
