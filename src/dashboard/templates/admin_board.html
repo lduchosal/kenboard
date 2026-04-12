@@ -37,12 +37,13 @@
     {% if not all_categories %}
     {% set es_badge = "Administration" %}
     {% set es_title = "Le board est vide" %}
-    {% set es_subtitle = "Cliquez + Catégorie ci-dessus pour commencer." %}
+    {% set es_subtitle = "Commencez par créer votre première catégorie." %}
     {% set es_cards = [
       {"icon": '<path d="M12 2v6m0 0l3-3m-3 3L9 5"/><rect x="3" y="10" width="7" height="5" rx="1"/><rect x="14" y="10" width="7" height="5" rx="1"/><rect x="8.5" y="17" width="7" height="5" rx="1"/>', "color": "blue", "title": "1. Catégorie", "text": "Créez une catégorie pour regrouper vos projets par thème."},
       {"icon": '<rect x="2" y="3" width="4" height="18" rx="1"/><rect x="8" y="3" width="4" height="12" rx="1"/><rect x="14" y="3" width="4" height="15" rx="1"/><rect x="20" y="3" width="2" height="8" rx="1"/>', "color": "purple", "title": "2. Projets", "text": "Ajoutez des projets dans chaque catégorie. Chacun est un kanban."},
       {"icon": '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/>', "color": "amber", "title": "3. Tâches", "text": "Les tâches se créent dans le kanban de chaque projet."}
     ] %}
+    {% set es_cta = {"label": "+ Catégorie", "href": "javascript:editCat('','','')"} %}
     {% include "partials/empty_state.html" %}
     {% endif %}
   </div>
