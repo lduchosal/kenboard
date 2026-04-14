@@ -7,6 +7,7 @@ to a tmp_path so ``.ken`` discovery and writes stay isolated.
 
 import json
 import os
+import sys
 from unittest.mock import patch
 
 import pytest
@@ -122,6 +123,7 @@ class TestLoadConfig:
         cfg = ken._load_config(base_url_override="http://x:9090/")
         assert cfg.base_url == "http://x:9090"
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Unix file permissions")
     def test_warns_on_loose_permissions(self, cwd_tmp, capsys):
         path = cwd_tmp / ".ken"
         path.write_text("project_id=abc\n")
@@ -232,9 +234,10 @@ class TestCliInit:
         content = ken_file.read_text()
         assert "project_id=uuid-1" in content
         assert "base_url=" in content
-        # Mode 0600
-        mode = ken_file.stat().st_mode & 0o777
-        assert mode == 0o600
+        # Mode 0600 (Unix only — Windows doesn't enforce POSIX permissions)
+        if sys.platform != "win32":
+            mode = ken_file.stat().st_mode & 0o777
+            assert mode == 0o600
         # .gitignore created with .ken
         gi = (cwd_tmp / ".gitignore").read_text()
         assert ".ken" in gi.splitlines()
@@ -707,7 +710,7 @@ class TestCliSync:
         payload = json.loads(result.output)
         assert payload["written"] == ["0001 - Hi.md"]
         assert payload["deleted"] == []
-        assert "doc/kenboard" in payload["target"]
+        assert os.path.join("doc", "kenboard") in payload["target"]
 
 
 class TestCliHelp:

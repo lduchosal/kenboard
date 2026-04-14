@@ -4,6 +4,7 @@ import logging
 import logging.handlers
 import os
 import signal
+import sys
 
 import pytest
 
@@ -39,6 +40,10 @@ class TestRotationSafety:
         assert len(file_handlers) == 1
         assert isinstance(file_handlers[0], logging.handlers.WatchedFileHandler)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Windows locks open files — rename fails",
+    )
     def test_log_reopens_after_rename(self, isolated_log_dir):
         """Simulate newsyslog: rename the file, write a new message, the
         handler must reopen the original path and write into the new file."""

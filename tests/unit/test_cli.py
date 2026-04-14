@@ -3,6 +3,7 @@
 import sys
 from unittest.mock import patch
 
+import pytest
 from click.testing import CliRunner
 
 from dashboard.cli import cli
@@ -72,6 +73,7 @@ class TestProdCommand:
         assert "gunicorn is not installed" in result.output
         assert 'pip install "kenboard[prod]"' in result.output
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="gunicorn is Unix-only")
     def test_invokes_gunicorn_with_default_argv(self):
         """With gunicorn installed, WSGIApplication is invoked with the right argv."""
         runner = CliRunner()
@@ -91,6 +93,7 @@ class TestProdCommand:
             "dashboard.app:create_app()",
         ]
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="gunicorn is Unix-only")
     def test_passes_custom_bind_and_workers(self):
         runner = CliRunner()
         with patch("gunicorn.app.wsgiapp.WSGIApplication") as mock_app:
