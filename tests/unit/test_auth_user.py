@@ -489,9 +489,11 @@ def rate_limited_client(auth_app):
 
     prev = auth_app.config.get("RATELIMIT_ENABLED", True)
     auth_app.config["RATELIMIT_ENABLED"] = True
+    limiter.enabled = True
     limiter.reset()
     yield auth_app.test_client()
     auth_app.config["RATELIMIT_ENABLED"] = prev
+    limiter.enabled = prev
     limiter.reset()
 
 

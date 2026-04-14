@@ -5,11 +5,12 @@ from typing import Any
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request
 from flask_login import current_user
 
 import dashboard.db as db
-from dashboard.auth_user import api_admin_required
+from dashboard.auth_user import api_admin_required, limiter
+from dashboard.logging import get_logger
 from dashboard.models.user import (
     PasswordChange,
     PasswordReset,
@@ -19,6 +20,8 @@ from dashboard.models.user import (
 )
 
 bp = Blueprint("users", __name__, url_prefix="/api/v1/users")
+
+log = get_logger("users")
 
 NOT_FOUND_ERROR = {"error": "Not found"}
 
@@ -43,6 +46,7 @@ def list_users() -> Any:
 
 
 @bp.route("", methods=["POST"])
+@limiter.limit("10 per hour")
 def create_user() -> Any:
     """Create a new user."""
     data = UserCreate(**request.get_json())
@@ -63,6 +67,12 @@ def create_user() -> Any:
             is_admin=int(data.is_admin),
         )
         row = queries.usr_get_by_id(conn, id=user_id)
+        log.info(
+            "admin.user_created",
+            user_id=user_id,
+            user_name=data.name,
+            principal=g.get("api_auth_principal"),
+        )
         return jsonify(User(**row).model_dump(mode="json")), 201
     finally:
         conn.close()
@@ -95,6 +105,11 @@ def update_user(user_id: str) -> Any:
             is_admin=is_admin_val,
         )
         row = queries.usr_get_by_id(conn, id=user_id)
+        log.info(
+            "admin.user_updated",
+            user_id=user_id,
+            principal=g.get("api_auth_principal"),
+        )
         return jsonify(User(**row).model_dump(mode="json"))
     finally:
         conn.close()
@@ -138,6 +153,7 @@ def change_password(user_id: str) -> Any:
 
 
 @bp.route("/<user_id>/reset-password", methods=["POST"])
+@limiter.limit("5 per hour")
 def reset_password(user_id: str) -> Any:
     """Admin reset of another user's password (#53).
 
@@ -168,6 +184,11 @@ def delete_user(user_id: str) -> Any:
     queries = db.load_queries()
     try:
         queries.usr_delete(conn, id=user_id)
+        log.info(
+            "admin.user_deleted",
+            user_id=user_id,
+            principal=g.get("api_auth_principal"),
+        )
         return "", 204
     finally:
         conn.close()

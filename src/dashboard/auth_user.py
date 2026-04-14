@@ -290,9 +290,20 @@ def login_post() -> Any:
         if not user.session_nonce:
             user.session_nonce = _rotate_session_nonce(user.id)
         login_user(user, remember=True, duration=timedelta(days=REMEMBER_DAYS))
+        log.info(
+            "auth.login_success",
+            user_id=user.id,
+            user_name=user.name,
+            ip=get_remote_address(),
+        )
         if _is_safe_url(next_url):
             return redirect(next_url)
         return redirect(url_for("pages.index"))
+    log.warning(
+        "auth.login_failed",
+        user_name=name,
+        ip=get_remote_address(),
+    )
     return render_template(
         _LOGIN_TEMPLATE, error="Identifiants invalides", next_url=next_url
     )
@@ -307,6 +318,12 @@ def logout() -> Any:
     ``remember_token``) becomes unverifiable on the next request.
     """
     if current_user.is_authenticated:
+        log.info(
+            "auth.logout",
+            user_id=current_user.id,
+            user_name=current_user.name,
+            ip=get_remote_address(),
+        )
         _rotate_session_nonce(current_user.id)
     logout_user()
     return redirect(url_for(LOGIN_VIEW_ENDPOINT))

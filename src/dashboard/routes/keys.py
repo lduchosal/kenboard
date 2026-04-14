@@ -12,10 +12,12 @@ import secrets
 import uuid
 from typing import Any
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 
 import dashboard.db as db
 from dashboard.auth import _hash_key
+from dashboard.auth_user import limiter
+from dashboard.logging import get_logger
 from dashboard.models.api_key import (
     ApiKey,
     ApiKeyCreate,
@@ -24,6 +26,8 @@ from dashboard.models.api_key import (
 )
 
 bp = Blueprint("keys", __name__, url_prefix="/api/v1/keys")
+
+log = get_logger("keys")
 
 KEY_PREFIX = "kb_"
 
@@ -61,6 +65,7 @@ def list_keys() -> Any:
 
 
 @bp.route("", methods=["POST"])
+@limiter.limit("10 per hour")
 def create_key() -> Any:
     """Create a new api_key.
 
@@ -96,6 +101,12 @@ def create_key() -> Any:
         row = queries.key_get_by_id(conn, id=key_id)
         merged = _row_with_scopes(conn, queries, row)
         merged["key"] = plain
+        log.info(
+            "admin.key_created",
+            key_id=key_id,
+            label=data.label,
+            principal=g.get("api_auth_principal"),
+        )
         return jsonify(ApiKeyCreated(**merged).model_dump(mode="json")), 201
     finally:
         conn.close()
@@ -220,6 +231,11 @@ def revoke_key(key_id: str) -> Any:
         if not existing:
             return jsonify({"error": "Not found"}), 404
         queries.key_revoke(conn, id=key_id)
+        log.info(
+            "admin.key_revoked",
+            key_id=key_id,
+            principal=g.get("api_auth_principal"),
+        )
         return "", 204
     finally:
         conn.close()

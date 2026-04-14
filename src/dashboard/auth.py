@@ -278,6 +278,12 @@ def _enforce_api_key(token: str, method: str, path: str) -> Any:
     """
     row = _lookup_api_key(token)
     if row is None:
+        log.warning(
+            "auth.api_key.invalid",
+            method=method,
+            path=path,
+            ip=request.remote_addr,
+        )
         return jsonify({"error": "invalid or revoked api key"}), 401
 
     api_key_id = row["id"]

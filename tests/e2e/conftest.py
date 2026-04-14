@@ -150,7 +150,12 @@ def live_server(_setup_test_db):
     app.config["LOGIN_DISABLED"] = True
     # Disable flask-limiter so the brute-force unit tests don't bleed
     # into e2e runs sharing the same module-level storage bucket.
+    # flask-limiter 4.x caches ``enabled`` at init time — set it on the
+    # instance directly.
     app.config["RATELIMIT_ENABLED"] = False
+    from dashboard.auth_user import limiter
+
+    limiter.enabled = False
 
     server = threading.Thread(
         target=lambda: app.run(port=SERVER_PORT, use_reloader=False),

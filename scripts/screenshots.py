@@ -146,6 +146,9 @@ def _start_server() -> str:
     app.config["TESTING"] = True
     app.config["LOGIN_DISABLED"] = True
     app.config["RATELIMIT_ENABLED"] = False
+    from dashboard.auth_user import limiter
+
+    limiter.enabled = False
 
     threading.Thread(
         target=lambda: app.run(port=SERVER_PORT, use_reloader=False),

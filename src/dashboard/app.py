@@ -153,7 +153,9 @@ def create_app() -> Flask:
     def handle_validation_error(e: ValidationError) -> tuple[dict[str, Any], int]:
         """Return 422 for Pydantic validation errors."""
         log.warning("validation_error", path=request.path, errors=e.errors())
-        return {"error": "Validation error", "details": e.errors()}, 422
+        if debug:
+            return {"error": "Validation error", "details": e.errors()}, 422
+        return {"error": "Validation error"}, 422
 
     @app.errorhandler(Exception)
     def handle_error(e: Exception) -> Any:
