@@ -13,9 +13,13 @@ from dashboard.db import load_queries
 # Config class itself before any app fixture runs.
 Config.KENBOARD_SECRET_KEY = "test-secret-do-not-use-outside-tests"
 
+# Set by _ensure_test_db(); False when MySQL is unreachable (e.g. Windows CI).
+_mysql_available = False
+
 
 def _ensure_test_db() -> None:
     """Create the test database and tables using the test admin user."""
+    global _mysql_available
     conn = pymysql.connect(
         host=Config.DB_HOST,
         port=Config.DB_PORT,
@@ -184,6 +188,7 @@ def _ensure_test_db() -> None:
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """)
     conn.close()
+    _mysql_available = True
 
 
 def _get_test_connection() -> pymysql.Connection:
@@ -201,8 +206,17 @@ def _get_test_connection() -> pymysql.Connection:
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db():
-    """Create the test database once per session."""
-    _ensure_test_db()
+    """Create the test database once per session.
+
+    When MySQL is unreachable (e.g. Windows CI runners) the fixture
+    silently succeeds so that pure-unit tests can still run.  Tests
+    that actually need the database will be skipped via the ``db`` or
+    ``app`` fixtures.
+    """
+    try:
+        _ensure_test_db()
+    except pymysql.err.OperationalError:
+        pass
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -215,6 +229,8 @@ def patch_db_connection(setup_test_db):
     hit the production database when a test only requests the ``db``
     fixture.
     """
+    if not _mysql_available:
+        return
     import dashboard.db as db_module
 
     db_module.get_connection = _get_test_connection
@@ -223,6 +239,8 @@ def patch_db_connection(setup_test_db):
 @pytest.fixture(scope="session")
 def app(setup_test_db):
     """Create Flask test app pointing to test database."""
+    if not _mysql_available:
+        pytest.skip("MySQL not available")
     import dashboard.db as db_module
 
     # Monkey-patch get_connection to use test DB
@@ -255,6 +273,8 @@ def queries():
 @pytest.fixture()
 def db():
     """Create a test database connection, clean tables before and after."""
+    if not _mysql_available:
+        pytest.skip("MySQL not available")
     conn = _get_test_connection()
     # Cleanup before test
     cur = conn.cursor()

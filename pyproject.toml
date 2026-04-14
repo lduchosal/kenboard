@@ -1,6 +1,6 @@
 [project]
 name = "kenboard"
-version = "0.1.57"
+version = "0.1.58"
 description = "Project management dashboard with kanban boards, burndown charts, and category-based organization. Flask API backend with MySQL storage and static HTML generation."
 authors = [
     { name = "Q" }
@@ -101,7 +101,7 @@ version-files = ["src/dashboard/__init__.py:__version__"]
 # Testing
 test = "pytest tests/ -q --tb=short --ignore=tests/e2e"
 test-quick = "pytest tests/ -q --tb=short -x --ignore=tests/e2e"
-test-ci = "pytest tests/ -q --tb=short --ignore=tests/integration --ignore=tests/e2e --cov=src/dashboard --cov-report=xml --cov-report=term"
+test-ci = "pytest tests/ -q --tb=short --ignore=tests/e2e --cov=src/dashboard --cov-report=xml --cov-report=term"
 test-unit = "pytest tests/unit/ -q --tb=short"
 test-integration = "pytest tests/integration/ -q --tb=short"
 test-e2e = "pytest tests/e2e/ -q --tb=short"
