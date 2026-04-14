@@ -113,6 +113,9 @@ def onboarding_text(cat_id: str | None, base_url: str) -> str:
     return (
         "KENBOARD — Pour accéder à ce board, 3 étapes :\n"
         "\n"
+        "Pré-requis : Python 11+ et un virtualenv :\n"
+        "   python3 -m venv .venv && source .venv/bin/activate\n"
+        "\n"
         "1. pip install kenboard\n"
         "\n"
         "2. Créer un fichier .ken (mode 0600) dans votre projet :\n"
@@ -146,6 +149,7 @@ def onboarding_json(cat_id: str | None, base_url: str) -> dict[str, Any]:
         "error": "unauthorized",
         "message": "Pour accéder à ce board, 3 étapes — voir onboarding.",
         "onboarding": {
+            "prerequisites": "Python 11+ et un virtualenv (python3 -m venv .venv)",
             "steps": [
                 "pip install kenboard",
                 "Créer un fichier .ken avec project_id, base_url, api_token",
@@ -225,6 +229,14 @@ def onboarding_text_full(
         )
     return (
         "# KENBOARD\n"
+        "\n"
+        "## Pré-requis\n"
+        "\n"
+        "Python 11 ou supérieur est requis.\n"
+        "Créer un virtualenv avant d'installer :\n"
+        "\n"
+        "   python3 -m venv .venv\n"
+        "   source .venv/bin/activate\n"
         "\n"
         "## 1. Installer\n"
         "\n"
