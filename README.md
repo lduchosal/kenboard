@@ -1,6 +1,6 @@
 # KENBOARD
 
-> **Un kanban pour les BOT.**
+> **A kanban for BOTs.**
 
 <table>
 <tr>
@@ -29,70 +29,70 @@
 </tr>
 </table>
 
-## Usage pour les humains
+## For humans
 
 <p align="center">
-  <img src="./doc/images/kanban.png" alt="Vue kanban KENBOARD" width="800">
+  <img src="./doc/images/kanban.png" alt="KENBOARD kanban view" width="800">
 </p>
 
-> Regenerer le screenshot apres une evolution UI : `pdm run screenshots`
+> Regenerate the screenshot after a UI change: `pdm run screenshots`
 
-## Usage pour les BOT
+## For BOTs
 
-KENBOARD livre `ken`, une CLI pensee pour Claude Code et autres assistants :
-output JSON, filtres natifs, exit codes propres.
+KENBOARD ships `ken`, a CLI built for Claude Code and other assistants:
+JSON output, native filters, clean exit codes.
 
-### Onboarding automatique
+### Automatic onboarding
 
-1. Un admin clique **Copy onboard link** sur un projet dans le kenboard
-2. Le lien est donne a l'agent (Claude Code, GPT, etc.)
-3. L'agent ouvre le lien et recoit un fichier `.ken` complet avec un
-   token API pre-rempli — zero interaction humaine pour l'API key
-4. L'agent fait `pip install kenboard`, cree le `.ken`, et commence a
-   travailler immediatement
+1. An admin clicks **Copy onboard link** on a project in the kenboard
+2. The link is handed to the agent (Claude Code, GPT, etc.)
+3. The agent opens the link and gets a complete `.ken` file with a
+   pre-filled API token — zero human interaction for the API key
+4. The agent runs `pip install kenboard`, creates the `.ken`, and
+   starts working immediately
 
-### Workflow quotidien
+### Daily workflow
 
 ```sh
-ken list --status todo --who Claude --json   # taches assignees
-ken show <id> --json                         # detail d'une tache
-ken move <id> --to doing                     # passer en cours
-ken add "MODULE / Titre" --desc "..." --who Claude  # creer
-ken move <id> --to review                    # soumettre
+ken list --status todo --who Claude --json   # assigned tasks
+ken show <id> --json                         # task details
+ken move <id> --to doing                     # mark in progress
+ken add "MODULE / Title" --desc "..." --who Claude  # create
+ken move <id> --to review                    # submit
 ```
 
-Le workflow complet : `todo` → `doing` → `review` → `done`.
-L'agent gere `todo` → `doing` → `review`. Seul l'utilisateur passe
+Full workflow: `todo` → `doing` → `review` → `done`.
+The agent handles `todo` → `doing` → `review`. Only the user moves
 `review` → `done`.
 
 ### References
 
-- CLI complete : [`doc/ken-cli.md`](doc/ken-cli.md)
-- Guide agent : `ken help`
-- API REST : [`doc/api.md`](doc/api.md), [`doc/openapi.yaml`](doc/openapi.yaml)
+- Full CLI: [`doc/ken-cli.md`](doc/ken-cli.md)
+- Agent guide: `ken help`
+- REST API: [`doc/api.md`](doc/api.md), [`doc/openapi.yaml`](doc/openapi.yaml)
 
-## Entreprise
+## Enterprise
 
-KENBOARD est concu pour un deploiement self-hosted en entreprise :
+KENBOARD is designed for self-hosted enterprise deployment:
 
-- **Authentification OIDC** — connexion via un Identity Provider
-  d'entreprise (Microsoft ADFS, Google Workspace, Authentik, Keycloak,
-  etc.) en complement ou remplacement du login par mot de passe.
-  Voir [`doc/oidc-adfs.md`](doc/oidc-adfs.md) pour le guide ADFS.
-- **Self-hosted** — aucune dependance cloud. MySQL + Flask + gunicorn
-  sur votre infrastructure, derriere votre reverse proxy / WAF.
-- **API keys par projet** — chaque agent ou integration recoit un
-  token scope (read/write) sur un projet specifique. Les agents IA
-  s'auto-onboardent via le runbook servi par le serveur.
-- **Support commercial** — accompagnement a la mise en place,
-  integration IdP, et support operationnel disponibles sur demande.
-  Contact : [2113.ch](https://www.2113.ch)
+- **OIDC authentication** — sign in through a corporate Identity
+  Provider (Microsoft ADFS, Google Workspace, Authentik, Keycloak,
+  etc.) alongside or instead of password login. See
+  [`doc/oidc-adfs.md`](doc/oidc-adfs.md) for the ADFS guide.
+- **Self-hosted** — no cloud dependencies. MySQL + Flask + gunicorn
+  on your own infrastructure, behind your reverse proxy / WAF.
+- **Per-project API keys** — each agent or integration gets a
+  scoped token (read/write) for a specific project. AI agents
+  self-onboard through the runbook served by the server.
+- **Commercial support** — setup assistance, IdP integration, and
+  operational support available on request.
+  Contact: [2113.ch](https://www.2113.ch)
 
 ## Installation
 
-Voir [`INSTALL.md`](INSTALL.md) pour la mise en place complète (MySQL, utilisateurs, migrations, reverse proxy, OIDC).
+See [`INSTALL.md`](INSTALL.md) for the full setup (MySQL, users,
+migrations, reverse proxy, OIDC).
 
-## Licence
+## License
 
-MIT — voir [`LICENSE`](LICENSE).
-
+MIT — see [`LICENSE`](LICENSE).
