@@ -5,11 +5,11 @@ from typing import Any
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from flask import Blueprint, current_app, g, jsonify, request
+from flask import Blueprint, g, jsonify, request
 from flask_login import current_user
 
 import dashboard.db as db
-from dashboard.auth_user import api_admin_required, limiter
+from dashboard.auth_user import _is_login_disabled, api_admin_required, limiter
 from dashboard.logging import get_logger
 from dashboard.models.user import (
     PasswordChange,
@@ -140,7 +140,8 @@ def change_password(user_id: str) -> Any:
     """
     # Tests with LOGIN_DISABLED=True skip ownership / authentication checks
     # so the unit suite can exercise the route without juggling sessions.
-    if not current_app.config.get("LOGIN_DISABLED"):
+    # #199: the helper refuses the bypass in production even if the flag is set.
+    if not _is_login_disabled():
         if not current_user.is_authenticated:
             return jsonify({"error": "login required"}), 401
         if str(current_user.id) != user_id:

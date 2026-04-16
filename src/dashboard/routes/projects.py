@@ -2,12 +2,13 @@
 
 from typing import Any
 
-from flask import Blueprint, current_app, g, jsonify, request
+from flask import Blueprint, g, jsonify, request
 from flask_login import current_user
 
 import dashboard.db as db
 from dashboard.auth_user import (
     _is_api_key_principal,
+    _is_login_disabled,
     current_user_can,
     current_user_can_project,
 )
@@ -18,7 +19,7 @@ bp = Blueprint("projects", __name__, url_prefix="/api/v1/projects")
 
 def _should_filter_for_current_user() -> bool:
     """True when list endpoints should be filtered to the current user's scopes."""
-    if current_app.config.get("LOGIN_DISABLED"):
+    if _is_login_disabled():
         return False
     if _is_api_key_principal(g.get("api_auth_principal")):
         return False

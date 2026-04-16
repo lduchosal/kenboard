@@ -25,7 +25,12 @@ log = get_logger("app")
 
 
 def create_app() -> Flask:
-    """Create and configure the Flask application."""
+    """Create and configure the Flask application.
+
+    Raises:
+        RuntimeError: when ``LOGIN_DISABLED`` is set on the app config
+            while ``DEBUG`` is off (#199 defense-in-depth).
+    """
     debug = os.getenv("DEBUG", "false").lower() == "true"
     setup_logging(debug=debug)
 
@@ -274,6 +279,19 @@ def create_app() -> Flask:
     def favicon() -> Any:
         """Return empty favicon."""
         return "", 204
+
+    # #199 defense-in-depth: if someone managed to set LOGIN_DISABLED on the
+    # app config while DEBUG is off (misconfigured .env, leaked secret), fail
+    # loud at startup instead of silently disabling authentication.
+    # ``_is_login_disabled()`` also enforces this at runtime on every request
+    # through the helper — this check just shortens the feedback loop so the
+    # app never serves a single request in that state.
+    if app.config.get("LOGIN_DISABLED") and not debug:
+        raise RuntimeError(
+            "LOGIN_DISABLED=True is set but DEBUG=False. This would bypass "
+            "authentication in production. Refusing to start. Remove "
+            "LOGIN_DISABLED from your config or set DEBUG=True (dev/test only)."
+        )
 
     log.info("app_started", debug=debug)
     return app

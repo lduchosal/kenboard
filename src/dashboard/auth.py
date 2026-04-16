@@ -34,7 +34,7 @@ import hashlib
 from typing import Any
 from urllib.parse import urlparse
 
-from flask import Flask, current_app, g, jsonify, request
+from flask import Flask, g, jsonify, request
 from flask_login import current_user
 
 import dashboard.db as db
@@ -342,8 +342,12 @@ def _enforce() -> Any:
         return None
 
     # Tests bypass the middleware via ``LOGIN_DISABLED`` (same flag that
-    # disables Flask-Login's @login_required). Mirrors auth_user.admin_required.
-    if current_app.config.get("LOGIN_DISABLED"):
+    # disables Flask-Login's @login_required). The helper carries the
+    # production guard (#199) — it raises if the flag is set without
+    # ``Config.DEBUG=True`` so a misconfigured prod crashes loud.
+    from dashboard.auth_user import _is_login_disabled
+
+    if _is_login_disabled():
         g.api_auth_principal = "test"
         return None
 

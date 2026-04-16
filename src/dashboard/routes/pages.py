@@ -3,12 +3,16 @@
 from datetime import date, datetime
 from typing import Any
 
-from flask import Blueprint, abort, current_app, render_template
+from flask import Blueprint, abort, render_template
 from flask_login import current_user, login_required
 
 import dashboard.db as db
 from dashboard import __version__
-from dashboard.auth_user import admin_required, current_user_can
+from dashboard.auth_user import (
+    _is_login_disabled,
+    admin_required,
+    current_user_can,
+)
 
 bp = Blueprint("pages", __name__)
 
@@ -20,7 +24,7 @@ def _visible_category_ids() -> set[str] | None:
     caller treats ``None`` as "show everything", while an empty set
     means "show nothing".
     """
-    if current_app.config.get("LOGIN_DISABLED"):
+    if _is_login_disabled():
         return None
     if not current_user.is_authenticated:
         return set()

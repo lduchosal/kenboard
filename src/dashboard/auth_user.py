@@ -176,13 +176,50 @@ def _unauthorized() -> Any:
     return redirect(url_for(LOGIN_VIEW_ENDPOINT, next=next_url))
 
 
+def _is_login_disabled() -> bool:
+    """Check the ``LOGIN_DISABLED`` test bypass with a production guard (#199).
+
+    ``LOGIN_DISABLED`` is a pytest convenience that short-circuits every auth
+    gate so unit tests don't have to juggle sessions. It MUST NEVER take
+    effect in production. Python has no ``#ifdef DEBUG`` so the code path
+    can't be stripped at build time — instead we centralize the read in
+    this helper and refuse the bypass whenever ``Config.DEBUG`` is False.
+
+    Every production read of the flag goes through this function so a
+    misconfigured ``.env`` or a leaked secret that sets ``LOGIN_DISABLED``
+    crashes the request loudly instead of silently disabling auth.
+
+    Returns:
+        ``True`` if the flag is set AND we are running in debug mode.
+        ``False`` when the flag is off.
+
+    Raises:
+        RuntimeError: when ``LOGIN_DISABLED`` is True but ``Config.DEBUG``
+            is False — the bypass is forbidden outside of test/dev.
+    """
+    if not current_app.config.get("LOGIN_DISABLED"):
+        return False
+    if not Config.DEBUG:
+        log.error(
+            "login_disabled.refused_in_production",
+            path=getattr(request, "path", None),
+        )
+        raise RuntimeError(
+            "LOGIN_DISABLED is a test-only flag and requires Config.DEBUG=True. "
+            "Refusing to bypass authentication in production."
+        )
+    return True
+
+
 def admin_required() -> None:
     """Abort with 403 if the current user is not an admin.
 
     To call from inside a ``@login_required`` view. Respects the Flask
-    ``LOGIN_DISABLED`` config flag (used by tests) by becoming a no-op.
+    ``LOGIN_DISABLED`` config flag (used by tests) by becoming a no-op
+    in debug mode. See :func:`_is_login_disabled` for the prod guard
+    (it raises ``RuntimeError`` if the flag is set without ``DEBUG=True``).
     """
-    if current_app.config.get("LOGIN_DISABLED"):
+    if _is_login_disabled():
         return
     if not current_user.is_authenticated or not current_user.is_admin:
         abort(403)
@@ -197,11 +234,13 @@ def api_admin_required() -> None:
     ``g.api_auth_principal == "admin"`` for the latter case.
 
     Tests with ``LOGIN_DISABLED=True`` skip the check, mirroring how
-    ``admin_required`` and the API middleware behave.
+    ``admin_required`` and the API middleware behave. See
+    :func:`_is_login_disabled` for the prod guard (it raises
+    ``RuntimeError`` if the flag is set without ``DEBUG=True``).
     """
     from flask import g
 
-    if current_app.config.get("LOGIN_DISABLED"):
+    if _is_login_disabled():
         return
     if g.get("api_auth_principal") == "admin":
         return
@@ -292,7 +331,7 @@ def current_user_can(category_id: str, action: str) -> bool:
     """
     from flask import g
 
-    if current_app.config.get("LOGIN_DISABLED"):
+    if _is_login_disabled():
         return True
     if _is_api_key_principal(g.get("api_auth_principal")):
         return True
@@ -308,7 +347,7 @@ def current_user_can_project(project_id: str, action: str) -> bool:
     """Same as :func:`current_user_can` but resolves the category from a project."""
     from flask import g
 
-    if current_app.config.get("LOGIN_DISABLED"):
+    if _is_login_disabled():
         return True
     if _is_api_key_principal(g.get("api_auth_principal")):
         return True

@@ -2,12 +2,13 @@
 
 from typing import Any
 
-from flask import Blueprint, current_app, g, jsonify, request
+from flask import Blueprint, g, jsonify, request
 from flask_login import current_user
 
 import dashboard.db as db
 from dashboard.auth_user import (
     _is_api_key_principal,
+    _is_login_disabled,
     api_admin_required,
     current_user_can,
 )
@@ -23,7 +24,7 @@ def _should_filter_for_current_user() -> bool:
     (``LOGIN_DISABLED``), and any API-key principal (API keys have their
     own project-level scoping enforced in ``auth.py``).
     """
-    if current_app.config.get("LOGIN_DISABLED"):
+    if _is_login_disabled():
         return False
     # Bearer-token callers are already scoped by auth.py, don't double-filter.
     if _is_api_key_principal(g.get("api_auth_principal")):
