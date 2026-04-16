@@ -311,7 +311,7 @@ class TestLoginFlow:
         new_id = create.get_json()["id"]
         reset = auth_client.post(
             f"/api/v1/users/{new_id}/reset-password",
-            data=json.dumps({"new_password": "secret123"}),
+            data=json.dumps({"new_password": "Np4rW!x8qZmB2kLt"}),
             content_type="application/json",
             headers=SAME_ORIGIN,
         )
@@ -319,7 +319,7 @@ class TestLoginFlow:
         auth_client.post("/logout")
         login = auth_client.post(
             "/login",
-            data={"name": "user@example.com", "password": "secret123"},
+            data={"name": "user@example.com", "password": "Np4rW!x8qZmB2kLt"},
             follow_redirects=False,
         )
         assert login.status_code == 302
@@ -466,17 +466,21 @@ class TestApiAcceptsSession:
     def test_normal_user_session_blocked_on_admin_only_api(
         self, auth_client, db, normal_user
     ):
-        """A non-admin logged-in user is blocked on admin-only endpoints.
+        """A non-admin logged-in user is blocked on endpoints that stay admin-only.
 
-        Tracked by ken #48: previously the cookie auth path bypassed the admin-only
-        check, letting any logged-in user manage users / keys / categories / projects.
-        The middleware now mirrors the bearer-token rules.
+        Tracked by ken #48 initially, updated in #197: categories and projects GETs are
+        now per-board scoped (filtered 200 instead of 403). Only endpoints that remain
+        admin-only (users, keys) still return 403 for non-admin cookie sessions.
         """
         auth_client.post("/login", data={"name": "Alice", "password": "alicepass"})
-        # /api/v1/categories is admin-only — non-admin must get 403
-        assert auth_client.get("/api/v1/categories").status_code == 403
-        # Same for /api/v1/users
+        # /api/v1/users is still admin-only
         assert auth_client.get("/api/v1/users").status_code == 403
+        # /api/v1/keys is still admin-only
+        assert auth_client.get("/api/v1/keys").status_code == 403
+        # /api/v1/categories now returns a filtered 200 (empty if no scopes)
+        r = auth_client.get("/api/v1/categories")
+        assert r.status_code == 200
+        assert r.get_json() == []
 
 
 # -- Rate limiting on /login --------------------------------------------------

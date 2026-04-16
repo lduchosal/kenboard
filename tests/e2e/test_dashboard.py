@@ -716,7 +716,7 @@ class TestAdminUsers:
         page.fill("#new-name", "Dave")
         page.fill("#new-color", "#abcdef")
         page.click("#new-password")
-        page.fill("#new-password", "secret123")
+        page.fill("#new-password", "X7k!mQvL2pYwR3tN")
         page.click("#users-create-btn")
         page.wait_for_timeout(500)
         page.reload()

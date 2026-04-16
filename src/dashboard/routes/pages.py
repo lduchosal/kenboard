@@ -3,14 +3,37 @@
 from datetime import date, datetime
 from typing import Any
 
-from flask import Blueprint, render_template
-from flask_login import login_required
+from flask import Blueprint, abort, current_app, render_template
+from flask_login import current_user, login_required
 
 import dashboard.db as db
 from dashboard import __version__
-from dashboard.auth_user import admin_required
+from dashboard.auth_user import admin_required, current_user_can
 
 bp = Blueprint("pages", __name__)
+
+
+def _visible_category_ids() -> set[str] | None:
+    """Return the set of category ids the current user may read.
+
+    Returns ``None`` to signal "no filtering" (admin, test mode). The
+    caller treats ``None`` as "show everything", while an empty set
+    means "show nothing".
+    """
+    if current_app.config.get("LOGIN_DISABLED"):
+        return None
+    if not current_user.is_authenticated:
+        return set()
+    if current_user.is_admin:
+        return None
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        rows = list(queries.usr_scopes_get(conn, user_id=current_user.id))
+        return {r["category_id"] for r in rows}
+    finally:
+        conn.close()
+
 
 COLUMNS = [
     {"id": "todo", "name": "A faire", "color": "var(--todo)"},
@@ -38,14 +61,25 @@ def fmt_date(when_str: str) -> str:
     return f"{d.day:02d}.{d.month:02d}"
 
 
-def _load_all_data() -> dict[str, Any]:
-    """Load all data from the database."""
+def _load_all_data(
+    visible_cat_ids: set[str] | None = None,
+) -> dict[str, Any]:
+    """Load all data from the database.
+
+    Args:
+        visible_cat_ids: If not ``None``, restrict categories and
+            projects to those whose category id is in the set. Used
+            for non-admin users per-board scoping (#197).
+    """
     conn = db.get_connection()
     queries = db.load_queries()
     try:
         categories = list(queries.cat_get_all(conn))
         all_projects = list(queries.proj_get_all(conn))
         users = list(queries.usr_get_all(conn))
+        if visible_cat_ids is not None:
+            categories = [c for c in categories if c["id"] in visible_cat_ids]
+            all_projects = [p for p in all_projects if p["cat_id"] in visible_cat_ids]
         # Attach tasks to each project
         for p in all_projects:
             p["tasks"] = list(queries.task_get_by_project(conn, project_id=p["id"]))
@@ -126,8 +160,8 @@ def _build_context(
 @bp.route("/", methods=["GET"])
 @login_required
 def index() -> Any:
-    """Serve the dashboard."""
-    data = _load_all_data()
+    """Serve the dashboard, filtered to the user's scopes if non-admin (#197)."""
+    data = _load_all_data(visible_cat_ids=_visible_category_ids())
     ctx = _build_context(data, prefix="/")
     ctx["title"] = "KEN"
     # Flat overview of all "doing" tasks across every project, with the
@@ -154,11 +188,25 @@ def index() -> Any:
 @bp.route("/admin/users", methods=["GET"])
 @login_required
 def admin_users() -> Any:
-    """Serve the user management admin page."""
+    """Serve the user management admin page with per-user board scopes (#197)."""
     admin_required()
     data = _load_all_data()
+    # Attach each user's category scopes for the "Accès boards" column.
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        for u in data["users"]:
+            u["scopes"] = [
+                {"category_id": s["category_id"], "scope": s["scope"]}
+                for s in queries.usr_scopes_get(conn, user_id=u["id"])
+            ]
+    finally:
+        conn.close()
     ctx = _build_context(data, prefix="/")
     ctx["title"] = "KEN / Utilisateurs"
+    # Provide the full category list to the template so the "Add board"
+    # popover can offer the set of categories not yet scoped for a user.
+    ctx["all_categories"] = data["categories"]
     return render_template("admin_users.html", **ctx)
 
 
@@ -205,8 +253,10 @@ def admin_board() -> Any:
 @bp.route("/cat/<cat_id>.html", methods=["GET"])
 @login_required
 def category(cat_id: str) -> Any:
-    """Serve a category detail page."""
-    data = _load_all_data()
+    """Serve a category detail page (read scope on the category required, #197)."""
+    if not current_user_can(cat_id, "read"):
+        abort(403)
+    data = _load_all_data(visible_cat_ids=_visible_category_ids())
     cat = next((c for c in data["categories"] if c["id"] == cat_id), None)
     if not cat:
         return "Not found", 404

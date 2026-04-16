@@ -56,9 +56,12 @@ SAFE_METHODS: frozenset[str] = frozenset({"GET", "HEAD", "OPTIONS"})
 ADMIN_ONLY_PREFIXES: tuple[tuple[str, frozenset[str] | None], ...] = (
     ("/api/v1/keys", None),
     ("/api/v1/users", None),
-    ("/api/v1/categories", None),
-    # Project create / list also reserved to admin (no project_id to scope on)
-    ("/api/v1/projects", frozenset({"GET", "POST"})),
+    # ``/api/v1/categories`` and ``/api/v1/projects`` used to be entirely
+    # admin-only for cookie sessions. Since #197 they accept non-admin
+    # sessions: the route handlers filter by ``user_category_scopes`` and
+    # call ``api_admin_required`` for the mutations that stay admin-only
+    # (POST/DELETE on categories — creating or destroying a board is a
+    # board-admin action, not a per-board one).
 )
 
 # Endpoints under an admin-only prefix that are nonetheless reachable by a

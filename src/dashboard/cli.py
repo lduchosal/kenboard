@@ -143,8 +143,13 @@ def set_password(name: str) -> None:
     if pw != pw2:
         click.echo("Passwords do not match", err=True)
         sys.exit(1)
-    if len(pw) < 8:
-        click.echo("Password must be at least 8 characters", err=True)
+    # #198: enforce the same zxcvbn-based strength policy the API uses.
+    from dashboard.password_strength import validate_password_strength
+
+    try:
+        validate_password_strength(pw)
+    except ValueError as e:
+        click.echo(str(e), err=True)
         sys.exit(1)
     h = PasswordHasher().hash(pw)
     conn = db_module.get_connection()
@@ -156,6 +161,39 @@ def set_password(name: str) -> None:
             sys.exit(1)
         queries.usr_update_password(conn, id=row["id"], password_hash=h)
         click.echo(f"Password updated for {name}")
+    finally:
+        conn.close()
+
+
+@cli.command()
+@click.option(
+    "--yes",
+    is_flag=True,
+    help="Skip interactive confirmation (for scripted use).",
+)
+def grant_legacy_read(yes: bool) -> None:
+    """Grant ``read`` on every existing category to every non-admin user (#197).
+
+    Opt-in recovery path for deployments migrating from a pre-permissions
+    version: the default-closed policy locks everyone out until an admin
+    assigns scopes. Running this once restores the pre-migration "everyone
+    sees everything" behaviour, only in read mode. Admins already bypass
+    scopes via ``users.is_admin``; this command only touches non-admins.
+
+    Idempotent: existing entries are left untouched (``INSERT IGNORE``).
+    """
+    import dashboard.db as db_module
+
+    if not yes:
+        click.confirm(
+            "Grant 'read' on every category to every non-admin user?",
+            abort=True,
+        )
+    conn = db_module.get_connection()
+    queries = db_module.load_queries()
+    try:
+        queries.usr_grant_all_categories_read(conn)
+        click.echo("Done. Existing entries were left untouched.")
     finally:
         conn.close()
 

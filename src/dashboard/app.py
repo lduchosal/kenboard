@@ -149,12 +149,70 @@ def create_app() -> Flask:
     from pydantic import ValidationError
     from werkzeug.exceptions import HTTPException
 
+    def _safe_pydantic_errors(errors: Any) -> list[dict[str, Any]]:
+        """Make Pydantic's ``.errors()`` JSON-serializable.
+
+        Pydantic 2 embeds the original exception under ``ctx.error`` for
+        ``value_error`` validators, which Flask's JSON provider refuses to
+        serialize. We stringify the exception so debug responses stay
+        useful without crashing. Typed as ``Any`` because pydantic
+        ``ErrorDetails`` is a ``TypedDict`` that does not unify with the
+        looser ``dict`` we hand back.
+        """
+        cleaned: list[dict[str, Any]] = []
+        for err in errors:
+            err_copy: dict[str, Any] = dict(err)
+            ctx = err_copy.get("ctx")
+            if isinstance(ctx, dict) and "error" in ctx:
+                err_copy["ctx"] = {**ctx, "error": str(ctx["error"])}
+            cleaned.append(err_copy)
+        return cleaned
+
+    _PASSWORD_FIELDS = {"password", "new_password", "old_password"}
+
+    def _extract_password_error(details: list[dict[str, Any]]) -> str | None:
+        """Return a user-facing message when a password field failed validation.
+
+        Our custom ``validate_password_strength`` raises ``ValueError`` whose
+        message is already actionable (length requirement, zxcvbn score,
+        zxcvbn feedback). We surface that instead of the generic "Validation
+        error" so the UI modal can tell the user *why* the password was
+        rejected (#198).
+
+        Pydantic prefixes value-error messages with ``"Value error, "`` —
+        strip it so the final text reads naturally.
+        """
+        for err in details:
+            loc = err.get("loc") or ()
+            if not loc:
+                continue
+            field = loc[0] if isinstance(loc, (list, tuple)) else loc
+            if field not in _PASSWORD_FIELDS:
+                continue
+            msg = err.get("msg", "")
+            if not isinstance(msg, str):
+                continue
+            msg = msg.removeprefix("Value error, ")
+            # Length check from pydantic's built-in ``min_length`` yields
+            # a ``string_too_short`` type with a less helpful message; we
+            # only forward messages that clearly come from our validator.
+            if msg and ("Password" in msg or err.get("type") == "value_error"):
+                return msg
+        return None
+
     @app.errorhandler(ValidationError)
     def handle_validation_error(e: ValidationError) -> tuple[dict[str, Any], int]:
         """Return 422 for Pydantic validation errors."""
-        log.warning("validation_error", path=request.path, errors=e.errors())
+        details = _safe_pydantic_errors(e.errors())
+        log.warning("validation_error", path=request.path, errors=details)
+        password_msg = _extract_password_error(details)
+        if password_msg:
+            body: dict[str, Any] = {"error": password_msg, "field": "password"}
+            if debug:
+                body["details"] = details
+            return body, 422
         if debug:
-            return {"error": "Validation error", "details": e.errors()}, 422
+            return {"error": "Validation error", "details": details}, 422
         return {"error": "Validation error"}, 422
 
     @app.errorhandler(Exception)

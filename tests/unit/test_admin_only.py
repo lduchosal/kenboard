@@ -154,11 +154,19 @@ class TestAdminOnlyAsNormalUser:
         )
         assert r.status_code == 403
 
-    def test_get_categories_rejected(self, normal_client, db):
+    def test_get_categories_returns_filtered_list(self, normal_client, db):
+        """Since #197: non-admin cookie GETs are allowed and filtered by scope.
+
+        A user with no scopes sees an empty list — the result is the same "no access"
+        outcome as the old 403 but communicated via an empty 200 (coherent with how
+        scoped users see partial data).
+        """
         r = normal_client.get("/api/v1/categories")
-        assert r.status_code == 403
+        assert r.status_code == 200
+        assert r.get_json() == []
 
     def test_post_categories_rejected(self, normal_client, db):
+        """Creating a board stays admin-only (api_admin_required in route)."""
         r = normal_client.post(
             "/api/v1/categories",
             data=json.dumps({"name": "x", "color": "#000000"}),
@@ -167,11 +175,14 @@ class TestAdminOnlyAsNormalUser:
         )
         assert r.status_code == 403
 
-    def test_get_projects_rejected(self, normal_client, db):
+    def test_get_projects_returns_filtered_list(self, normal_client, db):
+        """Since #197: projects GET is filtered by the user's scopes."""
         r = normal_client.get("/api/v1/projects")
-        assert r.status_code == 403
+        assert r.status_code == 200
+        assert r.get_json() == []
 
-    def test_post_projects_rejected(self, normal_client, db):
+    def test_post_projects_rejected_without_write_scope(self, normal_client, db):
+        """Non-admin without write on target category still gets 403 from the route."""
         r = normal_client.post(
             "/api/v1/projects",
             data=json.dumps(

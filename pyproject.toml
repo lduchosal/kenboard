@@ -1,6 +1,6 @@
 [project]
 name = "kenboard"
-version = "0.1.59"
+version = "0.1.60"
 description = "Project management dashboard with kanban boards, burndown charts, and category-based organization. Flask API backend with MySQL storage and static HTML generation."
 authors = [
     { name = "Q" }
@@ -40,6 +40,7 @@ dependencies = [
     "flask-limiter>=4.1.1",
     "authlib>=1.6.9",
     "requests>=2.28",
+    "zxcvbn>=4.5.0",
 ]
 
 [project.optional-dependencies]

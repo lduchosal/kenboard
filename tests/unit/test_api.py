@@ -365,7 +365,7 @@ class TestUserAPI:
                 {
                     "name": "Q",
                     "color": "#0969da",
-                    "password": "secret",
+                    "password": "X7k!mQvL2pYwR3tN",
                     "is_admin": True,
                 }
             ),
@@ -405,14 +405,18 @@ class TestUserAPI:
         client.post(
             "/api/v1/users",
             data=json.dumps(
-                {"name": "Claire", "color": "#1a7f37", "password": "topsecret"}
+                {
+                    "name": "Claire",
+                    "color": "#1a7f37",
+                    "password": "X7k!mQvL2pYwR3tN",
+                }
             ),
             content_type="application/json",
         )
         row = queries.usr_get_by_name(db, name="Claire")
         assert row is not None
         assert row["password_hash"] != ""
-        assert row["password_hash"] != "topsecret"
+        assert row["password_hash"] != "X7k!mQvL2pYwR3tN"
         # Argon2 hash starts with $argon2
         assert row["password_hash"].startswith("$argon2")
 
@@ -440,7 +444,7 @@ class TestUserAPI:
         created = client.post(
             "/api/v1/users",
             data=json.dumps(
-                {"name": "Eve", "color": "#abcdef", "password": "oldsecret"}
+                {"name": "Eve", "color": "#abcdef", "password": "X7k!mQvL2pYwR3tN"}
             ),
             content_type="application/json",
         ).get_json()
@@ -448,7 +452,7 @@ class TestUserAPI:
         # Sneak `password` through PATCH — extra fields are dropped silently.
         resp = client.patch(
             f"/api/v1/users/{created['id']}",
-            data=json.dumps({"name": "Eve2", "password": "newsecret"}),
+            data=json.dumps({"name": "Eve2", "password": "Np4rW!x8qZmB2kLt"}),
             content_type="application/json",
         )
         assert resp.status_code == 200
@@ -502,7 +506,7 @@ class TestPasswordChange:
     e2e tests in ``tests/e2e/test_auth_user.py``.
     """
 
-    def _create_user(self, client, name="Pwd", password="oldsecret123"):
+    def _create_user(self, client, name="Pwd", password="X7k!mQvL2pYwR3tN"):
         return client.post(
             "/api/v1/users",
             data=json.dumps({"name": name, "color": "#abcdef", "password": password}),
@@ -514,7 +518,10 @@ class TestPasswordChange:
         resp = client.post(
             f"/api/v1/users/{u['id']}/password",
             data=json.dumps(
-                {"old_password": "oldsecret123", "new_password": "newsecret456"}
+                {
+                    "old_password": "X7k!mQvL2pYwR3tN",
+                    "new_password": "Np4rW!x8qZmB2kLt",
+                }
             ),
             content_type="application/json",
         )
@@ -523,14 +530,14 @@ class TestPasswordChange:
         from argon2 import PasswordHasher
 
         row = queries.usr_get_by_name(db, name="ChgOk")
-        PasswordHasher().verify(row["password_hash"], "newsecret456")
+        PasswordHasher().verify(row["password_hash"], "Np4rW!x8qZmB2kLt")
 
     def test_change_password_with_wrong_old(self, client, db):
         u = self._create_user(client, name="ChgKO")
         resp = client.post(
             f"/api/v1/users/{u['id']}/password",
             data=json.dumps(
-                {"old_password": "wrongone", "new_password": "newsecret456"}
+                {"old_password": "wrongone", "new_password": "Np4rW!x8qZmB2kLt"}
             ),
             content_type="application/json",
         )
@@ -547,7 +554,7 @@ class TestPasswordChange:
         resp = client.post(
             f"/api/v1/users/{u['id']}/password",
             data=json.dumps(
-                {"old_password": "anything", "new_password": "newsecret456"}
+                {"old_password": "anything", "new_password": "Np4rW!x8qZmB2kLt"}
             ),
             content_type="application/json",
         )
@@ -557,7 +564,7 @@ class TestPasswordChange:
     def test_change_password_not_found(self, client, db):
         resp = client.post(
             "/api/v1/users/missing-id/password",
-            data=json.dumps({"old_password": "x", "new_password": "newsecret456"}),
+            data=json.dumps({"old_password": "x", "new_password": "Np4rW!x8qZmB2kLt"}),
             content_type="application/json",
         )
         assert resp.status_code == 404
@@ -566,11 +573,36 @@ class TestPasswordChange:
         u = self._create_user(client, name="Short")
         resp = client.post(
             f"/api/v1/users/{u['id']}/password",
-            data=json.dumps({"old_password": "oldsecret123", "new_password": "short"}),
+            data=json.dumps(
+                {"old_password": "X7k!mQvL2pYwR3tN", "new_password": "short"}
+            ),
             content_type="application/json",
         )
-        # Pydantic min_length=8 → 422
+        # #198: rejected by the strength validator → 422
         assert resp.status_code == 422
+
+    def test_weak_password_surfaces_specific_error(self, client, db):
+        """#198: password validation errors carry an actionable message.
+
+        Without this, the UI would show "Validation error" and leave the user guessing.
+        The handler extracts our validator's message so the frontend can display it
+        directly in the error modal.
+        """
+        u = self._create_user(client, name="WeakChg")
+        resp = client.post(
+            f"/api/v1/users/{u['id']}/password",
+            data=json.dumps(
+                {"old_password": "X7k!mQvL2pYwR3tN", "new_password": "password"}
+            ),
+            content_type="application/json",
+        )
+        assert resp.status_code == 422
+        body = resp.get_json()
+        assert body["field"] == "password"
+        assert "Password" in body["error"]
+        # The message should include the zxcvbn strength figure so the user
+        # sees how far they are from the target.
+        assert "strength" in body["error"].lower()
 
 
 class TestPasswordReset:
@@ -580,14 +612,14 @@ class TestPasswordReset:
         u = client.post(
             "/api/v1/users",
             data=json.dumps(
-                {"name": "Reset", "color": "#abcdef", "password": "originalpw"}
+                {"name": "Reset", "color": "#abcdef", "password": "X7k!mQvL2pYwR3tN"}
             ),
             content_type="application/json",
         ).get_json()
         old_hash = queries.usr_get_by_name(db, name="Reset")["password_hash"]
         resp = client.post(
             f"/api/v1/users/{u['id']}/reset-password",
-            data=json.dumps({"new_password": "freshpassword"}),
+            data=json.dumps({"new_password": "Np4rW!x8qZmB2kLt"}),
             content_type="application/json",
         )
         assert resp.status_code == 204
@@ -595,12 +627,12 @@ class TestPasswordReset:
         assert new_hash != old_hash
         from argon2 import PasswordHasher
 
-        PasswordHasher().verify(new_hash, "freshpassword")
+        PasswordHasher().verify(new_hash, "Np4rW!x8qZmB2kLt")
 
     def test_reset_not_found(self, client, db):
         resp = client.post(
             "/api/v1/users/missing-id/reset-password",
-            data=json.dumps({"new_password": "freshpassword"}),
+            data=json.dumps({"new_password": "Np4rW!x8qZmB2kLt"}),
             content_type="application/json",
         )
         assert resp.status_code == 404
@@ -609,7 +641,11 @@ class TestPasswordReset:
         u = client.post(
             "/api/v1/users",
             data=json.dumps(
-                {"name": "ResetShort", "color": "#abcdef", "password": "originalpw"}
+                {
+                    "name": "ResetShort",
+                    "color": "#abcdef",
+                    "password": "X7k!mQvL2pYwR3tN",
+                }
             ),
             content_type="application/json",
         ).get_json()

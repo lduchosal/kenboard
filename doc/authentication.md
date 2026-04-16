@@ -33,6 +33,34 @@ Le nom de l'utilisateur est aussi la cle utilisee dans `tasks.who` (texte libre,
 sans foreign key). Renommer un user via PATCH ne propage pas le nouveau nom dans
 les tasks existantes.
 
+## Politique de mot de passe (#198)
+
+Tout mot de passe saisi via l'API (`POST /api/v1/users`, `POST /.../password`,
+`POST /.../reset-password`) ou la CLI (`kenboard set-password`) passe par
+`dashboard.password_strength.validate_password_strength()` :
+
+| Critère | Valeur | Source |
+|---|---|---|
+| Longueur minimale | **8** caractères | `MIN_LENGTH` (`password_strength.py`) |
+| Score zxcvbn | **≥ 3 / 4** ("safely unguessable") | `MIN_SCORE` |
+
+La double vérification (longueur + zxcvbn) bloque les mots de passe courants même
+quand ils sont longs. Exemples rejetés : `password`, `Password123`,
+`abcdefghij`, `qwerty1234`. Exemples acceptés : `correct horse battery staple`,
+`Xk9$mQ2!vL`, toute chaîne de 10+ caractères avec un mix lettres/chiffres/symboles.
+
+Les erreurs de validation incluent le feedback de zxcvbn (warning + suggestions)
+afin que l'utilisateur sache comment corriger :
+
+```
+Password is too weak (strength 1/4, need 3/4). This is a very common password.
+Add another word or two. Uncommon words are better.
+```
+
+La logique vit dans un module dédié pour qu'il n'y ait qu'une seule source de
+vérité entre Pydantic (`PasswordChange`, `PasswordReset`, `UserCreate`) et la CLI
+`set-password`.
+
 ## Hash de mot de passe
 
 Argon2 via `argon2-cffi`. Une instance partagee `PasswordHasher()` est definie dans

@@ -177,14 +177,41 @@ mysql -u dashboard -p dashboard -e "SHOW TABLES;"
 Resultat attendu :
 
 ```
-+---------------------+
-| Tables_in_dashboard |
-+---------------------+
-| categories          |
-| projects            |
-| tasks               |
-+---------------------+
++-----------------------+
+| Tables_in_dashboard   |
++-----------------------+
+| api_key_projects      |
+| api_keys              |
+| categories            |
+| projects              |
+| tasks                 |
+| user_category_scopes  |
+| users                 |
++-----------------------+
 ```
+
+### Breaking change : migration 0015 (permissions par board)
+
+Depuis la migration `0015.create_user_category_scopes.sql` (#197), les
+utilisateurs **non administrateurs** doivent avoir un accès explicite
+sur chaque board. Après l'application de la migration, ils n'ont
+**aucun accès par défaut** (principe du moindre privilège).
+
+Deux façons de gérer la transition :
+
+1. **Assignation explicite** — un admin va sur `/admin/users`, colonne
+   *Accès boards*, et assigne read/write à chaque utilisateur sur les
+   boards voulus.
+2. **Opt-in legacy** — pour restaurer le comportement "tout le monde
+   voit tout" en lecture seule :
+
+   ```sh
+   kenboard grant-legacy-read
+   ```
+
+   Cette commande one-shot accorde `read` sur toutes les categories à
+   tous les utilisateurs non-admins existants. Idempotente, donc sûre
+   à relancer. Voir `doc/permissions.md` pour le détail du modèle.
 
 ### Rollback
 

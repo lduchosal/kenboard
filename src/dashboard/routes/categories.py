@@ -2,21 +2,47 @@
 
 from typing import Any
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request
+from flask_login import current_user
 
 import dashboard.db as db
+from dashboard.auth_user import (
+    _is_api_key_principal,
+    api_admin_required,
+    current_user_can,
+)
 from dashboard.models.category import Category, CategoryCreate, CategoryUpdate
 
 bp = Blueprint("categories", __name__, url_prefix="/api/v1/categories")
 
 
+def _should_filter_for_current_user() -> bool:
+    """True when list endpoints should be filtered to the current user's scopes.
+
+    Returns False for admin cookie sessions, admin API keys, test runs
+    (``LOGIN_DISABLED``), and any API-key principal (API keys have their
+    own project-level scoping enforced in ``auth.py``).
+    """
+    if current_app.config.get("LOGIN_DISABLED"):
+        return False
+    # Bearer-token callers are already scoped by auth.py, don't double-filter.
+    if _is_api_key_principal(g.get("api_auth_principal")):
+        return False
+    if not current_user.is_authenticated:
+        return False
+    return not current_user.is_admin
+
+
 @bp.route("", methods=["GET"])
 def list_categories() -> Any:
-    """List all categories."""
+    """List all categories (filtered to the user's scopes for non-admins)."""
     conn = db.get_connection()
     queries = db.load_queries()
     try:
-        rows = list(queries.cat_get_all(conn))
+        if _should_filter_for_current_user():
+            rows = list(queries.cat_list_for_user(conn, user_id=current_user.id))
+        else:
+            rows = list(queries.cat_get_all(conn))
         return jsonify([Category(**row).model_dump() for row in rows])
     finally:
         conn.close()
@@ -24,11 +50,12 @@ def list_categories() -> Any:
 
 @bp.route("", methods=["POST"])
 def create_category() -> Any:
-    """Create a new category.
+    """Create a new category (admin only — non-admins cannot create boards).
 
     Automatically creates a first project "Project <name>" inside the new category so
     the board is immediately usable (#175).
     """
+    api_admin_required()
     data = CategoryCreate(**request.get_json())
     conn = db.get_connection()
     queries = db.load_queries()
@@ -65,7 +92,9 @@ def create_category() -> Any:
 
 @bp.route("/<cat_id>", methods=["PATCH"])
 def update_category(cat_id: str) -> Any:
-    """Update a category."""
+    """Update a category (requires write scope on the category)."""
+    if not current_user_can(cat_id, "write"):
+        return jsonify({"error": "forbidden"}), 403
     data = CategoryUpdate(**request.get_json())
     conn = db.get_connection()
     queries = db.load_queries()
@@ -91,7 +120,8 @@ def update_category(cat_id: str) -> Any:
 
 @bp.route("/<cat_id>", methods=["DELETE"])
 def delete_category(cat_id: str) -> Any:
-    """Delete a category."""
+    """Delete a category (admin only — destructive, board-wide)."""
+    api_admin_required()
     conn = db.get_connection()
     queries = db.load_queries()
     try:
@@ -103,7 +133,8 @@ def delete_category(cat_id: str) -> Any:
 
 @bp.route("/reorder", methods=["POST"])
 def reorder_categories() -> Any:
-    """Reorder categories."""
+    """Reorder categories (admin only — changes global layout)."""
+    api_admin_required()
     data = request.get_json()
     old_idx = data["from"]
     new_idx = data["to"]

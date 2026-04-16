@@ -187,6 +187,19 @@ def _ensure_test_db() -> None:
             FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """)
+    # user_category_scopes was added in migration 0015 (#197). Mirrors the
+    # API-key scope table, but at category level for cookie-authenticated users.
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS user_category_scopes (
+            user_id VARCHAR(36) NOT NULL,
+            category_id VARCHAR(36) NOT NULL,
+            scope ENUM('read','write') NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, category_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """)
     conn.close()
     _mysql_available = True
 
@@ -284,6 +297,7 @@ def db():
     # Cleanup before test
     cur = conn.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
+    cur.execute("DELETE FROM user_category_scopes")
     cur.execute("DELETE FROM api_key_projects")
     cur.execute("DELETE FROM api_keys")
     cur.execute("DELETE FROM tasks")
@@ -295,6 +309,7 @@ def db():
     # Cleanup after test
     cur = conn.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
+    cur.execute("DELETE FROM user_category_scopes")
     cur.execute("DELETE FROM api_key_projects")
     cur.execute("DELETE FROM api_keys")
     cur.execute("DELETE FROM tasks")

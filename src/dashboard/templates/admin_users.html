@@ -6,6 +6,15 @@
 <div class="section" style="padding-top:0">
   <div class="section-title"><span>Gestion des utilisateurs</span></div>
 
+  <div class="password-policy" style="margin:0 0 12px 0;padding:10px 14px;border:1px solid var(--border);border-radius:6px;background:var(--bg);font-size:12px;color:var(--text)">
+    <strong>Critères de mot de passe</strong> —
+    au moins <strong>8 caractères</strong>, et
+    <strong>score zxcvbn ≥ 3/4</strong>
+    (« safely unguessable »).
+    Les mots de passe courants (<code>password</code>, <code>Password123</code>, <code>qwerty1234</code>, etc.) sont rejetés même s'ils atteignent 8 caractères.
+    Utilisez une passphrase longue (<em>correct horse battery staple</em>) ou un mix lettres/chiffres/symboles (<em>Xk9$mQ2!vL</em>).
+  </div>
+
   <table class="users-table" id="users-table" style="width:100%;border-collapse:collapse;font-size:13px">
     <thead>
       <tr style="border-bottom:1px solid var(--border);text-align:left">
@@ -13,18 +22,19 @@
         <th style="padding:8px 6px">Nom</th>
         <th style="padding:8px 6px">Couleur</th>
         <th style="padding:8px 6px">Admin</th>
+        <th style="padding:8px 6px">Accès boards</th>
         <th style="padding:8px 6px">Mot de passe</th>
         <th style="padding:8px 6px"></th>
       </tr>
     </thead>
     <tbody>
       {% if not users %}
-      <tr><td colspan="6">
+      <tr><td colspan="7">
         {% set es_badge = "Utilisateurs" %}
         {% set es_title = "Aucun utilisateur" %}
         {% set es_subtitle = "Créez un utilisateur avec le formulaire ci-dessous. Utilisez <code>kenboard set-password</code> pour définir un mot de passe en CLI." %}
         {% set es_cards = [
-          {"icon": '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>', "color": "blue", "title": "Utilisateurs", "text": "Chaque utilisateur a un nom, une couleur d'avatar et un rôle (admin ou non)."},
+          {"icon": '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>', "color": "blue", "title": "Utilisateurs", "text": "Chaque utilisateur a un nom, une couleur d\'avatar et un rôle (admin ou non)."},
           {"icon": '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>', "color": "purple", "title": "Mot de passe", "text": "Le mot de passe est haché en argon2. Utilisez le formulaire ou <code>kenboard set-password</code>."}
         ] %}
         {% include "partials/empty_state.html" %}
@@ -38,6 +48,29 @@
         <td style="padding:6px"><input type="text" class="u-name" value="{{ u.name }}" autocomplete="off" style="width:100%"></td>
         <td style="padding:6px"><input type="text" class="u-color" value="{{ u.color }}" autocomplete="off" style="width:100%"></td>
         <td style="padding:6px;text-align:center"><input type="checkbox" class="u-admin" {% if u.is_admin %}checked{% endif %}></td>
+        <td class="u-scopes-cell" data-user-id="{{ u.id }}" style="padding:6px;min-width:200px">
+          {% if u.is_admin %}
+            <span style="color:var(--dimmed);font-style:italic;font-size:11px">admin — tous les boards</span>
+          {% else %}
+            <div class="u-scopes-list" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">
+              {% for s in u.scopes %}
+                {% set cat = (all_categories | selectattr('id','equalto',s.category_id) | list | first) %}
+                {% if cat %}
+                <span class="scope-badge" data-category-id="{{ cat.id }}" data-scope="{{ s.scope }}"
+                      onclick="openScopeEditPopover(event, '{{ u.id }}', '{{ cat.id }}', '{{ cat.name|jsesc }}', '{{ s.scope }}')"
+                      style="background:{{ cat.color }};color:white;padding:2px 8px;border-radius:12px;font-size:11px;cursor:pointer;user-select:none"
+                      title="Cliquer pour modifier">
+                  {{ cat.name }}: {{ s.scope }}
+                </span>
+                {% endif %}
+              {% endfor %}
+              <button class="btn-scope-add" onclick="openScopeAddPopover(event, '{{ u.id }}')"
+                      style="background:transparent;border:1px dashed var(--border);color:var(--dimmed);padding:1px 8px;border-radius:12px;font-size:11px;cursor:pointer">
+                + Ajouter
+              </button>
+            </div>
+          {% endif %}
+        </td>
         <td style="padding:6px"><input type="password" class="u-password" placeholder="(inchangé)" autocomplete="new-password" style="width:100%"></td>
         <td style="padding:6px;white-space:nowrap">
           <button class="btn-edit btn-save-user" onclick="saveUser(this)">Enregistrer</button>
@@ -45,24 +78,139 @@
         </td>
       </tr>
       {% endfor %}
-      <tr style="border-top:2px solid var(--border)"><td colspan="6" style="padding:8px 6px 4px 6px;font-size:11px;color:var(--dimmed);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Nouvel utilisateur</td></tr>
+      <tr style="border-top:2px solid var(--border)"><td colspan="7" style="padding:8px 6px 4px 6px;font-size:11px;color:var(--dimmed);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Nouvel utilisateur</td></tr>
       <tr id="users-add-row" style="border-bottom:1px solid var(--border);background:var(--bg)">
         <td style="padding:6px"></td>
         <td style="padding:6px"><input type="text" id="new-name" placeholder="Nom" autocomplete="off" style="width:100%"></td>
         <td style="padding:6px"><input type="text" id="new-color" placeholder="#0969da ou var(--accent)" autocomplete="off" style="width:100%"></td>
         <td style="padding:6px;text-align:center"><input type="checkbox" id="new-admin"></td>
-        <td style="padding:6px"><input type="password" id="new-password" placeholder="Mot de passe" autocomplete="new-password" style="width:100%"></td>
+        <td style="padding:6px;color:var(--dimmed);font-size:11px;font-style:italic">(à configurer après création)</td>
+        <td style="padding:6px"><input type="password" id="new-password" placeholder="Mot de passe (≥8 car., zxcvbn ≥3/4)" autocomplete="new-password" style="width:100%"></td>
         <td style="padding:6px"><button class="btn btn-save" id="users-create-btn" onclick="createUser()">Créer</button></td>
       </tr>
     </tbody>
   </table>
 </div>
 
+<!-- Popover host for scope edit/add. Absolutely positioned, hidden by default. -->
+<div id="scope-popover" style="display:none;position:absolute;z-index:1000;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:200px;font-size:12px"></div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
 let _userDeleteId = null;
+
+// -- Scope badges / popover ---------------------------------------------------
+// Category lookup table: id → {name, color}. Populated from the server-side
+// `all_categories` so the popover can render without an extra round trip.
+const ALL_CATEGORIES = [
+  {% for c in all_categories %}
+  {id: '{{ c.id }}', name: '{{ c.name|jsesc }}', color: '{{ c.color|jsesc }}'}{{ "," if not loop.last }}
+  {% endfor %}
+];
+
+function _currentScopes(userId) {
+  const cell = document.querySelector('.u-scopes-cell[data-user-id="' + userId + '"]');
+  if (!cell) return [];
+  return Array.from(cell.querySelectorAll('.scope-badge')).map(b => ({
+    category_id: b.dataset.categoryId,
+    scope: b.dataset.scope,
+  }));
+}
+
+async function _putScopes(userId, scopes) {
+  try {
+    await apiCall('/api/v1/users/' + userId + '/scopes', {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({scopes}),
+    });
+    location.reload();
+  } catch (e) {
+    console.debug('putScopes: apiCall failed, popup already shown', e);
+  }
+}
+
+function _showPopoverAt(target) {
+  const pop = document.getElementById('scope-popover');
+  const rect = target.getBoundingClientRect();
+  pop.style.left = (window.scrollX + rect.left) + 'px';
+  pop.style.top = (window.scrollY + rect.bottom + 4) + 'px';
+  pop.style.display = 'block';
+}
+
+function _closePopover() {
+  document.getElementById('scope-popover').style.display = 'none';
+  document.removeEventListener('click', _outsideClickHandler, true);
+}
+
+function _outsideClickHandler(e) {
+  const pop = document.getElementById('scope-popover');
+  if (!pop.contains(e.target) && !e.target.closest('.scope-badge') && !e.target.closest('.btn-scope-add')) {
+    _closePopover();
+  }
+}
+
+function openScopeEditPopover(ev, userId, catId, catName, currentScope) {
+  ev.stopPropagation();
+  const pop = document.getElementById('scope-popover');
+  pop.innerHTML = `
+    <div style="font-weight:600;margin-bottom:8px">${catName}</div>
+    <label style="display:block;margin:4px 0"><input type="radio" name="scope-choice" value="read" ${currentScope === 'read' ? 'checked' : ''}> Read</label>
+    <label style="display:block;margin:4px 0"><input type="radio" name="scope-choice" value="write" ${currentScope === 'write' ? 'checked' : ''}> Write</label>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button class="btn-edit" onclick="_applyScopeEdit('${userId}', '${catId}')">Appliquer</button>
+      <button class="btn-edit" onclick="_removeScope('${userId}', '${catId}')" style="color:var(--red)">Retirer</button>
+    </div>
+  `;
+  _showPopoverAt(ev.currentTarget);
+  setTimeout(() => document.addEventListener('click', _outsideClickHandler, true), 0);
+}
+
+function _applyScopeEdit(userId, catId) {
+  const chosen = document.querySelector('#scope-popover input[name="scope-choice"]:checked');
+  if (!chosen) return;
+  const scopes = _currentScopes(userId).filter(s => s.category_id !== catId);
+  scopes.push({category_id: catId, scope: chosen.value});
+  _putScopes(userId, scopes);
+}
+
+function _removeScope(userId, catId) {
+  const scopes = _currentScopes(userId).filter(s => s.category_id !== catId);
+  _putScopes(userId, scopes);
+}
+
+function openScopeAddPopover(ev, userId) {
+  ev.stopPropagation();
+  const pop = document.getElementById('scope-popover');
+  const taken = new Set(_currentScopes(userId).map(s => s.category_id));
+  const available = ALL_CATEGORIES.filter(c => !taken.has(c.id));
+  if (available.length === 0) {
+    pop.innerHTML = '<div style="color:var(--dimmed)">Tous les boards ont déjà un accès.</div>';
+  } else {
+    const opts = available.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    pop.innerHTML = `
+      <div style="font-weight:600;margin-bottom:8px">Ajouter un accès</div>
+      <select id="scope-add-cat" style="width:100%;margin-bottom:6px">${opts}</select>
+      <label style="display:block;margin:4px 0"><input type="radio" name="scope-add-choice" value="read" checked> Read</label>
+      <label style="display:block;margin:4px 0"><input type="radio" name="scope-add-choice" value="write"> Write</label>
+      <div style="margin-top:10px"><button class="btn-edit" onclick="_applyScopeAdd('${userId}')">Ajouter</button></div>
+    `;
+  }
+  _showPopoverAt(ev.currentTarget);
+  setTimeout(() => document.addEventListener('click', _outsideClickHandler, true), 0);
+}
+
+function _applyScopeAdd(userId) {
+  const catId = document.getElementById('scope-add-cat').value;
+  const scope = document.querySelector('#scope-popover input[name="scope-add-choice"]:checked').value;
+  const scopes = _currentScopes(userId);
+  scopes.push({category_id: catId, scope});
+  _putScopes(userId, scopes);
+}
+
+// -- User CRUD (unchanged) ----------------------------------------------------
 
 async function saveUser(btn) {
   const tr = btn.closest('tr');

@@ -16,6 +16,7 @@ from dashboard.models.user import (
     PasswordReset,
     User,
     UserCreate,
+    UserScopeUpdate,
     UserUpdate,
 )
 
@@ -33,14 +34,21 @@ def _hash_password(password: str) -> str:
     return _hasher.hash(password)
 
 
+def _row_with_scopes(conn: Any, queries: Any, row: dict[str, Any]) -> dict[str, Any]:
+    """Attach ``scopes`` (list of category_id/scope dicts) to a user row."""
+    scopes = list(queries.usr_scopes_get(conn, user_id=row["id"]))
+    return row | {"scopes": scopes}
+
+
 @bp.route("", methods=["GET"])
 def list_users() -> Any:
-    """List all users."""
+    """List all users with their category scopes (#197)."""
     conn = db.get_connection()
     queries = db.load_queries()
     try:
         rows = list(queries.usr_get_all(conn))
-        return jsonify([User(**row).model_dump(mode="json") for row in rows])
+        enriched = [_row_with_scopes(conn, queries, row) for row in rows]
+        return jsonify([User(**row).model_dump(mode="json") for row in enriched])
     finally:
         conn.close()
 
@@ -73,7 +81,12 @@ def create_user() -> Any:
             user_name=data.name,
             principal=g.get("api_auth_principal"),
         )
-        return jsonify(User(**row).model_dump(mode="json")), 201
+        return (
+            jsonify(
+                User(**_row_with_scopes(conn, queries, row)).model_dump(mode="json")
+            ),
+            201,
+        )
     finally:
         conn.close()
 
@@ -110,7 +123,9 @@ def update_user(user_id: str) -> Any:
             user_id=user_id,
             principal=g.get("api_auth_principal"),
         )
-        return jsonify(User(**row).model_dump(mode="json"))
+        return jsonify(
+            User(**_row_with_scopes(conn, queries, row)).model_dump(mode="json")
+        )
     finally:
         conn.close()
 
@@ -173,6 +188,58 @@ def reset_password(user_id: str) -> Any:
             conn, id=user_id, password_hash=_hash_password(data.new_password)
         )
         return "", 204
+    finally:
+        conn.close()
+
+
+@bp.route("/<user_id>/scopes", methods=["PUT"])
+def update_user_scopes(user_id: str) -> Any:
+    """Replace a user's category scopes atomically (#197).
+
+    Admin only. The request body ``{"scopes": [...]}`` fully replaces the
+    user's existing scopes: any scope not in the new list is removed, and
+    any new scope is inserted. The clear + insert pair runs inside a
+    single transaction so a partial failure leaves the DB untouched.
+
+    Raises:
+        Exception: any error from the DB driver during the transaction,
+            re-raised after rolling back so no partial state is left.
+    """
+    api_admin_required()
+    data = UserScopeUpdate(**(request.get_json() or {}))
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        existing = queries.usr_get_by_id(conn, id=user_id)
+        if not existing:
+            return jsonify(NOT_FOUND_ERROR), 404
+        # Atomic replacement: clear then re-add inside one transaction.
+        # The connection has autocommit=True, so wrap the two statements
+        # in an explicit transaction block.
+        conn.begin()
+        try:
+            queries.usr_scopes_clear(conn, user_id=user_id)
+            for entry in data.scopes:
+                queries.usr_scopes_add(
+                    conn,
+                    user_id=user_id,
+                    category_id=entry.category_id,
+                    scope=entry.scope,
+                )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        row = queries.usr_get_by_id(conn, id=user_id)
+        log.info(
+            "admin.user_scopes_updated",
+            user_id=user_id,
+            n_scopes=len(data.scopes),
+            principal=g.get("api_auth_principal"),
+        )
+        return jsonify(
+            User(**_row_with_scopes(conn, queries, row)).model_dump(mode="json")
+        )
     finally:
         conn.close()
 

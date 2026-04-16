@@ -5,6 +5,7 @@ from typing import Any
 from flask import Blueprint, jsonify, request
 
 import dashboard.db as db
+from dashboard.auth_user import current_user_can_project
 from dashboard.models.task import Task, TaskCreate, TaskUpdate
 
 bp = Blueprint("tasks", __name__, url_prefix="/api/v1/tasks")
@@ -12,10 +13,12 @@ bp = Blueprint("tasks", __name__, url_prefix="/api/v1/tasks")
 
 @bp.route("", methods=["GET"])
 def list_tasks() -> Any:
-    """List tasks for a project."""
+    """List tasks for a project (read scope on its category required)."""
     project_id = request.args.get("project")
     if not project_id:
         return jsonify({"error": "project parameter required"}), 400
+    if not current_user_can_project(project_id, "read"):
+        return jsonify({"error": "forbidden"}), 403
     conn = db.get_connection()
     queries = db.load_queries()
     try:
@@ -34,6 +37,8 @@ def get_task(task_id: int) -> Any:
         row = queries.task_get_by_id(conn, id=task_id)
         if not row:
             return jsonify({"error": "Not found"}), 404
+        if not current_user_can_project(row["project_id"], "read"):
+            return jsonify({"error": "forbidden"}), 403
         return jsonify(Task(**row).model_dump(mode="json"))
     finally:
         conn.close()
@@ -41,8 +46,12 @@ def get_task(task_id: int) -> Any:
 
 @bp.route("", methods=["POST"])
 def create_task() -> Any:
-    """Create a new task."""
-    data = TaskCreate(**request.get_json())
+    """Create a new task (write scope on the project's category required)."""
+    payload = request.get_json() or {}
+    target_project = payload.get("project_id")
+    if target_project and not current_user_can_project(target_project, "write"):
+        return jsonify({"error": "forbidden"}), 403
+    data = TaskCreate(**payload)
     conn = db.get_connection()
     queries = db.load_queries()
     try:
@@ -142,7 +151,7 @@ def _apply_field_updates(
 
 @bp.route("/<int:task_id>", methods=["PATCH"])
 def update_task(task_id: int) -> Any:
-    """Update a task."""
+    """Update a task (write scope on its project's category required)."""
     data = TaskUpdate(**request.get_json())
     conn = db.get_connection()
     queries = db.load_queries()
@@ -150,6 +159,15 @@ def update_task(task_id: int) -> Any:
         existing = queries.task_get_by_id(conn, id=task_id)
         if not existing:
             return jsonify({"error": "Not found"}), 404
+        if not current_user_can_project(existing["project_id"], "write"):
+            return jsonify({"error": "forbidden"}), 403
+        # Cross-project move must also have write on the destination.
+        if (
+            data.project_id
+            and data.project_id != existing["project_id"]
+            and not current_user_can_project(data.project_id, "write")
+        ):
+            return jsonify({"error": "forbidden"}), 403
 
         _apply_position_change(queries, conn, task_id, data, existing)
         if _has_field_updates(data):
@@ -163,10 +181,13 @@ def update_task(task_id: int) -> Any:
 
 @bp.route("/<int:task_id>", methods=["DELETE"])
 def delete_task(task_id: int) -> Any:
-    """Delete a task."""
+    """Delete a task (write scope on its project's category required)."""
     conn = db.get_connection()
     queries = db.load_queries()
     try:
+        existing = queries.task_get_by_id(conn, id=task_id)
+        if existing and not current_user_can_project(existing["project_id"], "write"):
+            return jsonify({"error": "forbidden"}), 403
         queries.task_delete(conn, id=task_id)
         return "", 204
     finally:
