@@ -221,6 +221,26 @@ yoyo rollback --batch \
   migrations/
 ```
 
+## 5b. Burndown chart (cron quotidien)
+
+La migration `0016.create_burndown_snapshots.sql` ajoute une table pour
+le suivi historique du burndown. Afin de collecter les données, un cron
+quotidien doit appeler :
+
+```sh
+kenboard snapshot
+```
+
+Configurer un cron (ou un systemd timer) pour l'exécuter chaque nuit :
+
+```
+0 2 * * * /usr/local/bin/kenboard snapshot
+```
+
+Le burndown apparaîtra sur les cartes catégories (index) et les pages
+catégorie après 2 jours de données collectées. Voir
+`doc/burndown.md` pour le détail.
+
 ## 6. Initialiser le mot de passe de l'admin
 
 La migration `0004.create_users.sql` insere quatre utilisateurs de

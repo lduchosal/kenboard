@@ -21,6 +21,13 @@
     <span>{{ p.acronym or p.name[:4] | upper }} / {{ p.name }}</span>
     <button type="button" class="btn-edit section-onboard-btn" title="Copy onboarding URL (cat_id + project_id) to clipboard so an LLM agent can self-onboard via the 401 runbook" onclick="copyOnboardLink(this, '{{ cat.id }}', '{{ p.id }}')">Copy onboard link</button>
   </div>
+  {% set color = cat.color %}
+  {% set snapshots = p.get('snapshots', []) %}
+  {% if snapshots and snapshots | length >= 2 %}
+  <div style="max-width:400px;margin-bottom:8px">
+    {% include "partials/burndown.html" %}
+  </div>
+  {% endif %}
   {% set tasks = p.tasks %}
   {% set project_id = p.id %}
   {% set project_default_who = p.get('default_who', '') %}

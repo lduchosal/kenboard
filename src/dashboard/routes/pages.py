@@ -84,19 +84,25 @@ def _load_all_data(
         if visible_cat_ids is not None:
             categories = [c for c in categories if c["id"] in visible_cat_ids]
             all_projects = [p for p in all_projects if p["cat_id"] in visible_cat_ids]
-        # Attach tasks to each project
+        # Attach tasks and burndown snapshots to each project
         for p in all_projects:
             p["tasks"] = list(queries.task_get_by_project(conn, project_id=p["id"]))
             p["done"] = len([t for t in p["tasks"] if t["status"] == "done"])
             p["total"] = len(p["tasks"])
-            # Build burndown from task counts (simple: just remaining per week placeholder)
-            remaining = p["total"] - p["done"]
-            p["actual"] = [remaining] if remaining >= 0 else [0]
-            p["ideal"] = [p["total"]]
+            p["snapshots"] = list(
+                queries.burndown_get_by_project(conn, project_id=p["id"], days=60)
+            )
+        # Per-category aggregated snapshots for the index burndown (#206)
+        cat_snapshots: dict[str, list[dict[str, Any]]] = {}
+        for c in categories:
+            cat_snapshots[c["id"]] = list(
+                queries.burndown_get_by_category(conn, category_id=c["id"], days=60)
+            )
         return {
             "categories": categories,
             "all_projects": all_projects,
             "users": users,
+            "cat_snapshots": cat_snapshots,
         }
     finally:
         conn.close()
@@ -132,17 +138,9 @@ def _build_context(
             if p["cat_id"] == c["id"]
         ]
 
-    def aggregate_burndown(project_list: list[dict[str, Any]]) -> list[int]:
-        """Aggregate burndown actual values."""
-        if not project_list:
-            return [0]
-        length = len(project_list[0].get("actual", [0]))
-        return [
-            sum(p.get("actual", [0])[i] for p in project_list) for i in range(length)
-        ]
-
     users = data.get("users", [])
     avatar_colors = {u["name"]: u["color"] for u in users}
+    cat_snapshots = data.get("cat_snapshots", {})
 
     return {
         "prefix": prefix,
@@ -151,13 +149,13 @@ def _build_context(
         "projects_by_cat": projects_by_cat,
         "cat_project_counts": cat_project_counts,
         "cat_projects": cat_projects_js,
+        "cat_snapshots": cat_snapshots,
         "columns": COLUMNS,
         "color_list": COLOR_LIST,
         "avatar_colors": avatar_colors,
         "users": users,
         "version": __version__,
         "fmt_date": fmt_date,
-        "aggregate_burndown": aggregate_burndown,
     }
 
 

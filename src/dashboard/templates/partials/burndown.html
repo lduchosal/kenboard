@@ -1,7 +1,37 @@
-<div class="cat-burndown">
-{% set mx = [1] %}
-{% if actual and actual | max > 0 %}{% set _ = mx.__setitem__(0, actual | max) %}{% endif %}
-{% for v in actual %}
-<div class="bar-group"><div style="height:{{ (v / mx[0] * 100) | round }}%;background:{{ color }};opacity:0.5;border-radius:1px"></div></div>
+{#
+  Burndown chart (#206). Expects a `snapshots` variable — a list of dicts
+  with keys: snapshot_date, todo, doing, review, done. If fewer than 2
+  snapshots, shows a placeholder message. Otherwise renders an SVG polyline
+  of "remaining" (todo+doing+review) over time.
+
+  Also expects `color` for the line stroke.
+#}
+{% if snapshots and snapshots | length >= 2 %}
+{% set w = 200 %}
+{% set h = 60 %}
+{% set pad = 2 %}
+{% set n = snapshots | length %}
+{# Compute remaining (non-done) for each snapshot #}
+{% set remaining = [] %}
+{% for s in snapshots %}
+  {% set _ = remaining.append(s.todo + s.doing + s.review) %}
 {% endfor %}
+{% set mx = [remaining | max, 1] | max %}
+{# Build SVG polyline points #}
+{% set points = [] %}
+{% for r in remaining %}
+  {% set x = pad + (loop.index0 / (n - 1)) * (w - 2 * pad) %}
+  {% set y = pad + ((mx - r) / mx) * (h - 2 * pad) %}
+  {% set _ = points.append("%.1f,%.1f" | format(x, y)) %}
+{% endfor %}
+{# Filled area: polyline + close along the bottom #}
+{% set area_points = points | join(" ") + " %.1f,%.1f %.1f,%.1f" | format(w - pad, h - pad, pad, h - pad) %}
+<svg viewBox="0 0 {{ w }} {{ h }}" class="burndown-svg" preserveAspectRatio="none" aria-label="Burndown chart">
+  <polygon points="{{ area_points }}" fill="{{ color }}" opacity="0.15"/>
+  <polyline points="{{ points | join(' ') }}" fill="none" stroke="{{ color }}" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>
+{% else %}
+<div class="burndown-empty" style="height:60px;display:flex;align-items:center;justify-content:center;color:var(--dimmed);font-size:10px;font-style:italic">
+  Pas encore de données
 </div>
+{% endif %}

@@ -41,7 +41,6 @@
   {% set cp = projects_by_cat[c.id] %}
   {% set total_tasks = cp | sum(attribute="total") %}
   {% set total_done = cp | sum(attribute="done") %}
-  {% set agg_actual = aggregate_burndown(cp) %}
 
   <a class="cat-card" href="cat/{{ c.id }}.html">
     <div class="cat-header">
@@ -63,7 +62,7 @@
       {% endfor %}
     </div>
     {% set color = c.color %}
-    {% set actual = agg_actual %}
+    {% set snapshots = cat_snapshots.get(c.id, []) %}
     {% include "partials/burndown.html" %}
   </a>
   {% endfor %}

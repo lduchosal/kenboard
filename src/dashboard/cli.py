@@ -166,6 +166,45 @@ def set_password(name: str) -> None:
 
 
 @cli.command()
+def snapshot() -> None:
+    """Record today's task counts per project for the burndown chart (#206).
+
+    Counts the tasks in each status (todo/doing/review/done) per project
+    and upserts one row per project into ``burndown_snapshots`` at today's
+    date. Designed to run as a daily cron job::
+
+        0 2 * * * kenboard snapshot
+
+    Idempotent: running multiple times on the same day simply overwrites
+    the counters with the latest values.
+    """
+    import dashboard.db as db_module
+
+    conn = db_module.get_connection()
+    queries = db_module.load_queries()
+    try:
+        projects = list(queries.proj_get_all(conn))
+        recorded = 0
+        for proj in projects:
+            rows = list(
+                queries.burndown_task_counts_by_project(conn, project_id=proj["id"])
+            )
+            counts = {r["status"]: r["cnt"] for r in rows}
+            queries.burndown_record_snapshot(
+                conn,
+                project_id=proj["id"],
+                todo=counts.get("todo", 0),
+                doing=counts.get("doing", 0),
+                review=counts.get("review", 0),
+                done=counts.get("done", 0),
+            )
+            recorded += 1
+        click.echo(f"Recorded snapshots for {recorded} project(s).")
+    finally:
+        conn.close()
+
+
+@cli.command()
 @click.option(
     "--yes",
     is_flag=True,

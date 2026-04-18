@@ -200,6 +200,21 @@ def _ensure_test_db() -> None:
             FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """)
+    # burndown_snapshots was added in migration 0016 (#206). Daily
+    # task-count snapshots per project for the burndown chart.
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS burndown_snapshots (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            snapshot_date DATE NOT NULL,
+            project_id VARCHAR(36) NOT NULL,
+            todo INT NOT NULL DEFAULT 0,
+            doing INT NOT NULL DEFAULT 0,
+            review INT NOT NULL DEFAULT 0,
+            done INT NOT NULL DEFAULT 0,
+            UNIQUE KEY uq_snapshot (snapshot_date, project_id),
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """)
     conn.close()
     _mysql_available = True
 
@@ -297,6 +312,7 @@ def db():
     # Cleanup before test
     cur = conn.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
+    cur.execute("DELETE FROM burndown_snapshots")
     cur.execute("DELETE FROM user_category_scopes")
     cur.execute("DELETE FROM api_key_projects")
     cur.execute("DELETE FROM api_keys")
@@ -309,6 +325,7 @@ def db():
     # Cleanup after test
     cur = conn.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
+    cur.execute("DELETE FROM burndown_snapshots")
     cur.execute("DELETE FROM user_category_scopes")
     cur.execute("DELETE FROM api_key_projects")
     cur.execute("DELETE FROM api_keys")
