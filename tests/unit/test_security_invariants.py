@@ -98,13 +98,16 @@ class TestLoginDisabledRuntimeGuard:
 
         monkeypatch.setattr(Config, "DEBUG", False)
         prev_flag = app.config.get("LOGIN_DISABLED", False)
+        prev_testing = app.config.get("TESTING", False)
         app.config["LOGIN_DISABLED"] = True
+        app.config["TESTING"] = False
         try:
             with app.test_request_context("/api/v1/categories"):
                 with pytest.raises(RuntimeError, match="LOGIN_DISABLED"):
                     _is_login_disabled()
         finally:
             app.config["LOGIN_DISABLED"] = prev_flag
+            app.config["TESTING"] = prev_testing
 
     def test_helper_allows_bypass_in_debug_mode(self, app, monkeypatch):
         """With ``DEBUG=True`` the bypass works as intended (tests + dev)."""

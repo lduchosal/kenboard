@@ -183,23 +183,25 @@ def _is_login_disabled() -> bool:
     gate so unit tests don't have to juggle sessions. It MUST NEVER take
     effect in production. Python has no ``#ifdef DEBUG`` so the code path
     can't be stripped at build time — instead we centralize the read in
-    this helper and refuse the bypass whenever ``Config.DEBUG`` is False.
+    this helper and refuse the bypass whenever the app is in production
+    mode (neither ``Config.DEBUG`` nor Flask ``TESTING``).
 
     Every production read of the flag goes through this function so a
     misconfigured ``.env`` or a leaked secret that sets ``LOGIN_DISABLED``
     crashes the request loudly instead of silently disabling auth.
 
     Returns:
-        ``True`` if the flag is set AND we are running in debug mode.
+        ``True`` if the flag is set AND we are in debug or test mode.
         ``False`` when the flag is off.
 
     Raises:
-        RuntimeError: when ``LOGIN_DISABLED`` is True but ``Config.DEBUG``
-            is False — the bypass is forbidden outside of test/dev.
+        RuntimeError: when ``LOGIN_DISABLED`` is True but neither
+            ``Config.DEBUG`` nor ``TESTING`` is set — the bypass is
+            forbidden outside of test/dev.
     """
     if not current_app.config.get("LOGIN_DISABLED"):
         return False
-    if not Config.DEBUG:
+    if not Config.DEBUG and not current_app.config.get("TESTING"):
         log.error(
             "login_disabled.refused_in_production",
             path=getattr(request, "path", None),
