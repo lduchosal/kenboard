@@ -206,6 +206,84 @@ def snapshot() -> None:
 
 @cli.command()
 @click.option(
+    "--days",
+    default=60,
+    type=int,
+    help="How many days of history to reconstruct (default 60).",
+)
+def backfill(days: int) -> None:
+    """Reconstruct burndown snapshots from task timestamps (#206).
+
+    Approximates historical task counts by walking each day from
+    ``--days`` ago to today and inferring status from
+    ``tasks.created_at`` / ``tasks.updated_at``:
+
+    - A task with ``status='done'`` was "open" from ``created_at`` to
+      ``updated_at`` (exclusive) and "done" from ``updated_at`` onwards.
+    - A task with any other status is counted as "open" (todo) from
+      ``created_at`` to today.
+
+    The intermediate statuses (doing, review) cannot be reconstructed,
+    so all non-done tasks are counted as "todo" in the backfill. The
+    burndown curve (remaining = todo + doing + review) is still accurate
+    because all three statuses are summed together.
+
+    Idempotent: existing snapshots are overwritten via upsert.
+    """
+    from datetime import date, timedelta
+
+    import dashboard.db as db_module
+
+    conn = db_module.get_connection()
+    queries = db_module.load_queries()
+    try:
+        projects = list(queries.proj_get_all(conn))
+        today = date.today()
+        start = today - timedelta(days=days)
+        total = 0
+        for proj in projects:
+            tasks = list(queries.task_get_by_project(conn, project_id=proj["id"]))
+            if not tasks:
+                continue
+            for day_offset in range(days + 1):
+                day = start + timedelta(days=day_offset)
+                todo = 0
+                done = 0
+                for t in tasks:
+                    t_created = (
+                        t["created_at"].date()
+                        if hasattr(t["created_at"], "date")
+                        else t["created_at"]
+                    )
+                    t_updated = (
+                        t["updated_at"].date()
+                        if hasattr(t["updated_at"], "date")
+                        else t["updated_at"]
+                    )
+                    if t_created > day:
+                        continue  # didn't exist yet
+                    if t["status"] == "done" and t_updated <= day:
+                        done += 1
+                    else:
+                        todo += 1
+                # Use a raw INSERT with explicit date instead of CURDATE()
+                cur = conn.cursor()
+                cur.execute(
+                    "INSERT INTO burndown_snapshots"
+                    " (snapshot_date, project_id, todo, doing, review, done)"
+                    " VALUES (%s, %s, %s, 0, 0, %s)"
+                    " ON DUPLICATE KEY UPDATE"
+                    " todo=VALUES(todo), doing=0, review=0, done=VALUES(done)",
+                    (day.isoformat(), proj["id"], todo, done),
+                )
+                total += 1
+        click.echo(f"Backfilled {total} snapshot(s) across {len(projects)} project(s).")
+    finally:
+        conn.close()
+
+
+@cli.command()
+@click.option(
     "--yes",
     is_flag=True,
     help="Skip interactive confirmation (for scripted use).",
