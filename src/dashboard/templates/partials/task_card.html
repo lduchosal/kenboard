@@ -4,20 +4,19 @@
 {% set avatar_color = avatar_colors.get(who, "var(--dimmed)") %}
 {% set when_val = t.get("due_date") or t.get("when") %}
 {% set when_str = fmt_date(when_val | string) if when_val else "" %}
-{% set desc = t.get("description", "") or t.get("desc", "") %}
 {% set _task_href = task_href | default('', true) %}
 {# NOSONAR Web:S6819: this card cannot be a real <button> because its detail
    mode exposes a nested ``.btn-edit`` <button>. HTML5 forbids interactive
    descendants inside <button> and browsers auto-close the outer button on
    parse, which would push .btn-edit out of the card and break layout. #}
-<div class="kanban-task{{ ' task-hidden' if is_hidden else '' }}" data-task-id="{{ t.get('id', '') }}" role="button" tabindex="0" onclick="{% if _task_href %}window.location='{{ _task_href | jsesc }}'{% else %}toggleDetail(this,event){% endif %}"{% if not _task_href %} ondblclick="openEditTask(this,'{{ t.get('id', '') }}','{{ t.title | jsesc }}','{{ desc | jsesc }}','{{ who_raw | jsesc }}','{{ when_str }}')"{% endif %} onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+<div class="kanban-task{{ ' task-hidden' if is_hidden else '' }}" data-task-id="{{ t.get('id', '') }}" role="button" tabindex="0" onclick="{% if _task_href %}window.location='{{ _task_href | jsesc }}'{% else %}toggleDetail(this,event){% endif %}"{% if not _task_href %} ondblclick="openEditTask(this,'{{ t.get('id', '') }}')"{% endif %} onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
   {# .task-right comes BEFORE .task-body so the float:right (in detail
      mode) is anchored at the top of the card and the body text wraps
      around it. The Editer button lives in .task-actions at the bottom
      of the card, below the float, so it always sits flush at the
      bottom regardless of how short the description is. #}
   <div class="task-right">
-    <button class="btn-edit btn-fullscreen detail-only" onclick="event.stopPropagation();openFullscreen(this,'{{ t.get('id', '') }}','{{ t.title | jsesc }}','{{ desc | jsesc }}','{{ who_raw | jsesc }}','{{ when_str }}','{{ avatar_color }}')">&#x2922;</button>
+    <button class="btn-edit btn-fullscreen detail-only" onclick="event.stopPropagation();openFullscreen(this,'{{ t.get('id', '') }}')">&#x2922;</button>
     <div class="task-id-detail">#{{ t.get('id', '') }}</div>
     <div class="task-avatar" style="background:{{ avatar_color }}" title="{{ who }}">{{ initials }}</div>
     {% if when_str %}<div class="task-when">{{ when_str }}</div>{% endif %}
@@ -28,9 +27,8 @@
       <span class="task-title">{{ t.title }}</span>
       <span class="task-id">#{{ t.get('id', '') }}</span>
     </div>
-    {% if desc %}<div class="task-desc">{{ desc }}</div>{% endif %}
   </div>
   <div class="task-actions detail-only">
-    <button class="btn-edit" onclick="event.stopPropagation();openEditTask(this,'{{ t.get('id', '') }}','{{ t.title | jsesc }}','{{ desc | jsesc }}','{{ who_raw | jsesc }}','{{ when_str }}')">Editer</button>
+    <button class="btn-edit" onclick="event.stopPropagation();openEditTask(this,'{{ t.get('id', '') }}')">Editer</button>
   </div>
 </div>

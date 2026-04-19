@@ -61,6 +61,15 @@ async function apiCall(url, opts = {}) {
   return r;
 }
 
+// -- Date formatting ---------------------------------------------------------
+// Format ISO date (YYYY-MM-DD) to dd.mm for display consistency with Jinja.
+function _fmtDate(iso) {
+  if (!iso) return '';
+  const parts = iso.split('-');
+  if (parts.length < 3) return iso;
+  return parts[2] + '.' + parts[1];
+}
+
 // -- Sticky title observer ---------------------------------------------------
 
 const header = document.querySelector('.header');
@@ -277,24 +286,22 @@ async function copyOnboardLink(btn, catId, projectId) {
 
 // -- Fullscreen task view (#155) ----------------------------------------------
 
-async function openFullscreen(btn, id, title, desc, who, when, avatarColor) {
-  // Show the modal immediately with the data we have from the DOM
-  _populateFullscreen(id, title, desc, who, when, avatarColor, btn);
+async function openFullscreen(btn, id) {
+  const card = btn.closest('.kanban-task');
+  const avatarColor = card?.querySelector('.task-avatar')?.style.background || 'var(--dimmed)';
+  // Show the modal immediately with minimal data, then fill from API (#221)
+  _populateFullscreen(id, '...', '', '', '', avatarColor, btn);
   document.getElementById('task-fullscreen').showModal();
 
-  // Then refresh from the API for up-to-date content (#168)
   try {
-    const r = await fetch(`${API_BASE}/tasks/${id}`);
-    if (r.ok) {
-      const t = await r.json();
-      _populateFullscreen(
-        t.id, t.title, t.description || '', t.who || '',
-        t.due_date || '', avatarColor, btn
-      );
-    }
+    const r = await apiCall(`${API_BASE}/tasks/${id}`);
+    const t = await r.json();
+    _populateFullscreen(
+      t.id, t.title, t.description || '', t.who || '',
+      t.due_date ? _fmtDate(t.due_date) : '', avatarColor, btn
+    );
   } catch (e) {
-    // API call failed — keep the DOM-sourced content, no error popup
-    console.debug('openFullscreen: API refresh failed', e);
+    console.debug('openFullscreen: API fetch failed', e);
   }
 }
 
@@ -322,7 +329,7 @@ function _populateFullscreen(id, title, desc, who, when, avatarColor, btn) {
 
   document.getElementById('fs-edit-btn').onclick = function () {
     closeFullscreen();
-    openEditTask(btn, id, title, desc, who, when);
+    openEditTask(btn, id);
   };
 }
 
@@ -338,7 +345,7 @@ document.getElementById('task-fullscreen')?.addEventListener('click', function (
 
 // -- Task CRUD ---------------------------------------------------------------
 
-function toggleDetail(el, event) {
+async function toggleDetail(el, event) {
   // The 2nd click of a double-click reaches us with `event.detail === 2`
   // (browser-set click count). Bail so the matching `dblclick` handler can
   // open the edit modal without us toggling the detail view back off
@@ -357,6 +364,29 @@ function toggleDetail(el, event) {
   // Sync the URL fragment so the detail view survives reloads (60s
   // auto-refresh) and produces shareable deep links to the card (#109).
   if (taskId) _setTaskHash(taskId);
+
+  // Lazy-load description from API on first open (#221)
+  if (taskId && !el.dataset.descLoaded) {
+    try {
+      const r = await fetch(`${API_BASE}/tasks/${taskId}`);
+      if (r.ok) {
+        const t = await r.json();
+        if (t.description) {
+          let descEl = el.querySelector('.task-desc');
+          if (!descEl) {
+            descEl = document.createElement('div');
+            descEl.className = 'task-desc';
+            el.querySelector('.task-body').appendChild(descEl);
+          }
+          descEl.textContent = t.description;
+          renderMarkdown(el);
+        }
+        el.dataset.descLoaded = '1';
+      }
+    } catch (e) {
+      console.debug('toggleDetail: desc fetch failed', e);
+    }
+  }
 }
 
 // -- URL <-> task detail sync (#109) -----------------------------------------
@@ -387,7 +417,7 @@ function _clearTaskHash() {
   globalThis.history.replaceState(null, '', url.pathname + url.search);
 }
 
-function _applyTaskHash() {
+async function _applyTaskHash() {
   const id = _taskHashId();
   document.querySelectorAll('.kanban-task.detail-mode').forEach(t => {
     if (t.dataset.taskId !== id) t.classList.remove('detail-mode');
@@ -397,6 +427,28 @@ function _applyTaskHash() {
   if (!card) return;  // Stale link: task no longer on this page.
   card.classList.add('detail-mode');
   card.scrollIntoView({ block: 'center', behavior: 'auto' });
+  // Lazy-load description for hash-targeted card (#221)
+  if (!card.dataset.descLoaded) {
+    try {
+      const r = await fetch(`${API_BASE}/tasks/${id}`);
+      if (r.ok) {
+        const t = await r.json();
+        if (t.description) {
+          let descEl = card.querySelector('.task-desc');
+          if (!descEl) {
+            descEl = document.createElement('div');
+            descEl.className = 'task-desc';
+            card.querySelector('.task-body').appendChild(descEl);
+          }
+          descEl.textContent = t.description;
+          renderMarkdown(card);
+        }
+        card.dataset.descLoaded = '1';
+      }
+    } catch (e) {
+      console.debug('_applyTaskHash: desc fetch failed', e);
+    }
+  }
 }
 
 // React to back/forward and direct edits of the URL fragment. We don't fire
@@ -407,7 +459,7 @@ globalThis.addEventListener('hashchange', _applyTaskHash);
 // 60s auto-refresh, which preserves the fragment).
 _applyTaskHash();
 
-function openEditTask(btn, id, title, desc, who, when) {
+async function openEditTask(btn, id) {
   // Read status and projectId from the live DOM (the closest column / kanban),
   // not from inlined Jinja values: drag&drop moves the card without reloading,
   // so the original onclick params are stale and would silently revert the
@@ -421,25 +473,32 @@ function openEditTask(btn, id, title, desc, who, when) {
   _taskEditId = id;
   document.getElementById('task-modal-project-id').value = projectId;
   document.getElementById('task-modal-heading').textContent = 'Editer la t\u00e2che';
-  document.getElementById('task-modal-title').value = title;
-  document.getElementById('task-modal-desc').value = desc;
-  // Keep the existing assignee if set, else fall back to the project's
-  // default_who (#33). When neither is set the select stays on its
-  // server-rendered default (the logged-in user, cf. modals/task.html).
-  const whoSelect = document.getElementById('task-modal-who');
-  const effectiveWho = who || projectDefaultWho;
-  if (whoSelect && effectiveWho && [...whoSelect.options].some(o => o.value === effectiveWho)) {
-    whoSelect.value = effectiveWho;
-  } else if (whoSelect) {
-    whoSelect.value = who;
-  }
-  document.getElementById('task-modal-when').value = when;
+  document.getElementById('task-modal-title').value = '';
+  document.getElementById('task-modal-desc').value = '';
+  document.getElementById('task-modal-when').value = '';
   document.getElementById('task-modal-status').value = status;
   const delBtn = document.getElementById('task-modal-delete');
   if (delBtn) delBtn.style.display = id ? '' : 'none';
   const dupBtn = document.getElementById('task-modal-duplicate');
   if (dupBtn) dupBtn.style.display = id ? '' : 'none';
   document.getElementById('task-modal').style.display = 'flex';
+
+  // Fetch full task data from API (#221)
+  try {
+    const r = await apiCall(`${API_BASE}/tasks/${id}`);
+    const t = await r.json();
+    document.getElementById('task-modal-title').value = t.title;
+    document.getElementById('task-modal-desc').value = t.description || '';
+    document.getElementById('task-modal-when').value = t.due_date ? _fmtDate(t.due_date) : '';
+    document.getElementById('task-modal-status').value = t.status || status;
+    const whoSelect = document.getElementById('task-modal-who');
+    const effectiveWho = t.who || projectDefaultWho;
+    if (whoSelect && effectiveWho && [...whoSelect.options].some(o => o.value === effectiveWho)) {
+      whoSelect.value = effectiveWho;
+    }
+  } catch (e) {
+    console.debug('openEditTask: API fetch failed', e);
+  }
 }
 
 let _taskTargetList = null;
