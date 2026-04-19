@@ -76,6 +76,7 @@ class KenConfig:
     api_token: str | None
     ken_file: Path | None
     sync_dir: str = DEFAULT_SYNC_DIR
+    description: str = ""
 
 
 def _find_file_upwards(start: Path, name: str) -> Path | None:
@@ -128,9 +129,17 @@ def _load_config(
     project_override: str | None = None,
     base_url_override: str | None = None,
     token_override: str | None = None,
+    config_override: str | None = None,
 ) -> KenConfig:
     """Resolve config from flags > env > .ken > defaults."""
-    ken_path = _find_file_upwards(Path.cwd(), KEN_FILE)
+    ken_path: Path | None
+    if config_override:
+        ken_path = Path(config_override).resolve()
+        if not ken_path.is_file():
+            click.echo(f"Error: config file not found: {config_override}", err=True)
+            sys.exit(1)
+    else:
+        ken_path = _find_file_upwards(Path.cwd(), KEN_FILE)
     file_data: dict[str, str] = {}
     if ken_path is not None and ken_path.is_file():
         _check_ken_permissions(ken_path)
@@ -157,12 +166,14 @@ def _load_config(
     sync_dir = (
         os.environ.get("KEN_SYNC_DIR") or file_data.get("sync_dir") or DEFAULT_SYNC_DIR
     )
+    description = file_data.get("description", "")
     return KenConfig(
         project_id=project_id,
         base_url=base_url,
         api_token=api_token,
         ken_file=ken_path if ken_path is not None and ken_path.is_file() else None,
         sync_dir=sync_dir,
+        description=description,
     )
 
 
@@ -368,16 +379,18 @@ def _persist_sync_dir(cfg: KenConfig) -> None:
 @click.option("--project", help="Override project_id (UUID).")
 @click.option("--base-url", help="Override the kenboard base URL.")
 @click.option("--token", help="Override the API bearer token.")
+@click.option("--config", "config_file", help="Path to a .ken config file.")
 @click.pass_context
 def cli(
     ctx: click.Context,
     project: str | None,
     base_url: str | None,
     token: str | None,
+    config_file: str | None,
 ) -> None:
     """Ken — task CLI for the kenboard board."""
     ctx.ensure_object(dict)
-    ctx.obj["cfg"] = _load_config(project, base_url, token)
+    ctx.obj["cfg"] = _load_config(project, base_url, token, config_file)
 
 
 @cli.command()
@@ -430,7 +443,11 @@ def init(ctx: click.Context, project_uuid: str | None, force: bool) -> None:
             sys.exit(1)
         chosen_name = match["name"]
 
-    lines = [f"project_id={project_uuid}", f"base_url={cfg.base_url}"]
+    lines = [
+        f"project_id={project_uuid}",
+        f"base_url={cfg.base_url}",
+        f"description={chosen_name}",
+    ]
     if cfg.api_token:
         lines.append(f"api_token={cfg.api_token}")
     target.write_text("\n".join(lines) + "\n", encoding="utf-8")
