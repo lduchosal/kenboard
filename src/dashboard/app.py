@@ -12,6 +12,7 @@ from dashboard.auth_oidc import init_oidc
 from dashboard.auth_user import init_login_manager
 from dashboard.config import Config
 from dashboard.logging import get_logger, setup_logging
+from dashboard.perf import init_perf
 from dashboard.routes import (
     categories_bp,
     keys_bp,
@@ -75,6 +76,10 @@ def create_app() -> Flask:
     # OIDC auth (optional, cf. auth_oidc.py). Silent no-op when the
     # OIDC_* env vars are not set. Registers /oidc/login + /oidc/callback.
     init_oidc(app)
+
+    # Performance monitoring (#214) — must run before auth so the perf
+    # collector is available to all downstream request processing.
+    init_perf(app)
 
     # API key auth middleware (always enforced; tests opt-out via LOGIN_DISABLED)
     init_auth(app)

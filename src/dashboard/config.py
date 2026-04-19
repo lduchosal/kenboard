@@ -83,3 +83,13 @@ class Config:
         and os.getenv("OIDC_CLIENT_ID")
         and os.getenv("OIDC_CLIENT_SECRET")
     )
+
+    # -- Performance monitoring (#214) ----------------------------------------
+    PERF_ENABLED: bool = os.getenv("PERF_ENABLED", "true").lower() == "true"
+    PERF_BUDGET_MS: int = int(os.getenv("PERF_BUDGET_MS", "500"))
+    PERF_MAX_QUERIES: int = int(os.getenv("PERF_MAX_QUERIES", "20"))
+    PERF_MAX_SQL_MS: int = int(os.getenv("PERF_MAX_SQL_MS", "300"))
+    PERF_MAX_RESPONSE_KB: int = int(os.getenv("PERF_MAX_RESPONSE_KB", "512"))
+    PERF_PROJECT_ID: str = os.getenv("PERF_PROJECT_ID", "")
+    PERF_TASK_WHO: str = os.getenv("PERF_TASK_WHO", "Claude")
+    PERF_COOLDOWN_S: int = int(os.getenv("PERF_COOLDOWN_S", "3600"))
