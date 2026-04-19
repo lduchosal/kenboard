@@ -46,3 +46,19 @@ WHERE id = :id;
 -- Get the maximum position in a project for a given status.
 SELECT COALESCE(MAX(position), -1) FROM tasks
 WHERE project_id = :project_id AND status = :status;
+
+-- name: task_counts_by_project
+-- Get total and done counts per project in one query (#226).
+SELECT project_id,
+       COUNT(*) AS total,
+       SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) AS done
+FROM tasks
+GROUP BY project_id;
+
+-- name: task_get_all_doing
+-- Get all doing tasks across all projects (#226).
+SELECT id, project_id, title, description, status, who, due_date, position,
+       created_at, updated_at
+FROM tasks
+WHERE status = 'doing'
+ORDER BY position ASC;
