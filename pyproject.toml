@@ -1,6 +1,6 @@
 [project]
 name = "kenboard"
-version = "0.1.68"
+version = "0.1.69"
 description = "Project management dashboard with kanban boards, burndown charts, and category-based organization. Flask API backend with MySQL storage and static HTML generation."
 authors = [
     { name = "Q" }

@@ -1,9 +1,8 @@
 """Unit tests for page routes (pages.py) — safety net before refactoring (#227).
 
-These tests verify that each page route returns 200 and renders the
-expected data. They run with LOGIN_DISABLED=True (the default in the
-test app) so auth is not exercised here — that is covered by
-test_admin_only.py and test_auth_user.py.
+These tests verify that each page route returns 200 and renders the expected data. They
+run with LOGIN_DISABLED=True (the default in the test app) so auth is not exercised here
+— that is covered by test_admin_only.py and test_auth_user.py.
 """
 
 import pytest
@@ -13,9 +12,8 @@ import pytest
 def _ensure_login_disabled(app):
     """Ensure LOGIN_DISABLED is True for all page route tests.
 
-    Other test modules (test_admin_only, test_user_scopes) toggle this
-    flag on the session-scoped app. Restore it so page routes don't
-    redirect to /login.
+    Other test modules (test_admin_only, test_user_scopes) toggle this flag on the
+    session-scoped app. Restore it so page routes don't redirect to /login.
     """
     prev = app.config.get("LOGIN_DISABLED")
     app.config["LOGIN_DISABLED"] = True
