@@ -139,9 +139,7 @@ def index() -> Any:
         all_projects = list(queries.proj_get_all(conn))
         users = list(queries.usr_get_all(conn))
         visible = _visible_category_ids()
-        categories, all_projects = _filter_by_scope(
-            categories, all_projects, visible
-        )
+        categories, all_projects = _filter_by_scope(categories, all_projects, visible)
 
         # Per-project counts in one query instead of loading all tasks
         counts_rows = list(queries.task_counts_by_project(conn))
@@ -166,9 +164,7 @@ def index() -> Any:
     finally:
         conn.close()
 
-    ctx = _build_context(
-        categories, all_projects, users, cat_snapshots, prefix="/"
-    )
+    ctx = _build_context(categories, all_projects, users, cat_snapshots, prefix="/")
     ctx["title"] = "KEN"
 
     cat_by_id = {c["id"]: c for c in categories}
@@ -219,8 +215,8 @@ def admin_users() -> Any:
 def admin_keys() -> Any:
     """Serve the API keys management admin page (#223).
 
-    No tasks or burndown needed — only categories, projects, users,
-    and API keys with their scopes.
+    No tasks or burndown needed — only categories, projects, users, and API keys with
+    their scopes.
     """
     admin_required()
     conn = db.get_connection()
@@ -233,8 +229,7 @@ def admin_keys() -> Any:
         for k in api_keys:
             scopes = list(queries.key_scopes_get(conn, api_key_id=k["id"]))
             k["scopes"] = [
-                {"project_id": s["project_id"], "scope": s["scope"]}
-                for s in scopes
+                {"project_id": s["project_id"], "scope": s["scope"]} for s in scopes
             ]
     finally:
         conn.close()
@@ -277,8 +272,8 @@ def admin_board() -> Any:
 def category(cat_id: str) -> Any:
     """Serve a category detail page (#221).
 
-    Loads only the projects and tasks for the requested category
-    instead of all categories.
+    Loads only the projects and tasks for the requested category instead of all
+    categories.
     """
     if not current_user_can(cat_id, "read"):
         abort(403)
@@ -289,9 +284,7 @@ def category(cat_id: str) -> Any:
         all_projects = list(queries.proj_get_all(conn))
         users = list(queries.usr_get_all(conn))
         visible = _visible_category_ids()
-        categories, all_projects = _filter_by_scope(
-            categories, all_projects, visible
-        )
+        categories, all_projects = _filter_by_scope(categories, all_projects, visible)
 
         cat = next((c for c in categories if c["id"] == cat_id), None)
         if not cat:
@@ -300,31 +293,27 @@ def category(cat_id: str) -> Any:
         # Load tasks and burndown only for this category's projects
         cat_projects = [p for p in all_projects if p["cat_id"] == cat_id]
         for p in cat_projects:
-            p["tasks"] = list(
-                queries.task_get_by_project(conn, project_id=p["id"])
-            )
-            p["done"] = len(
-                [t for t in p["tasks"] if t["status"] == "done"]
-            )
+            p["tasks"] = list(queries.task_get_by_project(conn, project_id=p["id"]))
+            p["done"] = len([t for t in p["tasks"] if t["status"] == "done"])
             p["total"] = len(p["tasks"])
             p["snapshots"] = list(
-                queries.burndown_get_by_project(
-                    conn, project_id=p["id"], days=60
-                )
+                queries.burndown_get_by_project(conn, project_id=p["id"], days=60)
             )
 
         cat_snapshots: dict[str, list[dict[str, Any]]] = {}
         cat_snapshots[cat_id] = list(
-            queries.burndown_get_by_category(
-                conn, category_id=cat_id, days=60
-            )
+            queries.burndown_get_by_category(conn, category_id=cat_id, days=60)
         )
     finally:
         conn.close()
 
     ctx = _build_context(
-        categories, all_projects, users, cat_snapshots,
-        prefix="/", current_cat=cat,
+        categories,
+        all_projects,
+        users,
+        cat_snapshots,
+        prefix="/",
+        current_cat=cat,
     )
     ctx["title"] = f"KEN / {cat['name']}"
     ctx["cat"] = cat
