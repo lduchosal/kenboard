@@ -15,6 +15,7 @@ if sys.platform == "win32":  # pragma: no cover
 
 
 @click.group()
+@click.version_option(package_name="kenboard")  # type: ignore[call-arg]
 def cli() -> None:
     """Dashboard management commands."""
 

@@ -41,6 +41,8 @@ class ApiKey(BaseModel):
     label: str
     expires_at: datetime | None
     last_used_at: datetime | None
+    last_used_ip: str | None = None
+    last_used_agent: str | None = None
     revoked_at: datetime | None
     created_at: datetime
     scopes: list[ApiKeyScope] = Field(default_factory=list)

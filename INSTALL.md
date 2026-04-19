@@ -225,21 +225,37 @@ yoyo rollback --batch \
 
 La migration `0016.create_burndown_snapshots.sql` ajoute une table pour
 le suivi historique du burndown. Afin de collecter les données, un cron
-quotidien doit appeler :
+quotidien doit appeler `kenboard snapshot`.
 
-```sh
-kenboard snapshot
-```
-
-Configurer un cron (ou un systemd timer) pour l'exécuter chaque nuit :
+Sur FreeBSD avec le déploiement ansible, le cron est déjà configuré dans
+`/usr/local/etc/cron.d/kenboard` :
 
 ```
-0 2 * * * /usr/local/bin/kenboard snapshot
+0 2 * * * kenboard cd /usr/local/kenboard && . ./venv/bin/activate && kenboard snapshot > /var/log/kenboard_snapshot.log 2>&1
+```
+
+Pour un déploiement Linux (systemd) ou manuel, adapter le chemin :
+
+```
+0 2 * * * www-data cd /opt/kenboard && . ./venv/bin/activate && kenboard snapshot
 ```
 
 Le burndown apparaîtra sur les cartes catégories (index) et les pages
 catégorie après 2 jours de données collectées. Voir
 `doc/burndown.md` pour le détail.
+
+### Backfill initial
+
+Pour un déploiement existant avec des tâches déjà créées, le burndown
+peut être pré-rempli à partir des timestamps des tâches :
+
+```sh
+kenboard backfill --days 60
+```
+
+Cette commande reconstruit un historique approximatif (les tâches done
+sont comptées comme "open" entre `created_at` et `updated_at`, puis
+"done" après). A lancer une seule fois après la migration.
 
 ## 6. Initialiser le mot de passe de l'admin
 

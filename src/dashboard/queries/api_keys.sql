@@ -1,12 +1,12 @@
 -- name: key_get_all
 -- Get all api_keys (without project scopes) ordered by created_at desc.
-SELECT id, user_id, key_hash, label, expires_at, last_used_at, revoked_at, created_at
+SELECT id, user_id, key_hash, label, expires_at, last_used_at, last_used_ip, last_used_agent, revoked_at, created_at
 FROM api_keys
 ORDER BY created_at DESC;
 
 -- name: key_get_by_id^
 -- Get a single api_key by id.
-SELECT id, user_id, key_hash, label, expires_at, last_used_at, revoked_at, created_at
+SELECT id, user_id, key_hash, label, expires_at, last_used_at, last_used_ip, last_used_agent, revoked_at, created_at
 FROM api_keys
 WHERE id = :id;
 
@@ -42,9 +42,11 @@ DELETE FROM api_keys
 WHERE id = :id;
 
 -- name: key_touch_last_used!
--- Update last_used_at to NOW for a given api_key.
+-- Update last_used_at, IP and User-Agent for a given api_key (#209, #210).
 UPDATE api_keys
-SET last_used_at = NOW()
+SET last_used_at = NOW(),
+    last_used_ip = :ip,
+    last_used_agent = :agent
 WHERE id = :id;
 
 -- name: key_scopes_get

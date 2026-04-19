@@ -136,6 +136,8 @@ def _ensure_test_db() -> None:
             label VARCHAR(100) NOT NULL,
             expires_at DATETIME NULL,
             last_used_at DATETIME NULL,
+            last_used_ip VARCHAR(45) NULL,
+            last_used_agent VARCHAR(200) NULL,
             revoked_at DATETIME NULL,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_key_hash (key_hash),
@@ -177,6 +179,19 @@ def _ensure_test_db() -> None:
         cur.execute(
             "ALTER TABLE api_keys ADD COLUMN key_type VARCHAR(20) NULL AFTER user_id"
         )
+    # last_used_ip / last_used_agent added in migration 0017 (#209, #210).
+    for col, defn in [
+        ("last_used_ip", "VARCHAR(45) NULL AFTER last_used_at"),
+        ("last_used_agent", "VARCHAR(200) NULL AFTER last_used_ip"),
+    ]:
+        cur.execute(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+            "WHERE TABLE_SCHEMA = DATABASE() "
+            "AND TABLE_NAME = 'api_keys' "
+            f"AND COLUMN_NAME = '{col}'"
+        )
+        if cur.fetchone()[0] == 0:
+            cur.execute(f"ALTER TABLE api_keys ADD COLUMN {col} {defn}")
     cur.execute("""
         CREATE TABLE IF NOT EXISTS api_key_projects (
             api_key_id VARCHAR(36) NOT NULL,

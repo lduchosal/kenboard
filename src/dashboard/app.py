@@ -286,11 +286,7 @@ def create_app() -> Flask:
     # ``_is_login_disabled()`` also enforces this at runtime on every request
     # through the helper — this check just shortens the feedback loop so the
     # app never serves a single request in that state.
-    if (
-        app.config.get("LOGIN_DISABLED")
-        and not debug
-        and not app.config.get("TESTING")
-    ):
+    if app.config.get("LOGIN_DISABLED") and not debug and not app.config.get("TESTING"):
         raise RuntimeError(
             "LOGIN_DISABLED=True is set but DEBUG=False. This would bypass "
             "authentication in production. Refusing to start. Remove "

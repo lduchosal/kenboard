@@ -169,10 +169,12 @@ def _scope_satisfies(actual: str, required: str) -> bool:
 
 
 def _touch_last_used(api_key_id: str) -> None:
-    """Update last_used_at = NOW() for an api_key."""
+    """Update last_used_at, IP and User-Agent for an api_key (#209, #210)."""
+    ip = request.remote_addr or ""
+    agent = (request.user_agent.string or "")[:200]
     conn = db.get_connection()
     try:
-        db.load_queries().key_touch_last_used(conn, id=api_key_id)
+        db.load_queries().key_touch_last_used(conn, id=api_key_id, ip=ip, agent=agent)
     finally:
         conn.close()
 

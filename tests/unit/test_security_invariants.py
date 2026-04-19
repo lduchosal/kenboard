@@ -2,8 +2,8 @@
 
 These tests read source files as text and assert properties that must hold independently
 of runtime behaviour. They act as tripwires when a future refactor reintroduces a
-dangerous pattern — the code reviewer is forced to look at the invariant before the test
-can be silenced.
+dangerous pattern — the code reviewer is forced to look at the invariant before the
+test can be silenced.
 """
 
 from __future__ import annotations

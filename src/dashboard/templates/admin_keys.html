@@ -14,6 +14,8 @@
         <th style="padding:8px 6px">Statut</th>
         <th style="padding:8px 6px">Cr&eacute;&eacute;e</th>
         <th style="padding:8px 6px">Derni&egrave;re utilisation</th>
+        <th style="padding:8px 6px">IP</th>
+        <th style="padding:8px 6px">Agent</th>
         <th style="padding:8px 6px">Expire</th>
         <th style="padding:8px 6px">Scopes</th>
         <th style="padding:8px 6px"></th>
@@ -21,7 +23,7 @@
     </thead>
     <tbody>
       {% if not api_keys %}
-      <tr><td colspan="8">
+      <tr><td colspan="10">
         {% set es_badge = "API" %}
         {% set es_title = "Aucune clé API" %}
         {% set es_subtitle = "Créez une clé pour permettre aux agents et intégrations d'accéder au board." %}
@@ -52,6 +54,8 @@
         </td>
         <td style="padding:6px;font-size:11px;color:var(--dimmed)">{{ k.created_at.strftime('%Y-%m-%d %H:%M') if k.created_at else '' }}</td>
         <td style="padding:6px;font-size:11px;color:var(--dimmed)">{{ k.last_used_at.strftime('%Y-%m-%d %H:%M') if k.last_used_at else '--' }}</td>
+        <td style="padding:6px;font-size:11px;color:var(--dimmed)">{{ k.last_used_ip or '--' }}</td>
+        <td style="padding:6px;font-size:11px;color:var(--dimmed)" title="{{ k.last_used_agent or '' }}">{{ (k.last_used_agent or '--')[:30] }}{% if k.last_used_agent and k.last_used_agent|length > 30 %}...{% endif %}</td>
         <td style="padding:6px"><input type="text" class="k-expires" value="{{ k.expires_at.strftime('%Y-%m-%dT%H:%M') if k.expires_at else '' }}" placeholder="YYYY-MM-DDTHH:MM" autocomplete="off" style="width:140px"></td>
         <td style="padding:6px">
           <div class="k-scopes">

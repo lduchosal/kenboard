@@ -38,6 +38,17 @@ from urllib import request as urllib_request
 
 import click
 
+
+def _version() -> str:
+    """Return the kenboard package version for the User-Agent header."""
+    try:
+        from dashboard import __version__
+
+        return __version__
+    except ImportError:
+        return "unknown"
+
+
 DEFAULT_BASE_URL = "http://localhost:9090"
 DEFAULT_SYNC_DIR = "doc/kenboard"
 KEN_FILE = ".ken"
@@ -188,7 +199,10 @@ def _request(
     """Send a JSON request, return parsed response or None on empty body."""
     url = cfg.base_url + path
     data = json_lib.dumps(body).encode("utf-8") if body is not None else None
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": f"ken/{_version()} Python/{sys.version.split()[0]}",
+    }
     if cfg.api_token:
         headers["Authorization"] = f"Bearer {cfg.api_token}"
     req = urllib_request.Request(url, data=data, headers=headers, method=method)
