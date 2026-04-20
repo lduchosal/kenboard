@@ -107,16 +107,25 @@ body {
   padding: 12px 14px;
   z-index: 20;
   min-width: 180px;
-}
-.badge-menu-dropdown .badge {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 10px;
-  padding: 4px 10px;
+  /* Scrollable grid for large category lists (#230) */
+  max-height: 70vh;
+  overflow-y: auto;
+  display: none;
 }
 .header-badges-dropdown.open .badge-menu-dropdown {
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 80vw;
 }
+.badge-menu-dropdown .badge {
+  font-size: 10px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+/* Force dropdown mode on desktop when > 8 categories (#230) */
+.header-compact .header-badges { display: none; }
+.header-compact .header-badges-dropdown { display: block; }
 
 
 /* Avatar dropdown menu */

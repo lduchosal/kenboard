@@ -1,4 +1,4 @@
-<div class="header">
+<div class="header{{ ' header-compact' if categories | length > 8 else '' }}">
   <a href="/" style="text-decoration:none"><h1>KENBOARD</h1></a>
   <span class="header-version" title="kenboard {{ version }}">v{{ version }}</span>
   <div class="header-badges">
