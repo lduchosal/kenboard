@@ -113,15 +113,17 @@ body {
   display: none;
 }
 .header-badges-dropdown.open .badge-menu-dropdown {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 6px;
-  max-width: 80vw;
+  width: max(50vw, 600px);
+  max-width: 90vw;
 }
 .badge-menu-dropdown .badge {
   font-size: 10px;
   padding: 4px 10px;
   white-space: nowrap;
+  text-align: center;
 }
 /* Force dropdown mode on desktop when > 8 categories (#230) */
 .header-compact .header-badges { display: none; }
