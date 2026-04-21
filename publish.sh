@@ -187,6 +187,18 @@ if [ "$QUALITY_ONLY" = true ]; then
     exit 0
 fi
 
+# Push code to trigger Sonarcloud analysis, then wait for the gate
+print_step "Pushing Code for Sonarcloud Analysis"
+run_command "git push" "Pushing commits for analysis"
+
+print_step "Sonarcloud Quality Gate"
+if python scripts/sonar_gate.py --timeout 300 --interval 15; then
+    echo "${GREEN}${BOLD}✓ Sonarcloud quality gate passed${NC}"
+else
+    echo "${RED}${BOLD}✗ Sonarcloud quality gate FAILED — aborting publish${NC}"
+    exit 1
+fi
+
 print_step "Bumping Version (pdm bump ${BUMP_TYPE})"
 run_command "pdm bump ${BUMP_TYPE}" "Version bump"
 
@@ -208,9 +220,9 @@ print_step "Committing Changes"
 COMMIT_MSG="chore: release version ${VERSION}"
 run_command "git commit -m \"${COMMIT_MSG}\"" "Git commit"
 
-print_step "Creating Tag and Pushing"
+print_step "Creating Tag and Pushing Release"
 run_command "git tag kenboard-${VERSION}" "Creating git tag"
-run_command "git push" "Pushing commits"
+run_command "git push" "Pushing release commit"
 run_command "git push --tags" "Pushing tags"
 
 print_step "Cleaning Previous Build (pdm run clean)"
