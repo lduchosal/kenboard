@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kenboard &mdash; Cr&eacute;er un compte</title>
+<link rel="icon" type="image/png" href="/static/favicon-32.png" sizes="32x32">
+<link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="login-body">
+  <div class="login-card login-card-split">
+    <div class="login-logo-panel">
+      <img src="/static/logo.svg" alt="Kenboard" class="login-logo">
+    </div>
+    <div class="login-form-panel">
+      <h1 class="login-title">Cr&eacute;er un compte</h1>
+      <p style="font-size:13px;color:var(--dimmed);margin:0 0 16px">Seules les adresses <strong>@{{ domain }}</strong> sont accept&eacute;es.</p>
+      <form method="post" action="/register" class="login-form" autocomplete="off">
+        <label class="login-label">
+          Email
+          <input type="email" name="email" autofocus required autocomplete="email" placeholder="nom@{{ domain }}">
+        </label>
+        <label class="login-label">
+          Mot de passe
+          <input type="password" name="password" required autocomplete="new-password">
+        </label>
+        <label class="login-label">
+          Confirmation
+          <input type="password" name="password_confirm" required autocomplete="new-password">
+        </label>
+        {% if error %}
+        <div class="login-error">{{ error }}</div>
+        {% endif %}
+        {% if message %}
+        <div class="login-success">{{ message }}</div>
+        {% endif %}
+        <button type="submit" class="btn btn-save login-submit">S'inscrire</button>
+      </form>
+      <div style="text-align:center;margin-top:12px">
+        <a href="/login" style="font-size:12px;color:var(--dimmed)">D&eacute;j&agrave; un compte ? Se connecter</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

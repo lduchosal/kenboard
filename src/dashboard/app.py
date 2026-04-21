@@ -11,6 +11,7 @@ from dashboard.auth import init_auth
 from dashboard.auth_oidc import init_oidc
 from dashboard.auth_user import init_login_manager
 from dashboard.config import Config
+from dashboard.email import init_email
 from dashboard.logging import get_logger, setup_logging
 from dashboard.perf import init_perf
 from dashboard.routes import (
@@ -76,6 +77,9 @@ def create_app() -> Flask:
     # OIDC auth (optional, cf. auth_oidc.py). Silent no-op when the
     # OIDC_* env vars are not set. Registers /oidc/login + /oidc/callback.
     init_oidc(app)
+
+    # Email infrastructure (#231) — used by password reset and registration.
+    init_email(app)
 
     # Performance monitoring (#214) — must run before auth so the perf
     # collector is available to all downstream request processing.

@@ -29,8 +29,19 @@
         {% if error %}
         <div class="login-error">{{ error }}</div>
         {% endif %}
+        {% if message %}
+        <div class="login-success">{{ message }}</div>
+        {% endif %}
         <button type="submit" class="btn btn-save login-submit">Se connecter</button>
       </form>
+      <div style="text-align:center;margin-top:8px">
+        <a href="/forgot-password" style="font-size:12px;color:var(--dimmed)">Mot de passe oubli&eacute; ?</a>
+      </div>
+      {% if config.get("REGISTER_ALLOWED_DOMAIN") %}
+      <div style="text-align:center;margin-top:4px">
+        <a href="/register" style="font-size:12px;color:var(--dimmed)">Cr&eacute;er un compte</a>
+      </div>
+      {% endif %}
       {% if config.get("OIDC_ENABLED") %}
       <div class="login-separator"><span>ou</span></div>
       <a href="/oidc/login" class="btn btn-save login-submit login-oidc-btn">Sign in with OIDC</a>

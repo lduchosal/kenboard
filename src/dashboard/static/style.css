@@ -1492,6 +1492,13 @@ button.cat-card-add {
   padding: 6px 10px;
   border-radius: 4px;
 }
+.login-success {
+  font-size: 11px;
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 8%, transparent);
+  padding: 6px 10px;
+  border-radius: 4px;
+}
 .login-submit {
   margin-top: 4px;
   padding: 8px 14px;

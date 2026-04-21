@@ -110,6 +110,70 @@ def _setup_test_db():
             INDEX idx_key_hash (key_hash)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """)
+    # Columns added by later migrations — back-fill for legacy test DBs.
+    for col, tbl, defn in [
+        ("email", "users", "VARCHAR(255) NULL AFTER name"),
+        ("session_nonce", "users", "CHAR(32) NOT NULL DEFAULT '' AFTER is_admin"),
+        ("user_id", "api_keys", "VARCHAR(36) NULL AFTER id"),
+        ("key_type", "api_keys", "VARCHAR(20) NULL AFTER user_id"),
+        ("last_used_ip", "api_keys", "VARCHAR(45) NULL AFTER last_used_at"),
+        ("last_used_agent", "api_keys", "VARCHAR(200) NULL AFTER last_used_ip"),
+    ]:
+        cur.execute(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+            "WHERE TABLE_SCHEMA = DATABASE() "
+            f"AND TABLE_NAME = '{tbl}' AND COLUMN_NAME = '{col}'"
+        )
+        if cur.fetchone()[0] == 0:
+            cur.execute(f"ALTER TABLE {tbl} ADD COLUMN {col} {defn}")
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS user_category_scopes (
+            user_id VARCHAR(36) NOT NULL,
+            category_id VARCHAR(36) NOT NULL,
+            scope ENUM('read','write') NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, category_id),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS burndown_snapshots (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            snapshot_date DATE NOT NULL,
+            project_id VARCHAR(36) NOT NULL,
+            todo INT NOT NULL DEFAULT 0,
+            doing INT NOT NULL DEFAULT 0,
+            review INT NOT NULL DEFAULT 0,
+            done INT NOT NULL DEFAULT 0,
+            UNIQUE KEY uq_snapshot (snapshot_date, project_id),
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id VARCHAR(36) NOT NULL PRIMARY KEY,
+            user_id VARCHAR(36) NOT NULL,
+            token_hash CHAR(64) NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME NOT NULL,
+            used_at DATETIME NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            INDEX idx_prt_token_hash (token_hash)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS email_verification_tokens (
+            id VARCHAR(36) NOT NULL PRIMARY KEY,
+            email VARCHAR(255) NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            token_hash CHAR(64) NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME NOT NULL,
+            used_at DATETIME NULL,
+            INDEX idx_evt_token_hash (token_hash)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """)
     cur.execute("""
         CREATE TABLE IF NOT EXISTS api_key_projects (
             api_key_id VARCHAR(36) NOT NULL,
@@ -172,6 +236,10 @@ def clean_db():
     conn = _get_test_connection()
     cur = conn.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
+    cur.execute("DELETE FROM email_verification_tokens")
+    cur.execute("DELETE FROM password_reset_tokens")
+    cur.execute("DELETE FROM burndown_snapshots")
+    cur.execute("DELETE FROM user_category_scopes")
     cur.execute("DELETE FROM api_key_projects")
     cur.execute("DELETE FROM api_keys")
     cur.execute("DELETE FROM tasks")

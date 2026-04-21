@@ -20,6 +20,7 @@
       <tr style="border-bottom:1px solid var(--border);text-align:left">
         <th style="padding:8px 6px">Avatar</th>
         <th style="padding:8px 6px">Nom</th>
+        <th style="padding:8px 6px">Email</th>
         <th style="padding:8px 6px">Couleur</th>
         <th style="padding:8px 6px">Admin</th>
         <th style="padding:8px 6px">Accès boards</th>
@@ -29,7 +30,7 @@
     </thead>
     <tbody>
       {% if not users %}
-      <tr><td colspan="7">
+      <tr><td colspan="8">
         {% set es_badge = "Utilisateurs" %}
         {% set es_title = "Aucun utilisateur" %}
         {% set es_subtitle = "Créez un utilisateur avec le formulaire ci-dessous. Utilisez <code>kenboard set-password</code> pour définir un mot de passe en CLI." %}
@@ -46,6 +47,7 @@
           <div class="task-avatar" style="background:{{ u.color }};width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700">{{ u.name[0]|upper }}</div>
         </td>
         <td style="padding:6px"><input type="text" class="u-name" value="{{ u.name }}" autocomplete="off" style="width:100%"></td>
+        <td style="padding:6px;font-size:12px;color:var(--dimmed)">{{ u.email or '' }}</td>
         <td style="padding:6px"><input type="text" class="u-color" value="{{ u.color }}" autocomplete="off" style="width:100%"></td>
         <td style="padding:6px;text-align:center"><input type="checkbox" class="u-admin" {% if u.is_admin %}checked{% endif %}></td>
         <td class="u-scopes-cell" data-user-id="{{ u.id }}" style="padding:6px;min-width:200px">

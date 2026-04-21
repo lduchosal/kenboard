@@ -230,6 +230,32 @@ def _ensure_test_db() -> None:
             FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """)
+    # password_reset_tokens was added in migration 0018 (#231).
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            id VARCHAR(36) NOT NULL PRIMARY KEY,
+            user_id VARCHAR(36) NOT NULL,
+            token_hash CHAR(64) NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME NOT NULL,
+            used_at DATETIME NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            INDEX idx_prt_token_hash (token_hash)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """)
+    # email_verification_tokens was added in migration 0019 (#232).
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS email_verification_tokens (
+            id VARCHAR(36) NOT NULL PRIMARY KEY,
+            email VARCHAR(255) NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            token_hash CHAR(64) NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            expires_at DATETIME NOT NULL,
+            used_at DATETIME NULL,
+            INDEX idx_evt_token_hash (token_hash)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """)
     conn.close()
     _mysql_available = True
 
@@ -327,6 +353,8 @@ def db():
     # Cleanup before test
     cur = conn.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
+    cur.execute("DELETE FROM email_verification_tokens")
+    cur.execute("DELETE FROM password_reset_tokens")
     cur.execute("DELETE FROM burndown_snapshots")
     cur.execute("DELETE FROM user_category_scopes")
     cur.execute("DELETE FROM api_key_projects")
@@ -340,6 +368,8 @@ def db():
     # Cleanup after test
     cur = conn.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
+    cur.execute("DELETE FROM email_verification_tokens")
+    cur.execute("DELETE FROM password_reset_tokens")
     cur.execute("DELETE FROM burndown_snapshots")
     cur.execute("DELETE FROM user_category_scopes")
     cur.execute("DELETE FROM api_key_projects")

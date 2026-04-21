@@ -15,8 +15,10 @@ seed the first admin password.
 
 from __future__ import annotations
 
+import hashlib
 import secrets
-from datetime import timedelta
+import uuid
+from datetime import datetime, timedelta
 from typing import Any
 
 from argon2 import PasswordHasher
@@ -393,6 +395,10 @@ def init_login_manager(app: Flask) -> None:
         app.config["SESSION_COOKIE_SECURE"] = True
         app.config["REMEMBER_COOKIE_SECURE"] = True
 
+    # Expose to Jinja2 templates so login.html can show "Créer un compte"
+    if Config.REGISTER_ALLOWED_DOMAIN:
+        app.config["REGISTER_ALLOWED_DOMAIN"] = Config.REGISTER_ALLOWED_DOMAIN
+
     login_manager.init_app(app)
     limiter.init_app(app)
     app.register_blueprint(bp)
@@ -528,3 +534,338 @@ def _is_safe_url(target: str) -> bool:
         return False
     # Must start with /
     return target.startswith("/")
+
+
+# -- Password reset (#231) ---------------------------------------------------
+
+_FORGOT_TEMPLATE = "forgot_password.html"
+_RESET_TEMPLATE = "reset_password.html"
+_RESET_TOKEN_MINUTES = 30
+_FORGOT_RATE_LIMITS = "3 per hour"
+
+
+@bp.route("/forgot-password", methods=["GET"])
+def forgot_password() -> Any:
+    """Render the forgot-password form."""
+    return render_template(_FORGOT_TEMPLATE, message=None, is_error=False)
+
+
+@bp.route("/forgot-password", methods=["POST"])
+@limiter.limit(_FORGOT_RATE_LIMITS)
+def forgot_password_post() -> Any:
+    """Generate a reset token and send the email.
+
+    Always responds with the same message regardless of whether the email exists — no
+    information leakage.
+    """
+    from dashboard.email import send_email
+
+    email = (request.form.get("email") or "").strip().lower()
+    # Always show the same message (no email existence leak)
+    ok_msg = "Si un compte existe avec cet email, un lien a été envoyé."
+
+    if not email:
+        return render_template(_FORGOT_TEMPLATE, message="Email requis.", is_error=True)
+
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        user = queries.usr_get_by_email(conn, email=email)
+        if user:
+            token = secrets.token_urlsafe(32)
+            token_hash = hashlib.sha256(token.encode()).hexdigest()
+            expires = datetime.now() + timedelta(minutes=_RESET_TOKEN_MINUTES)
+            queries.prt_create(
+                conn,
+                id=str(uuid.uuid4()),
+                user_id=user["id"],
+                token_hash=token_hash,
+                expires_at=expires,
+            )
+            reset_url = request.host_url.rstrip("/") + f"/reset-password/{token}"
+            send_email(
+                to=email,
+                subject="Kenboard — Réinitialisation du mot de passe",
+                template="email/password_reset.html",
+                reset_url=reset_url,
+            )
+            log.info("auth.password_reset_requested", email=email)
+    finally:
+        conn.close()
+
+    return render_template(_FORGOT_TEMPLATE, message=ok_msg, is_error=False)
+
+
+@bp.route("/reset-password/<token>", methods=["GET"])
+def reset_password(token: str) -> Any:
+    """Render the new-password form if the token is valid."""
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        row = queries.prt_get_by_hash(conn, token_hash=token_hash)
+    finally:
+        conn.close()
+    if not row:
+        return render_template(
+            _FORGOT_TEMPLATE,
+            message="Lien invalide ou expiré.",
+            is_error=True,
+        )
+    return render_template(_RESET_TEMPLATE, token=token, error=None)
+
+
+@bp.route("/reset-password/<token>", methods=["POST"])
+def reset_password_post(token: str) -> Any:
+    """Validate the token and apply the new password."""
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    password = request.form.get("password") or ""
+    password_confirm = request.form.get("password_confirm") or ""
+
+    if password != password_confirm:
+        return render_template(
+            _RESET_TEMPLATE,
+            token=token,
+            error="Les mots de passe ne correspondent pas.",
+        )
+
+    # Validate password strength
+    from dashboard.password_strength import validate_password_strength
+
+    try:
+        validate_password_strength(password)
+    except ValueError as e:
+        return render_template(_RESET_TEMPLATE, token=token, error=str(e))
+
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        row = queries.prt_get_by_hash(conn, token_hash=token_hash)
+        if not row:
+            return render_template(
+                _FORGOT_TEMPLATE,
+                message="Lien invalide ou expiré.",
+                is_error=True,
+            )
+        # Apply new password
+        new_hash = _hasher.hash(password)
+        queries.usr_update_password(conn, id=row["user_id"], password_hash=new_hash)
+        # Invalidate all sessions (force re-login with new password)
+        _rotate_session_nonce(row["user_id"])
+        # Mark token as used
+        queries.prt_mark_used(conn, id=row["id"])
+        log.info("auth.password_reset_success", user_id=row["user_id"])
+    finally:
+        conn.close()
+
+    return render_template(
+        _LOGIN_TEMPLATE,
+        error=None,
+        next_url="",
+        message="Mot de passe modifié. Connectez-vous avec le nouveau.",
+    )
+
+
+# -- Self-registration (#232) ------------------------------------------------
+
+_REGISTER_TEMPLATE = "register.html"
+_VERIFY_TOKEN_HOURS = 24
+_REGISTER_RATE_LIMITS = "5 per hour"
+_USERS_CATEGORY_NAME = "Users"
+_USERS_CATEGORY_COLOR = "var(--accent)"
+# Random avatar colors for new users.
+_AVATAR_COLORS = [
+    "#0969da",
+    "#8250df",
+    "#1a7f37",
+    "#cf222e",
+    "#bf8700",
+    "#e16f24",
+    "#0550ae",
+    "#6639ba",
+]
+
+
+def _get_or_create_users_category(
+    queries: Any,
+    conn: Any,
+) -> str:
+    """Return the id of the 'Users' category, creating it if needed."""
+    cats = list(queries.cat_get_all(conn))
+    for c in cats:
+        if c["name"] == _USERS_CATEGORY_NAME:
+            return str(c["id"])
+    cat_id = str(uuid.uuid4())
+    max_pos = queries.cat_max_position(conn)
+    queries.cat_create(
+        conn,
+        id=cat_id,
+        name=_USERS_CATEGORY_NAME,
+        color=_USERS_CATEGORY_COLOR,
+        position=max_pos + 1,
+    )
+    return cat_id
+
+
+@bp.route("/register", methods=["GET"])
+def register() -> Any:
+    """Render the registration form (only if domain restriction is set)."""
+    domain = Config.REGISTER_ALLOWED_DOMAIN
+    if not domain:
+        abort(404)
+    return render_template(_REGISTER_TEMPLATE, domain=domain, error=None, message=None)
+
+
+@bp.route("/register", methods=["POST"])
+@limiter.limit(_REGISTER_RATE_LIMITS)
+def register_post() -> Any:
+    """Validate input, send verification email, and store pending registration."""
+    from dashboard.email import send_email
+    from dashboard.password_strength import validate_password_strength
+
+    domain = Config.REGISTER_ALLOWED_DOMAIN
+    if not domain:
+        abort(404)
+
+    email = (request.form.get("email") or "").strip().lower()
+    password = request.form.get("password") or ""
+    password_confirm = request.form.get("password_confirm") or ""
+
+    def _err(msg: str) -> Any:
+        """Render the register form with an error message."""
+        return render_template(
+            _REGISTER_TEMPLATE, domain=domain, error=msg, message=None
+        )
+
+    if not email:
+        return _err("Email requis.")
+    if not email.endswith(f"@{domain}"):
+        return _err(f"Seules les adresses @{domain} sont acceptées.")
+    if password != password_confirm:
+        return _err("Les mots de passe ne correspondent pas.")
+    try:
+        validate_password_strength(password)
+    except ValueError as e:
+        return _err(str(e))
+
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        existing = queries.usr_get_by_email(conn, email=email)
+        if existing:
+            return _err("Un compte existe déjà avec cet email.")
+
+        token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        pw_hash = _hasher.hash(password)
+        expires = datetime.now() + timedelta(hours=_VERIFY_TOKEN_HOURS)
+        queries.evt_create(
+            conn,
+            id=str(uuid.uuid4()),
+            email=email,
+            password_hash=pw_hash,
+            token_hash=token_hash,
+            expires_at=expires,
+        )
+    finally:
+        conn.close()
+
+    verify_url = request.host_url.rstrip("/") + f"/verify-email/{token}"
+    send_email(
+        to=email,
+        subject="Kenboard — Vérification de votre email",
+        template="email/verify_email.html",
+        verify_url=verify_url,
+    )
+    log.info("auth.registration_requested", email=email)
+
+    return render_template(
+        _REGISTER_TEMPLATE,
+        domain=domain,
+        error=None,
+        message="Un email de vérification a été envoyé.",
+    )
+
+
+@bp.route("/verify-email/<token>", methods=["GET"])
+def verify_email(token: str) -> Any:
+    """Verify the token, create the user, their category and project."""
+    import random
+
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        row = queries.evt_get_by_hash(conn, token_hash=token_hash)
+        if not row:
+            return render_template(
+                _REGISTER_TEMPLATE,
+                domain=Config.REGISTER_ALLOWED_DOMAIN,
+                error="Lien invalide ou expiré.",
+                message=None,
+            )
+
+        email = row["email"]
+        pw_hash = row["password_hash"]
+
+        # Check email not taken (race condition guard)
+        if queries.usr_get_by_email(conn, email=email):
+            queries.evt_mark_used(conn, id=row["id"])
+            return render_template(
+                _LOGIN_TEMPLATE,
+                error=None,
+                next_url="",
+                message="Ce compte existe déjà. Connectez-vous.",
+            )
+
+        # Create user
+        user_id = str(uuid.uuid4())
+        name = email
+        color = random.choice(_AVATAR_COLORS)  # noqa: S311
+        queries.usr_create(
+            conn,
+            id=user_id,
+            name=name,
+            email=email,
+            color=color,
+            password_hash=pw_hash,
+            is_admin=0,
+        )
+
+        # Get or create "Users" category
+        cat_id = _get_or_create_users_category(queries, conn)
+
+        # Create personal project "user@email"
+        proj_id = str(uuid.uuid4())
+        max_pos = queries.proj_max_position_in_cat(conn, cat_id=cat_id)
+        queries.proj_create(
+            conn,
+            id=proj_id,
+            cat_id=cat_id,
+            name=email,
+            acronym=email.split("@")[0][:4].upper(),
+            status="active",
+            position=max_pos + 1,
+            default_who=name,
+        )
+
+        # Grant write scope on "Users" category (write implies read)
+        queries.usr_scopes_add(conn, user_id=user_id, category_id=cat_id, scope="write")
+
+        # Mark token as used
+        queries.evt_mark_used(conn, id=row["id"])
+        log.info(
+            "auth.registration_verified",
+            user_id=user_id,
+            email=email,
+            project_id=proj_id,
+        )
+    finally:
+        conn.close()
+
+    return render_template(
+        _LOGIN_TEMPLATE,
+        error=None,
+        next_url="",
+        message="Compte activé ! Connectez-vous.",
+    )

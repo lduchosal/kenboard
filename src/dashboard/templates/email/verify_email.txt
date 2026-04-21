@@ -1,0 +1,8 @@
+Kenboard — Vérification de votre email
+
+Bonjour,
+
+Merci de vous être inscrit sur Kenboard. Cliquez sur le lien ci-dessous pour activer votre compte :
+{{ verify_url }}
+
+Ce lien expire dans 24 heures. Si vous n'avez pas créé de compte, ignorez cet email.

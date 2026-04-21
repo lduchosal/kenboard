@@ -84,6 +84,20 @@ class Config:
         and os.getenv("OIDC_CLIENT_SECRET")
     )
 
+    # -- Registration (#232) --------------------------------------------------
+    # When set, the /register page is enabled and only emails matching
+    # this domain are accepted (e.g. "2113.ch"). Empty = registration off.
+    REGISTER_ALLOWED_DOMAIN: str = os.getenv("REGISTER_ALLOWED_DOMAIN", "")
+
+    # -- Email / SMTP (#231) --------------------------------------------------
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: str = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM: str = os.getenv("SMTP_FROM", "")
+    SMTP_USE_TLS: bool = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
+    SMTP_ENABLED: bool = bool(os.getenv("SMTP_HOST"))
+
     # -- Performance monitoring (#214) ----------------------------------------
     PERF_ENABLED: bool = os.getenv("PERF_ENABLED", "true").lower() == "true"
     PERF_BUDGET_MS: int = int(os.getenv("PERF_BUDGET_MS", "500"))

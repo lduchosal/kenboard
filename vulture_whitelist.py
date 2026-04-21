@@ -21,3 +21,4 @@ patch_db_connection  # noqa
 disable_auth_enforcement  # noqa
 logged_in_user  # noqa
 seed_two_categories  # noqa
+user_with_email  # noqa
