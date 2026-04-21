@@ -59,7 +59,9 @@
                 {% set cat = (all_categories | selectattr('id','equalto',s.category_id) | list | first) %}
                 {% if cat %}
                 <span class="scope-badge" data-category-id="{{ cat.id }}" data-scope="{{ s.scope }}"
+                      role="button" tabindex="0"
                       onclick="openScopeEditPopover(event, '{{ u.id }}', '{{ cat.id }}', '{{ cat.name|jsesc }}', '{{ s.scope }}')"
+                      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"
                       style="background:{{ cat.color }};color:white;padding:2px 8px;border-radius:12px;font-size:11px;cursor:pointer;user-select:none"
                       title="Cliquer pour modifier">
                   {{ cat.name }}: {{ s.scope }}

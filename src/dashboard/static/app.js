@@ -345,6 +345,28 @@ document.getElementById('task-fullscreen')?.addEventListener('click', function (
 
 // -- Task CRUD ---------------------------------------------------------------
 
+async function _lazyLoadDesc(el, taskId) {
+  if (!taskId || el.dataset.descLoaded) return;
+  try {
+    const r = await fetch(`${API_BASE}/tasks/${taskId}`);
+    if (!r.ok) return;
+    const t = await r.json();
+    if (t.description) {
+      let descEl = el.querySelector('.task-desc');
+      if (!descEl) {
+        descEl = document.createElement('div');
+        descEl.className = 'task-desc';
+        el.querySelector('.task-body').appendChild(descEl);
+      }
+      descEl.textContent = t.description;
+      renderMarkdown(el);
+    }
+    el.dataset.descLoaded = '1';
+  } catch (e) {
+    console.debug('_lazyLoadDesc: fetch failed', e);
+  }
+}
+
 async function toggleDetail(el, event) {
   // The 2nd click of a double-click reaches us with `event.detail === 2`
   // (browser-set click count). Bail so the matching `dblclick` handler can
@@ -355,38 +377,12 @@ async function toggleDetail(el, event) {
   const wasDetail = el.classList.contains('detail-mode');
   document.querySelectorAll('.kanban-task.detail-mode').forEach(t => t.classList.remove('detail-mode'));
   if (wasDetail) {
-    // Closing the currently open task: drop the URL fragment if it points
-    // to it, so a copy of the address bar no longer reopens it.
     if (_taskHashId() === taskId) _clearTaskHash();
     return;
   }
   el.classList.add('detail-mode');
-  // Sync the URL fragment so the detail view survives reloads (60s
-  // auto-refresh) and produces shareable deep links to the card (#109).
   if (taskId) _setTaskHash(taskId);
-
-  // Lazy-load description from API on first open (#221)
-  if (taskId && !el.dataset.descLoaded) {
-    try {
-      const r = await fetch(`${API_BASE}/tasks/${taskId}`);
-      if (r.ok) {
-        const t = await r.json();
-        if (t.description) {
-          let descEl = el.querySelector('.task-desc');
-          if (!descEl) {
-            descEl = document.createElement('div');
-            descEl.className = 'task-desc';
-            el.querySelector('.task-body').appendChild(descEl);
-          }
-          descEl.textContent = t.description;
-          renderMarkdown(el);
-        }
-        el.dataset.descLoaded = '1';
-      }
-    } catch (e) {
-      console.debug('toggleDetail: desc fetch failed', e);
-    }
-  }
+  await _lazyLoadDesc(el, taskId);
 }
 
 // -- URL <-> task detail sync (#109) -----------------------------------------
@@ -427,28 +423,7 @@ async function _applyTaskHash() {
   if (!card) return;  // Stale link: task no longer on this page.
   card.classList.add('detail-mode');
   card.scrollIntoView({ block: 'center', behavior: 'auto' });
-  // Lazy-load description for hash-targeted card (#221)
-  if (!card.dataset.descLoaded) {
-    try {
-      const r = await fetch(`${API_BASE}/tasks/${id}`);
-      if (r.ok) {
-        const t = await r.json();
-        if (t.description) {
-          let descEl = card.querySelector('.task-desc');
-          if (!descEl) {
-            descEl = document.createElement('div');
-            descEl.className = 'task-desc';
-            card.querySelector('.task-body').appendChild(descEl);
-          }
-          descEl.textContent = t.description;
-          renderMarkdown(card);
-        }
-        card.dataset.descLoaded = '1';
-      }
-    } catch (e) {
-      console.debug('_applyTaskHash: desc fetch failed', e);
-    }
-  }
+  await _lazyLoadDesc(card, id);
 }
 
 // React to back/forward and direct edits of the URL fragment. We don't fire
