@@ -60,5 +60,5 @@ def validate_password_strength(password: str) -> None:
             hint_parts.append(" ".join(suggestions))
         hint = f" {' '.join(hint_parts)}" if hint_parts else ""
         raise ValueError(
-            f"Password is too weak (strength {score}/4, need {MIN_SCORE}/4)." f"{hint}"
+            f"Password is too weak (strength {score}/4, need {MIN_SCORE}/4).{hint}"
         )

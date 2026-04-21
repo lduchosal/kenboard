@@ -734,8 +734,7 @@ function shouldSkipRefresh() {
   if (document.querySelector('.task-chosen, .task-drag')) return true;
   // #205: the fullscreen task detail view is a <dialog>; check .open
   // so reading a task doesn't get interrupted by the auto-refresh.
-  const fs = document.getElementById('task-fullscreen');
-  if (fs && fs.open) return true;
+  if (document.getElementById('task-fullscreen')?.open) return true;
   const modals = document.querySelectorAll('.project-add-modal');
   for (const m of modals) {
     if (m.style.display && m.style.display !== 'none') return true;

@@ -4,7 +4,7 @@ SELECT snapshot_date, todo, doing, review, done
 FROM burndown_snapshots
 WHERE project_id = :project_id
   AND snapshot_date >= DATE_SUB(CURDATE(), INTERVAL :days DAY)
-ORDER BY snapshot_date;
+ORDER BY snapshot_date ASC;
 
 -- name: burndown_get_by_category
 -- Aggregated snapshots across all projects in a category.
@@ -16,7 +16,7 @@ JOIN projects p ON p.id = s.project_id
 WHERE p.cat_id = :category_id
   AND s.snapshot_date >= DATE_SUB(CURDATE(), INTERVAL :days DAY)
 GROUP BY s.snapshot_date
-ORDER BY s.snapshot_date;
+ORDER BY s.snapshot_date ASC;
 
 -- name: burndown_record_snapshot!
 -- Upsert a snapshot for a project at today's date. Idempotent: running

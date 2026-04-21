@@ -33,7 +33,7 @@ SELECT c.*
 FROM categories c
 JOIN user_category_scopes s ON s.category_id = c.id
 WHERE s.user_id = :user_id
-ORDER BY c.position, c.name;
+ORDER BY c.position ASC, c.name ASC;
 
 -- name: proj_list_for_user
 -- Projects belonging to categories the user has any scope on.
@@ -41,7 +41,7 @@ SELECT p.*
 FROM projects p
 JOIN user_category_scopes s ON s.category_id = p.cat_id
 WHERE s.user_id = :user_id
-ORDER BY p.position, p.name;
+ORDER BY p.position ASC, p.name ASC;
 
 -- name: usr_grant_all_categories_read!
 -- Opt-in helper: grant 'read' on every existing category to every

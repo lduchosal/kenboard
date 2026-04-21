@@ -542,6 +542,7 @@ _FORGOT_TEMPLATE = "forgot_password.html"
 _RESET_TEMPLATE = "reset_password.html"
 _RESET_TOKEN_MINUTES = 30
 _FORGOT_RATE_LIMITS = "3 per hour"
+_INVALID_LINK_MSG = "Lien invalide ou expiré."
 
 
 @bp.route("/forgot-password", methods=["GET"])
@@ -609,7 +610,7 @@ def reset_password(token: str) -> Any:
     if not row:
         return render_template(
             _FORGOT_TEMPLATE,
-            message="Lien invalide ou expiré.",
+            message=_INVALID_LINK_MSG,
             is_error=True,
         )
     return render_template(_RESET_TEMPLATE, token=token, error=None)
@@ -644,7 +645,7 @@ def reset_password_post(token: str) -> Any:
         if not row:
             return render_template(
                 _FORGOT_TEMPLATE,
-                message="Lien invalide ou expiré.",
+                message=_INVALID_LINK_MSG,
                 is_error=True,
             )
         # Apply new password
@@ -801,7 +802,7 @@ def verify_email(token: str) -> Any:
             return render_template(
                 _REGISTER_TEMPLATE,
                 domain=Config.REGISTER_ALLOWED_DOMAIN,
-                error="Lien invalide ou expiré.",
+                error=_INVALID_LINK_MSG,
                 message=None,
             )
 

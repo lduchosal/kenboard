@@ -110,7 +110,6 @@ body {
   /* Scrollable grid for large category lists (#230) */
   max-height: 70vh;
   overflow-y: auto;
-  display: none;
 }
 .header-badges-dropdown.open .badge-menu-dropdown {
   display: grid;
