@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+from typing import Any
 
 import click
 
@@ -246,41 +247,54 @@ def backfill(days: int) -> None:
             tasks = list(queries.task_get_by_project(conn, project_id=proj["id"]))
             if not tasks:
                 continue
-            for day_offset in range(days + 1):
-                day = start + timedelta(days=day_offset)
-                todo = 0
-                done = 0
-                for t in tasks:
-                    t_created = (
-                        t["created_at"].date()
-                        if hasattr(t["created_at"], "date")
-                        else t["created_at"]
-                    )
-                    t_updated = (
-                        t["updated_at"].date()
-                        if hasattr(t["updated_at"], "date")
-                        else t["updated_at"]
-                    )
-                    if t_created > day:
-                        continue  # didn't exist yet
-                    if t["status"] == "done" and t_updated <= day:
-                        done += 1
-                    else:
-                        todo += 1
-                # Use a raw INSERT with explicit date instead of CURDATE()
-                cur = conn.cursor()
-                cur.execute(
-                    "INSERT INTO burndown_snapshots"
-                    " (snapshot_date, project_id, todo, doing, review, done)"
-                    " VALUES (%s, %s, %s, 0, 0, %s)"
-                    " ON DUPLICATE KEY UPDATE"
-                    " todo=VALUES(todo), doing=0, review=0, done=VALUES(done)",
-                    (day.isoformat(), proj["id"], todo, done),
-                )
-                total += 1
+            total += _backfill_project(conn, proj["id"], tasks, start, days)
         click.echo(f"Backfilled {total} snapshot(s) across {len(projects)} project(s).")
     finally:
         conn.close()
+
+
+def _to_date(val: Any) -> Any:
+    """Convert a datetime to a date, or return as-is if already a date."""
+    return val.date() if hasattr(val, "date") else val
+
+
+def _count_task_status_at(task: dict[str, Any], day: Any) -> tuple[int, int]:
+    """Return (todo, done) contribution of a single task for a given day."""
+    t_created = _to_date(task["created_at"])
+    if t_created > day:
+        return 0, 0
+    t_updated = _to_date(task["updated_at"])
+    if task["status"] == "done" and t_updated <= day:
+        return 0, 1
+    return 1, 0
+
+
+def _backfill_project(
+    conn: Any, proj_id: str, tasks: list[dict[str, Any]], start: Any, days: int
+) -> int:
+    """Backfill snapshots for a single project, return count of rows upserted."""
+    from datetime import timedelta
+
+    count = 0
+    for day_offset in range(days + 1):
+        day = start + timedelta(days=day_offset)
+        todo = 0
+        done = 0
+        for t in tasks:
+            t_todo, t_done = _count_task_status_at(t, day)
+            todo += t_todo
+            done += t_done
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO burndown_snapshots"
+            " (snapshot_date, project_id, todo, doing, review, done)"
+            " VALUES (%s, %s, %s, 0, 0, %s)"
+            " ON DUPLICATE KEY UPDATE"
+            " todo=VALUES(todo), doing=0, review=0, done=VALUES(done)",
+            (day.isoformat(), proj_id, todo, done),
+        )
+        count += 1
+    return count
 
 
 @cli.command()

@@ -223,6 +223,46 @@ def _should_skip() -> bool:
     )
 
 
+def _build_request_summary(response: Any) -> dict[str, Any] | None:
+    """Build a performance summary for the current request."""
+    start = getattr(request, "_start_time", None)
+    if start is None:
+        return None
+    total_ms = (time.time() - start) * 1000
+    route = str(request.url_rule) if request.url_rule else request.path
+    method = request.method
+    response_kb = len(response.get_data()) / 1024
+    return dict(g.perf.summary(total_ms, response_kb, route, method))
+
+
+def _log_and_evaluate(summary: dict[str, Any]) -> None:
+    """Log metrics and create a task if thresholds are exceeded."""
+    log.info(
+        "perf",
+        route=summary["route"],
+        method=summary["method"],
+        total_ms=summary["total_ms"],
+        queries=summary["query_count"],
+        sql_ms=summary["sql_total_ms"],
+        template=summary["template_name"],
+        template_ms=summary["template_ms"],
+        response_kb=summary["response_kb"],
+    )
+    violations = _check_thresholds(summary)
+    if violations:
+        log.warning(
+            "perf_threshold_exceeded",
+            violations=violations,
+            route=summary["route"],
+            method=summary["method"],
+            total_ms=summary["total_ms"],
+            queries=summary["query_count"],
+            sql_ms=summary["sql_total_ms"],
+            response_kb=summary["response_kb"],
+        )
+        _create_perf_task(summary, violations)
+
+
 def init_perf(app: Flask) -> None:
     """Initialize performance monitoring on the Flask app."""
     if not Config.PERF_ENABLED:
@@ -255,43 +295,10 @@ def init_perf(app: Flask) -> None:
         """Evaluate performance budget and create a task if exceeded."""
         if not hasattr(g, "perf"):
             return response
-
-        start = getattr(request, "_start_time", None)
-        if start is None:
+        summary = _build_request_summary(response)
+        if summary is None:
             return response
-        total_ms = (time.time() - start) * 1000
-        route = str(request.url_rule) if request.url_rule else request.path
-        method = request.method
-        response_kb = len(response.get_data()) / 1024
-
-        summary = g.perf.summary(total_ms, response_kb, route, method)
-
-        log.info(
-            "perf",
-            route=route,
-            method=method,
-            total_ms=summary["total_ms"],
-            queries=summary["query_count"],
-            sql_ms=summary["sql_total_ms"],
-            template=summary["template_name"],
-            template_ms=summary["template_ms"],
-            response_kb=summary["response_kb"],
-        )
-
-        violations = _check_thresholds(summary)
-        if violations:
-            log.warning(
-                "perf_threshold_exceeded",
-                violations=violations,
-                route=route,
-                method=method,
-                total_ms=summary["total_ms"],
-                queries=summary["query_count"],
-                sql_ms=summary["sql_total_ms"],
-                response_kb=summary["response_kb"],
-            )
-            _create_perf_task(summary, violations)
-
+        _log_and_evaluate(summary)
         return response
 
     log.info(

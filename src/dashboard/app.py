@@ -26,76 +26,51 @@ from dashboard.routes.pages import bp as pages_bp
 log = get_logger("app")
 
 
-def create_app() -> Flask:
-    """Create and configure the Flask application.
+# -- Helper: security & proxy ------------------------------------------------
 
-    Raises:
-        RuntimeError: when ``LOGIN_DISABLED`` is set on the app config
-            while ``DEBUG`` is off (#199 defense-in-depth).
-    """
-    debug = os.getenv("DEBUG", "false").lower() == "true"
-    setup_logging(debug=debug)
 
-    # CSRF strategy (cf. sonar python:S4502): kenboard does not use
-    # Flask-WTF CSRFProtect. Cookie-authenticated unsafe requests are
-    # protected by an Origin/Referer same-host check in the API auth
-    # middleware (see ``dashboard.auth._enforce_cookie_session`` and
-    # ``dashboard.auth._origin_matches_host``). Bearer-token requests
-    # do not need CSRF protection because the token is never sent
-    # automatically by the browser. Both flows are covered by
-    # ``tests/unit/test_csrf.py``.
-    app = Flask(  # NOSONAR — CSRF via Origin/Referer check in auth.py, not Flask-WTF
-        __name__,
-        template_folder=os.path.join(os.path.dirname(__file__), "templates"),
-        static_folder=os.path.join(os.path.dirname(__file__), "static"),
-        static_url_path="/static",
-    )
-
-    # Trust the X-Forwarded-* headers set by the nginx reverse proxy so
-    # that url_for(_external=True) generates https:// URLs (needed for
-    # OIDC redirect_uri) and request.remote_addr reflects the real client
-    # IP (needed for rate limiting). x_for=1 x_proto=1 x_host=1 means
-    # "trust exactly one proxy hop" — matching the nginx → gunicorn setup
-    # in INSTALL.md section 9.
+def _configure_security(app: Flask) -> None:
+    """Set up reverse-proxy trust, CORS, and hardening response headers."""
     from werkzeug.middleware.proxy_fix import ProxyFix
 
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)  # type: ignore[assignment]
 
-    # Only enable CORS when an explicit origin allow-list is configured.
-    # No allow-list ⇒ browsers enforce same-origin (the secure default).
     if Config.KENBOARD_CORS_ORIGINS:
-        CORS(
-            app,
-            origins=Config.KENBOARD_CORS_ORIGINS,
-            supports_credentials=True,
+        CORS(app, origins=Config.KENBOARD_CORS_ORIGINS, supports_credentials=True)
+
+    @app.after_request
+    def security_headers(response: Any) -> Any:
+        """Apply hardening HTTP headers to every response."""
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data:; "
+            "font-src 'self' data:; "
+            "object-src 'none'; "
+            "base-uri 'none'; "
+            "frame-ancestors 'none'"
         )
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "()"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        if request.is_secure:
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains"
+            )
+        response.headers["Server"] = "kenboard"
+        return response
 
-    # User session auth (Flask-Login). Must run before init_auth so that
-    # the API middleware can detect a logged-in user via current_user.
-    init_login_manager(app)
 
-    # OIDC auth (optional, cf. auth_oidc.py). Silent no-op when the
-    # OIDC_* env vars are not set. Registers /oidc/login + /oidc/callback.
-    init_oidc(app)
+# -- Helper: request logging --------------------------------------------------
 
-    # Email infrastructure (#231) — used by password reset and registration.
-    init_email(app)
 
-    # Performance monitoring (#214) — must run before auth so the perf
-    # collector is available to all downstream request processing.
-    init_perf(app)
+def _register_request_logging(app: Flask) -> None:
+    """Register before/after request hooks for API request logging."""
 
-    # API key auth middleware (always enforced; tests opt-out via LOGIN_DISABLED)
-    init_auth(app)
-
-    # Custom Jinja2 filter for JS string escaping in onclick attributes
-    def jsesc(s: str) -> str:
-        """Escape a string for use inside JS single-quoted strings."""
-        return s.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n")
-
-    app.jinja_env.filters["jsesc"] = jsesc
-
-    # Request logging
     @app.before_request
     def log_request() -> None:
         """Log incoming request."""
@@ -122,97 +97,59 @@ def create_app() -> Flask:
             )
         return response
 
-    @app.after_request
-    def security_headers(response: Any) -> Any:
-        """Apply hardening HTTP headers to every response.
 
-        ``script-src`` and ``style-src`` keep ``'unsafe-inline'`` because
-        the templates use inline ``onclick=`` handlers and ``style=``
-        attributes throughout. The rest of the policy still blocks
-        loading external scripts, framing (clickjacking), object/embed
-        and ``<base>`` injection.
+# -- Helper: error handlers ---------------------------------------------------
 
-        HSTS is only set when the request is observed over HTTPS so the
-        header isn't accidentally cached over plain HTTP in dev.
-        """
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
-            "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data:; "
-            "font-src 'self' data:; "
-            "object-src 'none'; "
-            "base-uri 'none'; "
-            "frame-ancestors 'none'"
-        )
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "()"
-        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
-        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
-        if request.is_secure:
-            response.headers["Strict-Transport-Security"] = (
-                "max-age=31536000; includeSubDomains"
-            )
-        # Strip the Werkzeug/Python version fingerprint.
-        response.headers["Server"] = "kenboard"
-        return response
+_PASSWORD_FIELDS = {"password", "new_password", "old_password"}
 
-    # Error handler for Pydantic validation errors
+
+def _safe_pydantic_errors(errors: Any) -> list[dict[str, Any]]:
+    """Make Pydantic's ``.errors()`` JSON-serializable.
+
+    Pydantic 2 embeds the original exception under ``ctx.error`` for
+    ``value_error`` validators, which Flask's JSON provider refuses to
+    serialize. We stringify the exception so debug responses stay
+    useful without crashing.
+    """
+    cleaned: list[dict[str, Any]] = []
+    for err in errors:
+        err_copy: dict[str, Any] = dict(err)
+        ctx = err_copy.get("ctx")
+        if isinstance(ctx, dict) and "error" in ctx:
+            err_copy["ctx"] = {**ctx, "error": str(ctx["error"])}
+        cleaned.append(err_copy)
+    return cleaned
+
+
+def _extract_password_error(details: list[dict[str, Any]]) -> str | None:
+    """Return a user-facing message when a password field failed validation.
+
+    Our custom ``validate_password_strength`` raises ``ValueError`` whose
+    message is already actionable (length requirement, zxcvbn score,
+    zxcvbn feedback). We surface that instead of the generic "Validation
+    error" so the UI modal can tell the user *why* the password was
+    rejected (#198).
+    """
+    for err in details:
+        loc = err.get("loc") or ()
+        if not loc:
+            continue
+        field = loc[0] if isinstance(loc, (list, tuple)) else loc
+        if field not in _PASSWORD_FIELDS:
+            continue
+        msg = err.get("msg", "")
+        if not isinstance(msg, str):
+            continue
+        msg = msg.removeprefix("Value error, ")
+        if msg and ("Password" in msg or err.get("type") == "value_error"):
+            return msg
+    return None
+
+
+def _register_error_handlers(app: Flask, debug: bool) -> None:
+    """Register Pydantic validation and generic error handlers."""
     from pydantic import ValidationError
     from werkzeug.exceptions import HTTPException
-
-    def _safe_pydantic_errors(errors: Any) -> list[dict[str, Any]]:
-        """Make Pydantic's ``.errors()`` JSON-serializable.
-
-        Pydantic 2 embeds the original exception under ``ctx.error`` for
-        ``value_error`` validators, which Flask's JSON provider refuses to
-        serialize. We stringify the exception so debug responses stay
-        useful without crashing. Typed as ``Any`` because pydantic
-        ``ErrorDetails`` is a ``TypedDict`` that does not unify with the
-        looser ``dict`` we hand back.
-        """
-        cleaned: list[dict[str, Any]] = []
-        for err in errors:
-            err_copy: dict[str, Any] = dict(err)
-            ctx = err_copy.get("ctx")
-            if isinstance(ctx, dict) and "error" in ctx:
-                err_copy["ctx"] = {**ctx, "error": str(ctx["error"])}
-            cleaned.append(err_copy)
-        return cleaned
-
-    _PASSWORD_FIELDS = {"password", "new_password", "old_password"}
-
-    def _extract_password_error(details: list[dict[str, Any]]) -> str | None:
-        """Return a user-facing message when a password field failed validation.
-
-        Our custom ``validate_password_strength`` raises ``ValueError`` whose
-        message is already actionable (length requirement, zxcvbn score,
-        zxcvbn feedback). We surface that instead of the generic "Validation
-        error" so the UI modal can tell the user *why* the password was
-        rejected (#198).
-
-        Pydantic prefixes value-error messages with ``"Value error, "`` —
-        strip it so the final text reads naturally.
-        """
-        for err in details:
-            loc = err.get("loc") or ()
-            if not loc:
-                continue
-            field = loc[0] if isinstance(loc, (list, tuple)) else loc
-            if field not in _PASSWORD_FIELDS:
-                continue
-            msg = err.get("msg", "")
-            if not isinstance(msg, str):
-                continue
-            msg = msg.removeprefix("Value error, ")
-            # Length check from pydantic's built-in ``min_length`` yields
-            # a ``string_too_short`` type with a less helpful message; we
-            # only forward messages that clearly come from our validator.
-            if msg and ("Password" in msg or err.get("type") == "value_error"):
-                return msg
-        return None
 
     @app.errorhandler(ValidationError)
     def handle_validation_error(e: ValidationError) -> tuple[dict[str, Any], int]:
@@ -231,24 +168,21 @@ def create_app() -> Flask:
 
     @app.errorhandler(Exception)
     def handle_error(e: Exception) -> Any:
-        """Log and return 500 for unhandled exceptions.
-
-        HTTPException (abort 401/403/404/...) is left to Flask's default
-        handling so the original status code propagates.
-        """
+        """Log and return 500 for unhandled exceptions."""
         if isinstance(e, HTTPException):
             return e
         log.error("unhandled_error", path=request.path, error=str(e), exc_info=True)
         return {"error": "Internal server error"}, 500
 
-    # Public onboarding route (no auth, returns 200 text/plain so
-    # WebFetch and similar tools can read the body). Registered before
-    # the auth middleware so it is never intercepted.
+
+# -- Helper: static routes & blueprints --------------------------------------
+
+
+def _register_blueprints(app: Flask) -> None:
+    """Register all Flask blueprints."""
     from dashboard.onboarding import onboard_bp
 
     app.register_blueprint(onboard_bp)
-
-    # Register blueprints
     app.register_blueprint(pages_bp)
     app.register_blueprint(categories_bp)
     app.register_blueprint(projects_bp)
@@ -256,9 +190,10 @@ def create_app() -> Flask:
     app.register_blueprint(users_bp)
     app.register_blueprint(keys_bp)
 
-    # Convenience routes for static assets at root. ``methods=["GET"]`` is
-    # spelled explicitly per Sonar python:S6965 — Flask defaults to GET only,
-    # but the explicit form is clearer and prevents accidental method drift.
+
+def _register_static_routes(app: Flask) -> None:
+    """Register convenience routes that serve static assets at root URLs."""
+
     @app.route("/style.css", methods=["GET"])
     def serve_css() -> Any:
         """Serve stylesheet from root URL."""
@@ -289,12 +224,57 @@ def create_app() -> Flask:
         """Return empty favicon."""
         return "", 204
 
-    # #199 defense-in-depth: if someone managed to set LOGIN_DISABLED on the
-    # app config while DEBUG is off (misconfigured .env, leaked secret), fail
-    # loud at startup instead of silently disabling authentication.
-    # ``_is_login_disabled()`` also enforces this at runtime on every request
-    # through the helper — this check just shortens the feedback loop so the
-    # app never serves a single request in that state.
+
+# -- Factory ------------------------------------------------------------------
+
+
+def create_app() -> Flask:
+    """Create and configure the Flask application.
+
+    Raises:
+        RuntimeError: when ``LOGIN_DISABLED`` is set on the app config
+            while ``DEBUG`` is off (#199 defense-in-depth).
+    """
+    debug = os.getenv("DEBUG", "false").lower() == "true"
+    setup_logging(debug=debug)
+
+    # CSRF strategy (cf. sonar python:S4502): kenboard does not use
+    # Flask-WTF CSRFProtect. Cookie-authenticated unsafe requests are
+    # protected by an Origin/Referer same-host check in the API auth
+    # middleware (see ``dashboard.auth._enforce_cookie_session`` and
+    # ``dashboard.auth._origin_matches_host``). Bearer-token requests
+    # do not need CSRF protection because the token is never sent
+    # automatically by the browser. Both flows are covered by
+    # ``tests/unit/test_csrf.py``.
+    app = Flask(  # NOSONAR — CSRF via Origin/Referer check in auth.py, not Flask-WTF
+        __name__,
+        template_folder=os.path.join(os.path.dirname(__file__), "templates"),
+        static_folder=os.path.join(os.path.dirname(__file__), "static"),
+        static_url_path="/static",
+    )
+
+    _configure_security(app)
+
+    # Custom Jinja2 filter for JS string escaping in onclick attributes
+    def jsesc(s: str) -> str:
+        """Escape a string for use inside JS single-quoted strings."""
+        return s.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n")
+
+    app.jinja_env.filters["jsesc"] = jsesc
+
+    # Initialization order matters: login manager → OIDC → email → perf → auth
+    init_login_manager(app)
+    init_oidc(app)
+    init_email(app)
+    init_perf(app)
+    init_auth(app)
+
+    _register_request_logging(app)
+    _register_error_handlers(app, debug)
+    _register_blueprints(app)
+    _register_static_routes(app)
+
+    # #199 defense-in-depth
     if app.config.get("LOGIN_DISABLED") and not debug and not app.config.get("TESTING"):
         raise RuntimeError(
             "LOGIN_DISABLED=True is set but DEBUG=False. This would bypass "
