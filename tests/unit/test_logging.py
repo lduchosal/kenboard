@@ -45,8 +45,9 @@ class TestRotationSafety:
         reason="Windows locks open files — rename fails",
     )
     def test_log_reopens_after_rename(self, isolated_log_dir):
-        """Simulate newsyslog: rename the file, write a new message, the
-        handler must reopen the original path and write into the new file."""
+        """Simulate newsyslog: rename the file, write a new message, the handler must
+        reopen the original path and write into the new file.
+        """
         dashboard_logging.setup_logging(debug=False)
         log = dashboard_logging.get_logger("test")
         log.info("before_rotate")

@@ -1,8 +1,8 @@
 """Unit tests for the forgot-password / reset-password flow (#237).
 
-The email sending is mocked — we capture the token from the DB and
-exercise the full flow: request reset → token created → reset form →
-new password applied → old sessions invalidated.
+The email sending is mocked — we capture the token from the DB and exercise the full
+flow: request reset → token created → reset form → new password applied → old sessions
+invalidated.
 """
 
 import hashlib

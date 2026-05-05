@@ -32,9 +32,9 @@ def _should_filter_for_current_user() -> bool:
 def list_projects() -> Any:
     """List projects, optionally filtered by category.
 
-    Non-admin cookie users only see projects in categories they have a
-    scope on. If ``?cat=X`` is passed, the user must have at least read
-    access on X or the response is a 403.
+    Non-admin cookie users only see projects in categories they have a scope on. If
+    ``?cat=X`` is passed, the user must have at least read access on X or the response
+    is a 403.
     """
     cat_id = request.args.get("cat")
     conn = db.get_connection()

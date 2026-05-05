@@ -1,6 +1,6 @@
 [project]
 name = "kenboard"
-version = "0.1.81"
+version = "0.1.82"
 description = "Project management dashboard with kanban boards, burndown charts, and category-based organization. Flask API backend with MySQL storage and static HTML generation."
 authors = [
     { name = "Q" }
@@ -112,7 +112,7 @@ test-cov = "pytest tests/ -q --tb=short --cov=src/dashboard --cov-report=term-mi
 # Formatting
 format = "black src/ tests/"
 isort = "isort src/ tests/"
-docformatter = "docformatter --recursive --in-place --wrap-summaries 88 --wrap-descriptions 88 --close-quotes-on-newline src/ tests/"
+docformatter = { shell = "docformatter --recursive --in-place --wrap-summaries 88 --wrap-descriptions 88 --close-quotes-on-newline src/ tests/ || [ $? -eq 3 ]" }
 absolufy = { shell = "find src/ -name '*.py' -exec absolufy-imports {} +" }
 
 # Linting & type checking
@@ -124,7 +124,7 @@ vulture = "vulture src/ tests/ vulture_whitelist.py"
 refurb = "refurb src/"
 
 # Composite checks
-check = { composite = ["isort", "format", "docformatter", "typecheck", "flake8", "interrogate", "refurb", "lint", "vulture", "test-quick"] }
+check = { composite = ["isort", "docformatter", "format", "typecheck", "flake8", "interrogate", "refurb", "lint", "vulture", "test-quick"] }
 
 # Build & generation
 screenshots = "python scripts/screenshots.py"

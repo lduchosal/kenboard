@@ -500,10 +500,10 @@ class TestUserAPI:
 class TestPasswordChange:
     """#53: dedicated routes for password changes.
 
-    LOGIN_DISABLED=True (test default) bypasses the ownership/admin
-    checks so we can exercise the route logic without juggling sessions.
-    The session-bound branches (owner check, admin check) are covered by
-    e2e tests in ``tests/e2e/test_auth_user.py``.
+    LOGIN_DISABLED=True (test default) bypasses the ownership/admin checks so we can
+    exercise the route logic without juggling sessions. The session-bound branches
+    (owner check, admin check) are covered by e2e tests in
+    ``tests/e2e/test_auth_user.py``.
     """
 
     def _create_user(self, client, name="Pwd", password="X7k!mQvL2pYwR3tN"):

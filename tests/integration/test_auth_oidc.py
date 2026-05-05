@@ -1,13 +1,13 @@
 """Integration tests for OIDC authentication (#126).
 
-Uses ``oidc-provider-mock`` as a real in-process OIDC IdP — no Docker,
-no external service. The mock runs in a background thread and exposes a
-standard ``.well-known/openid-configuration`` discovery document. The
-test exercises the **full round trip**: browser → kenboard /oidc/login →
-IdP authorize → IdP token → kenboard /oidc/callback → session.
+Uses ``oidc-provider-mock`` as a real in-process OIDC IdP — no Docker, no external
+service. The mock runs in a background thread and exposes a standard ``.well-
+known/openid-configuration`` discovery document. The test exercises the **full round
+trip**: browser → kenboard /oidc/login → IdP authorize → IdP token → kenboard
+/oidc/callback → session.
 
-These tests hit the test MySQL database (via the ``db`` fixture from
-conftest.py) so they live under ``tests/integration/``.
+These tests hit the test MySQL database (via the ``db`` fixture from conftest.py) so
+they live under ``tests/integration/``.
 """
 
 from __future__ import annotations

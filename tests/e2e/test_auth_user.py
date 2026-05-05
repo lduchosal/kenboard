@@ -1,9 +1,9 @@
 """End-to-end tests for the user login flow.
 
-These tests run a dedicated Flask server with ``LOGIN_DISABLED=False``
-so that ``@login_required`` actually fires. The session-scoped
-``live_server`` from ``conftest.py`` keeps ``LOGIN_DISABLED=True`` for
-all the other e2e tests, so we spin up our own thread here.
+These tests run a dedicated Flask server with ``LOGIN_DISABLED=False`` so that
+``@login_required`` actually fires. The session-scoped ``live_server`` from
+``conftest.py`` keeps ``LOGIN_DISABLED=True`` for all the other e2e tests, so we spin up
+our own thread here.
 """
 
 import threading

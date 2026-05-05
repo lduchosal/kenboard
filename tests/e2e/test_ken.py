@@ -1,9 +1,8 @@
 """End-to-end tests for ``ken`` CLI against a live Flask server.
 
-Reuses the ``live_server`` and ``clean_db`` fixtures from
-``tests/e2e/conftest.py``. The CLI is exercised via ``CliRunner`` so we don't
-spawn a subprocess — but every command goes through the real
-``urllib.request`` → live Flask → real test database round trip.
+Reuses the ``live_server`` and ``clean_db`` fixtures from ``tests/e2e/conftest.py``. The
+CLI is exercised via ``CliRunner`` so we don't spawn a subprocess — but every command
+goes through the real ``urllib.request`` → live Flask → real test database round trip.
 """
 
 import json

@@ -46,8 +46,8 @@ oauth = OAuth()
 def init_oidc(app: Flask) -> None:
     """Register the OIDC client and blueprint if OIDC is configured.
 
-    No-op when ``Config.OIDC_ENABLED`` is False, which keeps kenboard
-    fully functional without an IdP (fail-soft).
+    No-op when ``Config.OIDC_ENABLED`` is False, which keeps kenboard fully functional
+    without an IdP (fail-soft).
     """
     if not Config.OIDC_ENABLED:
         return
@@ -79,11 +79,10 @@ def oidc_login() -> Any:
 def oidc_callback() -> Any:
     """Exchange the authorization code for tokens and log the user in.
 
-    The ``id_token`` is verified automatically by Authlib (signature,
-    audience, expiry with 120 s leeway). Then we check ``email_verified``
-    (unless ``OIDC_REQUIRE_EMAIL_VERIFIED=false``) and the allowed email
-    domain. Finally we look up the user by email or lazy-create a new
-    row with ``is_admin=False``.
+    The ``id_token`` is verified automatically by Authlib (signature, audience, expiry
+    with 120 s leeway). Then we check ``email_verified`` (unless
+    ``OIDC_REQUIRE_EMAIL_VERIFIED=false``) and the allowed email domain. Finally we look
+    up the user by email or lazy-create a new row with ``is_admin=False``.
     """
     token = oauth.oidc.authorize_access_token()
     userinfo = token.get("userinfo") or {}

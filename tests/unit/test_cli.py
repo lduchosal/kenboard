@@ -115,11 +115,10 @@ class TestProdCommand:
 class TestUtf8Encoding:
     """#148: ken and kenboard force UTF-8 on Windows.
 
-    On non-Windows platforms the fix is a no-op (guarded by
-    ``sys.platform == "win32"``). These tests verify the reconfigure
-    logic works and that UTF-8 output survives a round trip through
-    the Click test runner. The real Windows path is exercised by the
-    CI ``windows-unit`` job.
+    On non-Windows platforms the fix is a no-op (guarded by ``sys.platform ==
+    "win32"``). These tests verify the reconfigure logic works and that UTF-8 output
+    survives a round trip through the Click test runner. The real Windows path is
+    exercised by the CI ``windows-unit`` job.
     """
 
     def test_ken_outputs_utf8_characters(self):

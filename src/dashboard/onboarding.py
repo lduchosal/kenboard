@@ -1,18 +1,16 @@
 """Machine-readable onboarding hints for un-authenticated requests.
 
-When a CLI tool, an LLM agent, or any non-browser client follows a kenboard
-URL without credentials we want them to learn — without reverse-engineering
-the HTML login page — that there is a ``ken`` CLI to install, that they need
-a category ID and an API key, and where to get the key. The text and JSON
-payloads built here are returned by both the cookie auth handler
-(``auth_user._unauthorized``) and the API auth middleware (``auth._enforce``)
-so an agent that hits *any* protected URL gets a copy-pasteable runbook
-instead of a useless redirect or a one-line ``"missing Authorization"``.
+When a CLI tool, an LLM agent, or any non-browser client follows a kenboard URL without
+credentials we want them to learn — without reverse-engineering the HTML login page —
+that there is a ``ken`` CLI to install, that they need a category ID and an API key, and
+where to get the key. The text and JSON payloads built here are returned by both the
+cookie auth handler (``auth_user._unauthorized``) and the API auth middleware
+(``auth._enforce``) so an agent that hits *any* protected URL gets a copy-pasteable
+runbook instead of a useless redirect or a one-line ``"missing Authorization"``.
 
-The dedicated ``/onboard/cat/<cat_id>/project/<project_id>`` route (#137)
-always returns 200 text/plain so that WebFetch and similar high-level
-HTTP tools (which discard the body of 4xx responses) can read the
-runbook without hitting the 401 problem.
+The dedicated ``/onboard/cat/<cat_id>/project/<project_id>`` route (#137) always returns
+200 text/plain so that WebFetch and similar high-level HTTP tools (which discard the
+body of 4xx responses) can read the runbook without hitting the 401 problem.
 """
 
 from __future__ import annotations
@@ -37,11 +35,11 @@ _SAFE_ID_RE = re.compile(r"[^a-zA-Z0-9\-]")
 def derive_base_url() -> str:
     """Return the public base URL of this kenboard instance.
 
-    Uses ``request.host_url`` (which respects ProxyFix when nginx sends
-    ``X-Forwarded-Proto``). As a fallback for proxies that do NOT forward
-    the header, ``Config.KENBOARD_HTTPS`` forces the scheme to ``https``
-    so the onboarding runbook and OIDC redirect_uri are always correct
-    behind a TLS-terminating reverse proxy (#147).
+    Uses ``request.host_url`` (which respects ProxyFix when nginx sends ``X-Forwarded-
+    Proto``). As a fallback for proxies that do NOT forward the header,
+    ``Config.KENBOARD_HTTPS`` forces the scheme to ``https`` so the onboarding runbook
+    and OIDC redirect_uri are always correct behind a TLS-terminating reverse proxy
+    (#147).
     """
     from flask import request
 
@@ -73,12 +71,11 @@ def _sanitize_id(value: str) -> str:
 def cat_id_from_path(path: str) -> str | None:
     """Return the category id embedded in a ``/cat/<id>.html`` path, or None.
 
-    Used to render an explicit ``cat_id=<uuid>`` line in the onboarding
-    runbook when the agent landed on a category page directly. The matching
-    ``project_id`` lives in the URL fragment which the server never receives
-    (HTTP clients drop ``#fragment`` before sending), so the runbook
-    instructs the agent to copy the project id from the original URL the
-    user shared with it.
+    Used to render an explicit ``cat_id=<uuid>`` line in the onboarding runbook when the
+    agent landed on a category page directly. The matching ``project_id`` lives in the
+    URL fragment which the server never receives (HTTP clients drop ``#fragment`` before
+    sending), so the runbook instructs the agent to copy the project id from the
+    original URL the user shared with it.
     """
     m = _CAT_URL_RE.match(path)
     return m.group(1) if m else None
@@ -105,9 +102,8 @@ def wants_machine_response(request_obj: Request) -> bool:
 def onboarding_text(cat_id: str | None, base_url: str) -> str:
     """Render the agent-facing 401 body as plain text.
 
-    ``base_url`` is derived from ``request.host_url`` by the caller so
-    the runbook works on any self-hosted instance, not just the hardcoded
-    ``www.kenboard.2113.ch``.
+    ``base_url`` is derived from ``request.host_url`` by the caller so the runbook works
+    on any self-hosted instance, not just the hardcoded ``www.kenboard.2113.ch``.
     """
     cat_value = cat_id or "<UUID entre /cat/ et .html dans l'URL>"
     return (
@@ -142,8 +138,8 @@ def onboarding_text(cat_id: str | None, base_url: str) -> str:
 def onboarding_json(cat_id: str | None, base_url: str) -> dict[str, Any]:
     """Render the agent-facing 401 body as a JSON-friendly dict.
 
-    Same 3-step structure as ``onboarding_text`` but machine-parseable.
-    ``base_url`` is derived from ``request.host_url`` by the caller.
+    Same 3-step structure as ``onboarding_text`` but machine-parseable. ``base_url`` is
+    derived from ``request.host_url`` by the caller.
     """
     return {
         "error": "unauthorized",
@@ -184,14 +180,13 @@ onboard_bp = Blueprint("onboard", __name__)
 def onboard_route(cat_id: str, project_id: str) -> Any:
     """Serve the onboarding runbook as 200 text/plain.
 
-    This route has **no authentication**. It exists so that high-level
-    HTTP tools (WebFetch, requests.get, etc.) that discard the body of
-    4xx responses can still read the runbook. The copy-onboard-link
-    button in ``category.html`` generates a URL pointing here.
+    This route has **no authentication**. It exists so that high-level HTTP tools
+    (WebFetch, requests.get, etc.) that discard the body of 4xx responses can still read
+    the runbook. The copy-onboard-link button in ``category.html`` generates a URL
+    pointing here.
 
-    When ``?token=`` is present (#159), the runbook includes the token
-    in the ``.ken`` file so the agent can start immediately without
-    asking the user for an API key.
+    When ``?token=`` is present (#159), the runbook includes the token in the ``.ken``
+    file so the agent can start immediately without asking the user for an API key.
     """
     from flask import request as flask_request
 
@@ -209,10 +204,9 @@ def onboarding_text_full(
 ) -> str:
     """Render the onboarding runbook with both IDs and base_url resolved.
 
-    ``base_url`` comes from ``request.host_url`` (respects ProxyFix) so
-    the runbook works on any self-hosted instance. When ``token`` is
-    provided (#159), the ``.ken`` file is complete and the agent can
-    start immediately.
+    ``base_url`` comes from ``request.host_url`` (respects ProxyFix) so the runbook
+    works on any self-hosted instance. When ``token`` is provided (#159), the ``.ken``
+    file is complete and the agent can start immediately.
     """
     if token:
         token_line = f"api_token={_sanitize_token(token)}\n"

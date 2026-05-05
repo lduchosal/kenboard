@@ -17,9 +17,8 @@ QUERIES_DIR = Path(__file__).parent / "queries"
 class _InstrumentedQueries:
     """Proxy around aiosql queries that records timing in flask.g (#214).
 
-    When called inside a Flask request with ``g.perf`` set, each query
-    call is timed and recorded.  Outside Flask (CLI, tests) the proxy
-    is a transparent passthrough.
+    When called inside a Flask request with ``g.perf`` set, each query call is timed and
+    recorded.  Outside Flask (CLI, tests) the proxy is a transparent passthrough.
     """
 
     def __init__(self, queries: Any) -> None:

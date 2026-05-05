@@ -13,9 +13,9 @@ UserScope = Literal["read", "write"]
 def _check_password_strength(v: str | None) -> str | None:
     """Run the shared strength policy on a password field (#198).
 
-    ``None`` is passed through because several models accept an optional
-    password (e.g. ``UserCreate`` lets admins create a user with no
-    password, to be set later via ``kenboard set-password``).
+    ``None`` is passed through because several models accept an optional password (e.g.
+    ``UserCreate`` lets admins create a user with no password, to be set later via
+    ``kenboard set-password``).
     """
     if v is None or v == "":
         return v
@@ -38,11 +38,10 @@ class UserCreate(BaseModel):
 class UserUpdate(BaseModel):
     """Input model for updating a user.
 
-    Password changes are deliberately **not** part of this model since
-    #53. Use ``POST /api/v1/users/<id>/password`` (self-service, requires
-    the old password) or ``POST /api/v1/users/<id>/reset-password``
-    (admin-only) instead. Extra fields are silently dropped so older
-    clients that still send ``password`` here can't sneak it through.
+    Password changes are deliberately **not** part of this model since #53. Use ``POST
+    /api/v1/users/<id>/password`` (self-service, requires the old password) or ``POST
+    /api/v1/users/<id>/reset-password`` (admin-only) instead. Extra fields are silently
+    dropped so older clients that still send ``password`` here can't sneak it through.
     """
 
     model_config = ConfigDict(extra="ignore")
@@ -78,9 +77,9 @@ class PasswordReset(BaseModel):
 class UserCategoryScope(BaseModel):
     """One (category_id, scope) entry attached to a user (#197).
 
-    Mirrors :class:`dashboard.models.api_key.ApiKeyScope` but at the
-    category level, because humans are granted access to whole boards
-    while API keys stay scoped per-project.
+    Mirrors :class:`dashboard.models.api_key.ApiKeyScope` but at the category level,
+    because humans are granted access to whole boards while API keys stay scoped per-
+    project.
     """
 
     category_id: str

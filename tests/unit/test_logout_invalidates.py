@@ -1,13 +1,11 @@
 """Server-side session invalidation on /logout (ken #54).
 
-Flask's default sessions are signed cookies, so the server cannot
-unilaterally revoke them. We embed a per-user ``session_nonce`` in the
-cookie identifier and rotate it on /logout. The user_loader refuses any
-cookie whose nonce doesn't match the current row in DB → captured cookies
-become unusable after logout.
+Flask's default sessions are signed cookies, so the server cannot unilaterally revoke
+them. We embed a per-user ``session_nonce`` in the cookie identifier and rotate it on
+/logout. The user_loader refuses any cookie whose nonce doesn't match the current row in
+DB → captured cookies become unusable after logout.
 
-These tests run with ``LOGIN_DISABLED=False`` so the user_loader actually
-runs.
+These tests run with ``LOGIN_DISABLED=False`` so the user_loader actually runs.
 """
 
 from __future__ import annotations

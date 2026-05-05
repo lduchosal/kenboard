@@ -18,12 +18,11 @@ LOG_FILE = LOG_DIR / "dashboard.log"
 def _ignore_sighup() -> None:
     """Ignore SIGHUP so newsyslog's post-rotate reload script does not kill us.
 
-    Default Python behaviour for SIGHUP is to terminate the process. On
-    FreeBSD (web2) newsyslog rotates ``/var/log/kenboard/kenboard.log``
-    every day at 00:00 and signals the daemon afterwards via the rc.d
-    ``reload`` script. We don't need to do anything on the signal — log
-    re-opening is handled transparently by ``WatchedFileHandler`` — so
-    we just refuse to die.
+    Default Python behaviour for SIGHUP is to terminate the process. On FreeBSD (web2)
+    newsyslog rotates ``/var/log/kenboard/kenboard.log`` every day at 00:00 and signals
+    the daemon afterwards via the rc.d ``reload`` script. We don't need to do anything
+    on the signal — log re-opening is handled transparently by ``WatchedFileHandler`` —
+    so we just refuse to die.
     """
     # SIGHUP does not exist on Windows; signal() may also fail when
     # called from a non-main thread (e.g. tests inside a thread).

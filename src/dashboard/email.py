@@ -1,8 +1,7 @@
 """Email sending via SMTP (#231, #234).
 
-Uses the stdlib ``smtplib`` — no extra dependency. Sends multipart
-emails (text/plain + text/html) rendered from Jinja2 templates.
-Silent no-op when SMTP is not configured.
+Uses the stdlib ``smtplib`` — no extra dependency. Sends multipart emails (text/plain +
+text/html) rendered from Jinja2 templates. Silent no-op when SMTP is not configured.
 """
 
 import smtplib
@@ -37,9 +36,8 @@ def send_email(to: str, subject: str, template: str, **ctx: Any) -> bool:
     """Send a multipart email (text + HTML) rendered from Jinja2 templates.
 
     The ``template`` parameter should be the HTML template path (e.g.
-    ``email/password_reset.html``). The text version is derived by
-    replacing ``.html`` with ``.txt``. If the text template does not
-    exist, only the HTML part is sent.
+    ``email/password_reset.html``). The text version is derived by replacing ``.html``
+    with ``.txt``. If the text template does not exist, only the HTML part is sent.
 
     Returns True on success, False on failure (logged, never raises).
     """

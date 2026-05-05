@@ -20,9 +20,8 @@ bp = Blueprint("pages", __name__)
 def _visible_category_ids() -> set[str] | None:
     """Return the set of category ids the current user may read.
 
-    Returns ``None`` to signal "no filtering" (admin, test mode). The
-    caller treats ``None`` as "show everything", while an empty set
-    means "show nothing".
+    Returns ``None`` to signal "no filtering" (admin, test mode). The caller treats
+    ``None`` as "show everything", while an empty set means "show nothing".
     """
     if _is_login_disabled():
         return None

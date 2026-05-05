@@ -135,8 +135,8 @@ def change_password(user_id: str) -> Any:
     """Change one's own password (#53).
 
     Requires a Flask-Login session that matches ``user_id`` and a valid
-    ``old_password``. Bots with admin API keys should use
-    ``/reset-password`` instead — they don't have a "current user".
+    ``old_password``. Bots with admin API keys should use ``/reset-password`` instead —
+    they don't have a "current user".
     """
     # Tests with LOGIN_DISABLED=True skip ownership / authentication checks
     # so the unit suite can exercise the route without juggling sessions.
@@ -173,9 +173,9 @@ def change_password(user_id: str) -> Any:
 def reset_password(user_id: str) -> Any:
     """Admin reset of another user's password (#53).
 
-    Caller must be an admin (cookie session with ``is_admin=True`` or the
-    static ``KENBOARD_ADMIN_KEY``). The old password is **not** required —
-    this is the recovery path when a user forgets theirs.
+    Caller must be an admin (cookie session with ``is_admin=True`` or the static
+    ``KENBOARD_ADMIN_KEY``). The old password is **not** required — this is the recovery
+    path when a user forgets theirs.
     """
     api_admin_required()
     data = PasswordReset(**(request.get_json() or {}))

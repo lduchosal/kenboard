@@ -2,8 +2,8 @@
 
 These tests read source files as text and assert properties that must hold independently
 of runtime behaviour. They act as tripwires when a future refactor reintroduces a
-dangerous pattern — the code reviewer is forced to look at the invariant before the
-test can be silenced.
+dangerous pattern — the code reviewer is forced to look at the invariant before the test
+can be silenced.
 """
 
 from __future__ import annotations
@@ -39,10 +39,9 @@ def _iter_source_files() -> list[Path]:
 class TestLoginDisabledInvariant:
     """#199: ``LOGIN_DISABLED`` can only be consulted via ``_is_login_disabled``.
 
-    The test bypass is off-by-default and gated by ``Config.DEBUG`` inside
-    that helper. If any other module reads the flag directly from
-    ``app.config``, a misconfigured production deploy would silently
-    disable authentication.
+    The test bypass is off-by-default and gated by ``Config.DEBUG`` inside that helper.
+    If any other module reads the flag directly from ``app.config``, a misconfigured
+    production deploy would silently disable authentication.
     """
 
     FORBIDDEN_PATTERN = 'config.get("LOGIN_DISABLED")'
@@ -68,9 +67,12 @@ class TestLoginDisabledInvariant:
             )
 
     def test_helper_is_defined(self):
-        """Sanity check: ``_is_login_disabled`` must exist in ``auth_user``
-        and actually *read* the flag. Guards against a future refactor
-        that strips the helper body down to a no-op ``return False``."""
+        """Sanity check: ``_is_login_disabled`` must exist in ``auth_user`` and actually
+        *read* the flag.
+
+        Guards against a future refactor that strips the helper body down to a no-op
+        ``return False``.
+        """
         auth_user = SRC_ROOT / "auth_user.py"
         text = auth_user.read_text(encoding="utf-8")
         assert "def _is_login_disabled" in text, (
@@ -89,9 +91,8 @@ class TestLoginDisabledRuntimeGuard:
     def test_helper_raises_when_debug_off_and_flag_on(self, app, monkeypatch):
         """Flip ``Config.DEBUG`` to False and set LOGIN_DISABLED on the app.
 
-        The helper must raise ``RuntimeError`` so the request crashes loud
-        instead of silently letting the caller through as if it were a
-        unit test.
+        The helper must raise ``RuntimeError`` so the request crashes loud instead of
+        silently letting the caller through as if it were a unit test.
         """
         from dashboard.auth_user import _is_login_disabled
         from dashboard.config import Config
@@ -142,8 +143,9 @@ class TestCreateAppStartupGuard:
     """
 
     def test_create_app_refuses_login_disabled_without_debug(self, monkeypatch):
-        """Simulate a misconfigured prod deploy: DEBUG off but the flag leaks
-        into the app config (e.g. via ``FLASK_LOGIN_DISABLED`` env var)."""
+        """Simulate a misconfigured prod deploy: DEBUG off but the flag leaks into the
+        app config (e.g. via ``FLASK_LOGIN_DISABLED`` env var).
+        """
         from dashboard import app as app_module
 
         monkeypatch.setenv("DEBUG", "false")

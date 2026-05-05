@@ -1,8 +1,7 @@
 """Per-user category scope enforcement (#197).
 
-Covers the cookie-authenticated path only. API-key scoping is already
-covered by ``test_api_keys.py`` and stays at the project level (not
-touched by this feature).
+Covers the cookie-authenticated path only. API-key scoping is already covered by
+``test_api_keys.py`` and stays at the project level (not touched by this feature).
 """
 
 from __future__ import annotations

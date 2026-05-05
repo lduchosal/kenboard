@@ -89,9 +89,8 @@ def _required_scope(method: str) -> str:
 def _resolve_project_id(method: str, path: str) -> str | None:
     """Best-effort: derive the project_id targeted by the current request.
 
-    Returns ``None`` if the endpoint is not project-scoped (admin-only) or
-    if the project_id cannot be determined (in which case the caller will
-    deny the request).
+    Returns ``None`` if the endpoint is not project-scoped (admin-only) or if the
+    project_id cannot be determined (in which case the caller will deny the request).
     """
     # GET /api/v1/tasks?project=X
     if path == "/api/v1/tasks" and method == "GET":
@@ -130,8 +129,8 @@ def _is_admin_only(method: str, path: str) -> bool:
 def _is_self_service_cookie_path(path: str) -> bool:
     """Return True for paths a non-admin cookie session may reach.
 
-    The route handler is responsible for the actual ownership check
-    (e.g. verifying ``current_user.id == user_id``).
+    The route handler is responsible for the actual ownership check (e.g. verifying
+    ``current_user.id == user_id``).
     """
     for prefix, suffix in SELF_SERVICE_COOKIE_PATHS:
         if path.startswith(prefix) and path.endswith(suffix):
@@ -336,8 +335,8 @@ def _enforce_api_key(token: str, method: str, path: str) -> Any:
 def _enforce() -> Any:
     """Run the middleware on the current request.
 
-    Returns a Flask response (tuple) to short-circuit if denied, or
-    ``None`` to let the request through.
+    Returns a Flask response (tuple) to short-circuit if denied, or ``None`` to let the
+    request through.
     """
     # Only API requests are subject to the middleware.
     if not request.path.startswith("/api/v1/"):

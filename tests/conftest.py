@@ -7,6 +7,7 @@ import pytest
 from dashboard.app import create_app
 from dashboard.config import Config
 from dashboard.db import load_queries
+from tests._schema import load_schema
 
 # Provide a deterministic secret key for the test session so that
 # init_login_manager doesn't fall back to its dev default. Set on the
@@ -33,72 +34,18 @@ def _ensure_test_db() -> None:
         " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
     )
     cur.execute(f"USE `{Config.DB_TEST_NAME}`")
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS categories (
-            id VARCHAR(36) NOT NULL PRIMARY KEY,
-            name VARCHAR(250) NOT NULL,
-            color VARCHAR(50) NOT NULL,
-            position INT NOT NULL DEFAULT 0
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS projects (
-            id VARCHAR(36) NOT NULL PRIMARY KEY,
-            cat_id VARCHAR(36) NOT NULL,
-            name VARCHAR(250) NOT NULL,
-            acronym VARCHAR(4) NOT NULL,
-            status ENUM('active', 'archived') NOT NULL DEFAULT 'active',
-            position INT NOT NULL DEFAULT 0,
-            default_who VARCHAR(100) NOT NULL DEFAULT '',
-            FOREIGN KEY (cat_id) REFERENCES categories(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    # In case the table was created by an earlier session without the
-    # default_who column, add it. MySQL 8 doesn't support ADD COLUMN IF
-    # NOT EXISTS — check INFORMATION_SCHEMA first.
-    cur.execute(
-        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
-        "WHERE TABLE_SCHEMA = DATABASE() "
-        "AND TABLE_NAME = 'projects' "
-        "AND COLUMN_NAME = 'default_who'"
-    )
-    if cur.fetchone()[0] == 0:
-        cur.execute(
-            "ALTER TABLE projects "
-            "ADD COLUMN default_who VARCHAR(100) NOT NULL DEFAULT ''"
-        )
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS tasks (
-            id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            project_id VARCHAR(36) NOT NULL,
-            title VARCHAR(250) NOT NULL,
-            description TEXT NOT NULL DEFAULT (''),
-            status ENUM('todo', 'doing', 'review', 'done') NOT NULL DEFAULT 'todo',
-            who VARCHAR(100) NOT NULL DEFAULT '',
-            due_date DATE NULL,
-            position INT NOT NULL DEFAULT 0,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-            INDEX idx_project_status (project_id, status)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id VARCHAR(36) NOT NULL PRIMARY KEY,
-            name VARCHAR(100) NOT NULL UNIQUE,
-            email VARCHAR(255) NULL,
-            color VARCHAR(50) NOT NULL,
-            password_hash VARCHAR(255) NOT NULL DEFAULT '',
-            is_admin TINYINT(1) NOT NULL DEFAULT 0,
-            session_nonce CHAR(32) NOT NULL DEFAULT '',
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            UNIQUE INDEX uq_users_email (email)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    # users.session_nonce was added in migration 0008. Existing test DBs
-    # carried over from a previous run still have the old schema; back-fill.
+    load_schema(cur)
+    # Idempotent back-fills for legacy test DBs carried over from earlier runs.
+    # Each ALTER checks INFORMATION_SCHEMA before mutating; mirrors the rules
+    # in CLAUDE.md for production migrations.
+    _backfill_legacy_columns(cur)
+    conn.close()
+    _mysql_available = True
+
+
+def _backfill_legacy_columns(cur: pymysql.cursors.Cursor) -> None:
+    """Re-apply post-0008 schema additions on test DBs that predate them."""
+    # users.session_nonce — migration 0008.
     cur.execute(
         "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
         "WHERE TABLE_SCHEMA = DATABASE() "
@@ -107,10 +54,9 @@ def _ensure_test_db() -> None:
     )
     if cur.fetchone()[0] == 0:
         cur.execute(
-            "ALTER TABLE users " "ADD COLUMN session_nonce CHAR(32) NOT NULL DEFAULT ''"
+            "ALTER TABLE users ADD COLUMN session_nonce CHAR(32) NOT NULL DEFAULT ''"
         )
-    # users.email was added in migration 0012 (#126, OIDC). Back-fill for
-    # legacy test DBs that predate the column.
+    # users.email — migration 0012 (#126, OIDC).
     cur.execute(
         "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
         "WHERE TABLE_SCHEMA = DATABASE() "
@@ -127,27 +73,7 @@ def _ensure_test_db() -> None:
         )
         if cur.fetchone()[0] == 0:
             cur.execute("ALTER TABLE users ADD UNIQUE INDEX uq_users_email (email)")
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS api_keys (
-            id VARCHAR(36) NOT NULL PRIMARY KEY,
-            user_id VARCHAR(36) NULL,
-            key_type VARCHAR(20) NULL,
-            key_hash CHAR(64) NOT NULL UNIQUE,
-            label VARCHAR(100) NOT NULL,
-            expires_at DATETIME NULL,
-            last_used_at DATETIME NULL,
-            last_used_ip VARCHAR(45) NULL,
-            last_used_agent VARCHAR(200) NULL,
-            revoked_at DATETIME NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_key_hash (key_hash),
-            CONSTRAINT fk_api_keys_user
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    # api_keys.user_id was added in migration 0010. Back-fill on legacy
-    # carried-over schemas, in two atomic steps so a partial state can
-    # converge — mirrors the idempotent pattern in the migration itself.
+    # api_keys.user_id + fk_api_keys_user — migration 0010, two atomic steps.
     cur.execute(
         "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
         "WHERE TABLE_SCHEMA = DATABASE() "
@@ -168,7 +94,7 @@ def _ensure_test_db() -> None:
             "ALTER TABLE api_keys ADD CONSTRAINT fk_api_keys_user "
             "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL"
         )
-    # api_keys.key_type was added in migration 0014 (#159, onboarding tokens).
+    # api_keys.key_type — migration 0014 (#159, onboarding tokens).
     cur.execute(
         "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
         "WHERE TABLE_SCHEMA = DATABASE() "
@@ -179,7 +105,7 @@ def _ensure_test_db() -> None:
         cur.execute(
             "ALTER TABLE api_keys ADD COLUMN key_type VARCHAR(20) NULL AFTER user_id"
         )
-    # last_used_ip / last_used_agent added in migration 0017 (#209, #210).
+    # api_keys.last_used_ip / last_used_agent — migration 0017 (#209, #210).
     for col, defn in [
         ("last_used_ip", "VARCHAR(45) NULL AFTER last_used_at"),
         ("last_used_agent", "VARCHAR(200) NULL AFTER last_used_ip"),
@@ -192,72 +118,18 @@ def _ensure_test_db() -> None:
         )
         if cur.fetchone()[0] == 0:
             cur.execute(f"ALTER TABLE api_keys ADD COLUMN {col} {defn}")
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS api_key_projects (
-            api_key_id VARCHAR(36) NOT NULL,
-            project_id VARCHAR(36) NOT NULL,
-            scope ENUM('read','write','admin') NOT NULL,
-            PRIMARY KEY (api_key_id, project_id),
-            FOREIGN KEY (api_key_id) REFERENCES api_keys(id) ON DELETE CASCADE,
-            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    # user_category_scopes was added in migration 0015 (#197). Mirrors the
-    # API-key scope table, but at category level for cookie-authenticated users.
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS user_category_scopes (
-            user_id VARCHAR(36) NOT NULL,
-            category_id VARCHAR(36) NOT NULL,
-            scope ENUM('read','write') NOT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (user_id, category_id),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    # burndown_snapshots was added in migration 0016 (#206). Daily
-    # task-count snapshots per project for the burndown chart.
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS burndown_snapshots (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            snapshot_date DATE NOT NULL,
-            project_id VARCHAR(36) NOT NULL,
-            todo INT NOT NULL DEFAULT 0,
-            doing INT NOT NULL DEFAULT 0,
-            review INT NOT NULL DEFAULT 0,
-            done INT NOT NULL DEFAULT 0,
-            UNIQUE KEY uq_snapshot (snapshot_date, project_id),
-            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    # password_reset_tokens was added in migration 0018 (#231).
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS password_reset_tokens (
-            id VARCHAR(36) NOT NULL PRIMARY KEY,
-            user_id VARCHAR(36) NOT NULL,
-            token_hash CHAR(64) NOT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            expires_at DATETIME NOT NULL,
-            used_at DATETIME NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            INDEX idx_prt_token_hash (token_hash)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    # email_verification_tokens was added in migration 0019 (#232).
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS email_verification_tokens (
-            id VARCHAR(36) NOT NULL PRIMARY KEY,
-            email VARCHAR(255) NOT NULL,
-            password_hash VARCHAR(255) NOT NULL,
-            token_hash CHAR(64) NOT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            expires_at DATETIME NOT NULL,
-            used_at DATETIME NULL,
-            INDEX idx_evt_token_hash (token_hash)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    conn.close()
-    _mysql_available = True
+    # projects.default_who — pre-0008 column added on a later run.
+    cur.execute(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+        "WHERE TABLE_SCHEMA = DATABASE() "
+        "AND TABLE_NAME = 'projects' "
+        "AND COLUMN_NAME = 'default_who'"
+    )
+    if cur.fetchone()[0] == 0:
+        cur.execute(
+            "ALTER TABLE projects "
+            "ADD COLUMN default_who VARCHAR(100) NOT NULL DEFAULT ''"
+        )
 
 
 def _get_test_connection() -> pymysql.Connection:
@@ -277,10 +149,9 @@ def _get_test_connection() -> pymysql.Connection:
 def setup_test_db():
     """Create the test database once per session.
 
-    When MySQL is unreachable (e.g. Windows CI runners) the fixture
-    silently succeeds so that pure-unit tests can still run.  Tests
-    that actually need the database will be skipped via the ``db`` or
-    ``app`` fixtures.
+    When MySQL is unreachable (e.g. Windows CI runners) the fixture silently succeeds so
+    that pure-unit tests can still run.  Tests that actually need the database will be
+    skipped via the ``db`` or ``app`` fixtures.
     """
     try:
         _ensure_test_db()
@@ -293,10 +164,9 @@ def patch_db_connection(setup_test_db):
     """Force ``dashboard.db.get_connection`` to point at the test database for the
     entire test session, regardless of which fixtures are pulled in.
 
-    Without this, helper modules that resolve their connection at
-    call time (e.g. ``dashboard.auth``, ``dashboard.auth_user``) would
-    hit the production database when a test only requests the ``db``
-    fixture.
+    Without this, helper modules that resolve their connection at call time (e.g.
+    ``dashboard.auth``, ``dashboard.auth_user``) would hit the production database when
+    a test only requests the ``db`` fixture.
     """
     if not _mysql_available:
         return

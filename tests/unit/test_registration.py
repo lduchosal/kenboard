@@ -1,8 +1,8 @@
 """Unit tests for the self-registration flow (#236).
 
-The email sending is mocked — we capture the token from the DB and
-exercise the full flow: register → token created → verify email →
-user + category + project + scope created.
+The email sending is mocked — we capture the token from the DB and exercise the full
+flow: register → token created → verify email → user + category + project + scope
+created.
 """
 
 import hashlib

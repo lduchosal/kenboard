@@ -106,10 +106,9 @@ _PASSWORD_FIELDS = {"password", "new_password", "old_password"}
 def _safe_pydantic_errors(errors: Any) -> list[dict[str, Any]]:
     """Make Pydantic's ``.errors()`` JSON-serializable.
 
-    Pydantic 2 embeds the original exception under ``ctx.error`` for
-    ``value_error`` validators, which Flask's JSON provider refuses to
-    serialize. We stringify the exception so debug responses stay
-    useful without crashing.
+    Pydantic 2 embeds the original exception under ``ctx.error`` for ``value_error``
+    validators, which Flask's JSON provider refuses to serialize. We stringify the
+    exception so debug responses stay useful without crashing.
     """
     cleaned: list[dict[str, Any]] = []
     for err in errors:
@@ -124,11 +123,10 @@ def _safe_pydantic_errors(errors: Any) -> list[dict[str, Any]]:
 def _extract_password_error(details: list[dict[str, Any]]) -> str | None:
     """Return a user-facing message when a password field failed validation.
 
-    Our custom ``validate_password_strength`` raises ``ValueError`` whose
-    message is already actionable (length requirement, zxcvbn score,
-    zxcvbn feedback). We surface that instead of the generic "Validation
-    error" so the UI modal can tell the user *why* the password was
-    rejected (#198).
+    Our custom ``validate_password_strength`` raises ``ValueError`` whose message is
+    already actionable (length requirement, zxcvbn score, zxcvbn feedback). We surface
+    that instead of the generic "Validation error" so the UI modal can tell the user
+    *why* the password was rejected (#198).
     """
     for err in details:
         loc = err.get("loc") or ()

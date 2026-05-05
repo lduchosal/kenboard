@@ -99,11 +99,10 @@ class CurrentUser(UserMixin):
     def get_id(self) -> str:
         """Return the user id with the session nonce embedded.
 
-        Flask-Login stores this string in the session cookie. The user
-        loader splits it back into ``(id, nonce)`` and refuses any value
-        whose nonce doesn't match the current row in DB. That's how we
-        invalidate cookies after /logout (cf. ken #54): rotating
-        ``users.session_nonce`` makes the embedded nonce stale.
+        Flask-Login stores this string in the session cookie. The user loader splits it
+        back into ``(id, nonce)`` and refuses any value whose nonce doesn't match the
+        current row in DB. That's how we invalidate cookies after /logout (cf. ken #54):
+        rotating ``users.session_nonce`` makes the embedded nonce stale.
         """
         return f"{self.id}:{self.session_nonce}"
 
@@ -123,10 +122,10 @@ def _rotate_session_nonce(user_id: str) -> str:
 def _load_user(packed_id: str) -> CurrentUser | None:
     """Look up a user by id and verify the embedded session nonce.
 
-    ``packed_id`` is the value previously returned by ``CurrentUser.get_id``,
-    namely ``"<uuid>:<nonce>"``. We split it, fetch the user, and refuse
-    if the nonce doesn't match what's currently in DB. That's what makes
-    /logout effective despite Flask's signed-cookie sessions.
+    ``packed_id`` is the value previously returned by ``CurrentUser.get_id``, namely
+    ``"<uuid>:<nonce>"``. We split it, fetch the user, and refuse if the nonce doesn't
+    match what's currently in DB. That's what makes /logout effective despite Flask's
+    signed-cookie sessions.
     """
     if ":" in packed_id:
         user_id, nonce = packed_id.split(":", 1)
@@ -152,17 +151,16 @@ def _load_user(packed_id: str) -> CurrentUser | None:
 def _unauthorized() -> Any:
     """Redirect browsers to login; serve an onboarding runbook to agents.
 
-    Browser callers (``Accept`` includes ``text/html``) get the original
-    302 → /login redirect so the cookie flow stays unchanged. CLI tools
-    and LLM agents instead receive a 401 with a plain-text body explaining
-    how to ``pip install kenboard`` and ``ken init <category-id>`` (#117).
-    The category id, when present in the URL, is interpolated into the
-    init command so the agent can copy-paste it.
+    Browser callers (``Accept`` includes ``text/html``) get the original 302 → /login
+    redirect so the cookie flow stays unchanged. CLI tools and LLM agents instead
+    receive a 401 with a plain-text body explaining how to ``pip install kenboard`` and
+    ``ken init <category-id>`` (#117). The category id, when present in the URL, is
+    interpolated into the init command so the agent can copy-paste it.
 
-    The ``?onboard`` query parameter forces the machine response regardless
-    of the ``Accept`` header. This is what the copy-onboard-link button
-    generates, so that agents using WebFetch (which sends ``Accept:
-    text/html``) still receive the runbook instead of the login page.
+    The ``?onboard`` query parameter forces the machine response regardless of the
+    ``Accept`` header. This is what the copy-onboard-link button generates, so that
+    agents using WebFetch (which sends ``Accept: text/html``) still receive the runbook
+    instead of the login page.
     """
     if wants_machine_response(request) or "onboard" in request.args:
         cat_id = cat_id_from_path(request.path)
@@ -219,9 +217,9 @@ def admin_required() -> None:
     """Abort with 403 if the current user is not an admin.
 
     To call from inside a ``@login_required`` view. Respects the Flask
-    ``LOGIN_DISABLED`` config flag (used by tests) by becoming a no-op
-    in debug mode. See :func:`_is_login_disabled` for the prod guard
-    (it raises ``RuntimeError`` if the flag is set without ``DEBUG=True``).
+    ``LOGIN_DISABLED`` config flag (used by tests) by becoming a no-op in debug mode.
+    See :func:`_is_login_disabled` for the prod guard (it raises ``RuntimeError`` if the
+    flag is set without ``DEBUG=True``).
     """
     if _is_login_disabled():
         return
@@ -232,15 +230,13 @@ def admin_required() -> None:
 def api_admin_required() -> None:
     """Abort with 403 unless the caller is admin via cookie OR admin API key.
 
-    Use this in API routes that should be reachable both by a logged-in
-    admin user (Flask-Login session) and by the static
-    ``KENBOARD_ADMIN_KEY``. The API auth middleware sets
-    ``g.api_auth_principal == "admin"`` for the latter case.
+    Use this in API routes that should be reachable both by a logged-in admin user
+    (Flask-Login session) and by the static ``KENBOARD_ADMIN_KEY``. The API auth
+    middleware sets ``g.api_auth_principal == "admin"`` for the latter case.
 
-    Tests with ``LOGIN_DISABLED=True`` skip the check, mirroring how
-    ``admin_required`` and the API middleware behave. See
-    :func:`_is_login_disabled` for the prod guard (it raises
-    ``RuntimeError`` if the flag is set without ``DEBUG=True``).
+    Tests with ``LOGIN_DISABLED=True`` skip the check, mirroring how ``admin_required``
+    and the API middleware behave. See :func:`_is_login_disabled` for the prod guard (it
+    raises ``RuntimeError`` if the flag is set without ``DEBUG=True``).
     """
     from flask import g
 
@@ -408,9 +404,9 @@ def init_login_manager(app: Flask) -> None:
 def login() -> Any:
     """Render the login form (GET only).
 
-    Split from the POST handler (cf. sonar python:S3752) so each route
-    has a single HTTP method. The POST handler ``login_post`` lives just
-    below and is the only one wearing the brute-force rate limit.
+    Split from the POST handler (cf. sonar python:S3752) so each route has a single HTTP
+    method. The POST handler ``login_post`` lives just below and is the only one wearing
+    the brute-force rate limit.
     """
     next_url = request.args.get("next") or ""
     return render_template(_LOGIN_TEMPLATE, error=None, next_url=next_url)
@@ -430,10 +426,10 @@ def login() -> Any:
 def login_post() -> Any:
     """Validate credentials submitted by the login form (POST only).
 
-    Rate-limited per IP via flask-limiter (cf. ``LOGIN_RATE_LIMITS``).
-    Successful logins (302 redirect) do not count against the budget so
-    a user who fat-fingers their password 4 times can still log in on
-    the 5th try without burning through their hour quota.
+    Rate-limited per IP via flask-limiter (cf. ``LOGIN_RATE_LIMITS``). Successful logins
+    (302 redirect) do not count against the budget so a user who fat-fingers their
+    password 4 times can still log in on the 5th try without burning through their hour
+    quota.
     """
     next_url = request.form.get("next") or ""
     name = (request.form.get("name") or "").strip()
@@ -470,9 +466,9 @@ def login_post() -> Any:
 def logout() -> Any:
     """Invalidate every existing session for this user and redirect to /login.
 
-    Rotates ``users.session_nonce`` BEFORE clearing the Flask session, so
-    that any cookie captured prior to logout (including the long-lived
-    ``remember_token``) becomes unverifiable on the next request.
+    Rotates ``users.session_nonce`` BEFORE clearing the Flask session, so that any
+    cookie captured prior to logout (including the long-lived ``remember_token``)
+    becomes unverifiable on the next request.
     """
     if current_user.is_authenticated:
         log.info(

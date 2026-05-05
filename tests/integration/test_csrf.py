@@ -1,11 +1,9 @@
 """CSRF protection on cookie-authenticated /api/v1/* requests.
 
-The middleware (``dashboard.auth._enforce``) requires unsafe HTTP methods
-to be Same-Origin when the caller is authenticated by cookie. Bearer
-tokens skip the check.
+The middleware (``dashboard.auth._enforce``) requires unsafe HTTP methods to be Same-
+Origin when the caller is authenticated by cookie. Bearer tokens skip the check.
 
-These tests run with ``LOGIN_DISABLED=False`` so the middleware actually
-runs.
+These tests run with ``LOGIN_DISABLED=False`` so the middleware actually runs.
 """
 
 from __future__ import annotations

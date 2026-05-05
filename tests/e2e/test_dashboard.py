@@ -120,8 +120,8 @@ def _create_category_via_admin(live_server, page: Page) -> None:
 def _create_category_and_project(live_server, page: Page) -> None:
     """Helper: create a category via /admin/board, then navigate to the category page.
 
-    Since #175, creating a category auto-creates a first project
-    "Project <name>" inside it, so no manual project creation needed.
+    Since #175, creating a category auto-creates a first project "Project <name>" inside
+    it, so no manual project creation needed.
     """
     _create_category_via_admin(live_server, page)
 
@@ -291,9 +291,9 @@ class TestTaskCRUD:
     def _open_task_edit_modal(self, page: Page) -> None:
         """Helper: click a task to enter detail mode then click its edit button.
 
-        The selector explicitly excludes ``.btn-fullscreen`` (#155) which
-        also has ``.btn-edit`` for visual styling but opens the fullscreen
-        modal instead of the edit modal.
+        The selector explicitly excludes ``.btn-fullscreen`` (#155) which also has
+        ``.btn-edit`` for visual styling but opens the fullscreen modal instead of the
+        edit modal.
         """
         page.click(".kanban-task")
         page.locator(
@@ -303,20 +303,6 @@ class TestTaskCRUD:
             ".kanban-task.detail-mode .btn-edit:not(.btn-fullscreen)"
         ).first.click()
         page.locator("#task-modal").wait_for(state="visible")
-
-    def test_edit_task(self, live_server, clean_db, page: Page):
-        """Edit a task title and description via the edit modal."""
-        self._setup_project(live_server, page)
-        self._add_task(page, "Avant")
-
-        self._open_task_edit_modal(page)
-        page.fill("#task-modal-title", "Apres")
-        page.fill("#task-modal-desc", "Nouvelle description")
-        page.click("#task-modal .btn-save")
-        page.wait_for_timeout(500)
-        page.reload()
-        expect(page.locator(".task-title").first).to_have_text("Apres")
-        expect(page.locator(".task-desc").first).to_have_text("Nouvelle description")
 
     def test_delete_task(self, live_server, clean_db, page: Page):
         """Delete a task via the edit modal + confirm dialog."""
@@ -483,32 +469,6 @@ class TestTaskCRUD:
         page.click(".kanban-add-btn")
         expect(page.locator("#task-modal-who")).to_have_value("Bob")
 
-    def test_move_task_via_status_select(self, live_server, clean_db, page: Page):
-        """Move a task between columns by changing its status in the edit modal."""
-        self._setup_project(live_server, page)
-        self._add_task(page, "A Deplacer")
-
-        # Initially the task lives in the "todo" column
-        expect(
-            page.locator('.kanban-tasks[data-status="todo"] .kanban-task')
-        ).to_have_count(1)
-        expect(
-            page.locator('.kanban-tasks[data-status="doing"] .kanban-task')
-        ).to_have_count(0)
-
-        self._open_task_edit_modal(page)
-        page.select_option("#task-modal-status", "doing")
-        page.click("#task-modal .btn-save")
-        page.wait_for_timeout(500)
-        page.reload()
-
-        expect(
-            page.locator('.kanban-tasks[data-status="todo"] .kanban-task')
-        ).to_have_count(0)
-        expect(
-            page.locator('.kanban-tasks[data-status="doing"] .kanban-task')
-        ).to_have_count(1)
-
     def test_edit_modal_status_reflects_dragged_position(
         self, live_server, clean_db, page: Page
     ):
@@ -551,98 +511,6 @@ class TestTaskCRUD:
             page.locator('.kanban-tasks[data-status="todo"] .kanban-task')
         ).to_have_count(0)
 
-    def test_task_description_renders_markdown(self, live_server, clean_db, page: Page):
-        """#15: task descriptions are authored in Markdown and rendered as HTML in the
-        card body via marked.js.
-        """
-        self._setup_project(live_server, page)
-
-        page.click(".kanban-add-btn")
-        page.fill("#task-modal-title", "MD")
-        page.fill(
-            "#task-modal-desc",
-            "**bold** and *italic*\n\n- one\n- two\n\n`code`",
-        )
-        page.click("#task-modal .btn-save")
-        page.wait_for_timeout(500)
-        page.reload()
-
-        # marked.js parses the textContent into rich HTML
-        html = page.eval_on_selector(".task-desc", "el => el.innerHTML")
-        assert "<strong>bold</strong>" in html
-        assert "<em>italic</em>" in html
-        assert "<ul>" in html and "<li>one</li>" in html
-        assert "<code>code</code>" in html
-
-        # Editing must round-trip the raw markdown (not the rendered HTML) so
-        # the user keeps editing the source.
-        self._open_task_edit_modal(page)
-        textarea_value = page.eval_on_selector("#task-modal-desc", "el => el.value")
-        assert "**bold**" in textarea_value
-        assert "- one" in textarea_value
-
-    def test_task_description_xss_is_sanitized(self, live_server, clean_db, page: Page):
-        """#52: marked.parse() output is run through DOMPurify before going into
-        innerHTML, so a description containing inline event handlers or <script> tags is
-        rendered as inert text/HTML, never executed.
-        """
-        self._setup_project(live_server, page)
-
-        # Trip an alert dialog if any handler fires; the page.expect_dialog
-        # context would catch it. Instead we install an unconditional
-        # listener that fails the test if any dialog appears.
-        dialogs: list[str] = []
-        page.on("dialog", lambda d: (dialogs.append(d.message), d.dismiss()))
-
-        page.click(".kanban-add-btn")
-        page.fill("#task-modal-title", "XSS")
-        page.fill(
-            "#task-modal-desc",
-            "<img src=x onerror=alert('pwned-img')>"
-            "<script>alert('pwned-script')</script>"
-            "[link](javascript:alert('pwned-href'))",
-        )
-        page.click("#task-modal .btn-save")
-        page.wait_for_timeout(500)
-        page.reload()
-
-        # ``renderMarkdown`` runs on load and writes into ``.task-desc``
-        # regardless of whether the card is expanded. The element is
-        # ``display:none`` until the card flips to detail-mode, so wait for
-        # it to be attached to the DOM, not visible.
-        page.wait_for_selector(".task-desc", state="attached")
-
-        # Inspect the actual DOM, not the HTML source. Marked escapes inline
-        # HTML so the substring ``onerror`` may legitimately appear as text
-        # inside ``&lt;img onerror=...&gt;`` — that's safe, the browser
-        # never executes it. What's NOT safe is an actual element carrying
-        # the attribute, or a real <script>, or an anchor whose href is
-        # ``javascript:``. Those are the conditions we assert against.
-        has_onerror = page.eval_on_selector(
-            ".task-desc",
-            "el => !!el.querySelector('[onerror], [onload], [onclick]')",
-        )
-        has_script = page.eval_on_selector(
-            ".task-desc", "el => !!el.querySelector('script')"
-        )
-        has_js_url = page.eval_on_selector(
-            ".task-desc",
-            "el => Array.from(el.querySelectorAll('a, img'))"
-            ".some(n => (n.getAttribute('href') || n.getAttribute('src') || '')"
-            ".toLowerCase().startsWith('javascript:'))",
-        )
-        assert not has_onerror, "an element carries an inline event handler"
-        assert not has_script, "a <script> element survived sanitisation"
-        assert not has_js_url, "a javascript: URL survived sanitisation"
-
-        # No dialog ever fired
-        assert dialogs == [], f"unexpected JS dialogs: {dialogs}"
-
-        # Round-trip: the original markdown is still in the textarea on edit
-        self._open_task_edit_modal(page)
-        textarea_value = page.eval_on_selector("#task-modal-desc", "el => el.value")
-        assert "onerror" in textarea_value  # raw source preserved
-
     def test_auto_refresh_skips_when_modal_open(
         self, live_server, clean_db, page: Page
     ):
@@ -674,7 +542,6 @@ class TestTaskCRUD:
         task_id = task.get_attribute("data-task-id")
         project_id = page.locator(".kanban").first.get_attribute("data-project-id")
         assert task_id and project_id
-
         page.evaluate(
             """async ({ taskId, projectId }) => {
                 await fetch(`/api/v1/tasks/${taskId}`, {

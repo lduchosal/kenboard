@@ -1,8 +1,8 @@
 """Unit tests for the ``ken`` CLI.
 
-These tests do not hit a real network: HTTP is mocked at the
-``urllib.request.urlopen`` boundary, and the working directory is swapped
-to a tmp_path so ``.ken`` discovery and writes stay isolated.
+These tests do not hit a real network: HTTP is mocked at the ``urllib.request.urlopen``
+boundary, and the working directory is swapped to a tmp_path so ``.ken`` discovery and
+writes stay isolated.
 """
 
 import json
@@ -38,8 +38,8 @@ def _fake_urlopen(responses):
     """Build a urlopen replacement that pops responses in order.
 
     Each entry in ``responses`` is a tuple ``(expected_method, expected_path,
-    response_body)``. ``response_body`` is a python object that will be
-    JSON-encoded, or ``None`` for an empty body.
+    response_body)``. ``response_body`` is a python object that will be JSON-encoded, or
+    ``None`` for an empty body.
     """
     calls = []
     queue = list(responses)

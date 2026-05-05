@@ -324,10 +324,9 @@ def enforced_client(enforced_app):
 def make_api_key(db, queries):
     """Create an api_key row directly via SQL and return ``(id, plain_key)``.
 
-    Used by enforced-mode tests because POST /api/v1/keys is itself
-    middleware-protected (admin-only) and the session-scoped app shared
-    between ``client`` and ``enforced_client`` makes the HTTP setup path
-    awkward.
+    Used by enforced-mode tests because POST /api/v1/keys is itself middleware-protected
+    (admin-only) and the session-scoped app shared between ``client`` and
+    ``enforced_client`` makes the HTTP setup path awkward.
     """
     import secrets
     import uuid

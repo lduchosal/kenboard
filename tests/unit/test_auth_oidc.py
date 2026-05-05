@@ -1,11 +1,11 @@
 """Unit tests for OIDC authentication (#126).
 
-These tests mock the Authlib OAuth client so they don't need a running
-IdP. The integration tests in ``tests/integration/test_auth_oidc.py``
-use ``oidc-provider-mock`` for the full round trip.
+These tests mock the Authlib OAuth client so they don't need a running IdP. The
+integration tests in ``tests/integration/test_auth_oidc.py`` use ``oidc-provider-mock``
+for the full round trip.
 
-All tests run with ``LOGIN_DISABLED=False`` so the login/auth middleware
-is active (same as the password-login tests in ``test_auth_user.py``).
+All tests run with ``LOGIN_DISABLED=False`` so the login/auth middleware is active (same
+as the password-login tests in ``test_auth_user.py``).
 """
 
 from __future__ import annotations
@@ -21,9 +21,9 @@ from dashboard.auth_oidc import oauth
 def oidc_app(monkeypatch, db):
     """Create a fresh Flask app with OIDC enabled from the start.
 
-    The OIDC env vars must be set **before** ``create_app()`` so that
-    ``init_oidc()`` registers the blueprint during app construction
-    (Flask refuses ``register_blueprint`` after the first request).
+    The OIDC env vars must be set **before** ``create_app()`` so that ``init_oidc()``
+    registers the blueprint during app construction (Flask refuses
+    ``register_blueprint`` after the first request).
     """
     monkeypatch.setenv(
         "OIDC_DISCOVERY_URL", "https://mock/.well-known/openid-configuration"

@@ -10,6 +10,7 @@ from playwright.sync_api import Page, expect
 
 from dashboard.app import create_app
 from dashboard.config import Config
+from tests._schema import load_schema
 
 SERVER_PORT = 5099
 
@@ -40,77 +41,8 @@ def _setup_test_db():
         autocommit=True,
     )
     cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS categories (
-            id VARCHAR(36) NOT NULL PRIMARY KEY,
-            name VARCHAR(250) NOT NULL,
-            color VARCHAR(50) NOT NULL,
-            position INT NOT NULL DEFAULT 0
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS projects (
-            id VARCHAR(36) NOT NULL PRIMARY KEY,
-            cat_id VARCHAR(36) NOT NULL,
-            name VARCHAR(250) NOT NULL,
-            acronym VARCHAR(4) NOT NULL,
-            status ENUM('active', 'archived') NOT NULL DEFAULT 'active',
-            position INT NOT NULL DEFAULT 0,
-            default_who VARCHAR(100) NOT NULL DEFAULT '',
-            FOREIGN KEY (cat_id) REFERENCES categories(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    cur.execute(
-        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
-        "WHERE TABLE_SCHEMA = DATABASE() "
-        "AND TABLE_NAME = 'projects' "
-        "AND COLUMN_NAME = 'default_who'"
-    )
-    if cur.fetchone()[0] == 0:
-        cur.execute(
-            "ALTER TABLE projects "
-            "ADD COLUMN default_who VARCHAR(100) NOT NULL DEFAULT ''"
-        )
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS tasks (
-            id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            project_id VARCHAR(36) NOT NULL,
-            title VARCHAR(250) NOT NULL,
-            description TEXT NOT NULL DEFAULT (''),
-            status ENUM('todo', 'doing', 'review', 'done') NOT NULL DEFAULT 'todo',
-            who VARCHAR(100) NOT NULL DEFAULT '',
-            due_date DATE NULL,
-            position INT NOT NULL DEFAULT 0,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-            INDEX idx_project_status (project_id, status)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id VARCHAR(36) NOT NULL PRIMARY KEY,
-            name VARCHAR(100) NOT NULL UNIQUE,
-            color VARCHAR(50) NOT NULL,
-            password_hash VARCHAR(255) NOT NULL DEFAULT '',
-            is_admin TINYINT(1) NOT NULL DEFAULT 0,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS api_keys (
-            id VARCHAR(36) NOT NULL PRIMARY KEY,
-            key_hash CHAR(64) NOT NULL UNIQUE,
-            label VARCHAR(100) NOT NULL,
-            expires_at DATETIME NULL,
-            last_used_at DATETIME NULL,
-            revoked_at DATETIME NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_key_hash (key_hash)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    # Columns added by later migrations — back-fill for legacy test DBs.
+    load_schema(cur)
+    # Legacy back-fills for test DBs predating recent column additions.
     for col, tbl, defn in [
         ("email", "users", "VARCHAR(255) NULL AFTER name"),
         ("session_nonce", "users", "CHAR(32) NOT NULL DEFAULT '' AFTER is_admin"),
@@ -118,6 +50,7 @@ def _setup_test_db():
         ("key_type", "api_keys", "VARCHAR(20) NULL AFTER user_id"),
         ("last_used_ip", "api_keys", "VARCHAR(45) NULL AFTER last_used_at"),
         ("last_used_agent", "api_keys", "VARCHAR(200) NULL AFTER last_used_ip"),
+        ("default_who", "projects", "VARCHAR(100) NOT NULL DEFAULT ''"),
     ]:
         cur.execute(
             "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
@@ -126,64 +59,6 @@ def _setup_test_db():
         )
         if cur.fetchone()[0] == 0:
             cur.execute(f"ALTER TABLE {tbl} ADD COLUMN {col} {defn}")
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS user_category_scopes (
-            user_id VARCHAR(36) NOT NULL,
-            category_id VARCHAR(36) NOT NULL,
-            scope ENUM('read','write') NOT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (user_id, category_id),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS burndown_snapshots (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            snapshot_date DATE NOT NULL,
-            project_id VARCHAR(36) NOT NULL,
-            todo INT NOT NULL DEFAULT 0,
-            doing INT NOT NULL DEFAULT 0,
-            review INT NOT NULL DEFAULT 0,
-            done INT NOT NULL DEFAULT 0,
-            UNIQUE KEY uq_snapshot (snapshot_date, project_id),
-            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS password_reset_tokens (
-            id VARCHAR(36) NOT NULL PRIMARY KEY,
-            user_id VARCHAR(36) NOT NULL,
-            token_hash CHAR(64) NOT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            expires_at DATETIME NOT NULL,
-            used_at DATETIME NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            INDEX idx_prt_token_hash (token_hash)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS email_verification_tokens (
-            id VARCHAR(36) NOT NULL PRIMARY KEY,
-            email VARCHAR(255) NOT NULL,
-            password_hash VARCHAR(255) NOT NULL,
-            token_hash CHAR(64) NOT NULL,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            expires_at DATETIME NOT NULL,
-            used_at DATETIME NULL,
-            INDEX idx_evt_token_hash (token_hash)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS api_key_projects (
-            api_key_id VARCHAR(36) NOT NULL,
-            project_id VARCHAR(36) NOT NULL,
-            scope ENUM('read','write','admin') NOT NULL,
-            PRIMARY KEY (api_key_id, project_id),
-            FOREIGN KEY (api_key_id) REFERENCES api_keys(id) ON DELETE CASCADE,
-            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    """)
     conn.close()
 
 

@@ -1,9 +1,8 @@
 """Ken — task CLI for the kenboard board.
 
-See ``doc/ken-cli.md`` for the full spec. Resolves config in this order:
-flags > env vars (KEN_*) > .ken file in cwd (or any parent) > hardcoded
-defaults. Talks to the kenboard REST API via the stdlib (no extra HTTP
-dependency).
+See ``doc/ken-cli.md`` for the full spec. Resolves config in this order: flags > env
+vars (KEN_*) > .ken file in cwd (or any parent) > hardcoded defaults. Talks to the
+kenboard REST API via the stdlib (no extra HTTP dependency).
 """
 
 from __future__ import annotations
@@ -107,9 +106,9 @@ def _check_ken_permissions(path: Path) -> None:
     """Warn on stderr if ``.ken`` is readable by group/other.
 
     Skipped on Windows where POSIX permission bits are meaningless —
-    ``os.stat().st_mode`` always reports 0o666 and ``os.chmod(0o600)``
-    is a no-op. Windows relies on NTFS ACLs instead, and the user
-    profile directory is already protected by default (#146).
+    ``os.stat().st_mode`` always reports 0o666 and ``os.chmod(0o600)`` is a no-op.
+    Windows relies on NTFS ACLs instead, and the user profile directory is already
+    protected by default (#146).
     """
     if sys.platform == "win32":
         return
@@ -180,11 +179,10 @@ def _load_config(
 def _ssl_context() -> Any:
     """Build an SSL context using certifi's CA bundle.
 
-    Python installed via python.org on macOS ships without a CA bundle
-    (the user must run ``Install Certificates.command`` manually). Using
-    ``certifi.where()`` as the CA file makes ``ken`` work plug-and-play
-    on any Python installation. ``certifi`` is a transitive dependency
-    (via ``requests``) and updates its CA bundle automatically on
+    Python installed via python.org on macOS ships without a CA bundle (the user must
+    run ``Install Certificates.command`` manually). Using ``certifi.where()`` as the CA
+    file makes ``ken`` work plug-and-play on any Python installation. ``certifi`` is a
+    transitive dependency (via ``requests``) and updates its CA bundle automatically on
     ``pip install --upgrade kenboard``.
     """
     import ssl
@@ -299,9 +297,9 @@ def _add_to_gitignore(cwd: Path) -> None:
 def _sanitize_filename(title: str) -> str:
     r"""Replace filesystem-invalid characters in a task title.
 
-    Strips ``/ \ : * ? " < > |`` and control characters, collapses
-    whitespace runs, and trims trailing dots/spaces (which Windows rejects).
-    Returns ``"untitled"`` if nothing usable is left.
+    Strips ``/ \ : * ? " < > |`` and control characters, collapses whitespace runs, and
+    trims trailing dots/spaces (which Windows rejects). Returns ``"untitled"`` if
+    nothing usable is left.
     """
     cleaned = " ".join(_SYNC_INVALID_CHARS.sub("_", title).split()).rstrip(". ")
     return cleaned or "untitled"
@@ -315,10 +313,9 @@ def _sync_filename(task: dict[str, Any]) -> str:
 def _format_sync_markdown(task: dict[str, Any]) -> str:
     """Render a task as markdown with a YAML frontmatter header.
 
-    The frontmatter holds the structured fields (id, status, who, dates,
-    position) so the body stays focused on the human-authored title and
-    description. ``None`` values render as empty strings to keep the
-    frontmatter parseable.
+    The frontmatter holds the structured fields (id, status, who, dates, position) so
+    the body stays focused on the human-authored title and description. ``None`` values
+    render as empty strings to keep the frontmatter parseable.
     """
     fields = (
         "id",
@@ -349,9 +346,9 @@ def _format_sync_markdown(task: dict[str, Any]) -> str:
 def _resolve_sync_dir(cfg: KenConfig) -> Path:
     """Resolve ``sync_dir`` to an absolute path.
 
-    A relative ``sync_dir`` is anchored on the directory containing
-    ``.ken`` (so ``ken sync`` works from any subdirectory of the project),
-    falling back to the current working directory when no ``.ken`` exists.
+    A relative ``sync_dir`` is anchored on the directory containing ``.ken`` (so ``ken
+    sync`` works from any subdirectory of the project), falling back to the current
+    working directory when no ``.ken`` exists.
     """
     path = Path(cfg.sync_dir)
     if path.is_absolute():
@@ -400,9 +397,9 @@ def cli(
 def init(ctx: click.Context, project_uuid: str | None, force: bool) -> None:
     """Initialize a .ken file in the current directory.
 
-    Writes ``project_id``, ``base_url`` and (if set) ``api_token`` from the
-    resolved CLI config. The file is created with mode 0600 and added to the
-    repository ``.gitignore``.
+    Writes ``project_id``, ``base_url`` and (if set) ``api_token`` from the resolved CLI
+    config. The file is created with mode 0600 and added to the repository
+    ``.gitignore``.
     """
     cfg: KenConfig = ctx.obj["cfg"]
     cwd = Path.cwd()
@@ -696,9 +693,8 @@ def sync(ctx: click.Context, json_mode: bool) -> None:
 def self_update() -> None:
     """Upgrade kenboard to the latest version from PyPI.
 
-    Runs ``pip install --upgrade kenboard`` using the same Python
-    that is running this CLI. The new version is available on the
-    next ``ken`` invocation.
+    Runs ``pip install --upgrade kenboard`` using the same Python that is running this
+    CLI. The new version is available on the next ``ken`` invocation.
     """
     import subprocess
 
@@ -720,10 +716,9 @@ def self_update() -> None:
 def help_cmd() -> None:
     """Print the agent guide (kenboard best practices for LLM agents).
 
-    Loads ``agent_guide.md`` from the installed package via
-    ``importlib.resources`` so the doc travels with the wheel and stays
-    in sync with the CLI version. Pair with ``ken --help`` for the
-    auto-generated command reference.
+    Loads ``agent_guide.md`` from the installed package via ``importlib.resources`` so
+    the doc travels with the wheel and stays in sync with the CLI version. Pair with
+    ``ken --help`` for the auto-generated command reference.
     """
     text = (
         resources.files("dashboard")

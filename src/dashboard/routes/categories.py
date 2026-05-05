@@ -21,8 +21,8 @@ def _should_filter_for_current_user() -> bool:
     """True when list endpoints should be filtered to the current user's scopes.
 
     Returns False for admin cookie sessions, admin API keys, test runs
-    (``LOGIN_DISABLED``), and any API-key principal (API keys have their
-    own project-level scoping enforced in ``auth.py``).
+    (``LOGIN_DISABLED``), and any API-key principal (API keys have their own project-
+    level scoping enforced in ``auth.py``).
     """
     if _is_login_disabled():
         return False

@@ -141,11 +141,11 @@ run_command "pdm run absolufy" "Import conversion"
 print_step "Sorting Imports (isort)"
 run_command "pdm run isort" "Import sorting"
 
-print_step "Code Formatting (black)"
-run_command "pdm run format" "Code formatting"
-
 print_step "Docstring Formatting (docformatter)"
 run_command "pdm run docformatter" "Docstring formatting"
+
+print_step "Code Formatting (black)"
+run_command "pdm run format" "Code formatting"
 
 print_step "Type Checking (mypy)"
 run_command "pdm run typecheck" "Type checking"

@@ -28,11 +28,10 @@ def cli() -> None:
 def serve(host: str, port: int, debug: bool) -> None:
     """Start the Flask development server (local dev only).
 
-    Refuses to run without ``--debug`` to make it impossible to
-    accidentally serve production traffic from Werkzeug — that's the
-    server that prints "WARNING: This is a development server. Do not
-    use it in a production deployment." For prod, use a real WSGI
-    server (gunicorn, see INSTALL.md).
+    Refuses to run without ``--debug`` to make it impossible to accidentally serve
+    production traffic from Werkzeug — that's the server that prints "WARNING: This is a
+    development server. Do not use it in a production deployment." For prod, use a real
+    WSGI server (gunicorn, see INSTALL.md).
     """
     if not debug:
         click.echo(
@@ -76,9 +75,8 @@ def serve(host: str, port: int, debug: bool) -> None:
 def prod(bind: str, workers: int) -> None:
     """Start kenboard in production mode via gunicorn.
 
-    Wraps gunicorn so the operator does not need to remember the WSGI
-    target string. Requires the optional ``prod`` extra:
-    ``pip install "kenboard[prod]"``.
+    Wraps gunicorn so the operator does not need to remember the WSGI target string.
+    Requires the optional ``prod`` extra: ``pip install "kenboard[prod]"``.
     """
     try:
         from gunicorn.app.wsgiapp import WSGIApplication

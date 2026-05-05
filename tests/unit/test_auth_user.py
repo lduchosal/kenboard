@@ -1,8 +1,8 @@
 """Unit tests for the user session authentication flow.
 
 These tests run with ``LOGIN_DISABLED=False`` so they actually exercise
-``@login_required``, the login form, the user loader, and the admin
-check helper. They use the Flask test client (no Playwright).
+``@login_required``, the login form, the user loader, and the admin check helper. They
+use the Flask test client (no Playwright).
 """
 
 import json
@@ -217,8 +217,8 @@ class TestLoginFlow:
     def test_login_works_for_email_named_user(self, auth_client, db, queries):
         """#132: any user with a non-empty password_hash can log in.
 
-        The login flow has nothing Q-specific — it's just a name lookup
-        followed by an argon2 verify. Names containing ``@`` are valid.
+        The login flow has nothing Q-specific — it's just a name lookup followed by an
+        argon2 verify. Names containing ``@`` are valid.
         """
         h = PasswordHasher().hash("validpass")
         queries.usr_create(
@@ -364,9 +364,9 @@ class TestPageProtection:
 class TestAgentOnboardingHints:
     """#117: serve a copy-pasteable runbook to non-browser callers.
 
-    Browsers (``Accept: text/html``) keep getting the existing 302
-    redirect; CLI tools and LLM agents land on a 401 with the install /
-    init steps so they can self-onboard without scraping the login page.
+    Browsers (``Accept: text/html``) keep getting the existing 302 redirect; CLI tools
+    and LLM agents land on a 401 with the install / init steps so they can self-onboard
+    without scraping the login page.
     """
 
     def test_browser_still_redirects_to_login(self, auth_client, db):
@@ -443,8 +443,8 @@ class TestAgentOnboardingHints:
 class TestApiAcceptsSession:
     """A logged-in user gets full access to /api/v1.
 
-    Uses ``auth_client`` (LOGIN_DISABLED=False) so the API middleware is
-    actually enforced — same conditions as production.
+    Uses ``auth_client`` (LOGIN_DISABLED=False) so the API middleware is actually
+    enforced — same conditions as production.
     """
 
     def test_session_grants_api_access(self, auth_client, db, admin_user):
