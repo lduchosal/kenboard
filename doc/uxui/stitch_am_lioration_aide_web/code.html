@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KENBOARD | Ethereal Kanban Workspace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;family=Inter:wght@300..700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed": "#2c0051",
+                    "surface-container-low": "#faf1fa",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-container": "#5f3f00",
+                    "on-primary-fixed": "#001b3d",
+                    "on-surface": "#1e1a21",
+                    "on-tertiary-fixed": "#281800",
+                    "secondary": "#7846aa",
+                    "error-container": "#ffdad6",
+                    "error": "#ba1a1a",
+                    "surface": "#fff7fe",
+                    "surface-bright": "#fff7fe",
+                    "primary-container": "#004489",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#e8e0e9",
+                    "outline-variant": "#cec3d2",
+                    "on-primary-fixed-variant": "#00468c",
+                    "on-primary": "#ffffff",
+                    "on-surface-variant": "#4b4451",
+                    "primary-fixed": "#d6e3ff",
+                    "background": "#fff7fe",
+                    "secondary-fixed": "#f0dbff",
+                    "inverse-on-surface": "#f7eef7",
+                    "tertiary-fixed": "#ffddaf",
+                    "surface-container": "#f4ebf5",
+                    "inverse-surface": "#332f36",
+                    "outline": "#7d7482",
+                    "surface-container-high": "#eee5ef",
+                    "on-primary-container": "#87b4ff",
+                    "tertiary": "#422a00",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed-dim": "#a9c7ff",
+                    "secondary-container": "#c994fe",
+                    "primary": "#002e60",
+                    "on-tertiary-container": "#d9ab65",
+                    "surface-tint": "#005db7",
+                    "on-background": "#1e1a21",
+                    "on-secondary-fixed-variant": "#5f2c90",
+                    "on-tertiary-fixed-variant": "#614001",
+                    "surface-dim": "#e0d7e1",
+                    "tertiary-fixed-dim": "#eebf76",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-container": "#572388",
+                    "surface-container-highest": "#e8e0e9",
+                    "on-error": "#ffffff",
+                    "secondary-fixed-dim": "#ddb8ff",
+                    "inverse-primary": "#a9c7ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.5rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #fff7fe; color: #1e1a21; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-nav { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .tonal-shift-no-border { border: none !important; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-secondary-fixed selection:text-on-secondary-fixed">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-[#fff7fe]/80 backdrop-blur-xl dark:bg-slate-950/80 shadow-none h-20">
+<nav class="flex items-center justify-between px-8 h-20 w-full font-['Manrope'] text-sm tracking-wide">
+<div class="flex items-center gap-12">
+<span class="text-2xl font-black font-['Manrope'] tracking-tighter text-[#002e60] dark:text-white">KENBOARD</span>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-slate-500 dark:text-slate-400 font-medium hover:text-[#5D2A8E] hover:bg-[#faf1fa] dark:hover:bg-slate-800 rounded-lg transition-all duration-300 px-3 py-2" href="#">Workspaces</a>
+<a class="text-[#5D2A8E] dark:text-purple-300 font-bold border-b-2 border-[#5D2A8E] pb-1" href="#">Projects</a>
+<a class="text-slate-500 dark:text-slate-400 font-medium hover:text-[#5D2A8E] hover:bg-[#faf1fa] dark:hover:bg-slate-800 rounded-lg transition-all duration-300 px-3 py-2" href="#">Calendar</a>
+<a class="text-slate-500 dark:text-slate-400 font-medium hover:text-[#5D2A8E] hover:bg-[#faf1fa] dark:hover:bg-slate-800 rounded-lg transition-all duration-300 px-3 py-2" href="#">Analytics</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-500 dark:text-slate-400 font-medium hover:bg-[#faf1fa] px-4 py-2 rounded-lg transition-all duration-300">Sign In</button>
+<button class="bg-[#002e60] text-white px-6 py-2.5 rounded-lg font-bold scale-98 active:scale-95 transition-transform">Configurer le board</button>
+<div class="w-10 h-10 rounded-full overflow-hidden ml-2 ring-2 ring-surface-container">
+<img alt="User Profile Avatar" data-alt="close-up portrait of a professional man in his 30s with a friendly expression and neutral office lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjZZSELdvETy10GLCp0IcsQTsnsauPXNiUcKtFls5oFp8ZTrYVmyrCJ3ybB4zoGeqHQRAyK05k-ypnl486rGenMa5NEQNPID_coBuigrVkTQQcz80Ma63IpUmtcBMGK6TqKbpkjT3EGrwZKluttZiM6WcxdUbqwxxb5t6_GN3tQCli0egUoz1JVu4wC3RJpGtQ6cppbCGn3132PEG-e1MCAuM6ll-mUu0nYbyh4kE7uh9WCoogeZIgK1yuFb-EbwQz1-YLFQyb__kk"/>
+</div>
+</div>
+</nav>
+</header>
+<main class="flex-grow pt-28 pb-12 px-8 flex flex-col gap-10">
+<!-- Workspace Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 max-w-full">
+<div class="space-y-1">
+<nav class="flex items-center gap-2 text-on-surface-variant font-label text-[10px] uppercase tracking-[0.15em]">
+<span class="hover:text-primary cursor-pointer transition-colors">KEN</span>
+<span class="text-outline-variant">/</span>
+<span class="text-primary font-bold">KENBOARD</span>
+</nav>
+<h1 class="text-5xl font-headline font-extrabold tracking-tight text-primary">Board Editorial</h1>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex -space-x-3">
+<img alt="Team member" class="w-10 h-10 rounded-full border-4 border-surface" data-alt="professional headshot of a smiling young woman with dark hair against a soft grey background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuASHmC4KLifcpfal1MiSWHKrSVjoJQ2oBKiGFrwcFynyT3Nepyy2t-wX4JrNdELadaV7EVtc2X8x8IkU80iXGQoqAN1Rg5-smwVq1YNT_pZybdQ_Ou1zMEtS9MV4Eo4wD6NrJASjq9O5gkLdWhbbZcmkJbBl-GBM8bUoLgYUVdrHN6yJG1rLXxJwmhXh_qHUsjjqR4gJA7dv2XCnFaMsJXZVRt2QLSrP2SsBdg5gw2Y7lrlA4jfugxrze3qtyKATXN-DjmkZQuztAuS"/>
+<img alt="Team member" class="w-10 h-10 rounded-full border-4 border-surface" data-alt="headshot of a man with glasses and a friendly smile in natural daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQCmP9Q3OOEoOXxNrX43lkl7rbSE3JtoV3PCTKK0cX51j3ehZ29a5MbdZzIr7PyB_3GPBHWw1eUzOUNe7VvTBgU07IBSSTzIuvNDWY3LqgPdkUk4tziDwNbgftPEFjnUqgcueWq8QdwhATbNYDQ_Z_J6CzV1KdgfMbZFAzaDiUNj3HJ7UN3qewDazrsCbSaqnfBOSzsPn9vU4h2ny4nulzZnhSGW8nSE-FfWoaD4mbnKEGD2bO9gm-NFV4nfFThO66fkSO9ONgFSEh"/>
+<div class="w-10 h-10 rounded-full border-4 border-surface bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed text-xs font-bold">+4</div>
+</div>
+<button class="flex items-center gap-2 px-5 py-2.5 bg-surface-container-lowest text-primary font-bold rounded-lg shadow-sm hover:shadow-md transition-all active:scale-95 group">
+<span class="material-symbols-outlined text-xl" data-icon="link">link</span>
+<span>Copy onboard link</span>
+</button>
+</div>
+</div>
+<!-- Kanban Board Container -->
+<div class="flex-grow flex gap-6 overflow-x-auto no-scrollbar pb-6 items-start">
+<!-- Column: A FAIRE -->
+<div class="flex-shrink-0 w-[340px] flex flex-col gap-6 bg-surface-container-low rounded-xl p-4">
+<div class="flex items-center justify-between px-2">
+<div class="flex items-center gap-3">
+<h2 class="font-headline font-bold text-primary tracking-tight">A FAIRE</h2>
+<span class="bg-surface-container-high text-on-surface-variant px-2.5 py-0.5 rounded-full text-xs font-bold">3</span>
+</div>
+<button class="text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+</button>
+</div>
+<!-- Task Card #1 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl space-y-4 hover:shadow-xl transition-shadow cursor-grab group">
+<div class="flex justify-between items-start">
+<span class="bg-secondary-fixed text-on-secondary-fixed px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">UX DESIGN</span>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity text-outline-variant">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+</button>
+</div>
+<h3 class="font-headline text-lg font-bold text-primary leading-tight">UX / KENBOARD / Empty #174</h3>
+<div class="flex items-center gap-4 pt-2">
+<div class="flex items-center gap-1.5 text-on-surface-variant text-xs">
+<span class="material-symbols-outlined text-sm" data-icon="chat_bubble">chat_bubble</span>
+<span>4</span>
+</div>
+<div class="flex items-center gap-1.5 text-on-surface-variant text-xs">
+<span class="material-symbols-outlined text-sm" data-icon="attachment">attachment</span>
+<span>2</span>
+</div>
+</div>
+</div>
+<!-- Task Card #2 -->
+<div class="bg-surface-container-lowest p-6 rounded-xl space-y-4 hover:shadow-xl transition-shadow cursor-grab group">
+<div class="flex justify-between items-start">
+<span class="bg-error-container text-on-error-container px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">BUG</span>
+<button class="opacity-0 group-hover:opacity-100 transition-opacity text-outline-variant">
+<span class="material-symbols-outlined text-lg" data-icon="edit">edit</span>
+</button>
+</div>
+<div class="space-y-2">
+<h3 class="font-headline text-lg font-bold text-primary leading-tight">UI / BUG / task-fullscreen toujours apparent #173</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed">Résolution fixée sur les breakpoints mobiles et tablettes pour masquer l'overlay.</p>
+</div>
+<div class="flex items-center justify-between pt-2">
+<div class="flex items-center -space-x-2">
+<img alt="Assignee" class="w-7 h-7 rounded-full border-2 border-surface-container-lowest" data-alt="professional portrait of a man with beard smiling in high key studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4sYJCk5Bqk02esVDL1QTS2Zbf1bS98H1anI_aM-7C0Z0-R3GuqB9o2ng25k7dH45wTlkMus4Nh-uEb8XKACufgKXOHak8LxkVmzaElK6Sptc2QifRv0-N2sAMrFDujJHc4xHwD0_cKUBsy7UWQZhAVBnRgTiNUDQLv4nxv9ewwYetXDOMo2rMSbqSi2JErh00kIqTLmQEwGaTpI12u_FtPrQQxP8VlluQKZ0lJ4AvuRytWV5HK620q4geO4XJIsV7W6RVap2EQOb2"/>
+</div>
+<div class="flex items-center gap-1.5 text-error font-bold text-xs uppercase tracking-tighter">
+<span class="material-symbols-outlined text-sm" data-icon="priority_high">priority_high</span>
+<span>High</span>
+</div>
+</div>
+</div>
+<button class="flex items-center justify-center gap-2 py-3 border-2 border-dashed border-outline-variant/20 rounded-xl text-outline-variant hover:border-secondary/40 hover:text-secondary transition-all font-bold text-sm">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span>Ajouter une tâche</span>
+</button>
+</div>
+<!-- Column: EN COURS -->
+<div class="flex-shrink-0 w-[340px] flex flex-col gap-6 bg-surface-container-low rounded-xl p-4">
+<div class="flex items-center justify-between px-2">
+<div class="flex items-center gap-3">
+<h2 class="font-headline font-bold text-primary tracking-tight">EN COURS</h2>
+<span class="bg-surface-container-high text-on-surface-variant px-2.5 py-0.5 rounded-full text-xs font-bold">1</span>
+</div>
+<button class="text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+</button>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl space-y-4 hover:shadow-xl transition-shadow cursor-grab group">
+<div class="flex justify-between items-start">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed-variant px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">BACKEND</span>
+</div>
+<h3 class="font-headline text-lg font-bold text-primary leading-tight">Setup Server-side tasks pagination</h3>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[65%]"></div>
+</div>
+<div class="flex justify-between items-center text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+<span>Progress</span>
+<span>65%</span>
+</div>
+</div>
+</div>
+<!-- Column: REVUE -->
+<div class="flex-shrink-0 w-[340px] flex flex-col gap-6 bg-surface-container-low rounded-xl p-4">
+<div class="flex items-center justify-between px-2">
+<div class="flex items-center gap-3">
+<h2 class="font-headline font-bold text-primary tracking-tight">REVUE</h2>
+<span class="bg-surface-container-high text-on-surface-variant px-2.5 py-0.5 rounded-full text-xs font-bold">0</span>
+</div>
+</div>
+<div class="flex flex-col items-center justify-center py-12 px-6 text-center space-y-3 opacity-40">
+<span class="material-symbols-outlined text-4xl" data-icon="auto_awesome">auto_awesome</span>
+<p class="text-sm font-medium">Tout est clair pour le moment</p>
+</div>
+</div>
+<!-- Column: FAIT -->
+<div class="flex-shrink-0 w-[340px] flex flex-col gap-6 bg-surface-container-low rounded-xl p-4">
+<div class="flex items-center justify-between px-2">
+<div class="flex items-center gap-3">
+<h2 class="font-headline font-bold text-primary tracking-tight">FAIT</h2>
+<span class="bg-surface-container-high text-on-surface-variant px-2.5 py-0.5 rounded-full text-xs font-bold">12</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest/60 p-6 rounded-xl space-y-4 opacity-70 group hover:opacity-100 transition-all">
+<div class="flex justify-between items-start">
+<span class="bg-outline-variant/30 text-on-surface-variant px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase line-through">CORE ARCH</span>
+</div>
+<h3 class="font-headline text-lg font-bold text-primary leading-tight line-through">Draft design system tokens</h3>
+<div class="flex items-center gap-2 text-primary font-bold text-xs">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span>Complété</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-12 mt-auto bg-[#faf1fa] dark:bg-slate-900 tonal-shift-no-border">
+<div class="max-w-7xl mx-auto px-12 flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex flex-col gap-2 items-center md:items-start">
+<span class="font-['Manrope'] font-bold text-[#5D2A8E]">KENBOARD</span>
+<p class="font-['Inter'] text-xs uppercase tracking-widest text-[#002e60] dark:text-purple-200">© 2024 KENBOARD. THE ETHEREAL WORKSPACE FOR EDITORIAL TEAMS.</p>
+</div>
+<div class="flex gap-8">
+<a class="text-slate-400 dark:text-slate-500 font-['Inter'] text-xs uppercase tracking-widest hover:text-[#002e60] dark:hover:text-white transition-colors" href="#">Documentation</a>
+<a class="text-slate-400 dark:text-slate-500 font-['Inter'] text-xs uppercase tracking-widest hover:text-[#002e60] dark:hover:text-white transition-colors" href="#">Privacy Policy</a>
+<a class="text-slate-400 dark:text-slate-500 font-['Inter'] text-xs uppercase tracking-widest hover:text-[#002e60] dark:hover:text-white transition-colors" href="#">API Status</a>
+<a class="text-slate-400 dark:text-slate-500 font-['Inter'] text-xs uppercase tracking-widest hover:text-[#002e60] dark:hover:text-white transition-colors" href="#">Support</a>
+</div>
+</div>
+</footer>
+<!-- FAB Suppression: Contextual Check - Hidden as per suppression rules for focused views -->
+</body></html>
