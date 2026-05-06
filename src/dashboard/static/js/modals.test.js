@@ -49,21 +49,6 @@ describe('dismissModal', () => {
 });
 
 describe('bindModalDismissal', () => {
-  it('closes a modal when the backdrop is clicked', () => {
-    const m = makeModal('m1');
-    // The bound click listener is added by ``bindModalDismissal`` itself,
-    // but it queries the DOM at call time — so for modals added later we
-    // need to attach by hand. Reproduce production by triggering the
-    // listener path directly via dispatchEvent on the modal.
-    m.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    // ``bindModalDismissal`` only attaches per-modal listeners that were
-    // present at bind time; for the test we directly call dismissModal to
-    // confirm the dismissal behaviour. The Escape path below is the
-    // canonical end-to-end test for the keyboard listener.
-    dismissModal(m);
-    expect(m.style.display).toBe('none');
-  });
-
   it('closes the topmost open modal on Escape', () => {
     const m1 = makeModal('m1');
     const m2 = makeModal('m2');
@@ -75,6 +60,35 @@ describe('bindModalDismissal', () => {
   it('skips data-no-dismiss modals on Escape', () => {
     const m = makeModal('m1', { noDismiss: true });
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(m.style.display).toBe('flex');
+  });
+});
+
+// The backdrop-click listener is attached to each modal at the time
+// bindModalDismissal runs, so we need to call it AFTER constructing the
+// modals (separate suite to keep it apart from the Escape suite which
+// uses the global beforeAll).
+describe('bindModalDismissal: click-outside', () => {
+  it('closes a modal when the backdrop is clicked', () => {
+    const m = makeModal('m1');
+    bindModalDismissal();
+    m.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(m.style.display).toBe('none');
+  });
+
+  it('does not close the modal when an inner element is clicked', () => {
+    const m = makeModal('m2');
+    const inner = document.createElement('div');
+    m.appendChild(inner);
+    bindModalDismissal();
+    inner.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(m.style.display).toBe('flex');
+  });
+
+  it('skips data-no-dismiss modals on backdrop click', () => {
+    const m = makeModal('m3', { noDismiss: true });
+    bindModalDismissal();
+    m.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(m.style.display).toBe('flex');
   });
 });

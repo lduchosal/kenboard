@@ -91,4 +91,17 @@ describe('apiCall', () => {
     await expect(apiCall('/x')).rejects.toThrow(/name required/);
     expect(document.getElementById('error-modal-body').textContent).toBe('name required');
   });
+
+  // Cover the remaining status-code branches so each titled error is
+  // exercised at least once (Sonar new_coverage).
+  it.each([
+    [403, 'Permission refusée'],
+    [404, 'Introuvable'],
+    [409, 'Conflit'],
+    [418, 'Erreur 418'],
+  ])('titles a %i response as "%s"', async (status, title) => {
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response('nope', { status }));
+    await expect(apiCall('/x')).rejects.toThrow(new RegExp(`HTTP ${status}`));
+    expect(document.getElementById('error-modal-title').textContent).toBe(title);
+  });
 });

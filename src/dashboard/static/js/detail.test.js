@@ -129,4 +129,35 @@ describe('applyTaskHash', () => {
     const card = document.querySelector('.kanban-task');
     expect(card.classList.contains('detail-mode')).toBe(false);
   });
+
+  it('clears detail-mode from cards whose id no longer matches the hash', async () => {
+    document.body.innerHTML =
+      '<div class="kanban-task detail-mode" data-task-id="1"></div>' +
+      '<div class="kanban-task" data-task-id="2"></div>';
+    setHash('ID-2');
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ description: '' }), { status: 200 }));
+    await applyTaskHash();
+    const cards = document.querySelectorAll('.kanban-task');
+    expect(cards[0].classList.contains('detail-mode')).toBe(false);
+    expect(cards[1].classList.contains('detail-mode')).toBe(true);
+  });
+});
+
+describe('bindHashSync', () => {
+  it('runs applyTaskHash on load and on hashchange', async () => {
+    document.body.innerHTML =
+      '<div class="kanban-task" data-task-id="7"><div class="task-body"></div></div>';
+    setHash('ID-7');
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ description: '' }), { status: 200 }));
+    const { bindHashSync } = await import('./detail.js');
+    bindHashSync();
+    // applyTaskHash is async but bindHashSync calls it synchronously; give
+    // the microtask queue a tick so the detail-mode write lands.
+    await new Promise((r) => setTimeout(r, 0));
+    expect(document.querySelector('.kanban-task').classList.contains('detail-mode')).toBe(true);
+  });
 });
