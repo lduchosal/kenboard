@@ -129,6 +129,47 @@ body {
 .header-compact .header-badges-dropdown { display: block; }
 
 
+/* Activity line graph (#261). Engagement-oriented summary at the top of
+ * the home page. The card is full-width so the 30-day axis has room to
+ * breathe; the SVG itself is rendered with preserveAspectRatio="none"
+ * so it stretches with the container. */
+.activity-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.activity-title {
+  color: var(--dimmed);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.activity-total {
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+}
+.activity-svg {
+  width: 100%;
+  height: 90px;
+  display: block;
+}
+.activity-axis {
+  display: flex;
+  justify-content: space-between;
+  color: var(--dimmed);
+  font-size: 10px;
+  margin-top: 4px;
+}
+
 /* Header keyboard-shortcuts help button (#253). Subtle round dimmed glyph
  * sitting next to the avatar; opens the kb-help-modal. */
 .kb-help-btn {

@@ -111,6 +111,7 @@ def clean_db():
     conn = _get_test_connection()
     cur = conn.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
+    cur.execute("DELETE FROM activities")
     cur.execute("DELETE FROM email_verification_tokens")
     cur.execute("DELETE FROM password_reset_tokens")
     cur.execute("DELETE FROM burndown_snapshots")

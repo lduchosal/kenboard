@@ -5,6 +5,13 @@ from typing import Any
 from flask import Blueprint, jsonify, request
 
 import dashboard.db as db
+from dashboard.activity import (
+    ACTION_CREATE,
+    ACTION_DELETE,
+    ACTION_MOVE,
+    ACTION_SAVE,
+    log_activity,
+)
 from dashboard.auth_user import current_user_can_project
 from dashboard.models.task import Task, TaskCreate, TaskUpdate
 
@@ -72,6 +79,14 @@ def create_task() -> Any:
         cur.execute("SELECT LAST_INSERT_ID()")
         task_id = cur.fetchone()["LAST_INSERT_ID()"]
         row = queries.task_get_by_id(conn, id=task_id)
+        log_activity(
+            conn,
+            queries,
+            project_id=data.project_id,
+            action=ACTION_CREATE,
+            target_id=task_id,
+            details={"status": data.status, "title": data.title},
+        )
         return jsonify(Task(**row).model_dump(mode="json")), 201
     finally:
         conn.close()
@@ -174,6 +189,35 @@ def update_task(task_id: int) -> Any:
             _apply_field_updates(queries, conn, task_id, data, existing)
 
         row = queries.task_get_by_id(conn, id=task_id)
+        # Classify the PATCH as ``move`` (status changed) vs ``save`` (other
+        # field changed) for the activity log. A pure-position drag inside
+        # the same column also lands here as ``move`` — engagement-wise
+        # that's still movement worth counting.
+        old_status = existing["status"]
+        new_status = row["status"]
+        new_project = row["project_id"]
+        old_project = existing["project_id"]
+        if new_status != old_status or new_project != old_project:
+            log_activity(
+                conn,
+                queries,
+                project_id=new_project,
+                action=ACTION_MOVE,
+                target_id=task_id,
+                details={
+                    "from_status": old_status,
+                    "to_status": new_status,
+                    "from_project": old_project if new_project != old_project else None,
+                },
+            )
+        elif _has_field_updates(data):
+            log_activity(
+                conn,
+                queries,
+                project_id=new_project,
+                action=ACTION_SAVE,
+                target_id=task_id,
+            )
         return jsonify(Task(**row).model_dump(mode="json"))
     finally:
         conn.close()
@@ -189,6 +233,18 @@ def delete_task(task_id: int) -> Any:
         if existing and not current_user_can_project(existing["project_id"], "write"):
             return jsonify({"error": "forbidden"}), 403
         queries.task_delete(conn, id=task_id)
+        if existing:
+            log_activity(
+                conn,
+                queries,
+                project_id=existing["project_id"],
+                action=ACTION_DELETE,
+                target_id=task_id,
+                details={
+                    "title": existing.get("title", ""),
+                    "status": existing.get("status"),
+                },
+            )
         return "", 204
     finally:
         conn.close()

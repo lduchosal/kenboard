@@ -125,3 +125,17 @@ CREATE TABLE IF NOT EXISTS email_verification_tokens (
     used_at DATETIME NULL,
     INDEX idx_evt_token_hash (token_hash)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS activities (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    occurred_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    project_id VARCHAR(36) NOT NULL,
+    user_name VARCHAR(100) NOT NULL DEFAULT '',
+    action ENUM('create', 'save', 'move', 'delete') NOT NULL,
+    target_type VARCHAR(20) NOT NULL DEFAULT 'task',
+    target_id VARCHAR(36) NOT NULL,
+    details JSON NULL,
+    INDEX idx_activities_project_date (project_id, occurred_at),
+    INDEX idx_activities_date (occurred_at),
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

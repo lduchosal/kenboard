@@ -1,0 +1,40 @@
+{#
+  Daily activity line graph (#261). Expects:
+  - ``activity_series``: a list of ``{day, count}`` dicts spanning the last
+    30 days inclusive, in chronological order, with zero-filled gaps.
+  - ``activity_total``: the sum across the window.
+
+  Renders an inline SVG line over the count series, plus a small header
+  with the total. The SVG is intentionally inline so we don't pull in a
+  charting library (matches the burndown.html pattern).
+#}
+{% if activity_series and activity_series | length >= 2 %}
+{% set w = 760 %}
+{% set h = 90 %}
+{% set pad = 4 %}
+{% set n = activity_series | length %}
+{% set counts = [] %}
+{% for s in activity_series %}{% set _ = counts.append(s.count) %}{% endfor %}
+{% set mx = [counts | max, 1] | max %}
+{% set points = [] %}
+{% for c in counts %}
+  {% set x = pad + (loop.index0 / (n - 1)) * (w - 2 * pad) %}
+  {% set y = pad + ((mx - c) / mx) * (h - 2 * pad) %}
+  {% set _ = points.append("%.1f,%.1f" | format(x, y)) %}
+{% endfor %}
+{% set area_points = points | join(" ") + " %.1f,%.1f %.1f,%.1f" | format(w - pad, h - pad, pad, h - pad) %}
+<div class="activity-card">
+  <div class="activity-header">
+    <span class="activity-title">Activité (30 derniers jours)</span>
+    <span class="activity-total">{{ activity_total }}</span>
+  </div>
+  <svg viewBox="0 0 {{ w }} {{ h }}" class="activity-svg" preserveAspectRatio="none" aria-label="Daily activity line graph">
+    <polygon points="{{ area_points }}" fill="var(--accent)" opacity="0.12"/>
+    <polyline points="{{ points | join(' ') }}" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linejoin="round"/>
+  </svg>
+  <div class="activity-axis">
+    <span>{{ activity_series[0].day }}</span>
+    <span>{{ activity_series[-1].day }}</span>
+  </div>
+</div>
+{% endif %}

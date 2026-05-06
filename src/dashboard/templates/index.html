@@ -3,6 +3,12 @@
 {% block body %}
 {% include "partials/header.html" %}
 
+{% if categories %}
+<div class="section" style="padding-top:0">
+  {% include "partials/activity.html" %}
+</div>
+{% endif %}
+
 {% if doing_tasks %}
 <div class="section">
   <div class="doing-overview">

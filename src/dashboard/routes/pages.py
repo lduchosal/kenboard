@@ -160,6 +160,12 @@ def index() -> Any:
             cat_snapshots[c["id"]] = list(
                 queries.burndown_get_by_category(conn, category_id=c["id"], days=60)
             )
+
+        # Daily activity totals across all boards for the engagement line
+        # graph (#261). The query returns only days with activity; the
+        # template fills missing days with zero so the SVG span is uniform.
+        activity_rows = list(queries.activity_daily_total(conn, days=30))
+        activity_by_day = {str(r["day"]): r["count"] for r in activity_rows}
     finally:
         conn.close()
 
@@ -178,6 +184,21 @@ def index() -> Any:
                     {"task": t, "cat_id": cat["id"], "project_id": p["id"]}
                 )
     ctx["doing_tasks"] = doing_tasks
+
+    # Build a contiguous 30-day series (today minus 29 → today) so the
+    # template can render a uniform line graph regardless of which days
+    # have data. Days without activity get a 0.
+    from datetime import date, timedelta
+
+    today = date.today()
+    activity_series = []
+    for i in range(29, -1, -1):
+        d = today - timedelta(days=i)
+        activity_series.append(
+            {"day": d.isoformat(), "count": activity_by_day.get(str(d), 0)}
+        )
+    ctx["activity_series"] = activity_series
+    ctx["activity_total"] = sum(s["count"] for s in activity_series)
     return render_template("index.html", **ctx)
 
 
