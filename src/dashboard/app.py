@@ -199,8 +199,13 @@ def _register_static_routes(app: Flask) -> None:
 
     @app.route("/app.js", methods=["GET"])
     def serve_js() -> Any:
-        """Serve JavaScript from root URL."""
-        return app.send_static_file("app.js")
+        """Serve the Vite-bundled app from root URL (#251)."""
+        return app.send_static_file("dist/app.js")
+
+    @app.route("/app.js.map", methods=["GET"])
+    def serve_js_map() -> Any:
+        """Serve the Vite source map so DevTools can debug the bundle."""
+        return app.send_static_file("dist/app.js.map")
 
     @app.route("/sortable.min.js", methods=["GET"])
     def serve_sortable() -> Any:

@@ -26,7 +26,13 @@ See `doc/architecture.md` for the full picture. Hard rules from that doc:
 - **Flask blueprints** under `src/dashboard/routes/` (categories, projects,
   tasks, users, keys, pages). App factory is `dashboard.app:create_app`.
 - **Jinja2 templates** in `src/dashboard/templates/` are rendered by Flask.
-- **Frontend** is vanilla JS + SortableJS, no build step. Single `app.js`.
+- **Frontend** is vanilla JS + SortableJS, organised as ES modules under
+  `src/dashboard/static/js/`, bundled by Vite to `src/dashboard/static/dist/app.js`
+  (the file Flask serves). No framework. Biome handles lint + format; Vitest
+  covers unit tests for non-DOM logic; `tsc --noEmit` runs JSDoc-based type
+  checks on files that opt in via `// @ts-check`. The build step is allowed
+  only as long as it stays this lean: one bundler, one test runner, one
+  linter, no plugin sprawl.
 
 ## Layout
 
@@ -45,7 +51,11 @@ src/dashboard/
   migrations/     # *.sql consumed by yoyo (numbered, with `-- rollback`)
   routes/         # Flask blueprints
   templates/      # Jinja2
-  static/         # app.js, style.css, vendored sortable.min.js, marked.min.js
+  static/
+    js/           # ES module sources (api.js, tasks.js, keyboard.js, ...)
+    dist/         # Vite-bundled output (committed; served at /app.js)
+    style.css
+    sortable.min.js, marked.min.js, dompurify.min.js (vendored)
 tests/
   unit/           # fast, no DB
   integration/    # hits dashboard_test DB
@@ -166,8 +176,14 @@ Do **not** mark a task `done` yourself; that's the user's call after review.
   green.
 - Run `pdm run check` (or at least `pdm run lint typecheck test-quick`) before
   declaring work done.
-- Don't introduce an ORM, don't add a JS build step, don't bypass the
-  Pydantic validation layer.
+- Don't introduce an ORM, don't migrate to a frontend framework, don't
+  bypass the Pydantic validation layer. The JS toolchain (Vite + Vitest +
+  Biome + tsc-via-JSDoc) is the upper bound on frontend complexity — do
+  not add bundler plugins, a CSS pipeline, or a TS rewrite without an
+  explicit reason.
+- After touching any file under `src/dashboard/static/js/`, run
+  `pdm run js-build` to refresh `static/dist/app.js` (the served bundle).
+  `pdm run check` runs the full JS gate (lint + typecheck + tests + build).
 
 ## Writing migrations (read before adding any `migrations/*.sql`)
 

@@ -1,6 +1,6 @@
 [project]
 name = "kenboard"
-version = "0.1.83"
+version = "0.1.84"
 description = "Project management dashboard with kanban boards, burndown charts, and category-based organization. Flask API backend with MySQL storage and static HTML generation."
 authors = [
     { name = "Q" }
@@ -123,8 +123,17 @@ interrogate = "interrogate src/"
 vulture = "vulture src/ tests/ vulture_whitelist.py"
 refurb = "refurb src/"
 
+# JS toolchain (#251) — Vite bundler, Vitest unit tests, Biome lint+format,
+# tsc --noEmit for opt-in JSDoc type-check.
+js-install = { shell = "npm ci" }
+js-lint = { shell = "npx biome check src/dashboard/static/js" }
+js-lint-fix = { shell = "npx biome check --write src/dashboard/static/js" }
+js-typecheck = { shell = "npx tsc --noEmit -p jsconfig.json" }
+js-test = { shell = "npx vitest run" }
+js-build = { shell = "npx vite build" }
+
 # Composite checks
-check = { composite = ["isort", "docformatter", "format", "typecheck", "flake8", "interrogate", "refurb", "lint", "vulture", "test-quick"] }
+check = { composite = ["isort", "docformatter", "format", "typecheck", "flake8", "interrogate", "refurb", "lint", "vulture", "js-lint", "js-typecheck", "js-test", "js-build", "test-quick"] }
 
 # Build & generation
 screenshots = "python scripts/screenshots.py"

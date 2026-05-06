@@ -1,0 +1,21 @@
+{
+  "name": "kenboard-frontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "lint": "biome check src/dashboard/static/js",
+    "lint:fix": "biome check --write src/dashboard/static/js",
+    "typecheck": "tsc --noEmit -p jsconfig.json"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.3",
+    "vitest": "^2.1.8"
+  }
+}

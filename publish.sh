@@ -56,17 +56,18 @@ done
 
 # Set total steps based on mode
 # E2E tests are skipped in CI mode (require Playwright browsers + running DB)
+# JS toolchain (#251) adds 5 steps: install, lint, typecheck, test, build
 if [ "$QUALITY_ONLY" = true ]; then
     if [ "$CI_MODE" = true ]; then
-        STEPS=16
+        STEPS=21
     else
-        STEPS=17
+        STEPS=22
     fi
 else
     if [ "$CI_MODE" = true ]; then
-        STEPS=23
+        STEPS=28
     else
-        STEPS=24
+        STEPS=29
     fi
 fi
 STEP=0
@@ -164,6 +165,21 @@ run_command "pdm run lint" "Linting"
 
 print_step "Dead Code Check (vulture)"
 run_command "pdm run vulture" "Dead code check"
+
+print_step "Installing JS Dependencies (npm ci)"
+run_command "pdm run js-install" "JS dependencies installation"
+
+print_step "JS Lint + Format Check (biome)"
+run_command "pdm run js-lint" "JS lint"
+
+print_step "JS Type Check (tsc --noEmit)"
+run_command "pdm run js-typecheck" "JS type check"
+
+print_step "JS Unit Tests (vitest)"
+run_command "pdm run js-test" "JS unit tests"
+
+print_step "JS Bundle Build (vite)"
+run_command "pdm run js-build" "JS bundle build"
 
 print_step "Running Unit Tests (pytest)"
 if [ "$CI_MODE" = true ]; then
