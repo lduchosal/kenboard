@@ -129,6 +129,27 @@ body {
 .header-compact .header-badges-dropdown { display: block; }
 
 
+/* Header keyboard-shortcuts help button (#253). Subtle round dimmed glyph
+ * sitting next to the avatar; opens the kb-help-modal. */
+.kb-help-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--dimmed);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: color 0.12s, border-color 0.12s;
+}
+.kb-help-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 /* Avatar dropdown menu */
 .avatar-menu {
   position: relative;

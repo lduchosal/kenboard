@@ -42,7 +42,7 @@
   {% set total_tasks = cp | sum(attribute="total") %}
   {% set total_done = cp | sum(attribute="done") %}
 
-  <a class="cat-card" href="cat/{{ c.id }}.html">
+  <a class="cat-card" href="cat/{{ c.id }}.html" data-kb-nav>
     <div class="cat-header">
       <div class="cat-dot" style="background:{{ c.color }}"></div>
       <span class="cat-name">{{ c.name }}</span>

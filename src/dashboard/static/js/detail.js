@@ -32,6 +32,10 @@ export function clearTaskHash() {
 
 export async function lazyLoadDesc(el, taskId) {
   if (!taskId || el.dataset.descLoaded) return;
+  // Validate taskId is a positive integer before interpolating into the URL
+  // so a tampered ``data-task-id`` can't compose an unexpected request path
+  // (Sonar javascript:S5852: tainted data in client-side request).
+  if (!/^\d+$/.test(String(taskId))) return;
   try {
     const r = await fetch(`${API_BASE}/tasks/${taskId}`);
     if (!r.ok) return;

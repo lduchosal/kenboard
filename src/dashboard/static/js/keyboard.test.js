@@ -120,3 +120,101 @@ describe('moveHorizontal', () => {
     expect(selectedId()).toBe('a');
   });
 });
+
+// -- #253: spill-over to adjacent kanbans + flat home-page nav -------------
+
+function buildKanbans(boards) {
+  // Two-level: ``[[['a','b']], [['c']]]`` → kanban1 (1 col, 2 cards),
+  // kanban2 (1 col, 1 card).
+  document.body.innerHTML = '';
+  boards.forEach((cols, bi) => {
+    const k = document.createElement('div');
+    k.className = 'kanban';
+    k.dataset.projectId = `proj${bi}`;
+    cols.forEach((ids, ci) => {
+      const col = document.createElement('div');
+      col.className = 'kanban-tasks';
+      col.dataset.status = `col${ci}`;
+      ids.forEach((id) => {
+        const card = document.createElement('div');
+        card.className = 'kanban-task';
+        card.dataset.taskId = id;
+        col.appendChild(card);
+      });
+      k.appendChild(col);
+    });
+    document.body.appendChild(k);
+  });
+}
+
+describe('moveVertical across kanbans (#253)', () => {
+  it('spills from the bottom of one board to the top of the next', () => {
+    buildKanbans([[['a', 'b']], [['c', 'd']]]);
+    selectCard(document.querySelector('[data-task-id="b"]'), { scroll: false });
+    moveVertical(1);
+    expect(selectedId()).toBe('c');
+  });
+
+  it('spills from the top of one board to the bottom of the previous', () => {
+    buildKanbans([[['a', 'b']], [['c', 'd']]]);
+    selectCard(document.querySelector('[data-task-id="c"]'), { scroll: false });
+    moveVertical(-1);
+    expect(selectedId()).toBe('b');
+  });
+
+  it('clamps at the very bottom of the last board', () => {
+    buildKanbans([[['a']], [['b']]]);
+    selectCard(document.querySelector('[data-task-id="b"]'), { scroll: false });
+    moveVertical(1);
+    expect(selectedId()).toBe('b');
+  });
+});
+
+describe('flat nav for home-page tiles (#253)', () => {
+  function buildHomeTiles(ids) {
+    document.body.innerHTML = '';
+    ids.forEach((id) => {
+      const a = document.createElement('a');
+      a.dataset.kbNav = '';
+      a.dataset.id = id; // for the test, not read by the keyboard module
+      a.textContent = id;
+      document.body.appendChild(a);
+    });
+  }
+
+  function selectedTileId() {
+    const el = document.querySelector('[data-kb-selected="true"]');
+    return el ? el.dataset.id : null;
+  }
+
+  it('moves between tiles with ↓', () => {
+    buildHomeTiles(['x', 'y', 'z']);
+    selectCard(document.querySelector('[data-id="x"]'), { scroll: false });
+    moveVertical(1);
+    expect(selectedTileId()).toBe('y');
+    moveVertical(1);
+    expect(selectedTileId()).toBe('z');
+  });
+
+  it('clamps at the last tile', () => {
+    buildHomeTiles(['x', 'y']);
+    selectCard(document.querySelector('[data-id="y"]'), { scroll: false });
+    moveVertical(1);
+    expect(selectedTileId()).toBe('y');
+  });
+
+  it('selects the first tile when nothing is selected', () => {
+    buildHomeTiles(['x', 'y']);
+    moveVertical(1);
+    expect(selectedTileId()).toBe('x');
+  });
+
+  it('also navigates with ←/→', () => {
+    buildHomeTiles(['x', 'y', 'z']);
+    selectCard(document.querySelector('[data-id="x"]'), { scroll: false });
+    moveHorizontal(1);
+    expect(selectedTileId()).toBe('y');
+    moveHorizontal(-1);
+    expect(selectedTileId()).toBe('x');
+  });
+});

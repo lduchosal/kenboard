@@ -93,8 +93,10 @@ export function saveTaskModal() {
     if (taskId) {
       try {
         sessionStorage.setItem('kb-focus-task', String(taskId));
-      } catch (_e) {
-        /* ignore */
+      } catch (e) {
+        // sessionStorage may throw in private mode; the keyboard-selection
+        // restore is a UX nicety, not a hard requirement, so just log.
+        console.debug('saveTaskModal: sessionStorage write failed', e);
       }
     }
     globalThis.location.reload();

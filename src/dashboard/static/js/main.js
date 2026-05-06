@@ -7,16 +7,13 @@
 // time without their own DOMContentLoaded wrappers.
 
 import { apiCall, showError } from './api.js';
-import { bindHashSync } from './detail.js';
+import { addProjectInCatModal, deleteCat, editCat, saveCat, selectCatColor } from './categories.js';
+import { bindHashSync, toggleDetail } from './detail.js';
 import { bindDnd } from './dnd.js';
-import { bindFullscreenBackdrop } from './fullscreen.js';
+import { bindFullscreenBackdrop, closeFullscreen, openFullscreen } from './fullscreen.js';
 import { bindKeyboard } from './keyboard.js';
 import { renderMarkdown } from './markdown.js';
 import { bindModalDismissal } from './modals.js';
-
-import { addProjectInCatModal, deleteCat, editCat, saveCat, selectCatColor } from './categories.js';
-import { toggleDetail } from './detail.js';
-import { closeFullscreen, openFullscreen } from './fullscreen.js';
 import { copyOnboardLink, deleteProject, editProject, saveProject } from './projects.js';
 import {
   confirmDelete,
