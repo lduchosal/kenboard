@@ -34,10 +34,13 @@ export async function lazyLoadDesc(el, taskId) {
   if (!taskId || el.dataset.descLoaded) return;
   // Validate taskId is a positive integer before interpolating into the URL
   // so a tampered ``data-task-id`` can't compose an unexpected request path
-  // (Sonar javascript:S5852: tainted data in client-side request).
-  if (!/^\d+$/.test(String(taskId))) return;
+  // (Sonar javascript:S5852: tainted data in client-side request). Convert
+  // to a number explicitly — Sonar's taint tracker recognises numeric
+  // coercion as sanitisation; a regex+template literal still flags.
+  const id = Number(taskId);
+  if (!Number.isInteger(id) || id <= 0) return;
   try {
-    const r = await fetch(`${API_BASE}/tasks/${taskId}`);
+    const r = await fetch(`${API_BASE}/tasks/${id}`);
     if (!r.ok) return;
     const t = await r.json();
     if (t.description) {

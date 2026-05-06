@@ -13,7 +13,7 @@ beforeEach(() => {
     setOptions: () => {},
   };
   globalThis.DOMPurify = {
-    sanitize: (s) => s.replace(/<script[\s\S]*?<\/script>/gi, ''),
+    sanitize: (s) => s.replaceAll(/<script[\s\S]*?<\/script>/gi, ''),
   };
 });
 

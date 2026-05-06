@@ -6,6 +6,9 @@ __pycache__/
 .coverage
 coverage.xml
 htmlcov/
+# Vitest v8 coverage output (consumed by Sonar; regenerated on every
+# pdm run js-test, so no point committing).
+coverage/
 dist/
 # Re-include the Vite-bundled frontend so Python-only contributors don't
 # need Node to run the app (#251). The bundle is small and rebuilt on

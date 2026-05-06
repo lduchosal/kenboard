@@ -32,5 +32,18 @@ export default defineConfig({
     environment: 'jsdom',
     globals: false,
     include: ['src/dashboard/static/js/**/*.test.js'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      reportsDirectory: 'coverage',
+      include: ['src/dashboard/static/js/**/*.js'],
+      // Test files, the entry that just wires globals, and the bundle
+      // output don't need coverage themselves.
+      exclude: [
+        'src/dashboard/static/js/**/*.test.js',
+        'src/dashboard/static/js/main.js',
+        'src/dashboard/static/dist/**',
+      ],
+    },
   },
 });

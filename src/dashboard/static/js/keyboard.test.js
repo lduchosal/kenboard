@@ -170,23 +170,23 @@ describe('moveVertical across kanbans (#253)', () => {
   });
 });
 
+function buildHomeTiles(ids) {
+  document.body.innerHTML = '';
+  ids.forEach((id) => {
+    const a = document.createElement('a');
+    a.dataset.kbNav = '';
+    a.dataset.id = id; // for the test, not read by the keyboard module
+    a.textContent = id;
+    document.body.appendChild(a);
+  });
+}
+
+function selectedTileId() {
+  const el = document.querySelector('[data-kb-selected="true"]');
+  return el ? el.dataset.id : null;
+}
+
 describe('flat nav for home-page tiles (#253)', () => {
-  function buildHomeTiles(ids) {
-    document.body.innerHTML = '';
-    ids.forEach((id) => {
-      const a = document.createElement('a');
-      a.dataset.kbNav = '';
-      a.dataset.id = id; // for the test, not read by the keyboard module
-      a.textContent = id;
-      document.body.appendChild(a);
-    });
-  }
-
-  function selectedTileId() {
-    const el = document.querySelector('[data-kb-selected="true"]');
-    return el ? el.dataset.id : null;
-  }
-
   it('moves between tiles with ↓', () => {
     buildHomeTiles(['x', 'y', 'z']);
     selectCard(document.querySelector('[data-id="x"]'), { scroll: false });

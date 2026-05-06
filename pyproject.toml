@@ -129,7 +129,7 @@ js-install = { shell = "npm ci" }
 js-lint = { shell = "npx biome check src/dashboard/static/js" }
 js-lint-fix = { shell = "npx biome check --write src/dashboard/static/js" }
 js-typecheck = { shell = "npx tsc --noEmit -p jsconfig.json" }
-js-test = { shell = "npx vitest run" }
+js-test = { shell = "npx vitest run --coverage" }
 js-build = { shell = "npx vite build" }
 
 # Composite checks

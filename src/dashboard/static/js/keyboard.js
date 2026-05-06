@@ -105,7 +105,7 @@ export function moveVertical(delta) {
     const adjacent = adjacentKanban(kanban, delta);
     if (adjacent) {
       const adjacentCards = [...adjacent.querySelectorAll('.kanban-task:not(.task-hidden)')];
-      const target = delta > 0 ? adjacentCards[0] : adjacentCards[adjacentCards.length - 1] || null;
+      const target = delta > 0 ? adjacentCards[0] : adjacentCards.at(-1) || null;
       if (target) {
         selectCard(target);
         return target;
