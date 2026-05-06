@@ -101,6 +101,20 @@ jobs:
     - name: Test with pytest
       run: |
         pdm run test-ci
+    # JS toolchain (#251): Vitest produces coverage/lcov.info that Sonar
+    # consumes alongside the Python coverage.xml. Only run on the 3.13
+    # job so we don't reinstall Node + npm deps three times.
+    - name: Set up Node.js
+      if: matrix.python-version == '3.13'
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    - name: Install JS dependencies
+      if: matrix.python-version == '3.13'
+      run: npm ci
+    - name: Run JS tests with coverage
+      if: matrix.python-version == '3.13'
+      run: pdm run js-test
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v5
       with:
@@ -111,6 +125,14 @@ jobs:
       with:
         name: coverage-xml
         path: coverage.xml
+        if-no-files-found: error
+        retention-days: 1
+    - name: Upload JS lcov.info for SonarCloud job
+      if: matrix.python-version == '3.13'
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-lcov
+        path: coverage/lcov.info
         if-no-files-found: error
         retention-days: 1
 
@@ -129,6 +151,13 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: coverage-xml
+    - name: Download JS lcov.info
+      uses: actions/download-artifact@v4
+      with:
+        name: coverage-lcov
+        # Sonar reads it from ``coverage/lcov.info`` per
+        # sonar-project.properties.
+        path: coverage
     - name: SonarCloud Scan
       uses: SonarSource/sonarqube-scan-action@v6
       env:
