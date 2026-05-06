@@ -81,9 +81,12 @@ function moveFlat(delta) {
   return target;
 }
 
-// Vertical nav. Inside a kanban column: move within the column; at the edge,
-// spill into the next/previous ``.kanban`` (next project board, #253).
-// Outside any kanban (home-page tiles): flat document-order nav.
+// Vertical nav (#259). Within a column: move ±1. At the bottom of a column:
+// jump to the FIRST card of the next column in the same kanban; at the
+// bottom of the LAST column, spill into the FIRST card of the next ``.kanban``
+// (next project board). Symmetric going up: top of a column → last card of
+// the previous column; top of the FIRST column → last card of the previous
+// kanban. Outside any kanban (home-page tiles): flat document-order nav.
 export function moveVertical(delta) {
   const current = selected();
   if (!current) return selectFirst();
@@ -98,21 +101,43 @@ export function moveVertical(delta) {
     selectCard(target);
     return target;
   }
-  // At the edge of the column — try the adjacent kanban (next project
-  // board's first card going down, previous board's last card going up).
+  // At the edge of the column — first try the next/previous column of the
+  // same kanban, then fall through to the next/previous kanban.
   const kanban = current.closest('.kanban');
-  if (kanban) {
-    const adjacent = adjacentKanban(kanban, delta);
-    if (adjacent) {
-      const adjacentCards = [...adjacent.querySelectorAll('.kanban-task:not(.task-hidden)')];
-      const target = delta > 0 ? adjacentCards[0] : adjacentCards.at(-1) || null;
-      if (target) {
-        selectCard(target);
-        return target;
-      }
-    }
+  if (!kanban) return current;
+  const target = nextCardAcrossColumns(kanban, col, delta) || nextCardAcrossKanbans(kanban, delta);
+  if (target) {
+    selectCard(target);
+    return target;
   }
-  return current; // genuinely clamped (no adjacent kanban with cards)
+  return current; // genuinely clamped (no further card in this direction)
+}
+
+// Walk through the kanban's other columns in the given direction looking for
+// the first column with at least one visible card. Returns its first card
+// (going down) or last card (going up), or null if no further column has
+// cards.
+function nextCardAcrossColumns(kanban, currentCol, delta) {
+  const cols = [...kanban.querySelectorAll('.kanban-tasks')];
+  const colIdx = cols.indexOf(currentCol);
+  if (colIdx === -1) return null;
+  for (let i = colIdx + delta; i >= 0 && i < cols.length; i += delta) {
+    const cards = visibleCardsInColumn(cols[i]);
+    if (cards.length === 0) continue;
+    return delta > 0 ? cards[0] : cards.at(-1);
+  }
+  return null;
+}
+
+// Walk to the next/previous ``.kanban`` and return its first card (going
+// down) or last card (going up). Returns null if the adjacent kanban has
+// no visible cards (or doesn't exist).
+function nextCardAcrossKanbans(kanban, delta) {
+  const adjacent = adjacentKanban(kanban, delta);
+  if (!adjacent) return null;
+  const cards = [...adjacent.querySelectorAll('.kanban-task:not(.task-hidden)')];
+  if (cards.length === 0) return null;
+  return delta > 0 ? cards[0] : cards.at(-1);
 }
 
 // Horizontal nav. Inside a kanban: move between columns at the same

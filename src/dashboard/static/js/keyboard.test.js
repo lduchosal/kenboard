@@ -170,6 +170,54 @@ describe('moveVertical across kanbans (#253)', () => {
   });
 });
 
+// #259: ↓ at the bottom of a column jumps to the FIRST card of the next
+// column in the same kanban (not the next kanban — that only happens at
+// the bottom of the LAST column). Symmetric for ↑.
+describe('moveVertical across columns within a kanban (#259)', () => {
+  it('jumps from end of column to first card of the next column', () => {
+    buildKanbans([
+      [
+        ['a', 'b'],
+        ['c', 'd'],
+      ],
+    ]);
+    selectCard(document.querySelector('[data-task-id="b"]'), { scroll: false });
+    moveVertical(1);
+    expect(selectedId()).toBe('c');
+  });
+
+  it('jumps from top of column to last card of the previous column', () => {
+    buildKanbans([
+      [
+        ['a', 'b'],
+        ['c', 'd'],
+      ],
+    ]);
+    selectCard(document.querySelector('[data-task-id="c"]'), { scroll: false });
+    moveVertical(-1);
+    expect(selectedId()).toBe('b');
+  });
+
+  it('skips empty columns when walking right', () => {
+    buildKanbans([[['a'], [], ['z']]]);
+    selectCard(document.querySelector('[data-task-id="a"]'), { scroll: false });
+    moveVertical(1);
+    expect(selectedId()).toBe('z');
+  });
+
+  it('only spills to next kanban after exhausting the current kanbans columns', () => {
+    buildKanbans([[['a'], ['b']], [['c']]]);
+    // From the only card in col-1 of kanban-0, ↓ should land on 'b' (first
+    // of col-2), not 'c' (first card of next kanban).
+    selectCard(document.querySelector('[data-task-id="a"]'), { scroll: false });
+    moveVertical(1);
+    expect(selectedId()).toBe('b');
+    // Then a second ↓ from end of last column lands on the next kanban.
+    moveVertical(1);
+    expect(selectedId()).toBe('c');
+  });
+});
+
 function buildHomeTiles(ids) {
   document.body.innerHTML = '';
   ids.forEach((id) => {
