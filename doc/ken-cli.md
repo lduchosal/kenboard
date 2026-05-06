@@ -1,74 +1,74 @@
 # `ken` — CLI tasks pour Claude Code
 
-> Spec v1, validée par l'opérateur. Les décisions notées **« Choix »** ont
-> été arbitrées explicitement, ne pas les revisiter sans en discuter.
+`ken` est la CLI compagnon de kenboard pour piloter les tasks d'un
+projet depuis un shell, sans passer par WebFetch ou un client HTTP
+ad-hoc. Pensee pour Claude Code et tout agent qui scripte le board
+mais utilisable par un humain.
 
-## Objectif
+Module Python : `src/dashboard/ken.py` (Click). Entry point :
+`ken = "dashboard.ken:cli"` dans `pyproject.toml`. Aucune dependance
+runtime ajoutee — l'HTTP est fait avec `urllib.request` de la stdlib.
 
-Permettre à Claude Code (et à un humain qui scripte) de manipuler les tasks
-du board kenboard depuis un shell, sans passer par WebFetch ou par un client
-HTTP ad-hoc. Une commande `ken` exposée à côté de l'existant `kenboard`,
-partageant le même package PyPI `kenboard` et le même module Python
-`dashboard`.
-
-Périmètre v1 : **tasks + lecture des projects**. Categories, users,
-édition de projects : hors scope, gérés par l'UI web.
+Périmètre : **tasks + lecture des projects**. Categories, users,
+edition de projects : geres par l'UI web, hors scope CLI.
 
 ## Surface CLI
 
 ```
-ken init     [PROJECT_UUID]                          # crée/met à jour le .ken du cwd
-ken projects [--json]                                # liste les projects (pour trouver l'UUID)
-ken list     [--status STATUS] [--who WHO] [--json]  # tasks du projet courant
-ken show     ID [--json]                             # détail d'une task
+ken init     [PROJECT_UUID] [--force]                       # crée/met a jour le .ken du cwd
+ken projects [--json]                                       # liste les projects (pour trouver l'UUID)
+ken list     [--status STATUS] [--who WHO] [--json]         # tasks du projet courant
+ken show     ID [--json]                                    # detail d'une task
 ken add      TITLE [--desc TEXT] [--who WHO] [--status STATUS] [--when YYYY-MM-DD] [--json]
 ken update   ID [--title T] [--desc D] [--status S] [--who W] [--when YYYY-MM-DD] [--json]
-ken move     ID --to STATUS                          # raccourci status
-ken done     ID                                      # raccourci `update ID --status done`
-ken sync     [--json]                                # mirror les tasks dans sync_dir
+ken move     ID --to STATUS                                 # raccourci status
+ken done     ID                                             # raccourci `update ID --status done`
+ken sync     [--json]                                       # mirror les tasks dans sync_dir
+ken self-update                                             # pip install --upgrade kenboard
+ken help                                                    # affiche le agent_guide.md (LLM cheatsheet)
 ```
 
 `STATUS` ∈ `todo|doing|review|done` (les 4 colonnes kanban).
 
 ### Sorties
 
-**Choix : colonnes par défaut, `--json` pour Claude**. Convention Unix
-classique (`git`, `kubectl`). Le mode `--json` retourne le payload exact que
-renvoie l'API REST, avec dates ISO `YYYY-MM-DD`.
+Convention Unix classique (comme `git`, `kubectl`) : **colonnes par
+defaut, `--json` pour les agents**. Le mode `--json` retourne le
+payload exact que renvoie l'API REST, avec dates ISO `YYYY-MM-DD`.
 
-- Erreurs : sur `stderr`, exit non nul. Résultats : sur `stdout`.
-- Exit codes : `0` succès, `1` erreur API/réseau, `2` erreur de syntaxe CLI
-  (Click le fait nativement).
-- **Choix : dates en ISO `YYYY-MM-DD` même en mode colonnes**, pour la
-  précision (année incluse), le tri lexico, et la friendliness machine. La
-  vue web garde son `DD.MM`, c'est juste le CLI qui est plus verbeux.
+- Erreurs : sur `stderr`, exit non nul. Resultats : sur `stdout`.
+- Exit codes : `0` succes, `1` erreur API/reseau/auth, `2` erreur de
+  syntaxe CLI (Click le fait nativement).
+- Dates en ISO `YYYY-MM-DD` meme en mode colonnes — la vue web garde
+  son `DD.MM`, c'est juste le CLI qui est plus verbeux pour la
+  precision (annee incluse) et le tri lexico.
 
 ### Exemples
 
 ```sh
-# Bootstrap : trouver le projet et créer le .ken
+# Bootstrap : trouver le projet et creer le .ken
 $ ken projects
-ID                                    NAME                ACRONYM
-76a70206-0e6a-4485-a426-d7eb5ab53aac  Kenboard            KEN
+ID                                    ACRONYM  NAME
+76a70206-0e6a-4485-a426-d7eb5ab53aac  KEN      Kenboard
 
 $ ken init 76a70206-0e6a-4485-a426-d7eb5ab53aac
 Wrote .ken (project: Kenboard)
 
 # Lister les tasks ouvertes
 $ ken list --status doing
-ID  STATUS  WHO     WHEN        TITLE
-8   doing   Claude  --          RC / script update dans un cron
-14  doing   Q       2026-04-12  UX / Refresh automatique
+ID   STATUS  WHO     WHEN        TITLE
+8    doing   Claude  --          RC / script update dans un cron
+14   doing   Q       2026-04-12  UX / Refresh automatique
 
 # Mode JSON pour Claude
 $ ken list --json
 [{"id":8,"status":"doing","who":"Claude","title":"...",...}, ...]
 
-# Créer une task
-$ ken add "Fix le typo dans le footer" --who Claude
-{"id":22,"title":"Fix le typo dans le footer","status":"todo",...}
+# Creer une task et capturer son ID
+$ ken add "Fix le typo dans le footer" --who Claude --json | jq .id
+22
 
-# Déplacer
+# Deplacer
 $ ken move 22 --to doing
 $ ken done 22
 
@@ -79,61 +79,43 @@ Synced 14 task(s) to /repo/doc/kenboard
 
 ## Architecture
 
-### Module Python
-
-Nouveau fichier `src/dashboard/ken.py`, exposé par un nouveau script entry
-point dans `pyproject.toml` :
-
-```toml
-[project.scripts]
-kenboard = "dashboard.cli:cli"   # existant — admin (serve, migrate, build)
-ken      = "dashboard.ken:cli"   # nouveau — tasks (init, list, add, ...)
-```
-
-Les deux CLI restent **séparées** : `kenboard` pour les opérations admin,
-`ken` pour le workflow quotidien. Pas de sous-commande
-`kenboard task list ...` qui mélangerait les rôles.
-
-Implémentation : **Click** (déjà utilisé par `cli.py`), **`urllib.request`**
-de la stdlib pour parler à l'API REST (zéro dépendance ajoutée — `httpx` est
-plus agréable mais surdimensionné pour 5 endpoints REST simples).
-
 ### Fichier `.ken` du cwd
 
-**Choix : fichier `.ken` à la `git`**, self-contained. Format `key=value`,
-une clé par ligne :
+Self-contained, format `key=value`, une cle par ligne :
 
 ```
 project_id=76a70206-0e6a-4485-a426-d7eb5ab53aac
-base_url=http://localhost:9090
-api_token=k_abc123xyz...
+base_url=https://kenboard.example.com
+api_token=kb_<43_chars>
+sync_dir=doc/kenboard
+description=Kenboard
 ```
 
-Recherche : `ken` remonte le cwd vers `/` jusqu'à trouver un `.ken`. Comme
-`git`, ça permet de lancer `ken` depuis n'importe quel sous-répertoire d'un
-projet sans devoir `cd` à la racine.
+Recherche : `ken` remonte le cwd vers `/` jusqu'a trouver un `.ken`,
+comme `git`. Permet de lancer `ken` depuis n'importe quel
+sous-repertoire d'un projet sans devoir `cd` a la racine.
 
-#### Sécurité — `.ken` contient un secret
+#### Securite — `.ken` contient un secret
 
-**Choix arbitré : on accepte le risque de tout regrouper** dans `.ken` pour
-la simplicité (zéro fichier annexe, zéro variable d'env à exporter, copie de
-dossier = transfert complet du contexte). En contrepartie, le CLI prend
-plusieurs garde-fous **obligatoires** :
+Le `.ken` contient le bearer token de l'API. On accepte le risque de
+tout regrouper la-dedans pour la simplicite (zero fichier annexe,
+zero variable d'env a exporter, copie de dossier = transfert complet
+du contexte). En contrepartie, le CLI prend plusieurs garde-fous :
 
-1. `ken init` crée `.ken` en **mode `0600`** (lecture/écriture user-only).
-2. `ken init` ajoute `.ken` à `.gitignore` du repo courant si il n'y est pas
-   déjà (et crée le `.gitignore` au besoin). Si pas dans un repo git, émet
-   un warning.
-3. À chaque exécution, `ken` vérifie le mode du fichier ; si `0600` n'est
-   pas respecté (groupe ou autres ont des bits), affiche un warning sur
-   stderr (mais continue, pour ne pas bloquer).
-4. La doc README mentionne explicitement : « `.ken` contient un token,
-   ne pas le committer, ne pas le partager. »
+1. `ken init` cree `.ken` en **mode `0600`** (lecture/ecriture
+   user-only).
+2. `ken init` ajoute `.ken` a `.gitignore` du repo courant si il n'y
+   est pas deja (et cree le `.gitignore` au besoin). Si pas dans un
+   repo git, emet un warning.
+3. A chaque execution, `ken` verifie le mode du fichier ; si `0600`
+   n'est pas respecte (groupe ou autres ont des bits), affiche un
+   warning sur stderr (mais continue, pour ne pas bloquer).
+4. Le `.ken` ne doit jamais etre committe ni partage.
 
-Convention différente du standard `gh`/`kubectl`/`aws` qui séparent
-credentials et contexte projet — choix conscient pour la simplicité de
-workflow Claude Code, à revisiter si on déploie `ken` au-delà d'un user
-unique sur sa propre machine.
+Convention differente du standard `gh` / `kubectl` / `aws` qui
+separent credentials et contexte projet — choix conscient pour la
+simplicite du workflow Claude Code, a revisiter si on deploie `ken`
+au-dela d'un user unique sur sa propre machine.
 
 #### `ken init`
 
@@ -141,33 +123,43 @@ unique sur sa propre machine.
 ken init [UUID] [--base-url URL] [--token TOKEN] [--force]
 ```
 
-- Si `UUID` est fourni → écrit `.ken` avec ce project_id (vérifie qu'il
-  existe via `GET /api/v1/projects` et affiche le name).
+- Si `UUID` est fourni → ecrit `.ken` avec ce project_id (verifie
+  qu'il existe via `GET /api/v1/projects` et affiche le name).
 - Si omis → liste les projects, propose un choix interactif.
-- `--base-url` et `--token` permettent de seeder ces clés à la création ;
-  sinon le CLI utilise les défauts (`http://localhost:9090`, pas de token).
-- Refuse de réécrire un `.ken` existant sans `--force`.
-- Crée le fichier avec `chmod 0600`.
-- Ajoute `.ken` à `.gitignore` du repo si nécessaire.
+- `--base-url` et `--token` permettent de seeder ces cles a la
+  creation.
+- Refuse de reecrire un `.ken` existant sans `--force`.
+- Cree le fichier avec `chmod 0600`.
+- Ajoute `.ken` a `.gitignore` du repo si necessaire.
+
+#### Onboarding automatise (Copy onboard link)
+
+Pour les agents AI, le flow recommande est le bouton **Copy onboard
+link** sur la page d'un projet (cf. `/admin/board`). Le lien servi
+pointe vers `/onboarding/<token>` et inclut un `api_token` jetable
+de type `onboarding`. Au premier appel `ken init`, ce token est
+consomme et remplace par un token persistant de type `onboarded`
+(scope `write` sur le projet uniquement).
 
 ### Configuration
 
-Lecture par ordre de priorité (le premier qui résout l'emporte) :
+Lecture par ordre de priorite (le premier qui resout l'emporte) :
 
-1. Flags de ligne de commande (`--project`, `--base-url`, `--token`)
+1. Flags de ligne de commande (`--project`, `--base-url`, `--token`,
+   `--config`)
 2. Variables d'environnement (`KEN_*`)
-3. Fichier `.ken` du cwd (project_id, base_url, api_token)
-4. Défauts hardcodés
+3. Fichier `.ken` du cwd
+4. Defauts hardcodes
 
-| Clé `.ken` / env | Défaut | Rôle |
+| Cle `.ken` / env | Defaut | Role |
 |---|---|---|
-| `base_url` / `KEN_BASE_URL` | `http://localhost:9090` | URL de l'API kenboard. **Choix** : 9090 = port d'écoute kenboard sur web2 (cf `KENBOARD.md`), cohérent prod ↔ dev. |
-| `project_id` / `KEN_PROJECT_ID` | (aucun) | UUID du projet ciblé. |
-| `api_token` / `KEN_API_TOKEN` | aucun | Bearer token. **Choix** : préparé maintenant, envoyé en header `Authorization` dès qu'il est défini, même si l'API ne le lit pas encore (cf #6). |
-| `sync_dir` / `KEN_SYNC_DIR` | `doc/kenboard` | Dossier cible de `ken sync`. Chemin relatif résolu par rapport au dossier qui contient `.ken`. La clé est ajoutée automatiquement au `.ken` lors du premier `ken sync`. |
+| `base_url` / `KEN_BASE_URL` | `http://localhost:9090` | URL de l'API kenboard. |
+| `project_id` / `KEN_PROJECT_ID` | (aucun) | UUID du projet cible. |
+| `api_token` / `KEN_API_TOKEN` | (aucun) | Bearer token. Envoye en header `Authorization: Bearer <token>` sur chaque requete. |
+| `sync_dir` / `KEN_SYNC_DIR` | `doc/kenboard` | Dossier cible de `ken sync`. Chemin relatif resolu par rapport au dossier qui contient `.ken`. |
 
-Si après cette résolution `project_id` est toujours absent et qu'aucun
-`--project` n'est passé, `ken` échoue avec :
+Si apres cette resolution `project_id` est toujours absent et qu'aucun
+`--project` n'est passe, `ken` echoue avec :
 
 ```
 $ ken list
@@ -176,43 +168,75 @@ Error: no project configured. Run `ken init <UUID>` or set KEN_PROJECT_ID.
 
 ### Auth
 
-L'API n'a aucune auth aujourd'hui (cf. #1, #6, #7). Le CLI envoie quand
-même `Authorization: Bearer <KEN_API_TOKEN>` si la variable est définie,
-**comme préparation**. Quand #6 sera mergé, on n'aura qu'à distribuer un
-token sans changer le CLI.
+L'API est en mode strict depuis #40 : un token bearer valide est
+**requis** pour appeler `/api/v1/*`. `ken` envoie automatiquement
+`Authorization: Bearer <api_token>` si la cle est definie. Sans
+token (et sans cookie session, ce qui n'est jamais le cas en CLI),
+l'API repond 401.
+
+Trois facons de fournir le token :
+
+1. Token d'onboarding obtenu via le bouton **Copy onboard link** —
+   recommande pour les agents.
+2. Cle API creee manuellement via `POST /api/v1/keys` (admin only),
+   collee dans `~/.config/ken/...` ou dans `.ken`.
+3. Variable d'env `KEN_API_TOKEN` pour les pipelines / cron.
+
+Cf. [`api-keys.md`](api-keys.md) pour le detail des scopes et de la
+revocation.
+
+### `ken sync`
+
+Mirror de l'etat du board dans un dossier local (`sync_dir`,
+`doc/kenboard` par defaut), un fichier `NNNN - Title.md` par task
+avec un frontmatter YAML :
+
+```markdown
+---
+id: 42
+status: doing
+who: Claude
+due_date: 2026-05-12
+---
+
+# Fix le typo dans le footer
+
+(description en markdown)
+```
+
+Idempotent : reecriture des fichiers dont le titre/contenu a change,
+suppression des fichiers correspondant a des tasks supprimees ou
+deplacees hors du projet. Premier appel `ken sync` ajoute la cle
+`sync_dir=` au `.ken` si elle n'y est pas encore.
+
+### Commandes utilitaires
+
+- `ken self-update` — `pip install --upgrade kenboard` avec le meme
+  Python que la CLI. Pratique pour les agents qui veulent rester sur
+  la derniere version sans wrapper externe.
+- `ken help` — imprime `src/dashboard/agent_guide.md` (cheatsheet
+  embarquee, conventions d'usage pour LLMs, exemples).
 
 ## Tests
 
-- **Unit** (`tests/unit/test_ken.py`) :
-  - Mock HTTP (via `unittest.mock` ou `responses`)
-  - Resolution de la config (priorité flags > env > .ken > .env > défaut)
-  - Recherche du `.ken` en remontant les parents
-  - Formatting des sorties (texte colonnes alignées et JSON)
-  - Parsing des arguments Click
-  - Erreurs : status invalide, ID inexistant, projet manquant
-
-- **E2E** (`tests/e2e/test_ken.py`) :
-  - Utilise la fixture `live_server` existante
-  - Invoque `ken` via `click.testing.CliRunner` (pas besoin de subprocess)
-  - Crée projet + tasks, vérifie list/update/done end-to-end
-  - Vérifie qu'un `.ken` est trouvé en remontant 2 niveaux de cwd
-
-## Étapes d'implémentation
-
-1. ✅ Spec validée (ce document)
-2. Création du module `src/dashboard/ken.py` avec Click
-3. Ajout entry point `ken` dans `[project.scripts]`
-4. Tests unit + e2e
-5. Doc `README.md` mise à jour avec une section "CLI ken"
-6. Publish 0.1.x via `sh publish.sh`
+- **Unit** (`tests/unit/test_ken.py`) : mock HTTP, resolution de la
+  config (priorite flags > env > .ken > defaut), recherche du `.ken`
+  en remontant les parents, formatting des sorties (texte colonnes
+  alignees et JSON), parsing des arguments Click, erreurs (status
+  invalide, ID inexistant, projet manquant, token manquant /
+  invalide).
+- **E2E** (`tests/e2e/test_ken.py`) : utilise la fixture
+  `live_server` existante, invoque `ken` via
+  `click.testing.CliRunner` (pas besoin de subprocess), cree projet
+  + tasks, verifie list/update/done end-to-end, verifie qu'un `.ken`
+  est trouve en remontant 2 niveaux de cwd.
 
 ## Notes pour futures versions
 
-- v2 : sous-commandes `ken cat list`, `ken proj add` quand on veut admin
-  via CLI sans aller sur l'UI
-- v2 : `ken delete ID` (volontairement absent en v1, l'UI le fait, Claude
-  n'en a pas besoin)
-- v2 : `ken assign ID WHO` raccourci (équivalent `update --who`)
-- v2 : `ken comment ID TEXT` quand l'API supportera les commentaires
-- v2 : output `--watch` qui repoll toutes les N secondes (intéressant en
-  conjonction avec #14 refresh automatique)
+- v2 : sous-commandes `ken cat list`, `ken proj add` quand on veut
+  admin via CLI sans aller sur l'UI.
+- v2 : `ken delete ID` (volontairement absent, l'UI le fait, Claude
+  n'en a pas besoin).
+- v2 : `ken assign ID WHO` raccourci (equivalent `update --who`).
+- v2 : `ken comment ID TEXT` quand l'API supportera les commentaires.
+- v2 : output `--watch` qui repoll toutes les N secondes.

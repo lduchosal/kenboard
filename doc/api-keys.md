@@ -7,21 +7,29 @@ voir `doc/authentication.md` et la tâche #1.
 
 ## Schéma
 
-Migrations `0005.create_api_keys.sql`, `0006.create_api_key_projects.sql`,
-puis `0010.add_api_key_user_id.sql` (lien vers le user propriétaire, #110).
+Migrations en jeu :
+- `0005.create_api_keys.sql` — table principale.
+- `0006.create_api_key_projects.sql` — junction scopes.
+- `0010` / `0011` (recovery) — `api_keys.user_id` (#110).
+- `0014.add_api_keys_key_type.sql` — `key_type` pour les tokens
+  d'onboarding.
+- `0017.add_api_keys_last_used_metadata.sql` — `last_used_ip` et
+  `last_used_agent` (audit trail).
 
 ```sql
 CREATE TABLE api_keys (
-    id              VARCHAR(36) NOT NULL PRIMARY KEY,
-    user_id         VARCHAR(36) NULL,                -- #110, propriétaire
-    key_hash        CHAR(64)    NOT NULL UNIQUE,    -- sha256 hex
-    label           VARCHAR(100) NOT NULL,
-    expires_at      DATETIME    NULL,
-    last_used_at    DATETIME    NULL,
-    revoked_at      DATETIME    NULL,
-    created_at      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id               VARCHAR(36)  NOT NULL PRIMARY KEY,
+    user_id          VARCHAR(36)  NULL,                -- #110, propriétaire
+    key_hash         CHAR(64)     NOT NULL UNIQUE,    -- sha256 hex
+    key_type         VARCHAR(20)  NULL,               -- NULL | 'onboarding' | 'onboarded'
+    label            VARCHAR(100) NOT NULL,
+    expires_at       DATETIME     NULL,
+    last_used_at     DATETIME     NULL,
+    last_used_ip     VARCHAR(45)  NULL,
+    last_used_agent  VARCHAR(200) NULL,
+    revoked_at       DATETIME     NULL,
+    created_at       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_key_hash (key_hash),
-    INDEX idx_api_keys_user (user_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
@@ -102,11 +110,15 @@ contournent via `app.config["LOGIN_DISABLED"] = True`.
 ## CRUD `/api/v1/keys`
 
 ```
-POST   /api/v1/keys          {label, expires_at?, user_id?, scopes:[{project_id,scope}]}
-GET    /api/v1/keys           liste (sans clé en clair, jamais)
-PATCH  /api/v1/keys/<id>     {label?, expires_at?, user_id?, scopes?}
-DELETE /api/v1/keys/<id>     revoke (set revoked_at = NOW())
+POST   /api/v1/keys             {label, expires_at?, user_id?, scopes:[{project_id,scope}]}
+POST   /api/v1/keys/onboard     {project_id, cat_id} — token d'onboarding pour ken init
+GET    /api/v1/keys             liste (sans clé en clair, jamais)
+PATCH  /api/v1/keys/<id>        {label?, expires_at?, user_id?, scopes?}
+DELETE /api/v1/keys/<id>        revoke (set revoked_at = NOW())
 ```
+
+`POST /api/v1/keys` est rate-limite a 10 creations / heure / IP pour
+limiter le risque d'exfiltration en cas d'admin compromis.
 
 `user_id` est facultatif (#110). Quand il est fourni, l'API vérifie que
 l'utilisateur existe avant d'écrire la FK. Comme pour `expires_at`, le
@@ -118,6 +130,38 @@ créer une nouvelle clé. La suppression d'un user passe la colonne à
 `POST` renvoie `201` avec `{"id": ..., "key": "kb_...", "scopes": [...]}`.
 La clé en clair est dans le champ `key` et n'est plus jamais renvoyée
 ensuite — y compris par GET et PATCH.
+
+### Onboarding tokens (`key_type = onboarding`)
+
+Pour les agents AI (Claude Code, etc.), un admin clique **Copy
+onboard link** sur la page d'un projet (`/admin/board`). Le serveur
+appelle `POST /api/v1/keys/onboard` qui :
+
+1. Revoque tout token `onboarding` existant pour ce projet (un seul
+   actif a la fois).
+2. Cree une cle `kb_<...>` avec `key_type = "onboarding"`, scope
+   `write` sur le projet cible.
+3. Retourne le token en clair une seule fois, encode dans le lien
+   `/onboarding/<token>`.
+
+Quand l'agent clique le lien et que le runbook est consomme, le
+middleware `auth.py` promeut la cle a `key_type = "onboarded"` au
+premier appel API reussi. Une cle `onboarded` n'est plus revocable
+par un re-onboard accidentel ; seul `DELETE /api/v1/keys/<id>` la
+revoque.
+
+### Audit trail (`last_used_*`)
+
+A chaque appel API authentifie par bearer, le middleware met a jour :
+
+- `last_used_at` — timestamp UTC.
+- `last_used_ip` — IP du client (extraite via les headers de proxy
+  habituels).
+- `last_used_agent` — User-Agent (tronque a 200 chars).
+
+Visible dans `GET /api/v1/keys` et sur la page `/admin/keys` —
+permet de detecter une cle qui n'est plus utilisee et qu'on peut
+revoquer.
 
 ## Page `/admin/keys`
 
@@ -133,9 +177,9 @@ Template `templates/admin_keys.html`, calqué sur `admin_users.html`.
   seule fois. La modale ferme et reload la page.
 - Bouton **Révoquer** passe par le confirm-modal partagé.
 
-Comme `/admin/users`, la page reste **ouverte** (pas d'auth UI) tant
-que #1 (web user auth) n'est pas fait. Quand #1 arrivera, on protégera
-les deux pages via le même mécanisme de session.
+Comme `/admin/users`, la page est protegee par `@admin_required` :
+session Flask-Login + `is_admin = 1`. Cf. [`auth-user.md`](auth-user.md)
+pour le detail du flow login.
 
 ## Tests
 
@@ -156,7 +200,8 @@ puis distribuer les clés générées aux clients (CLI `ken`, scripts).
 # Génération d'une clé admin (à mettre dans le vault ansible)
 python -c 'import secrets; print("kb_" + secrets.token_urlsafe(32))'
 
-# Création de la première api_key via curl (en mode soft, avant enforce)
+# Création de la première api_key via curl (l'API est en mode strict
+# permanent depuis #40 — la KENBOARD_ADMIN_KEY est obligatoire ici)
 curl -X POST https://www.kenboard.2113.ch/api/v1/keys \
   -H "Authorization: Bearer $KENBOARD_ADMIN_KEY" \
   -H "Content-Type: application/json" \

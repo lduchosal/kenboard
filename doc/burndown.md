@@ -39,6 +39,22 @@ per project at today's date. Designed for a nightly cron:
 No daemon, no background process — consistent with kenboard's
 architecture.
 
+### Backfill from history
+
+```sh
+kenboard backfill [--days N]
+```
+
+Reconstructs snapshots from `tasks.created_at` / `tasks.updated_at`
+for the last N days (default 60), upserts via `ON DUPLICATE KEY
+UPDATE`. Idempotent — running it again overwrites the same rows.
+
+Caveat: `tasks.updated_at` is bumped by any edit, not just status
+transitions. Backfill counts everything that isn't currently `done`
+as `todo` for past dates — useful for an initial chart on a fresh
+deployment, but not a substitute for the daily snapshot once the
+cron is in place.
+
 ### Why not reconstruct from task timestamps?
 
 The `tasks.updated_at` column is bumped by **any** edit (title,

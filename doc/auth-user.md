@@ -390,3 +390,107 @@ Appliquer : `kenboard migrate` (production) ou `kenboard migrate-test`
 - Mapping groupes IdP → `is_admin`
 - Refresh token (la session Flask-Login a sa propre durée de vie)
 - SCIM / sync profil / photo
+
+## Reset password par email (#231)
+
+Pour les utilisateurs qui ont oublié leur mot de passe et n'ont pas
+d'admin sous la main pour appeler `POST /api/v1/users/:id/reset-password`.
+
+### Flow
+
+1. L'utilisateur clique « Mot de passe oublié ? » sur `/login`.
+2. `/forgot-password` (POST) demande l'email, rate-limité 3/heure/IP.
+3. Si l'email existe, `mailer.py` envoie un mail avec lien
+   `/reset-password/<token>` (token = `urlsafe(32)`, hash sha256
+   stocké dans `password_reset_tokens` avec `expires_at = NOW() +
+   30 min`). Si l'email n'existe pas, le serveur répond pareil — pas
+   de leak d'existence.
+4. Le user clique le lien, saisit un nouveau password (validé par
+   `password_strength.validate_password_strength()`).
+5. Au POST, le token est marqué `used_at = NOW()`, le password est
+   rehashé argon2, le `session_nonce` du user est rotaté
+   (invalide toutes les sessions ouvertes ailleurs).
+6. Redirect vers `/login` avec un message de succès.
+
+### Migration
+
+`0018.create_password_reset_tokens.sql` :
+
+```sql
+CREATE TABLE password_reset_tokens (
+    id          VARCHAR(36) NOT NULL PRIMARY KEY,
+    user_id     VARCHAR(36) NOT NULL,
+    token_hash  CHAR(64)    NOT NULL,
+    created_at  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at  DATETIME    NOT NULL,
+    used_at     DATETIME    NULL,
+    INDEX idx_prt_token_hash (token_hash),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
+
+### Configuration SMTP
+
+Variables d'env dans `.env` :
+
+| Variable | Defaut | Role |
+|---|---|---|
+| `SMTP_HOST` | (vide) | Si vide, le mail n'est pas envoyé (mode silencieux) |
+| `SMTP_PORT` | 587 | |
+| `SMTP_USER` | (vide) | |
+| `SMTP_PASSWORD` | (vide) | |
+| `SMTP_FROM` | (vide) | Adresse expediteur |
+| `SMTP_USE_TLS` | true | STARTTLS |
+
+## Self-registration (#232)
+
+Permet a un utilisateur de creer son propre compte si son email
+correspond a un domaine autorise. Disabled par defaut.
+
+### Activation
+
+Variable d'env :
+
+```env
+REGISTER_ALLOWED_DOMAIN=example.com
+```
+
+Vide → la route `/register` retourne 404. Sinon, seuls les emails
+`@example.com` peuvent s'inscrire.
+
+### Flow
+
+1. `/register` (GET) affiche le form (email + password).
+2. `/register` (POST) verifie le domaine, rate-limite 5/heure/IP,
+   genere un token (sha256 stocké dans `email_verification_tokens`
+   avec `expires_at = NOW() + 24h`), envoie un mail avec lien
+   `/verify-email/<token>`. Le password est déjà hashé argon2 et
+   stocké dans la table verification — le user n'existe pas encore.
+3. Le user clique le lien. `/verify-email/<token>` valide le token,
+   crée le `users` row (name = email, is_admin = false), crée la
+   catégorie « Users » si elle n'existe pas, crée un projet
+   personnel pour le user, lui octroie `write` sur la categorie
+   Users (`user_category_scopes`), marque le token `used_at`.
+4. Redirect vers `/login` avec succès.
+
+### Migration
+
+`0019.create_email_verification_tokens.sql` :
+
+```sql
+CREATE TABLE email_verification_tokens (
+    id             VARCHAR(36)  NOT NULL PRIMARY KEY,
+    email          VARCHAR(255) NOT NULL,
+    password_hash  VARCHAR(255) NOT NULL,
+    token_hash     CHAR(64)     NOT NULL,
+    created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at     DATETIME     NOT NULL,
+    used_at        DATETIME     NULL,
+    INDEX idx_evt_token_hash (token_hash)
+);
+```
+
+A noter : le password est hashé **avant** le mail de verification.
+Si le user abandonne le flow, le hash est dans la table mais sans
+`users` row associé — il sera ramassé par un cron de purge des
+tokens expirés (TODO).

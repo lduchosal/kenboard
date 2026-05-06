@@ -1,35 +1,336 @@
 openapi: 3.1.0
 info:
   title: Kenboard API
-  version: 0.1.11
+  version: "1.0"
   description: |
     REST API for Kenboard, a kanban-style project management tool.
 
-    This specification currently documents the **users** endpoints only
-    (introduced in 0.1.12). The categories, projects and tasks endpoints
-    are described in `doc/api.md` but not yet specified here.
+    All endpoints under `/api/v1/*` are protected. Three principals are
+    accepted by the middleware (`src/dashboard/auth.py`):
 
-    See `doc/authentication.md` for password hashing details and the
-    current limitations regarding authentication.
+    1. **Cookie session** — Flask-Login session set by `POST /login`.
+       On unsafe methods, an `Origin` / `Referer` check protects against
+       CSRF.
+    2. **Static admin key** — `Authorization: Bearer ${KENBOARD_ADMIN_KEY}`,
+       loaded from `.env`. Bypasses every scope check.
+    3. **Per-project API key** — `Authorization: Bearer kb_<43_chars>`,
+       scoped via `api_key_projects` (`read|write|admin`).
+
+    Endpoints under `/api/v1/users` and `/api/v1/keys` are admin-only:
+    they accept either an admin cookie session (`is_admin = 1`) or the
+    static admin key, but never a per-project API key. The single
+    exception is `POST /api/v1/users/{user_id}/password` (self-service
+    password change).
+
+    See `doc/api.md` for the human-readable reference,
+    `doc/api-keys.md` for the bearer token model, and
+    `doc/permissions.md` for the human scope model.
 
   license:
     name: Proprietary
+
 servers:
   - url: https://www.kenboard.2113.ch
     description: Production
   - url: http://localhost:5000
-    description: Local development
+    description: Local dev
+
+security:
+  - bearerAuth: []
+  - cookieAuth: []
 
 tags:
+  - name: categories
+    description: Top-level boards. Admin-only on create/delete/reorder.
+  - name: projects
+    description: Sub-units of a category, hold tasks.
+  - name: tasks
+    description: Kanban cards (todo / doing / review / done).
   - name: users
-    description: User management. No authentication required at this point.
+    description: User management. Admin-only.
+  - name: keys
+    description: API key management. Admin-only.
 
 paths:
+  /api/v1/categories:
+    get:
+      tags: [categories]
+      summary: List categories visible to the caller
+      description: |
+        Non-admin users only see categories they have read scope on (via
+        `user_category_scopes`). Admins and admin-key callers see every
+        category.
+      responses:
+        "200":
+          description: Array of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [categories]
+      summary: Create a category (admin only)
+      description: Also creates a `Project {name}` inside the new category.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryCreate"
+      responses:
+        "201":
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /api/v1/categories/{cat_id}:
+    parameters:
+      - $ref: "#/components/parameters/CatId"
+    patch:
+      tags: [categories]
+      summary: Update a category
+      description: |
+        `project_order` (optional) replaces the project ordering inside
+        the category as a single transaction. Requires `write` scope on
+        this category.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryUpdate"
+      responses:
+        "200":
+          description: Updated category
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    delete:
+      tags: [categories]
+      summary: Delete a category (admin only)
+      description: Cascades on projects and tasks.
+      responses:
+        "204":
+          description: Category deleted
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/v1/categories/reorder:
+    post:
+      tags: [categories]
+      summary: Reorder categories globally (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from, to]
+              properties:
+                from: { type: integer }
+                to: { type: integer }
+      responses:
+        "200":
+          description: Reorder applied
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/v1/projects:
+    get:
+      tags: [projects]
+      summary: List projects, optionally filtered by category
+      parameters:
+        - in: query
+          name: cat
+          required: false
+          schema: { type: string, format: uuid }
+          description: Restrict to a single category id.
+      responses:
+        "200":
+          description: Array of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [projects]
+      summary: Create a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectCreate"
+      responses:
+        "201":
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /api/v1/projects/{proj_id}:
+    parameters:
+      - $ref: "#/components/parameters/ProjId"
+    patch:
+      tags: [projects]
+      summary: Update a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    delete:
+      tags: [projects]
+      summary: Delete a project (refuses if it has tasks)
+      responses:
+        "204":
+          description: Project deleted
+        "400":
+          description: Project still has tasks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/v1/tasks:
+    get:
+      tags: [tasks]
+      summary: List tasks of a project
+      parameters:
+        - in: query
+          name: project
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Array of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+        "400":
+          description: Missing `project` query parameter
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [tasks]
+      summary: Create a task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskCreate"
+      responses:
+        "201":
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /api/v1/tasks/{task_id}:
+    parameters:
+      - in: path
+        name: task_id
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [tasks]
+      summary: Get a single task
+      responses:
+        "200":
+          description: Task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [tasks]
+      summary: Update a task (incl. status, position, project_id)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdate"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    delete:
+      tags: [tasks]
+      summary: Delete a task
+      responses:
+        "204":
+          description: Task deleted
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /api/v1/users:
     get:
       tags: [users]
-      summary: List all users
-      description: Returns the list of users without their password hash.
+      summary: List all users (admin)
+      description: Returns every user with their `scopes` array. Admin only.
       responses:
         "200":
           description: Array of users
@@ -39,42 +340,18 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/User"
-              examples:
-                two-users:
-                  value:
-                    - id: 7f1c8a9d-1234-4abc-9def-012345678901
-                      name: Q
-                      color: "#0969da"
-                      is_admin: true
-                      created_at: "2026-04-07T10:00:00"
-                      updated_at: "2026-04-07T10:00:00"
-                    - id: 8e2d9b0c-2345-4bcd-8ef0-123456789012
-                      name: Alice
-                      color: "#8250df"
-                      is_admin: false
-                      created_at: "2026-04-07T10:00:00"
-                      updated_at: "2026-04-07T10:00:00"
-
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
     post:
       tags: [users]
-      summary: Create a new user
+      summary: Create a new user (admin)
+      description: Rate-limited to 10 per hour per IP.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/UserCreate"
-            examples:
-              with-password:
-                value:
-                  name: Dave
-                  color: "#abcdef"
-                  password: topsecret
-                  is_admin: false
-              without-password:
-                value:
-                  name: Alice
-                  color: "#8250df"
       responses:
         "201":
           description: User created
@@ -82,51 +359,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
         "409":
           description: Name already exists
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-              example:
-                error: Name already exists
-        "422":
-          $ref: "#/components/responses/ValidationError"
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "429": { $ref: "#/components/responses/RateLimited" }
 
   /api/v1/users/{user_id}:
     parameters:
-      - name: user_id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-
+      - $ref: "#/components/parameters/UserId"
     patch:
       tags: [users]
-      summary: Update a user
+      summary: Update a user (admin)
       description: |
-        All fields are optional; missing fields keep their current value.
-        An empty `password` field also keeps the current hash.
+        Updates `name`, `color`, and/or `is_admin`. Password is **not**
+        in this payload (#53) — use `POST /users/{id}/password` for
+        self-service or `POST /users/{id}/reset-password` for admin
+        reset.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/UserUpdate"
-            examples:
-              rename:
-                value:
-                  name: NewName
-              change-color:
-                value:
-                  color: "#ffffff"
-              change-password:
-                value:
-                  password: newsecret
-              promote-admin:
-                value:
-                  is_admin: true
       responses:
         "200":
           description: Updated user
@@ -134,136 +394,559 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
-        "404":
-          $ref: "#/components/responses/NotFound"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
         "409":
           description: Name already taken by another user
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-        "422":
-          $ref: "#/components/responses/ValidationError"
-
+        "422": { $ref: "#/components/responses/ValidationError" }
     delete:
       tags: [users]
-      summary: Delete a user
+      summary: Delete a user (admin)
       responses:
         "204":
-          description: User deleted (no content)
+          description: User deleted
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/v1/users/{user_id}/password:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
+    post:
+      tags: [users]
+      summary: Self-service password change
+      description: |
+        The caller must be authenticated (cookie session) and own the
+        user (`current_user.id == user_id`). Requires the current
+        password. Rotates the user's `session_nonce`, invalidating
+        every other open session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordChange"
+      responses:
+        "204":
+          description: Password updated
+        "400":
+          description: User has no password set yet
+        "401":
+          description: Wrong old password
+        "403":
+          description: Not the owner of this user
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /api/v1/users/{user_id}/reset-password:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
+    post:
+      tags: [users]
+      summary: Admin password reset (admin)
+      description: |
+        Resets a user's password without requiring the old one. Rotates
+        the target user's `session_nonce`, invalidating every open
+        session. Rate-limited to 5 per hour per IP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordReset"
+      responses:
+        "204":
+          description: Password reset
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/v1/users/{user_id}/scopes:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
+    put:
+      tags: [users]
+      summary: Replace a user's category scopes (admin)
+      description: |
+        Atomically clears and re-inserts the user's
+        `user_category_scopes`. Pass an empty array to revoke
+        everything.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserScopeUpdate"
+      responses:
+        "200":
+          description: User with updated scopes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /api/v1/keys:
+    get:
+      tags: [keys]
+      summary: List all API keys (admin, no plain-text key)
+      responses:
+        "200":
+          description: Array of api_keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ApiKey"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [keys]
+      summary: Create an API key (admin)
+      description: |
+        Returns the plain-text key **once and only once** in the `key`
+        field. Subsequent reads only expose the metadata. Rate-limited
+        to 10 per hour per IP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyCreate"
+      responses:
+        "201":
+          description: API key created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyCreated"
+        "400":
+          description: Invalid `user_id` (no such user)
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/v1/keys/onboard:
+    post:
+      tags: [keys]
+      summary: Create or replace an onboarding token for a project (admin)
+      description: |
+        Revokes any existing onboarding token for `project_id` first,
+        then creates a fresh one with `key_type = "onboarding"`. The
+        token is consumed by the `ken init` flow and switches to
+        `key_type = "onboarded"` on first use.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [project_id, cat_id]
+              properties:
+                project_id: { type: string, format: uuid }
+                cat_id: { type: string, format: uuid }
+      responses:
+        "201":
+          description: Onboarding token created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [key, project_id, cat_id]
+                properties:
+                  key:
+                    type: string
+                    description: Plain-text token, returned once.
+                  project_id: { type: string, format: uuid }
+                  cat_id: { type: string, format: uuid }
+        "400":
+          description: Missing `project_id` / `cat_id`
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/v1/keys/{key_id}:
+    parameters:
+      - in: path
+        name: key_id
+        required: true
+        schema: { type: string, format: uuid }
+    patch:
+      tags: [keys]
+      summary: Update an API key (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApiKeyUpdate"
+      responses:
+        "200":
+          description: Updated api_key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKey"
+        "400":
+          description: Invalid `user_id`
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+    delete:
+      tags: [keys]
+      summary: Revoke an API key (admin)
+      description: Idempotent — sets `revoked_at` to NOW(), the row stays.
+      responses:
+        "204":
+          description: Key revoked
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
 components:
-  schemas:
-    User:
-      type: object
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: kb_<token>
       description: |
-        Public representation of a user. The `password_hash` column is
-        intentionally absent from this schema and is never returned by
-        the API.
-      required: [id, name, color, is_admin, created_at, updated_at]
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: Server-generated UUID v4
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-        color:
-          type: string
-          maxLength: 50
-          description: |
-            Avatar color, accepted as a hex string (`#0969da`) or a CSS
-            variable name (`var(--accent)`)
-        is_admin:
-          type: boolean
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
+        Either the static `KENBOARD_ADMIN_KEY` from the server env
+        (admin global) or a per-project API key (`kb_<43_chars>`)
+        created via `POST /api/v1/keys`. Per-project keys are
+        rejected on `/api/v1/users` and `/api/v1/keys`.
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+      description: |
+        Flask-Login session cookie set by `POST /login`. On unsafe
+        methods, the middleware checks `Origin` / `Referer` matches
+        the request host (CSRF defense).
 
-    UserCreate:
-      type: object
-      required: [name, color]
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-        color:
-          type: string
-          maxLength: 50
-        password:
-          type: string
-          minLength: 1
-          maxLength: 200
-          description: Optional. If omitted, the password_hash stays empty.
-        is_admin:
-          type: boolean
-          default: false
+  parameters:
+    CatId:
+      in: path
+      name: cat_id
+      required: true
+      schema: { type: string, format: uuid }
+    ProjId:
+      in: path
+      name: proj_id
+      required: true
+      schema: { type: string, format: uuid }
+    UserId:
+      in: path
+      name: user_id
+      required: true
+      schema: { type: string, format: uuid }
 
-    UserUpdate:
-      type: object
-      description: All fields are optional; only provided fields are updated.
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 100
-        color:
-          type: string
-          maxLength: 50
-        password:
-          type: string
-          minLength: 1
-          maxLength: 200
-          description: |
-            If provided and non-empty, the password is re-hashed (argon2)
-            and stored. An empty string is rejected by validation;
-            omitting the field keeps the current hash.
-        is_admin:
-          type: boolean
+  responses:
+    Unauthorized:
+      description: Missing / invalid / revoked / expired token
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Insufficient scope, admin-only endpoint, or CSRF check failed
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ValidationError:
+      description: Pydantic validation error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ValidationError" }
+    RateLimited:
+      description: Per-IP rate limit exceeded
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
 
+  schemas:
     Error:
       type: object
       required: [error]
       properties:
-        error:
-          type: string
+        error: { type: string }
 
     ValidationError:
       type: object
       required: [error]
       properties:
-        error:
-          type: string
+        error: { type: string }
         details:
           type: array
           items:
             type: object
 
-  responses:
-    NotFound:
-      description: Resource not found
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-          example:
-            error: Not found
+    Category:
+      type: object
+      required: [id, name, color, position]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 250 }
+        color: { type: string, maxLength: 50 }
+        position: { type: integer }
 
-    ValidationError:
-      description: Pydantic validation error
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ValidationError"
-          example:
-            error: Validation error
-            details:
-              - loc: ["body", "name"]
-                msg: Field required
-                type: missing
+    CategoryCreate:
+      type: object
+      required: [name, color]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 250 }
+        color: { type: string, maxLength: 50 }
+
+    CategoryUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 250 }
+        color: { type: string, maxLength: 50 }
+        project_order:
+          type: array
+          items: { type: string, format: uuid }
+          description: Replaces the project ordering inside the category.
+
+    Project:
+      type: object
+      required: [id, cat_id, name, acronym, status, position, default_who]
+      properties:
+        id: { type: string, format: uuid }
+        cat_id: { type: string, format: uuid }
+        name: { type: string }
+        acronym: { type: string, maxLength: 4 }
+        status: { type: string, enum: [active, archived] }
+        position: { type: integer }
+        default_who:
+          type: string
+          maxLength: 100
+          description: Pre-filled assignee on new tasks.
+
+    ProjectCreate:
+      type: object
+      required: [name, acronym, cat]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 250 }
+        acronym: { type: string, minLength: 1, maxLength: 4 }
+        cat: { type: string, format: uuid }
+        status:
+          type: string
+          enum: [active, archived]
+          default: active
+        default_who:
+          type: string
+          maxLength: 100
+          default: ""
+
+    ProjectUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 250 }
+        acronym: { type: string, minLength: 1, maxLength: 4 }
+        cat: { type: string, format: uuid }
+        status: { type: string, enum: [active, archived] }
+        default_who: { type: string, maxLength: 100 }
+        project_order:
+          type: array
+          items: { type: string, format: uuid }
+
+    Task:
+      type: object
+      required: [id, project_id, title, description, status, who, position, created_at, updated_at]
+      properties:
+        id: { type: integer }
+        project_id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        status: { type: string, enum: [todo, doing, review, done] }
+        who: { type: string }
+        due_date:
+          type: string
+          format: date
+          nullable: true
+        position: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    TaskCreate:
+      type: object
+      required: [project_id, title]
+      properties:
+        project_id: { type: string, format: uuid }
+        title: { type: string, minLength: 1, maxLength: 250 }
+        description: { type: string, default: "" }
+        status:
+          type: string
+          enum: [todo, doing, review, done]
+          default: todo
+        who: { type: string, default: "" }
+        due_date:
+          type: string
+          nullable: true
+          description: ISO `YYYY-MM-DD` or European `DD.MM` (current year).
+
+    TaskUpdate:
+      type: object
+      properties:
+        project_id: { type: string, format: uuid }
+        title: { type: string, minLength: 1, maxLength: 250 }
+        description: { type: string }
+        status: { type: string, enum: [todo, doing, review, done] }
+        who: { type: string }
+        due_date: { type: string, nullable: true }
+        position: { type: integer }
+
+    User:
+      type: object
+      required: [id, name, color, is_admin, created_at, updated_at, scopes]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 100 }
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 255
+        color: { type: string, maxLength: 50 }
+        is_admin: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserCategoryScope"
+
+    UserCreate:
+      type: object
+      required: [name, color]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        email: { type: string, format: email, maxLength: 255 }
+        color: { type: string, maxLength: 50 }
+        password:
+          type: string
+          maxLength: 200
+          description: |
+            Optional. If provided, validated against the strength
+            policy (min 8 chars + zxcvbn score >= 3) before being
+            argon2-hashed.
+        is_admin: { type: boolean, default: false }
+
+    UserUpdate:
+      type: object
+      description: |
+        All fields optional. Note that `password` is intentionally
+        absent from this model (#53) — use `/password` or
+        `/reset-password` instead.
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        color: { type: string, maxLength: 50 }
+        is_admin: { type: boolean }
+
+    PasswordChange:
+      type: object
+      required: [old_password, new_password]
+      properties:
+        old_password: { type: string, minLength: 1, maxLength: 200 }
+        new_password: { type: string, maxLength: 200 }
+
+    PasswordReset:
+      type: object
+      required: [new_password]
+      properties:
+        new_password: { type: string, maxLength: 200 }
+
+    UserCategoryScope:
+      type: object
+      required: [category_id, scope]
+      properties:
+        category_id: { type: string, format: uuid }
+        scope: { type: string, enum: [read, write] }
+
+    UserScopeUpdate:
+      type: object
+      required: [scopes]
+      properties:
+        scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserCategoryScope"
+
+    ApiKeyScope:
+      type: object
+      required: [project_id, scope]
+      properties:
+        project_id: { type: string, format: uuid }
+        scope: { type: string, enum: [read, write, admin] }
+
+    ApiKey:
+      type: object
+      required: [id, label, created_at, scopes]
+      properties:
+        id: { type: string, format: uuid }
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+        label: { type: string, maxLength: 100 }
+        expires_at: { type: string, format: date-time, nullable: true }
+        last_used_at: { type: string, format: date-time, nullable: true }
+        last_used_ip: { type: string, nullable: true }
+        last_used_agent: { type: string, nullable: true }
+        revoked_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+        scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiKeyScope"
+
+    ApiKeyCreate:
+      type: object
+      required: [label]
+      properties:
+        label: { type: string, minLength: 1, maxLength: 100 }
+        expires_at: { type: string, format: date-time, nullable: true }
+        user_id: { type: string, format: uuid, nullable: true }
+        scopes:
+          type: array
+          default: []
+          items:
+            $ref: "#/components/schemas/ApiKeyScope"
+
+    ApiKeyUpdate:
+      type: object
+      description: All fields optional. Pass `scopes: []` to revoke every scope.
+      properties:
+        label: { type: string, minLength: 1, maxLength: 100 }
+        expires_at: { type: string, format: date-time, nullable: true }
+        user_id: { type: string, format: uuid, nullable: true }
+        scopes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiKeyScope"
+
+    ApiKeyCreated:
+      allOf:
+        - $ref: "#/components/schemas/ApiKey"
+        - type: object
+          required: [key]
+          properties:
+            key:
+              type: string
+              description: |
+                Plain-text token (`kb_<43_chars>`). Returned **once**
+                on creation and never again — store it immediately.
