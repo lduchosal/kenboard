@@ -64,9 +64,33 @@ _LOGIN_TEMPLATE = "login.html"
 
 log = get_logger("auth_user")
 
+
+def _ua_only_session_identifier() -> str:
+    """Session-identifier override: hash User-Agent only, drop the IP (#254).
+
+    Flask-Login's default ``_create_identifier`` hashes ``(remote_addr | UA)``
+    and ``session_protection = "strong"`` deletes the session on any
+    mismatch. That trips on every legitimate IP change (WiFi → 4G roaming,
+    VPN flip, mobile carrier hop) and forces a re-login mid-task — losing
+    in-flight modal drafts. Hashing only the UA preserves the defense
+    against cookies replayed from a different browser while tolerating
+    same-browser roaming.
+
+    The session_nonce stored on ``users.session_nonce`` (rotated on logout
+    and password change) remains the primary anti-cookie-theft control.
+    """
+    ua = request.headers.get("User-Agent", "") or ""
+    return hashlib.sha512(ua.encode("utf-8")).hexdigest()
+
+
 login_manager = LoginManager()
 login_manager.login_view = LOGIN_VIEW_ENDPOINT
 login_manager.session_protection = "strong"
+# Flask-Login reads ``_session_identifier_generator`` (private name); the
+# public ``session_identifier_generator`` attribute is silently ignored.
+login_manager._session_identifier_generator = (
+    _ua_only_session_identifier  # noqa: SLF001
+)
 
 bp = Blueprint("auth_user", __name__)
 

@@ -10,7 +10,11 @@ import json
 import pytest
 from argon2 import PasswordHasher
 
-from dashboard.auth_user import _is_safe_url, _verify_credentials
+from dashboard.auth_user import (
+    _is_safe_url,
+    _ua_only_session_identifier,
+    _verify_credentials,
+)
 
 SAME_ORIGIN = {"Origin": "http://localhost"}
 
@@ -63,6 +67,70 @@ def normal_user(db, queries):
 
 
 # -- Helpers ------------------------------------------------------------------
+
+
+class TestUaOnlySessionIdentifier:
+    """#254: identifier hash must depend on UA only, not on remote IP.
+
+    Flask-Login's default mixes ``(remote_addr | UA)``; with
+    ``session_protection = "strong"`` any IP change wipes the session and
+    forces a re-login. Our override keeps the UA component (so cookie
+    replays from a different browser still trip) but tolerates same-UA
+    network roaming.
+    """
+
+    def test_same_ua_different_ip_yields_same_hash(self, auth_app):
+        ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14)"
+        with auth_app.test_request_context(
+            "/",
+            headers={"User-Agent": ua},
+            environ_overrides={"REMOTE_ADDR": "10.0.0.1"},
+        ):
+            h1 = _ua_only_session_identifier()
+        with auth_app.test_request_context(
+            "/",
+            headers={"User-Agent": ua},
+            environ_overrides={"REMOTE_ADDR": "192.168.1.5"},
+        ):
+            h2 = _ua_only_session_identifier()
+        assert h1 == h2
+
+    def test_different_ua_yields_different_hash(self, auth_app):
+        with auth_app.test_request_context("/", headers={"User-Agent": "BrowserA"}):
+            h1 = _ua_only_session_identifier()
+        with auth_app.test_request_context("/", headers={"User-Agent": "BrowserB"}):
+            h2 = _ua_only_session_identifier()
+        assert h1 != h2
+
+    def test_missing_ua_does_not_raise(self, auth_app):
+        with auth_app.test_request_context("/"):
+            # No User-Agent header — should still produce a stable hash.
+            assert _ua_only_session_identifier()
+
+    def test_login_survives_ip_change(self, auth_client, db, admin_user):
+        """End-to-end: log in from one IP, request from another, stay authenticated."""
+        ua = "Mozilla/5.0 (test)"
+        # Step 1: log in from IP A.
+        r = auth_client.post(
+            "/login",
+            data={"name": "Q", "password": "topsecret123"},
+            headers={"User-Agent": ua},
+            environ_overrides={"REMOTE_ADDR": "10.0.0.1"},
+            follow_redirects=False,
+        )
+        assert r.status_code == 302
+
+        # Step 2: hit a login_required route from a different IP. With the
+        # UA-only identifier (#254), the session survives the IP change. If
+        # the default ``(remote_addr | UA)`` identifier were still in use,
+        # ``session_protection = "strong"`` would wipe the session and we'd
+        # get a 302 to /login.
+        r2 = auth_client.get(
+            "/",
+            headers={"User-Agent": ua},
+            environ_overrides={"REMOTE_ADDR": "192.168.1.42"},
+        )
+        assert r2.status_code == 200
 
 
 class TestIsSafeUrl:
