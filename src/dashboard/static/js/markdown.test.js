@@ -5,15 +5,35 @@ import { renderMarkdown } from './markdown.js';
 
 beforeEach(() => {
   document.body.innerHTML = '';
-  // Stub the marked + DOMPurify globals the module reads. Our module only
-  // calls ``marked.parse`` and ``DOMPurify.sanitize`` so trivial passthroughs
-  // are enough to exercise the gating + idempotency logic.
+  // Stub the marked + DOMPurify globals the module reads. The DOMPurify
+  // mock is realistic enough to exercise the addHook/afterSanitizeAttributes
+  // path (#267): it walks the parsed elements and applies registered hooks
+  // before serialising back to HTML.
   globalThis.marked = {
-    parse: (s) => `<p>${s}</p>`,
+    parse: (s) => {
+      // Minimal markdown-link substitution so tests can exercise the
+      // DOMPurify link hook (#267) without pulling in real marked.
+      const link = /^\[(.+?)\]\((.+?)\)$/.exec(s);
+      if (link) return `<a href="${link[2]}">${link[1]}</a>`;
+      return `<p>${s}</p>`;
+    },
     setOptions: () => {},
   };
+  const hooks = { afterSanitizeAttributes: [] };
   globalThis.DOMPurify = {
-    sanitize: (s) => s.replaceAll(/<script[\s\S]*?<\/script>/gi, ''),
+    sanitize(s) {
+      const stripped = s.replaceAll(/<script[\s\S]*?<\/script>/gi, '');
+      const tmp = document.createElement('div');
+      tmp.innerHTML = stripped;
+      for (const node of tmp.querySelectorAll('*')) {
+        for (const fn of hooks.afterSanitizeAttributes) fn(node);
+      }
+      return tmp.innerHTML;
+    },
+    addHook(event, fn) {
+      hooks[event] ||= [];
+      hooks[event].push(fn);
+    },
   };
 });
 
@@ -57,5 +77,17 @@ describe('renderMarkdown', () => {
     const all = document.querySelectorAll('.task-desc');
     expect(all[0].dataset.mdRendered).toBeUndefined();
     expect(all[1].dataset.mdRendered).toBe('1');
+  });
+
+  // #267: every link inside a rendered task description must open in a new
+  // tab so the user doesn't navigate away from the current board.
+  it('opens links in a new tab with rel="noopener noreferrer"', () => {
+    document.body.innerHTML = '<div class="task-desc">[click](https://example.com)</div>';
+    renderMarkdown();
+    const a = document.querySelector('.task-desc a');
+    expect(a).not.toBeNull();
+    expect(a.getAttribute('href')).toBe('https://example.com');
+    expect(a.getAttribute('target')).toBe('_blank');
+    expect(a.getAttribute('rel')).toBe('noopener noreferrer');
   });
 });
