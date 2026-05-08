@@ -5,7 +5,7 @@ import secrets
 import time
 from typing import Any
 
-from flask import Flask, render_template, request
+from flask import Flask, jsonify, make_response, render_template, request
 from flask_cors import CORS
 
 from dashboard.auth import init_auth
@@ -156,7 +156,7 @@ def _register_error_handlers(app: Flask, debug: bool) -> None:
     from werkzeug.exceptions import HTTPException
 
     @app.errorhandler(ValidationError)
-    def handle_validation_error(e: ValidationError) -> tuple[dict[str, Any], int]:
+    def handle_validation_error(e: ValidationError) -> Any:
         """Return 422 for Pydantic validation errors."""
         details = _safe_pydantic_errors(e.errors())
         log.warning("validation_error", path=request.path, errors=details)
@@ -165,10 +165,11 @@ def _register_error_handlers(app: Flask, debug: bool) -> None:
             body: dict[str, Any] = {"error": password_msg, "field": "password"}
             if debug:
                 body["details"] = details
-            return body, 422
+            return make_response(jsonify(body), 422)
+        body = {"error": "Validation error"}
         if debug:
-            return {"error": "Validation error", "details": details}, 422
-        return {"error": "Validation error"}, 422
+            body["details"] = details
+        return make_response(jsonify(body), 422)
 
     # Bind on the explicit HTTP 500 status (not on the generic ``Exception``
     # base class) so 4xx ``HTTPException`` subclasses keep their default
@@ -203,8 +204,11 @@ def _register_error_handlers(app: Flask, debug: bool) -> None:
             exc_info=True,
         )
         if _wants_json(request):
-            return {"error": "Internal server error", "error_id": error_id}, 500
-        return (
+            return make_response(
+                jsonify({"error": "Internal server error", "error_id": error_id}),
+                500,
+            )
+        return make_response(
             render_template(
                 "error_fatal.html",
                 status_code=500,
