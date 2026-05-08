@@ -1,10 +1,11 @@
 """Flask application factory."""
 
 import os
+import secrets
 import time
 from typing import Any
 
-from flask import Flask, request
+from flask import Flask, render_template, request
 from flask_cors import CORS
 
 from dashboard.auth import init_auth
@@ -166,11 +167,50 @@ def _register_error_handlers(app: Flask, debug: bool) -> None:
 
     @app.errorhandler(Exception)
     def handle_error(e: Exception) -> Any:
-        """Log and return 500 for unhandled exceptions."""
+        """Log and return a friendly error page for unhandled exceptions (#268).
+
+        API callers (anything under ``/api/`` or asking for JSON) keep the existing
+        JSON-shaped response so the client-side ``apiCall`` flow doesn't break. Browser
+        callers get an HTML page with the HTTP code, the exception class name, and a
+        short reference id they can quote when reporting the problem to the
+        administrator.
+        """
         if isinstance(e, HTTPException):
             return e
-        log.error("unhandled_error", path=request.path, error=str(e), exc_info=True)
-        return {"error": "Internal server error"}, 500
+        # Generate a short, lexicographically-sortable correlation id so
+        # support can grep both the user's report and the structured log
+        # for the same incident.
+        error_id = f"E-{int(time.time()):x}-{secrets.token_hex(2)}"
+        error_class = type(e).__name__
+        log.error(
+            "unhandled_error",
+            path=request.path,
+            error=str(e),
+            error_class=error_class,
+            error_id=error_id,
+            exc_info=True,
+        )
+        if _wants_json(request):
+            return {"error": "Internal server error", "error_id": error_id}, 500
+        return (
+            render_template(
+                "error_fatal.html",
+                status_code=500,
+                error_class=error_class,
+                error_id=error_id,
+            ),
+            500,
+        )
+
+
+def _wants_json(req: Any) -> bool:
+    """Return True when the caller looks like an API/XHR consumer."""
+    if req.path.startswith("/api/"):
+        return True
+    accept = req.accept_mimetypes
+    # ``application/json`` ranks above ``text/html`` → caller wants JSON.
+    best = accept.best_match(["application/json", "text/html"])
+    return bool(best == "application/json")
 
 
 # -- Helper: static routes & blueprints --------------------------------------

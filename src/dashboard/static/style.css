@@ -129,6 +129,93 @@ body {
 .header-compact .header-badges-dropdown { display: block; }
 
 
+/* Fatal-error page (#268). Standalone — does not extend base.html so it
+ * still renders when the DB is down. Centered card with a warning icon,
+ * a French title/subtitle, and a short reference id the user can quote. */
+.error-fatal {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+}
+.error-fatal-card {
+  max-width: 480px;
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px 28px;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+.error-fatal-icon {
+  display: inline-flex;
+  width: 56px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  color: var(--red);
+  margin-bottom: 16px;
+}
+.error-fatal-icon svg {
+  width: 32px;
+  height: 32px;
+}
+.error-fatal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.error-fatal-subtitle {
+  color: var(--dimmed);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+.error-fatal-meta {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+.error-fatal-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+.error-fatal-meta-row:last-child {
+  border-bottom: none;
+}
+.error-fatal-meta-label {
+  color: var(--dimmed);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.error-fatal-meta-value {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.error-fatal-ref {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  user-select: all;
+}
+.error-fatal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
 /* Activity line graph (#261). Engagement-oriented summary at the top of
  * the home page. The card is full-width so the 30-day axis has room to
  * breathe; the SVG itself is rendered with preserveAspectRatio="none"

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Erreur — kenboard</title>
+<link rel="icon" type="image/png" href="/static/favicon-32.png" sizes="32x32">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="error-fatal">
+  <div class="error-fatal-card">
+    <div class="error-fatal-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="13"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+    <h1 class="error-fatal-title">Une erreur fatale est survenue</h1>
+    <p class="error-fatal-subtitle">
+      Le serveur n'a pas pu traiter votre requ&ecirc;te. Vous pouvez r&eacute;essayer
+      ou revenir &agrave; l'accueil. Si le probl&egrave;me persiste, communiquez le
+      code ci-dessous &agrave; l'administrateur.
+    </p>
+    <div class="error-fatal-meta">
+      <div class="error-fatal-meta-row">
+        <span class="error-fatal-meta-label">Code HTTP</span>
+        <span class="error-fatal-meta-value">{{ status_code }}</span>
+      </div>
+      {% if error_class %}
+      <div class="error-fatal-meta-row">
+        <span class="error-fatal-meta-label">Type</span>
+        <span class="error-fatal-meta-value">{{ error_class }}</span>
+      </div>
+      {% endif %}
+      <div class="error-fatal-meta-row">
+        <span class="error-fatal-meta-label">R&eacute;f&eacute;rence</span>
+        <span class="error-fatal-meta-value error-fatal-ref">{{ error_id }}</span>
+      </div>
+    </div>
+    <div class="error-fatal-actions">
+      <a href="/" class="btn btn-save">Retour &agrave; l'accueil</a>
+      <button type="button" class="btn" onclick="globalThis.location.reload()">R&eacute;essayer</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
