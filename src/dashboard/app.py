@@ -26,6 +26,11 @@ from dashboard.routes.pages import bp as pages_bp
 
 log = get_logger("app")
 
+# Path prefix used to differentiate API/XHR clients (which expect JSON) from
+# browser callers (which want HTML). Centralised so request-logging and the
+# error-content-negotiation logic stay in lockstep.
+API_PATH_PREFIX = "/api/"
+
 
 # -- Helper: security & proxy ------------------------------------------------
 
@@ -76,7 +81,7 @@ def _register_request_logging(app: Flask) -> None:
     def log_request() -> None:
         """Log incoming request."""
         request._start_time = time.time()  # type: ignore[attr-defined]
-        if request.path.startswith("/api/"):
+        if request.path.startswith(API_PATH_PREFIX):
             log.debug(
                 "request",
                 method=request.method,
@@ -87,7 +92,7 @@ def _register_request_logging(app: Flask) -> None:
     @app.after_request
     def log_response(response: Any) -> Any:
         """Log outgoing response."""
-        if request.path.startswith("/api/"):
+        if request.path.startswith(API_PATH_PREFIX):
             duration = time.time() - getattr(request, "_start_time", time.time())
             log.info(
                 "response",
@@ -165,27 +170,34 @@ def _register_error_handlers(app: Flask, debug: bool) -> None:
             return {"error": "Validation error", "details": details}, 422
         return {"error": "Validation error"}, 422
 
-    @app.errorhandler(Exception)
-    def handle_error(e: Exception) -> Any:
-        """Log and return a friendly error page for unhandled exceptions (#268).
+    # Bind on the explicit HTTP 500 status (not on the generic ``Exception``
+    # base class) so 4xx ``HTTPException`` subclasses keep their default
+    # rendering, and Sonar python:S5793 stays happy. Flask wraps any
+    # uncaught exception into an ``InternalServerError`` when
+    # ``PROPAGATE_EXCEPTIONS`` is False (the production default), and
+    # exposes the original exception via ``e.original_exception``.
+    @app.errorhandler(500)
+    def handle_internal_server_error(e: Any) -> Any:
+        """Friendly fatal-error response for unhandled 500s (#268).
 
         API callers (anything under ``/api/`` or asking for JSON) keep the existing
         JSON-shaped response so the client-side ``apiCall`` flow doesn't break. Browser
-        callers get an HTML page with the HTTP code, the exception class name, and a
-        short reference id they can quote when reporting the problem to the
+        callers get an HTML page with the HTTP code, the original exception class name,
+        and a short reference id they can quote when reporting the problem to the
         administrator.
         """
-        if isinstance(e, HTTPException):
-            return e
-        # Generate a short, lexicographically-sortable correlation id so
-        # support can grep both the user's report and the structured log
-        # for the same incident.
+        # Drill down to the underlying cause so logs and the rendered
+        # ``Type`` field reflect e.g. ``OperationalError`` instead of the
+        # generic Werkzeug ``InternalServerError`` wrapper.
+        original = getattr(e, "original_exception", None) or e
+        if isinstance(original, HTTPException) and original.code != 500:
+            return original
         error_id = f"E-{int(time.time()):x}-{secrets.token_hex(2)}"
-        error_class = type(e).__name__
+        error_class = type(original).__name__
         log.error(
             "unhandled_error",
             path=request.path,
-            error=str(e),
+            error=str(original),
             error_class=error_class,
             error_id=error_id,
             exc_info=True,
@@ -205,7 +217,7 @@ def _register_error_handlers(app: Flask, debug: bool) -> None:
 
 def _wants_json(req: Any) -> bool:
     """Return True when the caller looks like an API/XHR consumer."""
-    if req.path.startswith("/api/"):
+    if req.path.startswith(API_PATH_PREFIX):
         return True
     accept = req.accept_mimetypes
     # ``application/json`` ranks above ``text/html`` → caller wants JSON.
