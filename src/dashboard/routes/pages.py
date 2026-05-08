@@ -246,11 +246,18 @@ def admin_keys() -> Any:
         all_projects = list(queries.proj_get_all(conn))
         users = list(queries.usr_get_all(conn))
         api_keys = list(queries.key_get_all(conn))
+        # Batch the scopes lookup into a single round-trip (#257). Previously
+        # each key triggered its own ``key_scopes_get`` call — for 20 keys
+        # that's 20 queries on top of the 5 used by this route, tripping
+        # the perf budget at 25 > 20. Now: one query, group in Python.
+        scopes_rows = list(queries.key_scopes_get_all(conn))
+        scopes_by_key: dict[str, list[dict[str, str]]] = {}
+        for s in scopes_rows:
+            scopes_by_key.setdefault(s["api_key_id"], []).append(
+                {"project_id": s["project_id"], "scope": s["scope"]}
+            )
         for k in api_keys:
-            scopes = list(queries.key_scopes_get(conn, api_key_id=k["id"]))
-            k["scopes"] = [
-                {"project_id": s["project_id"], "scope": s["scope"]} for s in scopes
-            ]
+            k["scopes"] = scopes_by_key.get(k["id"], [])
     finally:
         conn.close()
 

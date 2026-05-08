@@ -55,6 +55,13 @@ SELECT project_id, scope
 FROM api_key_projects
 WHERE api_key_id = :api_key_id;
 
+-- name: key_scopes_get_all
+-- Get every (api_key_id, project_id, scope) triplet in one round-trip.
+-- Consumed by the /admin/keys page to avoid the N+1 fan-out of calling
+-- ``key_scopes_get`` once per api_key (#257).
+SELECT api_key_id, project_id, scope
+FROM api_key_projects;
+
 -- name: key_scopes_get_for_project^
 -- Get the scope an api_key has on a specific project, or NULL if none.
 SELECT scope

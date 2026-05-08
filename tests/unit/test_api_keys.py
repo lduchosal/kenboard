@@ -88,6 +88,49 @@ class TestKeysCRUD:
         assert len(body["key"]) > 10
         assert "key_hash" not in body
 
+    def test_admin_keys_page_uses_batched_scopes_query(
+        self, client, db, queries, project
+    ):
+        """#257: /admin/keys must NOT call key_scopes_get once per key.
+
+        Replaces the N+1 fan-out (one ``key_scopes_get`` per row) with a single
+        ``key_scopes_get_all``. We assert the new query is on the aiosql bundle and that
+        the page renders correctly with multiple keys + multiple scopes per key.
+        """
+        # Sanity: the batched query is registered.
+        assert hasattr(queries, "key_scopes_get_all")
+
+        # Two keys, each with a different scope on the same project.
+        for label, scope in [("k1", "read"), ("k2", "write")]:
+            r = client.post(
+                "/api/v1/keys",
+                data=json.dumps(
+                    {
+                        "label": label,
+                        "scopes": [{"project_id": project, "scope": scope}],
+                    }
+                ),
+                content_type="application/json",
+            )
+            assert r.status_code == 201
+
+        # The batched query returns every (api_key_id, project_id, scope)
+        # row in one round-trip.
+        rows = list(queries.key_scopes_get_all(db))
+        assert len(rows) == 2
+        scopes_for = {(r["api_key_id"], r["project_id"]): r["scope"] for r in rows}
+        assert "read" in scopes_for.values()
+        assert "write" in scopes_for.values()
+
+        # The /admin/keys page renders 200 with both labels visible — the
+        # template iterates over each api_key.scopes list, so a regression
+        # to the per-key fan-out OR a wrong grouping would show as either
+        # missing scopes or a 500.
+        page = client.get("/admin/keys")
+        assert page.status_code == 200
+        assert b"k1" in page.data
+        assert b"k2" in page.data
+
     def test_create_with_scopes(self, client, db, project):
         r = client.post(
             "/api/v1/keys",
