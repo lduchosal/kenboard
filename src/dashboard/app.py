@@ -153,7 +153,6 @@ def _extract_password_error(details: list[dict[str, Any]]) -> str | None:
 def _register_error_handlers(app: Flask, debug: bool) -> None:
     """Register Pydantic validation and generic error handlers."""
     from pydantic import ValidationError
-    from werkzeug.exceptions import HTTPException
 
     @app.errorhandler(ValidationError)
     def handle_validation_error(e: ValidationError) -> Any:
@@ -189,10 +188,11 @@ def _register_error_handlers(app: Flask, debug: bool) -> None:
         """
         # Drill down to the underlying cause so logs and the rendered
         # ``Type`` field reflect e.g. ``OperationalError`` instead of the
-        # generic Werkzeug ``InternalServerError`` wrapper.
+        # generic Werkzeug ``InternalServerError`` wrapper. (We don't
+        # need to re-route non-500 ``HTTPException`` here — Flask already
+        # routes 4xx subclasses to their own handlers before reaching
+        # this 500 handler.)
         original = getattr(e, "original_exception", None) or e
-        if isinstance(original, HTTPException) and original.code != 500:
-            return original
         error_id = f"E-{int(time.time()):x}-{secrets.token_hex(2)}"
         error_class = type(original).__name__
         log.error(
