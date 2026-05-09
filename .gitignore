@@ -28,3 +28,9 @@ KENBOARD.md
 .ken2
 .ken3
 .ken*
+
+# OS / editor noise (#293)
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
