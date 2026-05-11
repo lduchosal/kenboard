@@ -40,13 +40,6 @@ dependencies = [
     "flask-limiter>=4.1.1",
     "authlib>=1.6.9",
     "requests>=2.28",
-    # Make ``requests`` / ``ssl`` honour the OS truststore so OIDC against
-    # an IdP with an internal/self-signed CA (e.g. ADFS behind a private
-    # CA installed via certctl on FreeBSD) works out of the box, without
-    # forcing operators to set REQUESTS_CA_BUNDLE manually (#344). The
-    # package patches ``requests`` and ``ssl`` at import time via a
-    # ``.pth`` file — no code change needed.
-    "pip-system-certs>=4.0",
     "zxcvbn>=4.5.0",
 ]
 
@@ -56,6 +49,20 @@ dependencies = [
 # don't carry the dependency. Consumed by the ``kenboard prod`` command
 # in ``src/dashboard/cli.py``.
 prod = ["gunicorn>=21.0"]
+
+# Make ``requests`` / ``ssl`` honour the OS truststore so OIDC against an
+# IdP with an internal/self-signed CA (e.g. ADFS behind a private root
+# installed via certctl on FreeBSD) works without setting
+# REQUESTS_CA_BUNDLE manually (#344). The package patches at interpreter
+# startup via a ``.pth`` file — no kenboard code change.
+#
+# Kept as an opt-in extra because it pulls in ``truststore``, which clashes
+# with ``pdm``'s own ``truststore`` instrumentation and causes a recursion
+# in ``ssl.SSLContext.verify_mode`` during dependency resolution. Operators
+# with an internal IdP CA install via ``pip install "kenboard[oidc]"`` (or
+# ``[prod,oidc]``); developer / CI / test environments — where pdm is in
+# use — leave the extra off.
+oidc = ["pip-system-certs>=4.0"]
 
 [project.scripts]
 kenboard = "dashboard.cli:cli"

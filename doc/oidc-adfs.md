@@ -287,6 +287,30 @@ REQUESTS_CA_BUNDLE=/usr/local/kenboard/enterprise-root-ca.pem
 > perd le certificat ajouté. Après chaque upgrade de certifi, re-ajouter
 > le root CA. La variable `REQUESTS_CA_BUNDLE` est plus durable.
 
+**Alternative recommandée (#344) : extra `[oidc]`**
+
+Depuis 0.1.93, installer kenboard avec l'extra `oidc` ajoute
+[`pip-system-certs`](https://gitlab.com/alelec/pip-system-certs) qui
+patche `requests` et `ssl` au démarrage pour utiliser le truststore
+**système** au lieu du bundle `certifi` :
+
+```sh
+pip install "kenboard[oidc]"
+# ou, avec gunicorn pour la prod :
+pip install "kenboard[prod,oidc]"
+```
+
+Plus de manipulation de `certifi` ni de `REQUESTS_CA_BUNDLE` à régler :
+il suffit d'ajouter le root CA d'entreprise au truststore OS (sur
+FreeBSD : déposer le PEM dans `/usr/local/share/certs/` puis
+`certctl rehash`; sur Debian/Ubuntu : `update-ca-certificates`).
+
+> **Pourquoi un extra et pas une dépendance par défaut** : `pip-system-certs`
+> tire `truststore` qui entre en conflit avec l'instrumentation SSL de `pdm`
+> et provoque une `RecursionError` lors de la résolution de dépendances.
+> Tant que kenboard est packagé avec `pdm` côté dev, on ne peut pas le
+> mettre dans les `dependencies` par défaut. L'extra est l'opt-in propre.
+
 ### `Token expired` / `token is not valid yet`
 
 **Cause** : décalage d'horloge (clock skew) entre le serveur ADFS et
