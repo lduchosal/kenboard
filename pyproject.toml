@@ -40,6 +40,13 @@ dependencies = [
     "flask-limiter>=4.1.1",
     "authlib>=1.6.9",
     "requests>=2.28",
+    # Make ``requests`` / ``ssl`` honour the OS truststore so OIDC against
+    # an IdP with an internal/self-signed CA (e.g. ADFS behind a private
+    # CA installed via certctl on FreeBSD) works out of the box, without
+    # forcing operators to set REQUESTS_CA_BUNDLE manually (#344). The
+    # package patches ``requests`` and ``ssl`` at import time via a
+    # ``.pth`` file — no code change needed.
+    "pip-system-certs>=4.0",
     "zxcvbn>=4.5.0",
 ]
 
