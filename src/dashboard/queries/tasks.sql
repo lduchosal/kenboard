@@ -6,6 +6,18 @@ FROM tasks
 WHERE project_id = :project_id
 ORDER BY position ASC;
 
+-- name: task_get_by_category
+-- Get every task in every project of a category, ordered by project then
+-- position. Consumed by the category page to avoid the N+1 fan-out of
+-- calling ``task_get_by_project`` once per project (#338). The caller
+-- groups by ``project_id`` in Python.
+SELECT t.id, t.project_id, t.title, t.description, t.status, t.who,
+       t.due_date, t.position, t.created_at, t.updated_at
+FROM tasks t
+JOIN projects p ON p.id = t.project_id
+WHERE p.cat_id = :category_id
+ORDER BY t.project_id ASC, t.position ASC;
+
 -- name: task_get_by_id^
 -- Get a single task by id.
 SELECT id, project_id, title, description, status, who, due_date, position,

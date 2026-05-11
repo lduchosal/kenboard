@@ -18,6 +18,18 @@ WHERE p.cat_id = :category_id
 GROUP BY s.snapshot_date
 ORDER BY s.snapshot_date ASC;
 
+-- name: burndown_get_for_category_projects
+-- Return one row per (project, snapshot_date) for every project in the
+-- given category over the last :days days. Consumed by the category page
+-- to avoid the N+1 fan-out of calling ``burndown_get_by_project`` once
+-- per project (#338). The caller groups by ``project_id`` in Python.
+SELECT s.project_id, s.snapshot_date, s.todo, s.doing, s.review, s.done
+FROM burndown_snapshots s
+JOIN projects p ON p.id = s.project_id
+WHERE p.cat_id = :category_id
+  AND s.snapshot_date >= DATE_SUB(CURDATE(), INTERVAL :days DAY)
+ORDER BY s.project_id ASC, s.snapshot_date ASC;
+
 -- name: burndown_record_snapshot!
 -- Upsert a snapshot for a project at today's date. Idempotent: running
 -- multiple times on the same day updates the counters to the latest values.

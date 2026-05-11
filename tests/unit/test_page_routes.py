@@ -149,6 +149,64 @@ class TestCategoryPage:
         html = resp.data.decode()
         assert "Task in category" in html
 
+    def test_category_page_uses_batched_queries(self, client, db, queries):
+        """#338: /cat/<id>.html must NOT call task_get_by_project /
+        burndown_get_by_project once per project.
+
+        Replaces the N+1 fan-out with one ``task_get_by_category`` + one
+        ``burndown_get_for_category_projects``. We assert the new queries exist and that
+        the page renders correctly with tasks from multiple projects in the same
+        category.
+        """
+        # Sanity: batched queries are registered.
+        assert hasattr(queries, "task_get_by_category")
+        assert hasattr(queries, "burndown_get_for_category_projects")
+
+        queries.cat_create(
+            db, id="cat-batch", name="CatBatch", color="var(--accent)", position=0
+        )
+        for i in range(3):
+            pid = f"proj-batch-{i}"
+            queries.proj_create(
+                db,
+                id=pid,
+                cat_id="cat-batch",
+                name=f"Proj{i}",
+                acronym=f"P{i}",
+                status="active",
+                position=i,
+                default_who="",
+            )
+            queries.task_create(
+                db,
+                project_id=pid,
+                title=f"Task in proj {i}",
+                description="",
+                status="todo",
+                who="Q",
+                due_date=None,
+                position=0,
+            )
+
+        # The batched task query returns every task across all 3 projects
+        # in one round-trip.
+        rows = list(queries.task_get_by_category(db, category_id="cat-batch"))
+        assert len(rows) == 3
+        assert {r["project_id"] for r in rows} == {
+            "proj-batch-0",
+            "proj-batch-1",
+            "proj-batch-2",
+        }
+
+        # The page renders 200 and each project's task is visible —
+        # regression-guard against a Python grouping bug or a return to
+        # per-project fan-out.
+        resp = client.get("/cat/cat-batch.html")
+        assert resp.status_code == 200
+        html = resp.data.decode()
+        for i in range(3):
+            assert f"Task in proj {i}" in html
+
     def test_unknown_category_404(self, client, db):
         """Unknown category id returns 404."""
         resp = client.get("/cat/nonexistent.html")

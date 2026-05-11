@@ -317,15 +317,39 @@ def category(cat_id: str) -> Any:
         if not cat:
             return "Not found", 404
 
-        # Load tasks and burndown only for this category's projects
+        # Load tasks and burndown for the whole category in two batched
+        # queries instead of fanning out per project (#338). Previously a
+        # 9-project category did 18 queries (one task + one snapshot per
+        # project) plus the 4 setup queries → 21 > 20 perf budget.
         cat_projects = [p for p in all_projects if p["cat_id"] == cat_id]
-        for p in cat_projects:
-            p["tasks"] = list(queries.task_get_by_project(conn, project_id=p["id"]))
-            p["done"] = len([t for t in p["tasks"] if t["status"] == "done"])
-            p["total"] = len(p["tasks"])
-            p["snapshots"] = list(
-                queries.burndown_get_by_project(conn, project_id=p["id"], days=60)
+        all_tasks = list(queries.task_get_by_category(conn, category_id=cat_id))
+        tasks_by_project: dict[str, list[dict[str, Any]]] = {}
+        for t in all_tasks:
+            tasks_by_project.setdefault(t["project_id"], []).append(t)
+        snapshot_rows = list(
+            queries.burndown_get_for_category_projects(
+                conn, category_id=cat_id, days=60
             )
+        )
+        snapshots_by_project: dict[str, list[dict[str, Any]]] = {}
+        for s in snapshot_rows:
+            # Strip ``project_id`` before grouping — the partials/burndown.html
+            # template expects rows shaped like ``burndown_get_by_project``
+            # (no project_id field).
+            snapshots_by_project.setdefault(s["project_id"], []).append(
+                {
+                    "snapshot_date": s["snapshot_date"],
+                    "todo": s["todo"],
+                    "doing": s["doing"],
+                    "review": s["review"],
+                    "done": s["done"],
+                }
+            )
+        for p in cat_projects:
+            p["tasks"] = tasks_by_project.get(p["id"], [])
+            p["done"] = sum(1 for t in p["tasks"] if t["status"] == "done")
+            p["total"] = len(p["tasks"])
+            p["snapshots"] = snapshots_by_project.get(p["id"], [])
 
         cat_snapshots: dict[str, list[dict[str, Any]]] = {}
         cat_snapshots[cat_id] = list(
