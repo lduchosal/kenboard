@@ -1,0 +1,40 @@
+# UX / interactions
+
+Drag & drop, modals, keyboard shortcuts, markdown rendering.
+
+Section: `frontend/ux`
+
+## Archivé (32)
+
+- [UI / mode normal des tâches = titre seul](ui-mode-normal-des-t-ches-titre-seul-8.md)
+- [BUG / L'édition d'une tâche change son status](bug-l-dition-d-une-t-che-change-son-status-11.md)
+- [UX / UI / Refresh automatique](ux-ui-refresh-automatique-14.md)
+- [UI / UX / le texte d'une tache se render en MD](ui-ux-le-texte-d-une-tache-se-render-en-md-15.md)
+- [UX / Dupliquer une tâche](ux-dupliquer-une-t-che-17.md)
+- [UX / UI / Afficher l'ID de la tâche](ux-ui-afficher-l-id-de-la-t-che-21.md)
+- [UX / Mobile / Categorie drag on specific handler](ux-mobile-categorie-drag-on-specific-handler-28.md)
+- [UX / User par défault d'un projet.](ux-user-par-d-fault-d-un-projet-29.md)
+- [UX / Formulaire d'édition d'une tâche](ux-formulaire-d-dition-d-une-t-che-30.md)
+- [UX / User par défault lors de la création d'une tâche](ux-user-par-d-fault-lors-de-la-cr-ation-d-une-t-che-33.md)
+- [UX / Refresh / Stop on edit](ux-refresh-stop-on-edit-35.md)
+- [UX / Kenboard / Liste tâches en cours](ux-kenboard-liste-t-ches-en-cours-107.md)
+- [UX / Détail d'une tâche / Affichage de l'ID dans l'URL](ux-d-tail-d-une-t-che-affichage-de-l-id-dans-l-url-109.md)
+- [UX / Double clic sur une tâche amène à l'édition de la tâche](ux-double-clic-sur-une-t-che-am-ne-l-dition-de-la-t-che-111.md)
+- [UX / Initialisation d'un modèle](ux-initialisation-d-un-mod-le-117.md)
+- [UX / Onboarding / Rendre le runbook plus clair et actionnable](ux-onboarding-rendre-le-runbook-plus-clair-et-actionnable-138.md)
+- [WEB / Kenboard / Tâche en plein écran](web-kenboard-t-che-en-plein-cran-155.md)
+- [UC / MOBILE / Scroll dans le kenboard](uc-mobile-scroll-dans-le-kenboard-161.md)
+- [UI / LOGO / Pixel art](ui-logo-pixel-art-164.md)
+- [UX / Formulaires et bouton d'édition](ux-formulaires-et-bouton-d-dition-165.md)
+- [UX / WEB / Detail d'une tâche plein écran empâche le scroll du board en background](ux-web-detail-d-une-t-che-plein-cran-emp-che-le-scroll-du-board-en-background-169.md)
+- [WEB / UX / MOBILE : bloquer le zoom dezoom](web-ux-mobile-bloquer-le-zoom-dezoom-171.md)
+- [UI / BUG / task-fullscreen toujours apparent](ui-bug-task-fullscreen-toujours-apparent-173.md)
+- [UX / KENBOARD / Empty](ux-kenboard-empty-174.md)
+- [UX / Création d'une catégorie, crée un projet](ux-cr-ation-d-une-cat-gorie-cr-e-un-projet-175.md)
+- [BUG / UX / Detail d'une tâche / se ferme après 1 minute](bug-ux-detail-d-une-t-che-se-ferme-apr-s-1-minute-205.md)
+- [UX / Header / Liste des projets trop large](ux-header-liste-des-projets-trop-large-230.md)
+- [UX / Edit task / Enter save task](ux-edit-task-enter-save-task-247.md)
+- [UX / Keyboard shortcuts](ux-keyboard-shortcuts-249.md)
+- [UX / Shortcut / Retour d'experience](ux-shortcut-retour-d-experience-253.md)
+- [UX / Link / Open in new tab](ux-link-open-in-new-tab-267.md)
+- [WEB / Dupliquer tâche / Status A Faire](web-dupliquer-t-che-status-a-faire-395.md)
