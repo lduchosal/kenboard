@@ -35,13 +35,14 @@ with the package and printed by `ken help`.
    broken line and corrupts every markdown block (lists, code fences,
    headings).
 
-   Use one of these instead:
-
-   **A. Heredoc (recommended for multi-line)** — preserves newlines
-   verbatim, no escaping headaches inside `<<'EOF'`:
+   **Best practice for agents: `--desc-file path/to/body.md`.** Write
+   the body to a file on disk (a capability nearly every agent host
+   exposes), then pass the path. No shell escaping, no heredoc tricks,
+   no stdin plumbing — just two steps:
 
    ```sh
-   ken update <id> --desc "$(cat <<'EOF'
+   # 1. Write the resolution body to a temp file
+   cat > /tmp/ken-<id>.md <<'EOF'
    <original description verbatim>
 
    ---
@@ -57,11 +58,33 @@ with the package and printed by `ken help`.
    ### Garde-fous
    - pdm run check: passed
    EOF
+
+   # 2. Hand the path to ken
+   ken update <id> --desc-file /tmp/ken-<id>.md
+   ```
+
+   This is the recommended idiom because it works the same way across
+   bash / zsh / sh / cmd.exe, doesn't depend on stdin redirection, and
+   the temp file gives you a second chance to inspect what you're
+   about to send.
+
+   Two alternatives if you can't write a file:
+
+   **B. Heredoc into `$(cat <<'EOF' …)`** — preserves newlines verbatim:
+
+   ```sh
+   ken update <id> --desc "$(cat <<'EOF'
+   <original description verbatim>
+
+   ---
+
+   ## Résolution
+   ...
+   EOF
    )"
    ```
 
-   **B. Pipe via stdin** — pass `--desc -` and stream the markdown on
-   stdin. Cleanest when you already have the body in a variable:
+   **C. `--desc -` reads from stdin** — pipe a heredoc directly:
 
    ```sh
    ken update <id> --desc - <<'EOF'
@@ -69,11 +92,10 @@ with the package and printed by `ken help`.
    EOF
    ```
 
-   **C. ANSI-C quoting** for a short two-line case:
+   For a quick two-liner, `$'first line\nsecond line'` (ANSI-C quoting)
+   also works, but for anything beyond two lines prefer `--desc-file`.
 
-   ```sh
-   ken update <id> --desc $'first line\nsecond line'
-   ```
+   Passing both `--desc` and `--desc-file` is an error — pick one.
 
    Preserve the original description verbatim, then add three sections:
 

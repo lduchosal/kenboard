@@ -518,13 +518,30 @@ def show(ctx: click.Context, task_id: int, json_mode: bool) -> None:
         click.echo(f"{key:12s}: {task.get(key) if task.get(key) is not None else ''}")
 
 
-def _resolve_desc(desc: str | None) -> str | None:
-    """Read ``--desc`` from stdin when the literal value is ``-`` (#393).
+def _resolve_desc(desc: str | None, desc_file: str | None = None) -> str | None:
+    """Pick the description body from --desc-file > stdin (--desc -) > --desc (#393).
 
-    Lets agents pipe a heredoc into the CLI for multi-line markdown descriptions without
-    worrying about shell escaping. ``None`` (option not passed) and the empty string
-    fall through unchanged.
+    Three input shapes are supported for agents that have different host capabilities:
+    - ``--desc-file path/to/body.md`` reads from a file on disk (most agent-friendly,
+      no shell escaping at all).
+    - ``--desc -`` reads from stdin (heredoc-friendly for agents that can pipe).
+    - ``--desc "literal text"`` passes the value through unchanged (single-line only —
+      multi-line bash double-quoted strings drop newlines).
+
+    Passing both ``--desc`` and ``--desc-file`` is an error so we don't have to invent
+    a merge semantic. ``None`` (option not passed) and the empty string fall through
+    unchanged.
     """
+    if desc_file:
+        if desc:
+            raise click.UsageError(
+                "Pass --desc OR --desc-file, not both. "
+                "See `ken help` for the multi-line description idioms.",
+            )
+        try:
+            return Path(desc_file).read_text(encoding="utf-8")
+        except OSError as e:
+            raise click.UsageError(f"Cannot read --desc-file: {e}") from e
     if desc == "-":
         return sys.stdin.read()
     return desc
@@ -535,7 +552,13 @@ def _resolve_desc(desc: str | None) -> str | None:
 @click.option(
     "--desc",
     default="",
-    help="Description (use '-' to read from stdin — heredoc-friendly for multi-line markdown)",
+    help="Description (single-line text, or '-' to read stdin)",
+)
+@click.option(
+    "--desc-file",
+    type=click.Path(dir_okay=False, readable=True),
+    default=None,
+    help="Read description from a file on disk (best for multi-line markdown)",
 )
 @click.option("--who", default="", help="Assignee")
 @click.option("--status", type=click.Choice(VALID_STATUSES), default="todo")
@@ -547,6 +570,7 @@ def add(  # noqa: PLR0913
     ctx: click.Context,
     title: str,
     desc: str,
+    desc_file: str | None,
     who: str,
     status: str,
     when: str | None,
@@ -554,17 +578,17 @@ def add(  # noqa: PLR0913
 ) -> None:
     r"""Add a new task to the current project.
 
-    For multi-line markdown descriptions, use ``--desc -`` and pipe the body in via
-    stdin (heredoc-friendly) — see ``ken help`` for examples. Passing ``--desc
+    For multi-line markdown descriptions, prefer ``--desc-file path/to/body.md`` (no
+    shell escaping at all). ``--desc -`` reads from stdin (heredoc). Passing ``--desc
     "line1\nline2"`` in a double-quoted shell string stores the literal ``\n`` and
-    breaks markdown rendering.
+    breaks markdown rendering. See ``ken help`` for full examples.
     """
     cfg: KenConfig = ctx.obj["cfg"]
     project_id = _require_project(cfg)
     body: dict[str, Any] = {
         "project_id": project_id,
         "title": title,
-        "description": _resolve_desc(desc) or "",
+        "description": _resolve_desc(desc, desc_file) or "",
         "who": who,
         "status": status,
         "due_date": when,
@@ -578,7 +602,13 @@ def add(  # noqa: PLR0913
 @click.option("--title", help="New title")
 @click.option(
     "--desc",
-    help="New description (use '-' to read from stdin — heredoc-friendly for multi-line markdown)",
+    help="New description (single-line text, or '-' to read stdin)",
+)
+@click.option(
+    "--desc-file",
+    type=click.Path(dir_okay=False, readable=True),
+    default=None,
+    help="Read new description from a file on disk (best for multi-line markdown)",
 )
 @click.option("--who", help="New assignee")
 @click.option("--status", type=click.Choice(VALID_STATUSES), help="New status")
@@ -591,6 +621,7 @@ def update(  # noqa: PLR0913
     task_id: int,
     title: str | None,
     desc: str | None,
+    desc_file: str | None,
     who: str | None,
     status: str | None,
     when: str | None,
@@ -598,16 +629,19 @@ def update(  # noqa: PLR0913
 ) -> None:
     r"""Update an existing task (only the fields you pass).
 
-    For multi-line markdown in ``--desc``, prefer ``--desc -`` with a heredoc on stdin —
-    see ``ken help`` for examples. ``--desc "line1\nline2"`` in a bash double-quoted
-    string stores literal backslash-n's and corrupts markdown rendering (#393).
+    For multi-line markdown in the description, prefer ``--desc-file path/to/body.md``
+    (no shell escaping). ``--desc -`` reads from stdin (heredoc). ``--desc
+    "line1\nline2"`` in a bash double-quoted string stores literal backslash-n's and
+    corrupts markdown rendering (#393).
     """
     cfg: KenConfig = ctx.obj["cfg"]
     body: dict[str, Any] = {}
     if title is not None:
         body["title"] = title
-    if desc is not None:
-        body["description"] = _resolve_desc(desc)
+    # ``--desc-file`` is independent of ``--desc`` being set; resolve through
+    # the helper so the file path wins (with a UsageError if both are passed).
+    if desc is not None or desc_file is not None:
+        body["description"] = _resolve_desc(desc, desc_file)
     if who is not None:
         body["who"] = who
     if status is not None:

@@ -477,6 +477,57 @@ class TestCliMutations:
         assert result.exit_code == 0, result.output
         assert calls[0][2]["description"] == "no-stdin-here"
 
+    # #393: --desc-file PATH is the recommended idiom for agents to pass
+    # multi-line markdown. No shell escaping, works on any agent host
+    # that can write a temp file.
+    def test_add_reads_desc_from_file(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        body = "# Heading\n\nWith multiple\n\n- bullets"
+        body_file = cwd_tmp / "body.md"
+        body_file.write_text(body, encoding="utf-8")
+        ctx, calls = _patch_responses(
+            [("POST", "/api/v1/tasks", {"id": 3, "title": "T", "status": "todo"})]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["add", "T", "--desc-file", str(body_file)])
+        assert result.exit_code == 0, result.output
+        assert calls[0][2]["description"] == body
+
+    def test_update_reads_desc_from_file(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        body = "line A\nline B\n"
+        body_file = cwd_tmp / "update.md"
+        body_file.write_text(body, encoding="utf-8")
+        ctx, calls = _patch_responses(
+            [("PATCH", "/api/v1/tasks/11", {"id": 11, "status": "todo"})]
+        )
+        with ctx:
+            result = runner.invoke(
+                ken.cli, ["update", "11", "--desc-file", str(body_file)]
+            )
+        assert result.exit_code == 0, result.output
+        assert calls[0][2] == {"description": body}
+
+    def test_desc_and_desc_file_are_mutually_exclusive(self, cwd_tmp, runner):
+        """Passing both --desc and --desc-file fails with a clear UsageError."""
+        self._setup(cwd_tmp)
+        body_file = cwd_tmp / "body.md"
+        body_file.write_text("x", encoding="utf-8")
+        result = runner.invoke(
+            ken.cli,
+            ["add", "T", "--desc", "literal", "--desc-file", str(body_file)],
+        )
+        assert result.exit_code != 0
+        assert "not both" in result.output.lower()
+
+    def test_desc_file_missing_path_fails(self, cwd_tmp, runner):
+        """An unreadable --desc-file path fails fast at the option parser."""
+        self._setup(cwd_tmp)
+        result = runner.invoke(
+            ken.cli, ["add", "T", "--desc-file", str(cwd_tmp / "nope.md")]
+        )
+        assert result.exit_code != 0
+
     def test_move(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
         ctx, calls = _patch_responses(
