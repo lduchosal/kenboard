@@ -943,11 +943,12 @@ def groom(  # noqa: PLR0913
         return
 
     # ---- no-args: list unclassified + sections ----
-    unclassified = _request(cfg, "GET", "/api/v1/wiki/unclassified") or []
+    # When a project is configured, send it server-side so a per-project
+    # api_key passes the auth scope check (admin keys see across projects).
+    endpoint = "/api/v1/wiki/unclassified"
     if cfg.project_id:
-        unclassified = [
-            t for t in unclassified if t.get("project_id") == cfg.project_id
-        ]
+        endpoint = f"{endpoint}?project={cfg.project_id}"
+    unclassified = _request(cfg, "GET", endpoint) or []
     sections, paths = _load_sections(architecture)
 
     if json_mode:

@@ -501,6 +501,49 @@ class TestMiddlewareEnforced:
         )
         assert r.status_code == 403
 
+    def test_wiki_unclassified_requires_project_filter(
+        self, enforced_client, db, project, make_api_key
+    ):
+        """Cross-project listing is rejected for per-project api_keys without
+        ``?project=``.
+
+        The auth middleware's ``_resolve_project_id`` returns ``None`` when the filter
+        is missing, so the scope check fails closed (#376b).
+        """
+        _, plain_key = make_api_key(scopes=[{"project_id": project, "scope": "read"}])
+        # No ?project= → middleware cannot resolve a project_id → 403
+        r = enforced_client.get(
+            "/api/v1/wiki/unclassified",
+            headers={"Authorization": f"Bearer {plain_key}"},
+        )
+        assert r.status_code == 403
+        # With ?project= matching the key's scope → 200
+        r = enforced_client.get(
+            f"/api/v1/wiki/unclassified?project={project}",
+            headers={"Authorization": f"Bearer {plain_key}"},
+        )
+        assert r.status_code == 200
+
+    def test_wiki_classify_resolves_project_from_task(
+        self, enforced_client, db, project, queries, make_api_key
+    ):
+        """POST /api/v1/wiki/classify resolves project_id via body.task_id (#376b)."""
+        cur = db.cursor()
+        cur.execute(
+            "INSERT INTO tasks (project_id, title, description, status, who, "
+            "due_date, position) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            (project, "T", "", "todo", "Q", None, 0),
+        )
+        task_id = cur.lastrowid
+        _, plain_key = make_api_key(scopes=[{"project_id": project, "scope": "write"}])
+        r = enforced_client.post(
+            "/api/v1/wiki/classify",
+            data=json.dumps({"task_id": task_id, "section_path": "backend"}),
+            content_type="application/json",
+            headers={"Authorization": f"Bearer {plain_key}"},
+        )
+        assert r.status_code == 200
+
     def test_last_used_at_is_updated(
         self, enforced_client, db, project, queries, make_api_key
     ):
