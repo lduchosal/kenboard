@@ -658,6 +658,23 @@ def update(  # noqa: PLR0913
         sys.exit(1)
     task = _request(cfg, "PATCH", f"/api/v1/tasks/{task_id}", body=body)
     _output(task, json_mode, columns=TASK_COLUMNS)
+    if status == "review":
+        _wiki_groom_reminder(task_id)
+
+
+def _wiki_groom_reminder(task_id: int) -> None:
+    """Remind the agent to classify the task for the wiki (#376).
+
+    Printed to stderr so it doesn't corrupt ``--json`` output. Always shown on
+    transitions to ``review`` — if the task is already classified the reminder is a
+    cheap no-op for the agent.
+    """
+    click.echo(
+        f"Reminder: classify task #{task_id} for the wiki:\n"
+        f"    ken wiki groom {task_id} <section_path>\n"
+        "(run `ken wiki groom` with no args to list available sections)",
+        err=True,
+    )
 
 
 @cli.command()
@@ -677,6 +694,8 @@ def move(ctx: click.Context, task_id: int, to_status: str) -> None:
         cfg, "PATCH", f"/api/v1/tasks/{task_id}", body={"status": to_status}
     )
     click.echo(f"Task #{task['id']} → {task['status']}")
+    if to_status == "review":
+        _wiki_groom_reminder(task_id)
 
 
 @cli.command()
@@ -1197,6 +1216,178 @@ def wiki_sync(
         + (f", {plan['orphans']} orphan section(s)" if plan["orphans"] else "")
         + ").",
     )
+
+
+# -- ken wiki build ----------------------------------------------------------
+
+_WIKI_HTML_CSS = """\
+body{margin:0;font-family:system-ui,sans-serif;color:#222;background:#fff}
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+nav.sidebar{background:#f6f8fa;border-right:1px solid #d0d7de;padding:16px;
+  overflow-y:auto;font-size:13px}
+nav.sidebar h1{font-size:14px;text-transform:uppercase;color:#57606a;margin:0 0 12px}
+nav.sidebar ul{list-style:none;padding:0;margin:0}
+nav.sidebar li{margin:2px 0}
+nav.sidebar a{color:#0969da;text-decoration:none}
+nav.sidebar a:hover{text-decoration:underline}
+nav.sidebar a.current{font-weight:600;color:#1a1a1a}
+main{padding:24px 32px;max-width:900px}
+main h1{margin-top:0}
+main code{background:#f6f8fa;padding:1px 4px;border-radius:3px;font-size:90%}
+main pre{background:#f6f8fa;padding:12px;border-radius:6px;overflow-x:auto}
+main pre code{background:transparent;padding:0}
+main a{color:#0969da}
+"""
+
+
+def _render_markdown(md_text: str) -> str:
+    """Convert a markdown string to safe HTML via the ``markdown`` library."""
+    import markdown as md_lib
+
+    return str(md_lib.markdown(md_text, extensions=["fenced_code", "tables"]))
+
+
+def _rewrite_md_links_to_html(html: str) -> str:
+    """Rewrite ``href="…/index.md"`` (and ``foo.md``) to ``.html`` in rendered HTML."""
+    return re.sub(r'href="([^"]+)\.md"', r'href="\1.html"', html)
+
+
+def _format_sidebar_nav(sections: list, current_path: str | None) -> str:
+    """Render the per-page sidebar nav, marking the current page with
+    ``class=current``.
+    """
+    lines = ['<nav class="sidebar"><h1>kenboard wiki</h1><ul>']
+    root_cls = ' class="current"' if current_path == "" else ""
+    root_href = (
+        "../" * current_path.count("/") + "index.html" if current_path else "index.html"
+    )
+    if current_path is not None:
+        lines.append(f'<li><a href="{root_href}"{root_cls}>Home</a></li>')
+    for section in sections:
+        for path, node in section.flatten():
+            depth = path.count("/")
+            indent_style = f"padding-left:{depth * 12}px"
+            href = _relative_href(current_path, f"{path}/index.html")
+            cls = ' class="current"' if path == current_path else ""
+            lines.append(
+                f'<li style="{indent_style}"><a href="{href}"{cls}>{node.title}</a></li>',
+            )
+    lines.append("</ul></nav>")
+    return "".join(lines)
+
+
+def _relative_href(from_path: str | None, to_path: str) -> str:
+    """Compute the relative href from one wiki page to another (both relative to wiki
+    root).
+    """
+    if from_path is None or from_path == "":
+        return to_path
+    # Strip the trailing index.html from from_path to get the directory depth
+    depth = from_path.count("/") + 1  # +1 because we're inside a subdir
+    return "../" * depth + to_path
+
+
+def _wrap_html(title: str, body_html: str, sidebar_html: str) -> str:
+    """Wrap a rendered body with the standard layout (head + sidebar + main)."""
+    return (
+        '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+        f"<title>{title} — kenboard wiki</title>"
+        f"<style>{_WIKI_HTML_CSS}</style>"
+        '</head><body><div class="layout">'
+        f"{sidebar_html}"
+        f"<main>{body_html}</main>"
+        "</div></body></html>"
+    )
+
+
+def _extract_title(md_text: str) -> str:
+    """Pull the first ``# heading`` line out of an MD blob to use as the ``<title>``."""
+    for line in md_text.splitlines():
+        line = line.strip()
+        if line.startswith("# "):
+            return line[2:].strip()
+    return "kenboard wiki"
+
+
+def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
+    """Walk every ``.md`` under ``in_dir`` and return ``[{path, content}]`` for HTML
+    output.
+    """
+    files: list[dict[str, str]] = []
+    for md_path in sorted(in_dir.rglob("*.md")):
+        rel = md_path.relative_to(in_dir)
+        # Path used by the sidebar to mark "current" — strip trailing /index.md.
+        section_key = str(rel.parent) if rel.name == "index.md" else str(rel)
+        if section_key == ".":
+            section_key = ""
+        md_text = md_path.read_text(encoding="utf-8")
+        title = _extract_title(md_text)
+        body = _rewrite_md_links_to_html(_render_markdown(md_text))
+        sidebar = _format_sidebar_nav(sections, section_key)
+        html = _wrap_html(title, body, sidebar)
+        html_rel = rel.with_suffix(".html")
+        files.append({"path": str(html_rel), "content": html})
+    return files
+
+
+def _write_html_plan(out: str, files: list[dict[str, str]]) -> None:
+    """Idempotently materialise the HTML tree (clean + re-write)."""
+    base = Path(out)
+    if base.exists():
+        shutil.rmtree(base)
+    base.mkdir(parents=True)
+    for f in files:
+        target = base / f["path"]
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(f["content"], encoding="utf-8")
+
+
+@wiki.command(name="build", help="Render the wiki MD tree as standalone HTML.")
+@click.option(
+    "--in",
+    "in_dir",
+    default="wiki",
+    help="Input directory holding the MD tree (default: ./wiki — output of `wiki sync`).",
+)
+@click.option(
+    "--out",
+    default="wiki-html",
+    help="Output directory — re-written from scratch each run (default: ./wiki-html).",
+)
+@click.option(
+    "--architecture",
+    default="ARCHITECTURE.md",
+    help="Path to the architecture file (default: ./ARCHITECTURE.md).",
+)
+@click.pass_context
+def wiki_build(
+    ctx: click.Context,
+    in_dir: str,
+    out: str,
+    architecture: str,
+) -> None:
+    """Build the HTML wiki from the MD tree produced by ``ken wiki sync``.
+
+    Raises:
+        UsageError: when ``--in`` doesn't exist or ``ARCHITECTURE.md`` is missing.
+    """
+    _ = ctx  # CLI context not needed (purely local IO).
+    src = Path(in_dir)
+    if not src.is_dir():
+        raise click.UsageError(
+            f"Input directory '{in_dir}' does not exist. "
+            "Run `ken wiki sync` first to generate the MD tree.",
+        )
+    sections, paths = _load_sections(architecture)
+    if not paths:
+        raise click.UsageError(
+            f"No sections declared in {architecture}. "
+            "Add a `wiki.sections` block to its YAML frontmatter "
+            "before running build. See `ken wiki groom --help`.",
+        )
+    files = _build_html_plan(src, sections)
+    _write_html_plan(out, files)
+    click.echo(f"Wrote {len(files)} HTML file(s) under {out}/.")
 
 
 @cli.command(name="help")

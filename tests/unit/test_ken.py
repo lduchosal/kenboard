@@ -816,6 +816,83 @@ class TestCliMutations:
         assert "removed/section" in orphans
         assert "stale" in orphans
 
+    # #376d: ken wiki build — render MD tree as standalone HTML.
+    def _make_md_tree(self, cwd_tmp):
+        """Materialise a minimal wiki/ tree (root + one section + log)."""
+        wiki = cwd_tmp / "wiki"
+        wiki.mkdir()
+        (wiki / "index.md").write_text(
+            "# kenboard wiki\n\n- [Backend](backend/index.md) — 1 task\n",
+            encoding="utf-8",
+        )
+        (wiki / "backend").mkdir()
+        (wiki / "backend" / "index.md").write_text(
+            "# Backend\n\nServer-side.\n\n## Tasks (1)\n\n- **#1** T1 — _todo_ — Q\n",
+            encoding="utf-8",
+        )
+        (wiki / "log.md").write_text(
+            "# Classification log\n\n- 2026-05-24 — task #1 → `backend`\n",
+            encoding="utf-8",
+        )
+        return wiki
+
+    def test_wiki_build_renders_html_tree(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n",
+        )
+        self._make_md_tree(cwd_tmp)
+        result = runner.invoke(ken.cli, ["wiki", "build"])
+        assert result.exit_code == 0, result.output
+        out = cwd_tmp / "wiki-html"
+        assert (out / "index.html").is_file()
+        assert (out / "backend" / "index.html").is_file()
+        assert (out / "log.html").is_file()
+        body = (out / "backend" / "index.html").read_text()
+        assert "<h1>Backend</h1>" in body
+        # Sidebar nav is present on every page
+        assert 'class="sidebar"' in body
+        # Inline CSS — page is self-contained
+        assert "<style>" in body
+
+    def test_wiki_build_rewrites_md_links_to_html(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n",
+        )
+        self._make_md_tree(cwd_tmp)
+        runner.invoke(ken.cli, ["wiki", "build"])
+        index = (cwd_tmp / "wiki-html" / "index.html").read_text()
+        assert 'href="backend/index.html"' in index
+        assert "index.md" not in index  # all .md links rewritten
+
+    def test_wiki_build_missing_input_fails(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n",
+        )
+        # No wiki/ dir → must refuse with a usable error.
+        result = runner.invoke(ken.cli, ["wiki", "build"])
+        assert result.exit_code != 0
+        assert "does not exist" in result.output
+
+    def test_wiki_build_overwrites_previous_run(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n",
+        )
+        self._make_md_tree(cwd_tmp)
+        out = cwd_tmp / "wiki-html"
+        out.mkdir()
+        (out / "stale.html").write_text("garbage")
+        runner.invoke(ken.cli, ["wiki", "build"])
+        assert not (out / "stale.html").exists()
+        assert (out / "index.html").is_file()
+
     def test_wiki_sync_overwrites_previous_run(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
         self._write_architecture(
@@ -842,6 +919,30 @@ class TestCliMutations:
         assert result.exit_code == 0, result.output
         assert calls[0][2] == {"status": "doing"}
         assert "→ doing" in result.output
+        # No grooming reminder when moving to non-review status (#376).
+        assert "ken wiki groom" not in result.stderr
+
+    def test_move_to_review_prints_groom_reminder(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        ctx, _calls = _patch_responses(
+            [("PATCH", "/api/v1/tasks/5", {"id": 5, "status": "review"})]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["move", "5", "--to", "review"])
+        assert result.exit_code == 0, result.output
+        # Click 8.4 always splits stdout/stderr; reminder is on stderr.
+        assert "ken wiki groom 5" in result.stderr
+        assert "→ review" in result.stdout
+
+    def test_update_status_review_prints_groom_reminder(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        ctx, _calls = _patch_responses(
+            [("PATCH", "/api/v1/tasks/9", {"id": 9, "status": "review"})]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["update", "9", "--status", "review"])
+        assert result.exit_code == 0, result.output
+        assert "ken wiki groom 9" in result.stderr
 
     def test_done(self, cwd_tmp, runner):
         self._setup(cwd_tmp)

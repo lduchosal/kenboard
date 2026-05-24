@@ -128,6 +128,8 @@ def onboarding_text(cat_id: str | None, base_url: str) -> str:
         "   ken list --status todo --json\n"
         "   ken show <id> --json\n"
         '   ken add "Titre" --desc "..." --who Claude --status todo\n'
+        "   ken move <id> --to review     # quand fini\n"
+        "   ken wiki groom <id> <section> # classifier pour le wiki\n"
         "\n"
         f"Info : cat_id = {cat_value}\n"
         "\n"
@@ -166,6 +168,7 @@ def onboarding_json(cat_id: str | None, base_url: str) -> dict[str, Any]:
                 "ken list --status todo --json",
                 "ken show <id> --json",
                 'ken add "Titre" --desc "..." --who Claude --status todo',
+                "ken move <id> --to review  # then ken wiki groom <id> <section>",
             ],
         },
     }
@@ -251,6 +254,7 @@ def onboarding_text_full(
         "   ken move <id> --to doing\n"
         "   ken move <id> --to review\n"
         '   ken update <id> --desc "<original>\\n\\n---\\n\\n## Résolution\\n..."\n'
+        "   ken wiki groom <id> <section>   # classifier après review\n"
         "\n"
         "Références :\n"
         "   ken --help     commandes disponibles\n"
@@ -258,8 +262,8 @@ def onboarding_text_full(
         "\n"
         "## Bonnes pratiques\n"
         "\n"
-        "- Workflow : todo → doing → review → done\n"
-        "  L'agent gère todo → doing → review.\n"
+        "- Workflow : todo → doing → review → groom → done\n"
+        "  L'agent gère todo → doing → review puis ken wiki groom.\n"
         "  Seul l'utilisateur passe review → done.\n"
         "\n"
         "- Titres de tâches : MODULE / Titre\n"

@@ -110,6 +110,18 @@ with the package and printed by `ken help`.
    Do **not** mark a task `done` yourself. That is the user's call
    after review.
 
+6. **Classify the task for the wiki (#376).** Once it is in review,
+   assign it to a section of `ARCHITECTURE.md` so `ken wiki sync` can
+   include it in the exported tree. The CLI prints a reminder after
+   every `ken move --to review` / `ken update --status review`:
+
+       ken wiki groom                 # list unclassified + sections
+       ken wiki groom <id> <section>  # assign
+
+   Use the deepest matching section path (`backend/api` beats
+   `backend`). Skipping this step leaves the task invisible to
+   `ken wiki sync` until someone backfills it.
+
 ## Statuses and ownership
 
     todo → doing → review → done
@@ -138,6 +150,8 @@ command (e.g. `ken add --json` to capture the created task ID).
     ken update <id> --status review
     ken update <id> --desc "<original>\n\n---\n\n## Résolution\n..."
     ken move <id> --to doing
+    ken wiki groom                 # list unclassified + sections
+    ken wiki groom <id> <section>  # classify after move-to-review
     ken done <id>          # avoid; let the user mark done after review
 
 ## Task title convention

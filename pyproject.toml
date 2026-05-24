@@ -43,6 +43,8 @@ dependencies = [
     # ``ken wiki`` parses YAML frontmatter from ARCHITECTURE.md (#376);
     # types-PyYAML is already a dev dep — bring the runtime lib in too.
     "pyyaml>=6.0",
+    # ``ken wiki build`` renders the MD tree as standalone HTML (#376d).
+    "markdown>=3.5",
     "zxcvbn>=4.5.0",
 ]
 

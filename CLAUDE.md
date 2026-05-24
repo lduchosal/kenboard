@@ -163,6 +163,12 @@ When the user asks Claude to pick up a kenboard task, follow this loop:
    the commit message alone is not enough since not every task maps 1:1
    to a commit.
 5. `ken move <id> --to review` once the description is updated.
+6. **Classify the task for the wiki (#376).** The CLI prints a reminder
+   after every move-to-review. Run `ken wiki groom <id> <section>` with
+   the deepest matching path from `ARCHITECTURE.md` (e.g. `backend/api`
+   beats `backend`). Run `ken wiki groom` with no args to list the
+   available sections. Skipping leaves the task invisible to
+   `ken wiki sync`.
 
 Do **not** mark a task `done` yourself; that's the user's call after review.
 
