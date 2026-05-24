@@ -40,6 +40,9 @@ dependencies = [
     "flask-limiter>=4.1.1",
     "authlib>=1.6.9",
     "requests>=2.28",
+    # ``ken wiki`` parses YAML frontmatter from ARCHITECTURE.md (#376);
+    # types-PyYAML is already a dev dep — bring the runtime lib in too.
+    "pyyaml>=6.0",
     "zxcvbn>=4.5.0",
 ]
 

@@ -139,3 +139,14 @@ CREATE TABLE IF NOT EXISTS activities (
     INDEX idx_activities_date (occurred_at),
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS task_wiki_classifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    task_id INT NOT NULL,
+    section_path VARCHAR(255) NOT NULL,
+    classified_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    classified_by VARCHAR(100) NOT NULL DEFAULT '',
+    UNIQUE KEY uq_task (task_id),
+    INDEX idx_section (section_path),
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
