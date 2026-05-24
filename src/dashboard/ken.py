@@ -1045,22 +1045,129 @@ groom.help = _WIKI_GROOM_HELP
 # -- ken wiki sync -----------------------------------------------------------
 
 
+_SLUG_NONWORD_RE = re.compile(r"[^a-z0-9]+")
+
+
+def _slugify(text: str) -> str:
+    """Lowercase ``text`` and collapse non-alphanumerics into dashes.
+
+    Used to build the filename portion of a task detail page:
+    ``<section>/<slug>-<id>.md`` (#376f). The id suffix breaks ties when two
+    tasks share the same title.
+    """
+    slug = _SLUG_NONWORD_RE.sub("-", text.lower()).strip("-")
+    return slug or "untitled"
+
+
+def _task_filename(task: dict[str, Any]) -> str:
+    """Return ``<slug>-<id>.md`` for the per-task detail page."""
+    return f"{_slugify(str(task.get('title') or ''))}-{task['task_id']}.md"
+
+
+_ARCHIVED_STATUSES = frozenset({"done"})
+_ACTIVE_STATUS_ORDER = ("doing", "review", "todo")
+
+
 def _format_section_md(node: Any, path: str, tasks: list[dict[str, Any]]) -> str:
-    """Render one section's ``index.md`` (title + description + task list)."""
+    """Render one section's ``index.md`` — split into "En cours" / "Archivé" (#376f).
+
+    Each row links to ``<slug>-<id>.md`` (the per-task detail page). ``who`` is omitted
+    (always Q/Claude → no signal). ``status`` and ``due_date`` are only shown when they
+    carry information (status hidden on archived rows; due_date only if set on a non-
+    done task).
+    """
     lines = [f"# {node.title}", ""]
     if node.description:
         lines.extend([node.description, ""])
     lines.extend([f"Section: `{path}`", ""])
     if not tasks:
         lines.append("(no tasks classified yet)")
-    else:
-        lines.extend((f"## Tasks ({len(tasks)})", ""))
-        for t in sorted(tasks, key=lambda x: int(x["task_id"])):
-            who = t.get("who") or "?"
-            status = t.get("status") or "?"
-            title = t.get("title") or ""
-            lines.append(f"- **#{t['task_id']}** {title} — _{status}_ — {who}")
+        return "\n".join(lines) + "\n"
+
+    active = [t for t in tasks if (t.get("status") or "") not in _ARCHIVED_STATUSES]
+    archived = [t for t in tasks if (t.get("status") or "") in _ARCHIVED_STATUSES]
+
+    def _active_key(t: dict[str, Any]) -> tuple[int, int]:
+        """Sort key: doing → review → todo → others, ties broken by id."""
+        status = t.get("status") or ""
+        order = (
+            _ACTIVE_STATUS_ORDER.index(status)
+            if status in _ACTIVE_STATUS_ORDER
+            else len(_ACTIVE_STATUS_ORDER)
+        )
+        return (order, int(t["task_id"]))
+
+    if active:
+        lines.extend((f"## En cours ({len(active)})", ""))
+        for t in sorted(active, key=_active_key):
+            lines.append(_format_section_row(t, archived=False))
+        lines.append("")
+    if archived:
+        lines.extend((f"## Archivé ({len(archived)})", ""))
+        for t in sorted(archived, key=lambda x: int(x["task_id"])):
+            lines.append(_format_section_row(t, archived=True))
     return "\n".join(lines) + "\n"
+
+
+def _format_section_row(task: dict[str, Any], *, archived: bool) -> str:
+    """One bullet line for the section index — `[title](slug-id.md)` + metadata."""
+    title = task.get("title") or ""
+    href = _task_filename(task)
+    line = f"- [{title}]({href})"
+    if not archived:
+        status = task.get("status") or ""
+        if status:
+            line += f" — _{status}_"
+        due = task.get("due_date")
+        if due:
+            line += f" — due {due}"
+    return line
+
+
+def _format_task_detail_md(
+    task: dict[str, Any], section_path: str, section_title: str
+) -> str:
+    """Render the per-task detail page (#376f).
+
+    Emits YAML frontmatter so ``wiki build`` can lift the metadata into the
+    ``.fullscreen-card`` HTML layout without re-parsing the body. The body is the task
+    description, rendered as-is (already MD).
+    """
+    fm_lines = [
+        "---",
+        f"id: {task['task_id']}",
+        f"title: {_yaml_str(task.get('title') or '')}",
+        f"status: {task.get('status') or ''}",
+        f"who: {_yaml_str(task.get('who') or '')}",
+        f"due_date: {task.get('due_date') or ''}",
+        f"classified_at: {task.get('classified_at') or ''}",
+        f"classified_by: {_yaml_str(task.get('classified_by') or '')}",
+        f"section: {section_path}",
+        f"section_title: {_yaml_str(section_title)}",
+        "---",
+        "",
+    ]
+    title = task.get("title") or ""
+    body_lines = [
+        f"# #{task['task_id']} — {title}",
+        "",
+    ]
+    desc = task.get("description") or ""
+    if desc.strip():
+        body_lines.extend([desc.rstrip(), ""])
+    else:
+        body_lines.extend(["*(no description)*", ""])
+    nav = (
+        f"---\n\n[← retour à {section_path}](index.md) · "
+        "[voir log](" + "../" * (section_path.count("/") + 1) + "log.md)\n"
+    )
+    return "\n".join(fm_lines + body_lines) + nav
+
+
+def _yaml_str(text: str) -> str:
+    """Quote a YAML scalar so colons / `#` / leading whitespace don't break parsing."""
+    escaped = text.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
 
 
 def _format_root_index_md(
@@ -1133,12 +1240,23 @@ def _build_sync_plan(
     ]
     for section in sections:
         for path, node in section.flatten():
+            section_tasks = by_path.get(path, [])
             files.append(
                 {
                     "path": f"{path}/index.md",
-                    "content": _format_section_md(node, path, by_path.get(path, [])),
+                    "content": _format_section_md(node, path, section_tasks),
                 },
             )
+            # Per-task detail pages (#376f, Option B): one MD per task with
+            # YAML frontmatter so wiki build can lift the metadata into the
+            # ``.fullscreen-card`` HTML layout.
+            for task in section_tasks:
+                files.append(
+                    {
+                        "path": f"{path}/{_task_filename(task)}",
+                        "content": _format_task_detail_md(task, path, node.title),
+                    },
+                )
     files.append({"path": "log.md", "content": _format_log_md(rows)})
     if orphans:
         files.append({"path": "orphans.md", "content": _format_orphans_md(orphans)})
@@ -1237,7 +1355,87 @@ main code{background:#f6f8fa;padding:1px 4px;border-radius:3px;font-size:90%}
 main pre{background:#f6f8fa;padding:12px;border-radius:6px;overflow-x:auto}
 main pre code{background:transparent;padding:0}
 main a{color:#0969da}
+/* Task detail (#376f — mirrors templates/modals/task_fullscreen.html) */
+.fullscreen-card{background:#fff;border:1px solid #d0d7de;border-radius:10px;
+  padding:32px 36px;max-width:760px}
+.fullscreen-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.fullscreen-id{font-size:12px;color:#57606a;font-weight:600}
+.fullscreen-status{font-size:11px;text-transform:uppercase;letter-spacing:.5px;
+  color:#57606a;background:#f6f8fa;padding:3px 8px;border-radius:10px}
+.fullscreen-status.status-todo{background:#ddf4ff;color:#0969da}
+.fullscreen-status.status-doing{background:#fff8c5;color:#9a6700}
+.fullscreen-status.status-review{background:#dafbe1;color:#1a7f37}
+.fullscreen-status.status-done{background:#eaeef2;color:#57606a}
+.fullscreen-title{font-size:22px;font-weight:700;margin:0 0 16px;line-height:1.3}
+.fullscreen-meta{display:flex;align-items:center;gap:10px;margin-bottom:20px;
+  font-size:13px;color:#57606a}
+.task-avatar{width:28px;height:28px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
+.fs-who{font-weight:600;color:#222}
+.fullscreen-desc{font-size:14px;line-height:1.7;border-top:1px solid #d0d7de;
+  padding-top:16px}
+.fullscreen-desc h1,.fullscreen-desc h2,.fullscreen-desc h3{margin-top:16px;
+  margin-bottom:8px}
+.fullscreen-desc pre{background:#f6f8fa;border-radius:4px;padding:12px;
+  overflow-x:auto;font-size:12px}
+.fullscreen-desc code{background:#f6f8fa;border-radius:3px;padding:1px 4px;font-size:12px}
+.fullscreen-desc pre code{background:transparent;padding:0}
+.fullscreen-desc ul,.fullscreen-desc ol{padding-left:20px}
+.wiki-nav{margin-top:20px;padding-top:12px;border-top:1px solid #d0d7de;
+  font-size:13px;color:#57606a}
+.wiki-nav a{color:#0969da}
 """
+
+# Stable per-name avatar colour — picked from a small palette so the
+# detail page renders the same swatch as the board card. Mirrors
+# ``buildAvatar`` in ``static/js/tasks.js`` at a high level (palette
+# differs in length but the deterministic hash keeps it consistent
+# per identity).
+_AVATAR_PALETTE = (
+    "#0969da",
+    "#bf3989",
+    "#1a7f37",
+    "#9a6700",
+    "#cf222e",
+    "#8250df",
+    "#0a3069",
+    "#bc4c00",
+)
+
+
+def _avatar_color(name: str) -> str:
+    """Deterministically map a name to one of ``_AVATAR_PALETTE``."""
+    if not name:
+        return _AVATAR_PALETTE[0]
+    return _AVATAR_PALETTE[sum(ord(c) for c in name) % len(_AVATAR_PALETTE)]
+
+
+def _split_frontmatter(md_text: str) -> tuple[dict[str, Any], str]:
+    r"""Strip a leading ``---\n…\n---`` block; return ``(meta, body)``.
+
+    Returns ``({}, md_text)`` when there is no frontmatter. Used by ``_build_html_plan``
+    to detect per-task detail pages (#376f) and lift their metadata into the
+    ``.fullscreen-card`` template.
+    """
+    if not md_text.startswith("---"):
+        return {}, md_text
+    lines = md_text.splitlines()
+    end = next(
+        (i for i, ln in enumerate(lines[1:], start=1) if ln.strip() == "---"),
+        None,
+    )
+    if end is None:
+        return {}, md_text
+    import yaml
+
+    try:
+        data = yaml.safe_load("\n".join(lines[1:end])) or {}
+    except yaml.YAMLError:
+        return {}, md_text
+    if not isinstance(data, dict):
+        return {}, md_text
+    body = "\n".join(lines[end + 1 :]).lstrip("\n")
+    return data, body
 
 
 def _render_markdown(md_text: str) -> str:
@@ -1312,22 +1510,103 @@ def _extract_title(md_text: str) -> str:
 def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
     """Walk every ``.md`` under ``in_dir`` and return ``[{path, content}]`` for HTML
     output.
+
+    Detail pages (any MD with a YAML frontmatter block — written by
+    ``_format_task_detail_md`` since #376f) get the ``.fullscreen-card`` layout
+    mirroring the kenboard board's full-screen task view; everything else gets the plain
+    Markdown layout.
     """
     files: list[dict[str, str]] = []
     for md_path in sorted(in_dir.rglob("*.md")):
         rel = md_path.relative_to(in_dir)
-        # Path used by the sidebar to mark "current" — strip trailing /index.md.
-        section_key = str(rel.parent) if rel.name == "index.md" else str(rel)
+        md_text = md_path.read_text(encoding="utf-8")
+        meta, body_md = _split_frontmatter(md_text)
+        # Sidebar "current" key: section directory if this is an index page
+        # or a per-task detail page; else the bare filename.
+        if rel.name == "index.md" or meta:
+            section_key = str(rel.parent)
+        else:
+            section_key = str(rel)
         if section_key == ".":
             section_key = ""
-        md_text = md_path.read_text(encoding="utf-8")
-        title = _extract_title(md_text)
-        body = _rewrite_md_links_to_html(_render_markdown(md_text))
         sidebar = _format_sidebar_nav(sections, section_key)
-        html = _wrap_html(title, body, sidebar)
-        html_rel = rel.with_suffix(".html")
-        files.append({"path": str(html_rel), "content": html})
+        if meta and "id" in meta:
+            page_title = f"#{meta.get('id')} — {meta.get('title') or 'task'}"
+            body_html = _render_task_detail(meta, body_md)
+        else:
+            page_title = _extract_title(md_text)
+            body_html = _rewrite_md_links_to_html(_render_markdown(md_text))
+        html = _wrap_html(page_title, body_html, sidebar)
+        files.append({"path": str(rel.with_suffix(".html")), "content": html})
     return files
+
+
+def _render_task_detail(meta: dict[str, Any], body_md: str) -> str:
+    """Render a per-task detail page as ``.fullscreen-card`` HTML (#376f).
+
+    ``meta`` comes from the page's YAML frontmatter (set by ``_format_task_detail_md``).
+    ``body_md`` is the description body — the H1 / footer-nav written by sync are
+    stripped server-side here since the fullscreen template renders its own header.
+    """
+    status = str(meta.get("status") or "")
+    who = str(meta.get("who") or "")
+    due = str(meta.get("due_date") or "")
+    classified_at = str(meta.get("classified_at") or "")
+    classified_by = str(meta.get("classified_by") or "")
+    section = str(meta.get("section") or "")
+    avatar_initial = (who[:1] or "?").upper()
+    avatar_color = _avatar_color(who)
+    meta_parts = [
+        f'<div class="task-avatar" style="background:{avatar_color}">{avatar_initial}</div>',
+        f'<span class="fs-who">{who}</span>' if who else "",
+        f"<span>Due {due}</span>" if due else "",
+        f"<span>Classified {classified_at[:10]}</span>" if classified_at else "",
+        f"<span>by {classified_by}</span>" if classified_by else "",
+    ]
+    desc_md = _strip_detail_chrome(body_md)
+    desc_html = _rewrite_md_links_to_html(_render_markdown(desc_md))
+    log_href = "../" * (section.count("/") + 1) + "log.html"
+    section_label = section or "section"
+    status_cls = f"status-{status}" if status else ""
+    return (
+        '<div class="fullscreen-card">'
+        '<div class="fullscreen-header">'
+        f'<span class="fullscreen-id">#{meta.get("id")}</span>'
+        f'<span class="fullscreen-status {status_cls}">{status}</span>'
+        "</div>"
+        f'<h2 class="fullscreen-title">{meta.get("title") or ""}</h2>'
+        '<div class="fullscreen-meta">' + "".join(p for p in meta_parts if p) + "</div>"
+        f'<div class="fullscreen-desc">{desc_html}</div>'
+        '<div class="wiki-nav">'
+        f'<a href="index.html">← retour à {section_label}</a> · '
+        f'<a href="{log_href}">voir log</a>'
+        "</div>"
+        "</div>"
+    )
+
+
+def _strip_detail_chrome(body_md: str) -> str:
+    """Drop the ``# #ID — title`` header and footer nav from a detail body.
+
+    The HTML layout supplies its own header (``fullscreen-title``) and footer (``wiki-
+    nav``) so we don't want them duplicated when rendering the body.
+    """
+    lines = body_md.splitlines()
+    if lines and lines[0].startswith("# #"):
+        lines = lines[1:]
+        while lines and not lines[0].strip():
+            lines = lines[1:]
+    # Drop the trailing footer nav (an ``---`` separator + a one-line
+    # ``[← retour …](…) · [voir log](…)``). It's the last non-empty block.
+    while lines and not lines[-1].strip():
+        lines.pop()
+    if lines and lines[-1].startswith("[← retour"):
+        lines.pop()
+        while lines and not lines[-1].strip():
+            lines.pop()
+        if lines and lines[-1].strip() == "---":
+            lines.pop()
+    return "\n".join(lines)
 
 
 def _write_html_plan(out: str, files: list[dict[str, str]]) -> None:

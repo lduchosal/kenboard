@@ -893,6 +893,161 @@ class TestCliMutations:
         assert not (out / "stale.html").exists()
         assert (out / "index.html").is_file()
 
+    # #376f: per-task detail pages.
+    def test_wiki_sync_emits_per_task_detail_pages(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n",
+        )
+        rows = [
+            {
+                "task_id": 42,
+                "section_path": "backend",
+                "classified_at": "2026-05-24T10:00:00",
+                "classified_by": "Claude",
+                "title": "AUTH / Login OIDC",
+                "description": "## Sub-heading\n\nReally important task body.\n",
+                "status": "doing",
+                "who": "Claude",
+                "project_id": "p1",
+            },
+        ]
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/all", rows)])
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "sync"])
+        assert result.exit_code == 0, result.output
+        # Detail page slug = slugified-title + -id.
+        detail = cwd_tmp / "wiki" / "backend" / "auth-login-oidc-42.md"
+        assert detail.is_file()
+        body = detail.read_text()
+        assert body.startswith("---")  # YAML frontmatter
+        assert "id: 42" in body
+        assert "status: doing" in body
+        assert "Really important task body" in body
+        # Section index links to the detail page (not just the title text).
+        index = (cwd_tmp / "wiki" / "backend" / "index.md").read_text()
+        assert "[AUTH / Login OIDC](auth-login-oidc-42.md)" in index
+
+    def test_wiki_sync_section_index_splits_active_and_archived(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n",
+        )
+        rows = [
+            {
+                "task_id": 1,
+                "section_path": "backend",
+                "classified_at": "2026-05-24T10:00:00",
+                "classified_by": "Q",
+                "title": "Active",
+                "description": "",
+                "status": "todo",
+                "who": "Q",
+                "project_id": "p1",
+            },
+            {
+                "task_id": 2,
+                "section_path": "backend",
+                "classified_at": "2026-05-24T10:00:00",
+                "classified_by": "Q",
+                "title": "Done",
+                "description": "",
+                "status": "done",
+                "who": "Q",
+                "project_id": "p1",
+            },
+        ]
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/all", rows)])
+        with ctx:
+            runner.invoke(ken.cli, ["wiki", "sync"])
+        index = (cwd_tmp / "wiki" / "backend" / "index.md").read_text()
+        assert "## En cours (1)" in index
+        assert "## Archivé (1)" in index
+        # `who` is not in the section index (Q2 decision).
+        assert " — Q" not in index
+        # Status badge shown only for non-done rows.
+        active_pos = index.index("Active")
+        done_pos = index.index("Done")
+        # "_todo_" appears in the En cours block (before the Archivé block).
+        assert "_todo_" in index
+        assert index.index("_todo_") < done_pos
+        # No _done_ badge in the Archivé block.
+        assert "_done_" not in index[active_pos:]
+
+    def test_wiki_sync_slug_collision_resolved_by_id_suffix(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: ops\n      title: Ops\n",
+        )
+        rows = [
+            {
+                "task_id": 10,
+                "section_path": "ops",
+                "classified_at": "2026-05-24T10:00:00",
+                "classified_by": "Q",
+                "title": "PYPI / Quality and publish",
+                "description": "first",
+                "status": "done",
+                "who": "Claude",
+                "project_id": "p1",
+            },
+            {
+                "task_id": 20,
+                "section_path": "ops",
+                "classified_at": "2026-05-24T11:00:00",
+                "classified_by": "Q",
+                "title": "PYPI / Quality and publish",  # same title
+                "description": "second",
+                "status": "done",
+                "who": "Claude",
+                "project_id": "p1",
+            },
+        ]
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/all", rows)])
+        with ctx:
+            runner.invoke(ken.cli, ["wiki", "sync"])
+        ops = cwd_tmp / "wiki" / "ops"
+        assert (ops / "pypi-quality-and-publish-10.md").is_file()
+        assert (ops / "pypi-quality-and-publish-20.md").is_file()
+
+    def test_wiki_build_renders_detail_with_fullscreen_layout(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n",
+        )
+        # Sync first, then build.
+        rows = [
+            {
+                "task_id": 7,
+                "section_path": "backend",
+                "classified_at": "2026-05-24T10:00:00",
+                "classified_by": "Claude",
+                "title": "Hello world",
+                "description": "Body text.",
+                "status": "todo",
+                "who": "Claude",
+                "project_id": "p1",
+            },
+        ]
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/all", rows)])
+        with ctx:
+            runner.invoke(ken.cli, ["wiki", "sync"])
+        runner.invoke(ken.cli, ["wiki", "build"])
+        detail = (cwd_tmp / "wiki-html" / "backend" / "hello-world-7.html").read_text()
+        assert 'class="fullscreen-card"' in detail
+        assert 'class="fullscreen-title"' in detail
+        assert ">Hello world<" in detail
+        assert "status-todo" in detail
+        # YAML frontmatter must NOT bleed into the rendered HTML.
+        assert "classified_by:" not in detail
+        # Footer nav present.
+        assert "← retour à backend" in detail
+        assert "voir log" in detail
+
     def test_wiki_sync_overwrites_previous_run(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
         self._write_architecture(
