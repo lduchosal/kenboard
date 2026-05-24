@@ -518,9 +518,25 @@ def show(ctx: click.Context, task_id: int, json_mode: bool) -> None:
         click.echo(f"{key:12s}: {task.get(key) if task.get(key) is not None else ''}")
 
 
+def _resolve_desc(desc: str | None) -> str | None:
+    """Read ``--desc`` from stdin when the literal value is ``-`` (#393).
+
+    Lets agents pipe a heredoc into the CLI for multi-line markdown descriptions without
+    worrying about shell escaping. ``None`` (option not passed) and the empty string
+    fall through unchanged.
+    """
+    if desc == "-":
+        return sys.stdin.read()
+    return desc
+
+
 @cli.command()
 @click.argument("title")
-@click.option("--desc", default="", help="Description")
+@click.option(
+    "--desc",
+    default="",
+    help="Description (use '-' to read from stdin — heredoc-friendly for multi-line markdown)",
+)
 @click.option("--who", default="", help="Assignee")
 @click.option("--status", type=click.Choice(VALID_STATUSES), default="todo")
 @click.option("--when", help="Due date YYYY-MM-DD")
@@ -536,13 +552,19 @@ def add(  # noqa: PLR0913
     when: str | None,
     json_mode: bool,
 ) -> None:
-    """Add a new task to the current project."""
+    r"""Add a new task to the current project.
+
+    For multi-line markdown descriptions, use ``--desc -`` and pipe the body in via
+    stdin (heredoc-friendly) — see ``ken help`` for examples. Passing ``--desc
+    "line1\nline2"`` in a double-quoted shell string stores the literal ``\n`` and
+    breaks markdown rendering.
+    """
     cfg: KenConfig = ctx.obj["cfg"]
     project_id = _require_project(cfg)
     body: dict[str, Any] = {
         "project_id": project_id,
         "title": title,
-        "description": desc,
+        "description": _resolve_desc(desc) or "",
         "who": who,
         "status": status,
         "due_date": when,
@@ -554,7 +576,10 @@ def add(  # noqa: PLR0913
 @cli.command()
 @click.argument("task_id", type=int)
 @click.option("--title", help="New title")
-@click.option("--desc", help="New description")
+@click.option(
+    "--desc",
+    help="New description (use '-' to read from stdin — heredoc-friendly for multi-line markdown)",
+)
 @click.option("--who", help="New assignee")
 @click.option("--status", type=click.Choice(VALID_STATUSES), help="New status")
 @click.option("--when", help="New due date YYYY-MM-DD")
@@ -571,13 +596,18 @@ def update(  # noqa: PLR0913
     when: str | None,
     json_mode: bool,
 ) -> None:
-    """Update an existing task (only the fields you pass)."""
+    r"""Update an existing task (only the fields you pass).
+
+    For multi-line markdown in ``--desc``, prefer ``--desc -`` with a heredoc on stdin —
+    see ``ken help`` for examples. ``--desc "line1\nline2"`` in a bash double-quoted
+    string stores literal backslash-n's and corrupts markdown rendering (#393).
+    """
     cfg: KenConfig = ctx.obj["cfg"]
     body: dict[str, Any] = {}
     if title is not None:
         body["title"] = title
     if desc is not None:
-        body["description"] = desc
+        body["description"] = _resolve_desc(desc)
     if who is not None:
         body["who"] = who
     if status is not None:

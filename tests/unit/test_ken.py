@@ -428,6 +428,55 @@ class TestCliMutations:
         assert result.exit_code != 0
         assert "nothing to update" in result.output
 
+    # #393: agents passing multi-line markdown via ``--desc "line1\nline2"``
+    # in a bash double-quoted string store literal backslash-n's. The CLI
+    # accepts ``--desc -`` to read the body from stdin instead — a
+    # heredoc-friendly path that preserves newlines verbatim.
+    def test_add_reads_desc_from_stdin_when_dash(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        ctx, calls = _patch_responses(
+            [
+                (
+                    "POST",
+                    "/api/v1/tasks",
+                    {"id": 1, "title": "T", "status": "todo"},
+                )
+            ]
+        )
+        body = "# Heading\n\nLine one.\n\n- bullet"
+        with ctx:
+            result = runner.invoke(ken.cli, ["add", "T", "--desc", "-"], input=body)
+        assert result.exit_code == 0, result.output
+        assert calls[0][2]["description"] == body
+
+    def test_update_reads_desc_from_stdin_when_dash(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        ctx, calls = _patch_responses(
+            [
+                (
+                    "PATCH",
+                    "/api/v1/tasks/9",
+                    {"id": 9, "title": "X", "status": "todo"},
+                )
+            ]
+        )
+        body = "line A\nline B\n"
+        with ctx:
+            result = runner.invoke(ken.cli, ["update", "9", "--desc", "-"], input=body)
+        assert result.exit_code == 0, result.output
+        assert calls[0][2] == {"description": body}
+
+    def test_add_literal_desc_passes_through_unchanged(self, cwd_tmp, runner):
+        """Non-dash --desc value is not magically transformed (regression guard)."""
+        self._setup(cwd_tmp)
+        ctx, calls = _patch_responses(
+            [("POST", "/api/v1/tasks", {"id": 2, "title": "T", "status": "todo"})]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["add", "T", "--desc", "no-stdin-here"])
+        assert result.exit_code == 0, result.output
+        assert calls[0][2]["description"] == "no-stdin-here"
+
     def test_move(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
         ctx, calls = _patch_responses(

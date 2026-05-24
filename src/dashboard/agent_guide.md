@@ -25,9 +25,55 @@ with the package and printed by `ken help`.
 
 4. **Update the task description BEFORE moving to review.** Append a
    resolution block so the board accumulates an audit trail (commit
-   messages alone are not enough — not every task maps 1:1 to a commit):
+   messages alone are not enough — not every task maps 1:1 to a commit).
 
-       ken update <id> --desc "<original>\n\n---\n\n## Résolution\n..."
+   ### Passing multi-line markdown safely
+
+   ⚠️ **Do NOT** use `--desc "line1\nline2"`. In a bash double-quoted
+   string the backslash-n is **not** interpreted as a newline — it
+   stores the literal two characters `\n`, which then renders as one
+   broken line and corrupts every markdown block (lists, code fences,
+   headings).
+
+   Use one of these instead:
+
+   **A. Heredoc (recommended for multi-line)** — preserves newlines
+   verbatim, no escaping headaches inside `<<'EOF'`:
+
+   ```sh
+   ken update <id> --desc "$(cat <<'EOF'
+   <original description verbatim>
+
+   ---
+
+   ## Résolution
+
+   ### Modifications
+   - path/to/file.py: short summary
+
+   ### Comportements obtenus
+   - what works now
+
+   ### Garde-fous
+   - pdm run check: passed
+   EOF
+   )"
+   ```
+
+   **B. Pipe via stdin** — pass `--desc -` and stream the markdown on
+   stdin. Cleanest when you already have the body in a variable:
+
+   ```sh
+   ken update <id> --desc - <<'EOF'
+   <description body here>
+   EOF
+   ```
+
+   **C. ANSI-C quoting** for a short two-line case:
+
+   ```sh
+   ken update <id> --desc $'first line\nsecond line'
+   ```
 
    Preserve the original description verbatim, then add three sections:
 
