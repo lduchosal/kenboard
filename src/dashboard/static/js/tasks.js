@@ -140,13 +140,18 @@ export function deleteTask() {
 export async function duplicateTask() {
   // POST a copy of the current modal fields, then re-bind the modal to
   // the new task id so the user can keep editing without closing.
+  //
+  // The duplicate is always created in ``todo``, regardless of the
+  // original's status (#395). Rationale: a duplicated task represents
+  // new work to schedule, not a re-instance of an in-progress / done
+  // item — so it belongs back at the top of the funnel where the user
+  // can decide what to do with it.
   if (!_taskEditId) return;
   const title = document.getElementById('task-modal-title').value.trim();
   if (!title) return;
   const desc = document.getElementById('task-modal-desc').value;
   const who = document.getElementById('task-modal-who').value;
   const when = document.getElementById('task-modal-when').value;
-  const status = document.getElementById('task-modal-status').value;
   const projectId = document.getElementById('task-modal-project-id').value;
   let r;
   try {
@@ -159,7 +164,7 @@ export async function duplicateTask() {
         description: desc,
         who,
         due_date: when || null,
-        status,
+        status: 'todo',
       }),
     });
   } catch (e) {
@@ -170,6 +175,10 @@ export async function duplicateTask() {
   // Re-bind the modal to the new task. The user keeps editing in place.
   _taskEditId = created.id;
   document.getElementById('task-modal-title').value = created.title;
+  // Reflect the forced ``todo`` status in the dropdown so the modal
+  // matches the server-side state (the user could save right away
+  // without ever opening the status select).
+  document.getElementById('task-modal-status').value = 'todo';
   document.getElementById('task-modal-heading').textContent = 'Editer la tâche (copie)';
   document.getElementById('task-modal-title').focus();
   document.getElementById('task-modal-title').select();
