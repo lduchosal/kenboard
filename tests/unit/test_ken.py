@@ -1048,6 +1048,188 @@ class TestCliMutations:
         assert "← retour à backend" in detail
         assert "voir log" in detail
 
+    # #376e: ken wiki lint — orphans / unclassified / empty-section checks.
+    def _seed_lint_arch(self, cwd_tmp):
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n"
+            "    - id: frontend\n      title: Frontend\n",
+        )
+
+    def test_wiki_lint_clean_exits_zero(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._seed_lint_arch(cwd_tmp)
+        classified = [
+            {
+                "task_id": 1,
+                "section_path": "backend",
+                "classified_at": "2026-05-24T10:00:00",
+                "classified_by": "Q",
+                "title": "T1",
+                "description": "",
+                "status": "doing",
+                "who": "Q",
+                "project_id": "p1",
+            },
+            {
+                "task_id": 2,
+                "section_path": "frontend",
+                "classified_at": "2026-05-24T10:00:00",
+                "classified_by": "Q",
+                "title": "T2",
+                "description": "",
+                "status": "todo",
+                "who": "Q",
+                "project_id": "p1",
+            },
+        ]
+        ctx, _calls = _patch_responses(
+            [
+                ("GET", "/api/v1/wiki/all", classified),
+                ("GET", "/api/v1/wiki/unclassified", []),
+            ]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "lint"])
+        assert result.exit_code == 0, result.output
+        assert "0 error(s), 0 warning(s), 0 info" in result.output
+
+    def test_wiki_lint_orphan_is_error_exit_one(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._seed_lint_arch(cwd_tmp)
+        classified = [
+            {
+                "task_id": 1,
+                "section_path": "removed/section",  # not declared
+                "classified_at": "2026-05-24T10:00:00",
+                "classified_by": "Q",
+                "title": "stale",
+                "description": "",
+                "status": "done",
+                "who": "Q",
+                "project_id": "p1",
+            },
+        ]
+        ctx, _calls = _patch_responses(
+            [
+                ("GET", "/api/v1/wiki/all", classified),
+                ("GET", "/api/v1/wiki/unclassified", []),
+            ]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "lint"])
+        assert result.exit_code == 1
+        assert "ORPHAN" in result.output
+        assert "removed/section" in result.output
+
+    def test_wiki_lint_unclassified_is_warn_default_exit_zero(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._seed_lint_arch(cwd_tmp)
+        ctx, _calls = _patch_responses(
+            [
+                (
+                    "GET",
+                    "/api/v1/wiki/all",
+                    [
+                        {
+                            "task_id": 1,
+                            "section_path": "backend",
+                            "classified_at": "2026-05-24T10:00:00",
+                            "classified_by": "Q",
+                            "title": "ok",
+                            "description": "",
+                            "status": "done",
+                            "who": "Q",
+                            "project_id": "p1",
+                        },
+                    ],
+                ),
+                (
+                    "GET",
+                    "/api/v1/wiki/unclassified",
+                    [
+                        {"id": 9, "title": "lone", "status": "todo", "who": "Q"},
+                    ],
+                ),
+            ]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "lint"])
+        assert result.exit_code == 0
+        assert "UNCLASSIFIED" in result.output
+        assert "#9" in result.output
+
+    def test_wiki_lint_strict_fails_on_warnings(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._seed_lint_arch(cwd_tmp)
+        ctx, _calls = _patch_responses(
+            [
+                ("GET", "/api/v1/wiki/all", []),
+                (
+                    "GET",
+                    "/api/v1/wiki/unclassified",
+                    [
+                        {"id": 9, "title": "lone", "status": "todo", "who": "Q"},
+                    ],
+                ),
+            ]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "lint", "--strict"])
+        assert result.exit_code == 1
+
+    def test_wiki_lint_empty_section_is_info_not_failing(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._seed_lint_arch(cwd_tmp)
+        # ``backend`` declared but no tasks classified there → INFO only.
+        classified = [
+            {
+                "task_id": 1,
+                "section_path": "frontend",
+                "classified_at": "2026-05-24T10:00:00",
+                "classified_by": "Q",
+                "title": "ok",
+                "description": "",
+                "status": "doing",
+                "who": "Q",
+                "project_id": "p1",
+            },
+        ]
+        ctx, _calls = _patch_responses(
+            [
+                ("GET", "/api/v1/wiki/all", classified),
+                ("GET", "/api/v1/wiki/unclassified", []),
+            ]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "lint"])
+        # Empty section is INFO only — should NOT fail even in --strict.
+        assert result.exit_code == 0
+        assert "EMPTY-SECTION" in result.output
+        assert "backend" in result.output
+
+    def test_wiki_lint_json_mode_emits_stable_schema(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._seed_lint_arch(cwd_tmp)
+        ctx, _calls = _patch_responses(
+            [
+                ("GET", "/api/v1/wiki/all", []),
+                ("GET", "/api/v1/wiki/unclassified", []),
+            ]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "lint", "--json"])
+        assert result.exit_code == 0
+        payload = json.loads(result.output)
+        assert set(payload.keys()) == {"errors", "warnings", "info", "summary"}
+        assert set(payload["summary"].keys()) == {
+            "errors",
+            "warnings",
+            "info",
+            "sections",
+            "classified",
+        }
+
     def test_wiki_sync_overwrites_previous_run(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
         self._write_architecture(
