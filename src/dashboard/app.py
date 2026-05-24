@@ -21,6 +21,7 @@ from dashboard.routes import (
     projects_bp,
     tasks_bp,
     users_bp,
+    wiki_bp,
 )
 from dashboard.routes.pages import bp as pages_bp
 
@@ -243,6 +244,7 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(tasks_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(keys_bp)
+    app.register_blueprint(wiki_bp)
 
 
 def _register_static_routes(app: Flask) -> None:

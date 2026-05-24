@@ -528,6 +528,153 @@ class TestCliMutations:
         )
         assert result.exit_code != 0
 
+    # #376b: ken wiki groom — agent-driven classification.
+    def _write_architecture(self, cwd_tmp, sections_yaml: str) -> str:
+        path = cwd_tmp / "ARCHITECTURE.md"
+        path.write_text(
+            "---\n"
+            "wiki:\n"
+            "  sections:\n"
+            f"{sections_yaml}"
+            "---\n\n"
+            "# Project architecture\n",
+            encoding="utf-8",
+        )
+        return str(path)
+
+    def test_wiki_groom_no_args_lists_unclassified_and_sections(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n"
+            "      title: Backend\n"
+            "    - id: frontend\n"
+            "      title: Frontend\n",
+        )
+        ctx, _calls = _patch_responses(
+            [
+                (
+                    "GET",
+                    "/api/v1/wiki/unclassified",
+                    [
+                        {
+                            "id": 1,
+                            "title": "T1",
+                            "status": "todo",
+                            "who": "Q",
+                            "project_id": "p1",
+                        }
+                    ],
+                )
+            ]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "groom"])
+        assert result.exit_code == 0, result.output
+        assert "T1" in result.output
+        assert "backend" in result.output
+        assert "frontend" in result.output
+
+    def test_wiki_groom_classify_validates_section(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n",
+        )
+        # POST should NOT happen because validation rejects the section first.
+        ctx, calls = _patch_responses([])
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "groom", "42", "made-up-section"])
+        assert result.exit_code != 0
+        assert "Unknown section" in result.output
+        assert "backend" in result.output  # listed valid paths
+        assert calls == []  # no API call
+
+    def test_wiki_groom_classify_happy_path(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n",
+        )
+        ctx, calls = _patch_responses(
+            [
+                (
+                    "POST",
+                    "/api/v1/wiki/classify",
+                    {
+                        "task_id": 42,
+                        "section_path": "backend",
+                        "classified_at": "2026-05-24T12:00:00",
+                        "classified_by": "Claude",
+                    },
+                )
+            ]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "groom", "42", "backend"])
+        assert result.exit_code == 0, result.output
+        assert calls[0][2]["task_id"] == 42
+        assert calls[0][2]["section_path"] == "backend"
+
+    def test_wiki_groom_show_unclassified_is_friendly(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        # Server returns 404 for unclassified — _request would normally exit
+        # the process; the CLI swallows that to print a friendly line.
+        import urllib.error as _ue
+        from unittest.mock import patch as _patch
+
+        def _raise_404(*_a, **_kw):
+            raise _ue.HTTPError(
+                "u",
+                404,
+                "not found",
+                {},
+                fp=__import__("io").BytesIO(b'{"error":"Unclassified"}'),
+            )
+
+        with _patch("dashboard.ken.urllib_request.urlopen", _raise_404):
+            result = runner.invoke(ken.cli, ["wiki", "groom", "42", "--show"])
+        assert result.exit_code == 0
+        assert "unclassified" in result.output.lower()
+
+    def test_wiki_groom_clear_calls_delete(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        ctx, calls = _patch_responses([("DELETE", "/api/v1/wiki/classify/42", None)])
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "groom", "42", "--clear"])
+        assert result.exit_code == 0, result.output
+        assert calls[0][0] == "DELETE"
+        assert "Cleared" in result.output
+
+    def test_wiki_groom_show_and_clear_mutually_exclusive(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        result = runner.invoke(ken.cli, ["wiki", "groom", "42", "--show", "--clear"])
+        assert result.exit_code != 0
+        assert "mutually exclusive" in result.output.lower()
+
+    def test_wiki_groom_section_without_task_id_fails(self, cwd_tmp, runner):
+        """A non-integer first arg fails at the Click parser level."""
+        self._setup(cwd_tmp)
+        # Click treats the single arg as TASK_ID; non-int → parser error.
+        result = runner.invoke(ken.cli, ["wiki", "groom", "not-an-int"])
+        assert result.exit_code != 0
+
+    def test_wiki_groom_help_mentions_karpathy_gist(self, cwd_tmp, runner):
+        result = runner.invoke(ken.cli, ["wiki", "groom", "--help"])
+        assert result.exit_code == 0
+        assert "karpathy" in result.output.lower()
+        assert "gist" in result.output.lower()
+        assert "LLM Wiki" in result.output
+
+    def test_wiki_groom_no_architecture_warns(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        # No ARCHITECTURE.md in cwd_tmp.
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/unclassified", [])])
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "groom"])
+        assert result.exit_code == 0
+        assert "ARCHITECTURE" in result.output
+
     def test_move(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
         ctx, calls = _patch_responses(
