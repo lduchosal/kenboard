@@ -153,6 +153,47 @@ class TestGetClassification:
         assert r.status_code == 404
 
 
+class TestListAll:
+    """``GET /api/v1/wiki/all`` — consumed by ``ken wiki sync`` (#376c)."""
+
+    def test_empty_when_no_classifications(self, client, db, project):
+        r = client.get("/api/v1/wiki/all")
+        assert r.status_code == 200
+        assert r.get_json() == []
+
+    def test_returns_classified_rows_joined_with_task(self, client, db, project):
+        tid = project["tasks"][0]
+        client.post(
+            "/api/v1/wiki/classify",
+            data=json.dumps({"task_id": tid, "section_path": "backend/api"}),
+            content_type="application/json",
+        )
+        r = client.get("/api/v1/wiki/all")
+        assert r.status_code == 200
+        rows = r.get_json()
+        assert len(rows) == 1
+        row = rows[0]
+        assert row["task_id"] == tid
+        assert row["section_path"] == "backend/api"
+        assert row["title"] == "First"
+        assert row["status"] == "todo"
+        assert row["project_id"] == project["project_id"]
+        assert row["classified_at"] is not None
+
+    def test_project_filter(self, client, db, project):
+        tid = project["tasks"][0]
+        client.post(
+            "/api/v1/wiki/classify",
+            data=json.dumps({"task_id": tid, "section_path": "x"}),
+            content_type="application/json",
+        )
+        r = client.get(f"/api/v1/wiki/all?project={project['project_id']}")
+        assert r.status_code == 200
+        rows = r.get_json()
+        assert len(rows) == 1
+        assert rows[0]["task_id"] == tid
+
+
 class TestClearClassification:
     def test_clear_removes(self, client, db, project):
         tid = project["tasks"][0]

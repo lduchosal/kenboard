@@ -51,6 +51,45 @@ def list_unclassified() -> Any:
     return jsonify(rows)
 
 
+@bp.route("/all", methods=["GET"])
+def list_all() -> Any:
+    """Return every classification joined with task data.
+
+    Consumed by ``ken wiki sync`` to render the MD tree. Same project-scoping rules as
+    ``/unclassified``: optional ``?project=<id>`` filter, server stores opaque
+    ``section_path`` strings.
+    """
+    project_filter = request.args.get("project")
+    if project_filter and not current_user_can_project(project_filter, "read"):
+        return jsonify({"error": "forbidden"}), 403
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        rows = list(queries.wiki_get_all(conn))
+    finally:
+        conn.close()
+    if project_filter:
+        rows = [r for r in rows if r["project_id"] == project_filter]
+    return jsonify(
+        [
+            {
+                "task_id": r["task_id"],
+                "section_path": r["section_path"],
+                "classified_at": (
+                    r["classified_at"].isoformat() if r["classified_at"] else None
+                ),
+                "classified_by": r["classified_by"],
+                "title": r["title"],
+                "description": r["description"],
+                "status": r["status"],
+                "who": r["who"],
+                "project_id": r["project_id"],
+            }
+            for r in rows
+        ],
+    )
+
+
 @bp.route("/classify/<int:task_id>", methods=["GET"])
 def get_classification(task_id: int) -> Any:
     """Return the current classification for a task, or 404 if unclassified."""

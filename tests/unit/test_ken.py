@@ -675,6 +675,163 @@ class TestCliMutations:
         assert result.exit_code == 0
         assert "ARCHITECTURE" in result.output
 
+    # #376c: ken wiki sync — materialise the MD tree from classifications.
+    def test_wiki_sync_writes_tree(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n"
+            "      title: Backend\n"
+            "      sub:\n"
+            "        - id: api\n"
+            "          title: REST API\n"
+            "    - id: frontend\n"
+            "      title: Frontend\n",
+        )
+        rows = [
+            {
+                "task_id": 1,
+                "section_path": "backend/api",
+                "classified_at": "2026-05-24T10:00:00",
+                "classified_by": "Q",
+                "title": "T1",
+                "description": "",
+                "status": "todo",
+                "who": "Q",
+                "project_id": "p1",
+            },
+            {
+                "task_id": 2,
+                "section_path": "frontend",
+                "classified_at": "2026-05-24T11:00:00",
+                "classified_by": "Q",
+                "title": "T2",
+                "description": "",
+                "status": "done",
+                "who": "Claude",
+                "project_id": "p1",
+            },
+        ]
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/all", rows)])
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "sync"])
+        assert result.exit_code == 0, result.output
+        wiki = cwd_tmp / "wiki"
+        assert (wiki / "index.md").is_file()
+        assert (wiki / "backend" / "index.md").is_file()
+        assert (wiki / "backend" / "api" / "index.md").is_file()
+        assert (wiki / "frontend" / "index.md").is_file()
+        assert (wiki / "log.md").is_file()
+        # Task assigned to its section
+        backend_api = (wiki / "backend" / "api" / "index.md").read_text()
+        assert "T1" in backend_api
+        # Empty section has its index but flagged
+        backend_root = (wiki / "backend" / "index.md").read_text()
+        assert "no tasks classified yet" in backend_root
+
+    def test_wiki_sync_log_is_desc_by_classified_at(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n",
+        )
+        rows = [
+            {
+                "task_id": 1,
+                "section_path": "backend",
+                "classified_at": "2026-01-01T00:00:00",
+                "classified_by": "old",
+                "title": "older",
+                "description": "",
+                "status": "done",
+                "who": "Q",
+                "project_id": "p1",
+            },
+            {
+                "task_id": 2,
+                "section_path": "backend",
+                "classified_at": "2026-06-01T00:00:00",
+                "classified_by": "new",
+                "title": "newer",
+                "description": "",
+                "status": "todo",
+                "who": "Q",
+                "project_id": "p1",
+            },
+        ]
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/all", rows)])
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "sync"])
+        assert result.exit_code == 0, result.output
+        log = (cwd_tmp / "wiki" / "log.md").read_text()
+        # Newest first → "newer" appears before "older"
+        assert log.index("newer") < log.index("older")
+
+    def test_wiki_sync_json_mode_does_not_write(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n",
+        )
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/all", [])])
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "sync", "--json"])
+        assert result.exit_code == 0, result.output
+        assert not (cwd_tmp / "wiki").exists()
+        payload = json.loads(result.output)
+        assert "files" in payload
+        assert payload["sections"] == 1
+
+    def test_wiki_sync_no_architecture_fails(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        # No ARCHITECTURE.md — must refuse with a usable error.
+        result = runner.invoke(ken.cli, ["wiki", "sync"])
+        assert result.exit_code != 0
+        assert "ARCHITECTURE" in result.output
+
+    def test_wiki_sync_flags_orphans(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n",
+        )
+        rows = [
+            {
+                "task_id": 5,
+                "section_path": "removed/section",  # not declared anymore
+                "classified_at": "2026-05-24T10:00:00",
+                "classified_by": "Q",
+                "title": "stale",
+                "description": "",
+                "status": "todo",
+                "who": "Q",
+                "project_id": "p1",
+            },
+        ]
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/all", rows)])
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "sync"])
+        assert result.exit_code == 0, result.output
+        orphans = (cwd_tmp / "wiki" / "orphans.md").read_text()
+        assert "removed/section" in orphans
+        assert "stale" in orphans
+
+    def test_wiki_sync_overwrites_previous_run(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n",
+        )
+        # Pre-existing stale file in the output dir → must be wiped on next run.
+        (cwd_tmp / "wiki").mkdir()
+        (cwd_tmp / "wiki" / "stale-from-old-run.md").write_text("garbage")
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/all", [])])
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "sync"])
+        assert result.exit_code == 0, result.output
+        assert not (cwd_tmp / "wiki" / "stale-from-old-run.md").exists()
+        assert (cwd_tmp / "wiki" / "index.md").is_file()
+
     def test_move(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
         ctx, calls = _patch_responses(

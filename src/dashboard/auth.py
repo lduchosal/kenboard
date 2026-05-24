@@ -114,10 +114,11 @@ def _resolve_project_id(method: str, path: str) -> str | None:
     # PATCH/DELETE /api/v1/projects/<id> → URL <id>
     if path.startswith("/api/v1/projects/") and method in ("PATCH", "DELETE"):
         return path.rsplit("/", 1)[1]
-    # GET /api/v1/wiki/unclassified?project=X — cross-project by design,
-    # but api_keys are per-project so we require the explicit filter for
-    # them. The route handler also enforces ``current_user_can_project``.
-    if path == "/api/v1/wiki/unclassified" and method == "GET":
+    # GET /api/v1/wiki/{unclassified,all}?project=X — cross-project by
+    # design, but api_keys are per-project so we require the explicit
+    # filter for them. The route handlers also enforce
+    # ``current_user_can_project``.
+    if path in ("/api/v1/wiki/unclassified", "/api/v1/wiki/all") and method == "GET":
         return request.args.get("project")
     # POST /api/v1/wiki/classify → body.task_id → SELECT project_id from DB
     if path == "/api/v1/wiki/classify" and method == "POST":
