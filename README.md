@@ -59,11 +59,41 @@ ken show <id> --json                         # task details
 ken move <id> --to doing                     # mark in progress
 ken add "MODULE / Title" --desc "..." --who Claude  # create
 ken move <id> --to review                    # submit
+ken wiki groom <id> <section>                # classify for the wiki
 ```
 
-Full workflow: `todo` → `doing` → `review` → `done`.
-The agent handles `todo` → `doing` → `review`. Only the user moves
-`review` → `done`.
+Full workflow: `todo` → `doing` → `review` → `groom` → `done`.
+The agent handles `todo` → `doing` → `review` then `ken wiki groom`.
+Only the user moves `review` → `done`. `ken move --to review` and
+`ken update --status review` print a one-line reminder about the
+grooming step so the agent doesn't forget.
+
+### Wiki — exporting the board as a structured doc tree (#376)
+
+Inspired by Karpathy's
+[LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f):
+the kanban board is the source of truth, and an LLM agent classifies
+each task into a section of `ARCHITECTURE.md` (a YAML-frontmatter file
+at the project root that declares the wiki's section tree). The CLI
+then exports the result as a navigable MD/HTML tree.
+
+```sh
+ken wiki groom                       # list unclassified + sections
+ken wiki groom <id> <section>        # assign a task to a section
+ken wiki sync   --out wiki           # MD tree (committed in /wiki)
+ken wiki build  --in wiki --out wiki-html   # standalone HTML
+ken wiki lint   --strict             # orphans / unclassified (CI gate)
+```
+
+- The server stays unaware of `ARCHITECTURE.md` — it stores opaque
+  `(task_id, section_path)` pairs, the CLI does the validation.
+- Each section index splits "En cours" (todo/doing/review) and
+  "Archivé" (done). Per-task pages mirror the board's full-screen
+  task view (header + meta + description).
+- `ken wiki lint --strict` exits 1 on orphans / unclassified tasks
+  — wire it into your CI to keep the wiki in sync with the board.
+
+A live snapshot of the export lives under [`/wiki`](./wiki) in this repo.
 
 ### References
 

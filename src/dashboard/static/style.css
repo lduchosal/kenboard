@@ -1906,3 +1906,57 @@ button.cat-card-add {
 #kb-help-modal h4:first-of-type {
   margin-top: 0;
 }
+
+/* -- Print: fullscreen task detail (#445) ------------------------------------
+   When the user hits Cmd+P with a task open, print the task — not the kanban
+   board behind it. The native <dialog open> is in the top layer; we hide
+   everything else via visibility, then reposition the dialog as ordinary page
+   content stripped of modal chrome (no backdrop, no shadow, no close button,
+   no action bar). */
+@media print {
+  body {
+    background: white;
+    visibility: hidden;
+  }
+  dialog.fullscreen-modal[open],
+  dialog.fullscreen-modal[open] * {
+    visibility: visible;
+  }
+  dialog.fullscreen-modal[open] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    border: none;
+    background: white;
+    padding: 0;
+    margin: 0;
+    display: block;
+  }
+  dialog.fullscreen-modal[open]::backdrop {
+    display: none;
+  }
+  .fullscreen-card {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 16px !important;
+    color: black;
+  }
+  .fullscreen-modal .modal-close,
+  .fullscreen-actions {
+    display: none !important;
+  }
+  .fullscreen-desc {
+    color: black;
+  }
+  .fullscreen-desc pre,
+  .fullscreen-desc blockquote,
+  .fullscreen-desc table {
+    page-break-inside: avoid;
+  }
+}
