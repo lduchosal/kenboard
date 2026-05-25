@@ -1,3 +1,3 @@
 """Dashboard - Project management dashboard with kanban boards."""
 
-__version__ = "0.1.105"
+__version__ = "0.1.106"
