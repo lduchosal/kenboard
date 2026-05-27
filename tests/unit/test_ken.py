@@ -131,6 +131,26 @@ class TestLoadConfig:
         ken._load_config()
         assert "mode 644" in capsys.readouterr().err
 
+    # #473: architecture path comes from .ken or env, with default fallback.
+    def test_architecture_defaults_to_ARCHITECTURE_md(self, cwd_tmp):
+        assert ken._load_config().architecture == "ARCHITECTURE.md"
+
+    def test_architecture_from_ken_file(self, cwd_tmp):
+        (cwd_tmp / ".ken").write_text(
+            "project_id=abc\narchitecture=Doc/Spécifications/Architecture.md\n",
+            encoding="utf-8",
+        )
+        os.chmod(cwd_tmp / ".ken", 0o600)
+        cfg = ken._load_config()
+        # Accented path must round-trip through UTF-8 parsing.
+        assert cfg.architecture == "Doc/Spécifications/Architecture.md"
+
+    def test_architecture_env_overrides_file(self, cwd_tmp, monkeypatch):
+        (cwd_tmp / ".ken").write_text("architecture=from-file.md\n")
+        os.chmod(cwd_tmp / ".ken", 0o600)
+        monkeypatch.setenv("KEN_ARCHITECTURE", "from-env.md")
+        assert ken._load_config().architecture == "from-env.md"
+
 
 # -- Format helpers -----------------------------------------------------------
 
@@ -665,6 +685,48 @@ class TestCliMutations:
         assert "karpathy" in result.output.lower()
         assert "gist" in result.output.lower()
         assert "LLM Wiki" in result.output
+
+    # #473: --architecture default sourced from .ken `architecture=` key.
+    def test_wiki_groom_uses_architecture_path_from_ken_file(self, cwd_tmp, runner):
+        (cwd_tmp / ".ken").write_text(
+            "project_id=p1\narchitecture=doc/Spécifications/Arch.md\n",
+            encoding="utf-8",
+        )
+        os.chmod(cwd_tmp / ".ken", 0o600)
+        # Write the architecture at the custom (accented) path.
+        target_dir = cwd_tmp / "doc" / "Spécifications"
+        target_dir.mkdir(parents=True)
+        (target_dir / "Arch.md").write_text(
+            "---\nwiki:\n  sections:\n"
+            "    - id: backend\n      title: BackendCustom\n"
+            "---\n\n# arch\n",
+            encoding="utf-8",
+        )
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/unclassified", [])])
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "groom"])
+        assert result.exit_code == 0, result.output
+        # The section from the *custom* arch path must appear in the listing —
+        # proves the default came from .ken, not from ./ARCHITECTURE.md.
+        assert "BackendCustom" in result.output
+
+    def test_wiki_groom_cli_flag_overrides_ken_architecture(self, cwd_tmp, runner):
+        (cwd_tmp / ".ken").write_text("project_id=p1\narchitecture=from-ken.md\n")
+        os.chmod(cwd_tmp / ".ken", 0o600)
+        # Only write the arch at the path passed via --architecture.
+        (cwd_tmp / "override.md").write_text(
+            "---\nwiki:\n  sections:\n"
+            "    - id: ops\n      title: OpsOverride\n"
+            "---\n\n# o\n",
+            encoding="utf-8",
+        )
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/unclassified", [])])
+        with ctx:
+            result = runner.invoke(
+                ken.cli, ["wiki", "groom", "--architecture", "override.md"]
+            )
+        assert result.exit_code == 0, result.output
+        assert "OpsOverride" in result.output
 
     def test_wiki_groom_no_architecture_warns(self, cwd_tmp, runner):
         self._setup(cwd_tmp)

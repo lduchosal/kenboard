@@ -51,6 +51,7 @@ def _version() -> str:
 
 DEFAULT_BASE_URL = "http://localhost:9090"
 DEFAULT_SYNC_DIR = "doc/kenboard"
+DEFAULT_ARCHITECTURE = "ARCHITECTURE.md"
 KEN_FILE = ".ken"
 VALID_STATUSES = ("todo", "doing", "review", "done")
 TASK_COLUMNS = [
@@ -76,6 +77,7 @@ class KenConfig:
     api_token: str | None
     ken_file: Path | None
     sync_dir: str = DEFAULT_SYNC_DIR
+    architecture: str = DEFAULT_ARCHITECTURE
     description: str = ""
 
 
@@ -166,6 +168,16 @@ def _load_config(
     sync_dir = (
         os.environ.get("KEN_SYNC_DIR") or file_data.get("sync_dir") or DEFAULT_SYNC_DIR
     )
+    # #473: ``architecture=`` in .ken supplies the default path used by all
+    # four ``ken wiki *`` subcommands (groom/sync/build/lint). The CLI flag
+    # ``--architecture`` still wins when explicitly passed. The path may
+    # contain accented characters (e.g. ``Doc/Spécifications/Architecture.md``)
+    # — UTF-8 is preserved through ``_parse_ken_file``'s ``encoding="utf-8"``.
+    architecture = (
+        os.environ.get("KEN_ARCHITECTURE")
+        or file_data.get("architecture")
+        or DEFAULT_ARCHITECTURE
+    )
     description = file_data.get("description", "")
     return KenConfig(
         project_id=project_id,
@@ -173,6 +185,7 @@ def _load_config(
         api_token=api_token,
         ken_file=ken_path if ken_path is not None and ken_path.is_file() else None,
         sync_dir=sync_dir,
+        architecture=architecture,
         description=description,
     )
 
@@ -887,8 +900,11 @@ def _classified_by(cfg: KenConfig) -> str:
 @click.argument("section", required=False)
 @click.option(
     "--architecture",
-    default="ARCHITECTURE.md",
-    help="Path to the architecture file (default: ./ARCHITECTURE.md)",
+    default=None,
+    help=(
+        "Path to the architecture file. Resolves to: flag > KEN_ARCHITECTURE "
+        "env > `architecture=` in .ken > ./ARCHITECTURE.md (#473)."
+    ),
 )
 @click.option("--show", is_flag=True, help="Show current classification for TASK_ID.")
 @click.option("--clear", is_flag=True, help="Drop the classification for TASK_ID.")
@@ -898,7 +914,7 @@ def groom(  # noqa: PLR0913
     ctx: click.Context,
     task_id: int | None,
     section: str | None,
-    architecture: str,
+    architecture: str | None,
     show: bool,
     clear: bool,
     json_mode: bool,
@@ -912,6 +928,7 @@ def groom(  # noqa: PLR0913
             project's ARCHITECTURE.md.
     """
     cfg: KenConfig = ctx.obj["cfg"]
+    architecture = architecture or cfg.architecture
     if show and clear:
         raise click.UsageError("--show and --clear are mutually exclusive.")
     if (show or clear) and task_id is None:
@@ -1288,8 +1305,11 @@ def _write_sync_plan(out: str, plan: dict[str, Any]) -> None:
 )
 @click.option(
     "--architecture",
-    default="ARCHITECTURE.md",
-    help="Path to the architecture file (default: ./ARCHITECTURE.md).",
+    default=None,
+    help=(
+        "Path to the architecture file. Resolves to: flag > KEN_ARCHITECTURE "
+        "env > `architecture=` in .ken > ./ARCHITECTURE.md (#473)."
+    ),
 )
 @click.option(
     "--json",
@@ -1301,7 +1321,7 @@ def _write_sync_plan(out: str, plan: dict[str, Any]) -> None:
 def wiki_sync(
     ctx: click.Context,
     out: str,
-    architecture: str,
+    architecture: str | None,
     json_mode: bool,
 ) -> None:
     """Materialise the wiki MD tree from live classifications (chunk C, #376c).
@@ -1310,6 +1330,7 @@ def wiki_sync(
         UsageError: when ``ARCHITECTURE.md`` is missing or declares no sections.
     """
     cfg: KenConfig = ctx.obj["cfg"]
+    architecture = architecture or cfg.architecture
     sections, paths = _load_sections(architecture)
     if not paths:
         raise click.UsageError(
@@ -1635,22 +1656,26 @@ def _write_html_plan(out: str, files: list[dict[str, str]]) -> None:
 )
 @click.option(
     "--architecture",
-    default="ARCHITECTURE.md",
-    help="Path to the architecture file (default: ./ARCHITECTURE.md).",
+    default=None,
+    help=(
+        "Path to the architecture file. Resolves to: flag > KEN_ARCHITECTURE "
+        "env > `architecture=` in .ken > ./ARCHITECTURE.md (#473)."
+    ),
 )
 @click.pass_context
 def wiki_build(
     ctx: click.Context,
     in_dir: str,
     out: str,
-    architecture: str,
+    architecture: str | None,
 ) -> None:
     """Build the HTML wiki from the MD tree produced by ``ken wiki sync``.
 
     Raises:
         UsageError: when ``--in`` doesn't exist or ``ARCHITECTURE.md`` is missing.
     """
-    _ = ctx  # CLI context not needed (purely local IO).
+    cfg: KenConfig = ctx.obj["cfg"]
+    architecture = architecture or cfg.architecture
     src = Path(in_dir)
     if not src.is_dir():
         raise click.UsageError(
@@ -1756,8 +1781,11 @@ def _print_lint_report(report: dict[str, Any]) -> None:
 @wiki.command(name="lint", help="Report orphans / unclassified / empty sections.")
 @click.option(
     "--architecture",
-    default="ARCHITECTURE.md",
-    help="Path to the architecture file (default: ./ARCHITECTURE.md).",
+    default=None,
+    help=(
+        "Path to the architecture file. Resolves to: flag > KEN_ARCHITECTURE "
+        "env > `architecture=` in .ken > ./ARCHITECTURE.md (#473)."
+    ),
 )
 @click.option(
     "--strict",
@@ -1773,7 +1801,7 @@ def _print_lint_report(report: dict[str, Any]) -> None:
 @click.pass_context
 def wiki_lint(
     ctx: click.Context,
-    architecture: str,
+    architecture: str | None,
     strict: bool,
     json_mode: bool,
 ) -> None:
@@ -1786,6 +1814,7 @@ def wiki_lint(
         UsageError: when ``ARCHITECTURE.md`` is missing or declares no sections.
     """
     cfg: KenConfig = ctx.obj["cfg"]
+    architecture = architecture or cfg.architecture
     _sections, paths = _load_sections(architecture)
     if not paths:
         raise click.UsageError(
