@@ -277,7 +277,7 @@ class TestCliInit:
         assert result.exit_code == 0, result.output
         ken_file = cwd_tmp / ".ken"
         assert ken_file.exists()
-        content = ken_file.read_text()
+        content = ken_file.read_text(encoding="utf-8")
         assert "project_id=uuid-1" in content
         assert "base_url=" in content
         # Mode 0600 (Unix only — Windows doesn't enforce POSIX permissions)
@@ -285,7 +285,7 @@ class TestCliInit:
             mode = ken_file.stat().st_mode & 0o777
             assert mode == 0o600
         # .gitignore created with .ken
-        gi = (cwd_tmp / ".gitignore").read_text()
+        gi = (cwd_tmp / ".gitignore").read_text(encoding="utf-8")
         assert ".ken" in gi.splitlines()
 
     def test_init_unknown_uuid_fails(self, cwd_tmp, runner):
@@ -313,7 +313,7 @@ class TestCliInit:
         with ctx:
             result = runner.invoke(ken.cli, ["init", "uuid-1", "--force"])
         assert result.exit_code == 0, result.output
-        assert "project_id=uuid-1" in (cwd_tmp / ".ken").read_text()
+        assert "project_id=uuid-1" in (cwd_tmp / ".ken").read_text(encoding="utf-8")
 
     def test_init_appends_to_existing_gitignore(self, cwd_tmp, runner):
         (cwd_tmp / ".git").mkdir()
@@ -324,7 +324,7 @@ class TestCliInit:
         with ctx:
             result = runner.invoke(ken.cli, ["init", "uuid-1"])
         assert result.exit_code == 0, result.output
-        gi_lines = (cwd_tmp / ".gitignore").read_text().splitlines()
+        gi_lines = (cwd_tmp / ".gitignore").read_text(encoding="utf-8").splitlines()
         assert "__pycache__/" in gi_lines
         assert "*.log" in gi_lines
         assert ".ken" in gi_lines
@@ -891,10 +891,10 @@ class TestCliMutations:
         assert (wiki / "frontend" / "index.md").is_file()
         assert (wiki / "log.md").is_file()
         # Task assigned to its section
-        backend_api = (wiki / "backend" / "api" / "index.md").read_text()
+        backend_api = (wiki / "backend" / "api" / "index.md").read_text(encoding="utf-8")
         assert "T1" in backend_api
         # Empty section has its index but flagged
-        backend_root = (wiki / "backend" / "index.md").read_text()
+        backend_root = (wiki / "backend" / "index.md").read_text(encoding="utf-8")
         assert "no tasks classified yet" in backend_root
 
     def test_wiki_sync_log_is_desc_by_classified_at(self, cwd_tmp, runner):
@@ -931,7 +931,7 @@ class TestCliMutations:
         with ctx:
             result = runner.invoke(ken.cli, ["wiki", "sync"])
         assert result.exit_code == 0, result.output
-        log = (cwd_tmp / "wiki" / "log.md").read_text()
+        log = (cwd_tmp / "wiki" / "log.md").read_text(encoding="utf-8")
         # Newest first → "newer" appears before "older"
         assert log.index("newer") < log.index("older")
 
@@ -980,7 +980,7 @@ class TestCliMutations:
         with ctx:
             result = runner.invoke(ken.cli, ["wiki", "sync"])
         assert result.exit_code == 0, result.output
-        orphans = (cwd_tmp / "wiki" / "orphans.md").read_text()
+        orphans = (cwd_tmp / "wiki" / "orphans.md").read_text(encoding="utf-8")
         assert "removed/section" in orphans
         assert "stale" in orphans
 
@@ -1017,7 +1017,7 @@ class TestCliMutations:
         assert (out / "index.html").is_file()
         assert (out / "backend" / "index.html").is_file()
         assert (out / "log.html").is_file()
-        body = (out / "backend" / "index.html").read_text()
+        body = (out / "backend" / "index.html").read_text(encoding="utf-8")
         assert "<h1>Backend</h1>" in body
         # Sidebar nav is present on every page
         assert 'class="sidebar"' in body
@@ -1032,7 +1032,7 @@ class TestCliMutations:
         )
         self._make_md_tree(cwd_tmp)
         runner.invoke(ken.cli, ["wiki", "build"])
-        index = (cwd_tmp / "wiki-html" / "index.html").read_text()
+        index = (cwd_tmp / "wiki-html" / "index.html").read_text(encoding="utf-8")
         assert 'href="backend/index.html"' in index
         assert "index.md" not in index  # all .md links rewritten
 
@@ -1088,13 +1088,13 @@ class TestCliMutations:
         # Detail page slug = slugified-title + -id.
         detail = cwd_tmp / "wiki" / "backend" / "auth-login-oidc-42.md"
         assert detail.is_file()
-        body = detail.read_text()
+        body = detail.read_text(encoding="utf-8")
         assert body.startswith("---")  # YAML frontmatter
         assert "id: 42" in body
         assert "status: doing" in body
         assert "Really important task body" in body
         # Section index links to the detail page (not just the title text).
-        index = (cwd_tmp / "wiki" / "backend" / "index.md").read_text()
+        index = (cwd_tmp / "wiki" / "backend" / "index.md").read_text(encoding="utf-8")
         assert "[AUTH / Login OIDC](auth-login-oidc-42.md)" in index
 
     def test_wiki_sync_section_index_splits_active_and_archived(self, cwd_tmp, runner):
@@ -1130,7 +1130,7 @@ class TestCliMutations:
         ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/all", rows)])
         with ctx:
             runner.invoke(ken.cli, ["wiki", "sync"])
-        index = (cwd_tmp / "wiki" / "backend" / "index.md").read_text()
+        index = (cwd_tmp / "wiki" / "backend" / "index.md").read_text(encoding="utf-8")
         assert "## En cours (1)" in index
         assert "## Archivé (1)" in index
         # `who` is not in the section index (Q2 decision).
@@ -1205,7 +1205,7 @@ class TestCliMutations:
         with ctx:
             runner.invoke(ken.cli, ["wiki", "sync"])
         runner.invoke(ken.cli, ["wiki", "build"])
-        detail = (cwd_tmp / "wiki-html" / "backend" / "hello-world-7.html").read_text()
+        detail = (cwd_tmp / "wiki-html" / "backend" / "hello-world-7.html").read_text(encoding="utf-8")
         assert 'class="fullscreen-card"' in detail
         assert 'class="fullscreen-title"' in detail
         assert ">Hello world<" in detail
@@ -1620,7 +1620,7 @@ class TestCliSync:
         target = cwd_tmp / "doc" / "kenboard"
         assert (target / "0001 - First.md").exists()
         assert (target / "0042 - AGENT _ CLI _ sync.md").exists()
-        body = (target / "0042 - AGENT _ CLI _ sync.md").read_text()
+        body = (target / "0042 - AGENT _ CLI _ sync.md").read_text(encoding="utf-8")
         assert "id: 42" in body
         assert "# AGENT / CLI / sync" in body
         assert "beta" in body
@@ -1632,7 +1632,7 @@ class TestCliSync:
         with ctx:
             result = runner.invoke(ken.cli, ["sync"])
         assert result.exit_code == 0, result.output
-        ken_text = (cwd_tmp / ".ken").read_text()
+        ken_text = (cwd_tmp / ".ken").read_text(encoding="utf-8")
         assert "sync_dir=doc/kenboard" in ken_text
 
     def test_does_not_duplicate_sync_dir_line(self, cwd_tmp, runner):
@@ -1642,7 +1642,7 @@ class TestCliSync:
         with ctx:
             result = runner.invoke(ken.cli, ["sync"])
         assert result.exit_code == 0, result.output
-        ken_text = (cwd_tmp / ".ken").read_text()
+        ken_text = (cwd_tmp / ".ken").read_text(encoding="utf-8")
         assert ken_text.count("sync_dir=") == 1
         # Custom path was used, not the default
         assert (cwd_tmp / "custom" / "path").is_dir()
@@ -1701,7 +1701,7 @@ class TestCliSync:
             result = runner.invoke(ken.cli, ["sync"])
         assert result.exit_code == 0, result.output
         assert readme.exists()
-        assert readme.read_text() == "hand-written\n"
+        assert readme.read_text(encoding="utf-8") == "hand-written\n"
 
     def test_json_output_lists_changes(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
