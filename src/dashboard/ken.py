@@ -52,6 +52,8 @@ def _version() -> str:
 DEFAULT_BASE_URL = "http://localhost:9090"
 DEFAULT_SYNC_DIR = "doc/kenboard"
 DEFAULT_ARCHITECTURE = "ARCHITECTURE.md"
+DEFAULT_WIKI_DIR = "wiki"
+DEFAULT_WIKI_HTML_DIR = "wiki-html"
 KEN_FILE = ".ken"
 VALID_STATUSES = ("todo", "doing", "review", "done")
 TASK_COLUMNS = [
@@ -78,6 +80,8 @@ class KenConfig:
     ken_file: Path | None
     sync_dir: str = DEFAULT_SYNC_DIR
     architecture: str = DEFAULT_ARCHITECTURE
+    wiki_dir: str = DEFAULT_WIKI_DIR
+    wiki_html_dir: str = DEFAULT_WIKI_HTML_DIR
     description: str = ""
 
 
@@ -178,6 +182,18 @@ def _load_config(
         or file_data.get("architecture")
         or DEFAULT_ARCHITECTURE
     )
+    # #479: per-project default output dirs for the wiki pipeline.
+    # ``wiki_dir`` = MD tree (output of ``wiki sync``, input of ``wiki build``).
+    # ``wiki_html_dir`` = rendered HTML (output of ``wiki build``).
+    # Same resolution chain as the rest: flag > env > .ken > default.
+    wiki_dir = (
+        os.environ.get("KEN_WIKI_DIR") or file_data.get("wiki_dir") or DEFAULT_WIKI_DIR
+    )
+    wiki_html_dir = (
+        os.environ.get("KEN_WIKI_HTML_DIR")
+        or file_data.get("wiki_html_dir")
+        or DEFAULT_WIKI_HTML_DIR
+    )
     description = file_data.get("description", "")
     return KenConfig(
         project_id=project_id,
@@ -186,6 +202,8 @@ def _load_config(
         ken_file=ken_path if ken_path is not None and ken_path.is_file() else None,
         sync_dir=sync_dir,
         architecture=architecture,
+        wiki_dir=wiki_dir,
+        wiki_html_dir=wiki_html_dir,
         description=description,
     )
 
@@ -1334,8 +1352,11 @@ def _write_sync_plan(out: str, plan: dict[str, Any]) -> None:
 @wiki.command(name="sync", help="Export classifications to a structured MD tree.")
 @click.option(
     "--out",
-    default="wiki",
-    help="Output directory — re-written from scratch each run (default: ./wiki).",
+    default=None,
+    help=(
+        "Output directory — re-written from scratch each run. Resolves to: "
+        "flag > KEN_WIKI_DIR env > `wiki_dir=` in .ken > ./wiki (#479)."
+    ),
 )
 @click.option(
     "--architecture",
@@ -1354,7 +1375,7 @@ def _write_sync_plan(out: str, plan: dict[str, Any]) -> None:
 @click.pass_context
 def wiki_sync(
     ctx: click.Context,
-    out: str,
+    out: str | None,
     architecture: str | None,
     json_mode: bool,
 ) -> None:
@@ -1365,6 +1386,7 @@ def wiki_sync(
     """
     cfg: KenConfig = ctx.obj["cfg"]
     architecture = architecture or cfg.architecture
+    out = out or cfg.wiki_dir
     sections, paths = _load_sections(architecture)
     if not paths:
         raise click.UsageError(_architecture_help(architecture))
@@ -1676,13 +1698,20 @@ def _write_html_plan(out: str, files: list[dict[str, str]]) -> None:
 @click.option(
     "--in",
     "in_dir",
-    default="wiki",
-    help="Input directory holding the MD tree (default: ./wiki — output of `wiki sync`).",
+    default=None,
+    help=(
+        "Input directory holding the MD tree. Resolves to: flag > KEN_WIKI_DIR "
+        "env > `wiki_dir=` in .ken > ./wiki (#479)."
+    ),
 )
 @click.option(
     "--out",
-    default="wiki-html",
-    help="Output directory — re-written from scratch each run (default: ./wiki-html).",
+    default=None,
+    help=(
+        "Output directory — re-written from scratch each run. Resolves to: "
+        "flag > KEN_WIKI_HTML_DIR env > `wiki_html_dir=` in .ken > "
+        "./wiki-html (#479)."
+    ),
 )
 @click.option(
     "--architecture",
@@ -1695,8 +1724,8 @@ def _write_html_plan(out: str, files: list[dict[str, str]]) -> None:
 @click.pass_context
 def wiki_build(
     ctx: click.Context,
-    in_dir: str,
-    out: str,
+    in_dir: str | None,
+    out: str | None,
     architecture: str | None,
 ) -> None:
     """Build the HTML wiki from the MD tree produced by ``ken wiki sync``.
@@ -1706,6 +1735,8 @@ def wiki_build(
     """
     cfg: KenConfig = ctx.obj["cfg"]
     architecture = architecture or cfg.architecture
+    in_dir = in_dir or cfg.wiki_dir
+    out = out or cfg.wiki_html_dir
     src = Path(in_dir)
     if not src.is_dir():
         raise click.UsageError(

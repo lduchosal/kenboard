@@ -151,6 +151,32 @@ class TestLoadConfig:
         monkeypatch.setenv("KEN_ARCHITECTURE", "from-env.md")
         assert ken._load_config().architecture == "from-env.md"
 
+    # #479: wiki output dirs are configurable in .ken.
+    def test_wiki_dirs_default_when_nothing_set(self, cwd_tmp):
+        cfg = ken._load_config()
+        assert cfg.wiki_dir == "wiki"
+        assert cfg.wiki_html_dir == "wiki-html"
+
+    def test_wiki_dirs_from_ken_file(self, cwd_tmp):
+        (cwd_tmp / ".ken").write_text(
+            "project_id=p\nwiki_dir=doc/wiki/md\nwiki_html_dir=doc/wiki/html\n"
+        )
+        os.chmod(cwd_tmp / ".ken", 0o600)
+        cfg = ken._load_config()
+        assert cfg.wiki_dir == "doc/wiki/md"
+        assert cfg.wiki_html_dir == "doc/wiki/html"
+
+    def test_wiki_dirs_env_overrides_file(self, cwd_tmp, monkeypatch):
+        (cwd_tmp / ".ken").write_text(
+            "wiki_dir=from-file\nwiki_html_dir=from-file-html\n"
+        )
+        os.chmod(cwd_tmp / ".ken", 0o600)
+        monkeypatch.setenv("KEN_WIKI_DIR", "from-env")
+        monkeypatch.setenv("KEN_WIKI_HTML_DIR", "from-env-html")
+        cfg = ken._load_config()
+        assert cfg.wiki_dir == "from-env"
+        assert cfg.wiki_html_dir == "from-env-html"
+
 
 # -- Format helpers -----------------------------------------------------------
 
@@ -709,6 +735,50 @@ class TestCliMutations:
         # The section from the *custom* arch path must appear in the listing —
         # proves the default came from .ken, not from ./ARCHITECTURE.md.
         assert "BackendCustom" in result.output
+
+    # #479: wiki sync / wiki build pick the output dir from .ken.
+    def test_wiki_sync_writes_to_wiki_dir_from_ken(self, cwd_tmp, runner):
+        (cwd_tmp / ".ken").write_text("project_id=p1\nwiki_dir=custom/out\n")
+        os.chmod(cwd_tmp / ".ken", 0o600)
+        self._write_architecture(cwd_tmp, "    - id: backend\n      title: Backend\n")
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/all", [])])
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "sync"])
+        assert result.exit_code == 0, result.output
+        # The .ken-configured dir was used, not the ./wiki default.
+        assert (cwd_tmp / "custom" / "out" / "index.md").is_file()
+        assert not (cwd_tmp / "wiki").exists()
+
+    def test_wiki_build_reads_in_and_writes_out_from_ken(self, cwd_tmp, runner):
+        (cwd_tmp / ".ken").write_text(
+            "project_id=p1\nwiki_dir=md-src\nwiki_html_dir=html-out\n"
+        )
+        os.chmod(cwd_tmp / ".ken", 0o600)
+        self._write_architecture(cwd_tmp, "    - id: backend\n      title: Backend\n")
+        # Pre-stage the MD tree at the configured wiki_dir.
+        src = cwd_tmp / "md-src"
+        src.mkdir()
+        (src / "index.md").write_text("# kenboard wiki\n", encoding="utf-8")
+        (src / "backend").mkdir()
+        (src / "backend" / "index.md").write_text(
+            "# Backend\n\nbody\n", encoding="utf-8"
+        )
+        result = runner.invoke(ken.cli, ["wiki", "build"])
+        assert result.exit_code == 0, result.output
+        # HTML landed in the .ken-configured wiki_html_dir, not ./wiki-html.
+        assert (cwd_tmp / "html-out" / "backend" / "index.html").is_file()
+        assert not (cwd_tmp / "wiki-html").exists()
+
+    def test_wiki_sync_cli_flag_overrides_ken_wiki_dir(self, cwd_tmp, runner):
+        (cwd_tmp / ".ken").write_text("project_id=p1\nwiki_dir=from-ken\n")
+        os.chmod(cwd_tmp / ".ken", 0o600)
+        self._write_architecture(cwd_tmp, "    - id: backend\n      title: Backend\n")
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/all", [])])
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "sync", "--out", "from-flag"])
+        assert result.exit_code == 0, result.output
+        assert (cwd_tmp / "from-flag" / "index.md").is_file()
+        assert not (cwd_tmp / "from-ken").exists()
 
     def test_wiki_groom_cli_flag_overrides_ken_architecture(self, cwd_tmp, runner):
         (cwd_tmp / ".ken").write_text("project_id=p1\narchitecture=from-ken.md\n")
