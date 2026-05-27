@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quick task</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<form id="task-form">
+  <label>Title<input id="title" required maxlength="250" autocomplete="off"></label>
+  <label>Description<textarea id="description" rows="4"></textarea></label>
+  <label>Who<input id="who" autocomplete="off"></label>
+  <label class="checkbox"><input type="checkbox" id="include-screenshot" checked> Include screenshot</label>
+  <div class="actions">
+    <button type="submit" id="submit">Save</button>
+    <a href="#" id="open-options">Settings</a>
+  </div>
+  <div id="status"></div>
+</form>
+<script src="popup.js"></script>
+</body>
+</html>

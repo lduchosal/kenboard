@@ -95,6 +95,18 @@ ken wiki lint   --strict             # orphans / unclassified (CI gate)
 
 A live snapshot of the export lives under [`/wiki`](./wiki) in this repo.
 
+### Browser extension — quick-capture from any page (#480)
+
+Sideload-only browser extension that pops a "create task" dialog from
+the current tab with `Ctrl+Shift+K` (`Cmd+Shift+K` macOS). Pre-fills
+the title from the page title, attaches a PNG screenshot of the
+visible viewport, posts to `POST /api/v1/tasks` with your existing
+api_key. Zero new server code — reuses the standard bearer auth.
+
+Install + first-run guide: [`extension/README.md`](extension/README.md).
+Pre-zipped sideload package on every release:
+[GitHub Releases](https://github.com/lduchosal/kenboard/releases).
+
 ### References
 
 - Full CLI: [`doc/ken-cli.md`](doc/ken-cli.md)

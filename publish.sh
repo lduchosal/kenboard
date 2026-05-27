@@ -221,6 +221,13 @@ run_command "pdm bump ${BUMP_TYPE}" "Version bump"
 # Sync __init__.py with pyproject.toml version (portable sed: BSD/macOS + GNU/Linux)
 VERSION=$(grep '^version' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
 sed -i.bak "s/__version__ = \".*\"/__version__ = \"${VERSION}\"/" src/dashboard/__init__.py && rm src/dashboard/__init__.py.bak
+# Sync extension manifest version too (#485) so the sideload package
+# tracks the kenboard release it was built against. The pattern matches
+# only the bare `"version"` key (a quoted-string value), not
+# `"manifest_version"` (which is a bare number) — works on BSD + GNU sed.
+if [ -f extension/manifest.json ]; then
+    sed -i.bak 's/"version": "[^"]*"/"version": "'"${VERSION}"'"/' extension/manifest.json && rm extension/manifest.json.bak
+fi
 echo "${BLUE}New version: ${VERSION}${NC}"
 
 print_step "Building Package (pdm)"
@@ -240,6 +247,34 @@ print_step "Creating Tag and Pushing Release"
 run_command "git tag kenboard-${VERSION}" "Creating git tag"
 run_command "git push" "Pushing release commit"
 run_command "git push --tags" "Pushing tags"
+
+# #485: zip the browser extension and attach it as a release artifact so
+# sideload users can grab a single file from the GitHub Release instead
+# of cloning the repo. Best-effort: if zip / gh fails (missing token, no
+# network), warn and continue — the PyPI upload above has already shipped.
+if [ -d extension ]; then
+    print_step "Packaging Browser Extension (#480)"
+    EXTENSION_ZIP="dist/kenboard-extension-${VERSION}.zip"
+    mkdir -p dist
+    if ( cd extension && zip -r "../${EXTENSION_ZIP}" . -x "*.DS_Store" ) > /dev/null; then
+        echo "${GREEN}✓ Extension zipped to ${EXTENSION_ZIP}${NC}"
+    else
+        echo "${YELLOW}WARN: extension/ not zipped${NC}"
+        EXTENSION_ZIP=""
+    fi
+
+    if [ -n "${EXTENSION_ZIP}" ] && command -v gh > /dev/null 2>&1; then
+        print_step "Creating GitHub Release with Extension Artifact"
+        gh release create "kenboard-${VERSION}" \
+            --title "kenboard ${VERSION}" \
+            --generate-notes \
+            "${EXTENSION_ZIP}" && \
+            echo "${GREEN}✓ Release created with extension attached${NC}" || \
+            echo "${YELLOW}WARN: gh release create failed — release / artifact not published${NC}"
+    elif [ -n "${EXTENSION_ZIP}" ]; then
+        echo "${YELLOW}WARN: gh CLI not found — skipping GitHub Release. Upload ${EXTENSION_ZIP} manually.${NC}"
+    fi
+fi
 
 print_step "Cleaning Previous Build (pdm run clean)"
 run_command "pdm run clean" "Clean"
