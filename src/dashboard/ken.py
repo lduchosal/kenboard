@@ -881,6 +881,47 @@ def _load_sections(architecture: str) -> tuple[list, list[str]]:
     return sections, section_paths(sections)
 
 
+def _architecture_help(architecture: str) -> str:
+    """Compose the user-facing help when ``architecture`` can't yield sections (#472).
+
+    Distinguishes the two failure modes (file missing vs file present but no
+    ``wiki.sections`` block) and shows the operator both fix paths: create the file at
+    the expected location, or repoint the CLI via ``architecture=`` in ``.ken``.
+    """
+    target = Path(architecture)
+    yaml_example = (
+        "---\n"
+        "wiki:\n"
+        "  sections:\n"
+        "    - id: backend\n"
+        "      title: Backend\n"
+        "    - id: frontend\n"
+        "      title: Frontend\n"
+        "---\n"
+    )
+    if not target.is_file():
+        return (
+            f"ARCHITECTURE file not found: {architecture}\n"
+            "\n"
+            "Two fixes:\n"
+            f"  (a) Create {architecture} with this YAML frontmatter:\n"
+            "\n"
+            + "\n".join(f"      {line}" for line in yaml_example.splitlines())
+            + "\n\n"
+            "  (b) Or point ken at the existing file via .ken:\n"
+            "\n"
+            "      echo 'architecture=path/to/Architecture.md' >> .ken\n"
+            "      (or export KEN_ARCHITECTURE=path/to/Architecture.md)\n"
+        )
+    return (
+        f"{architecture} exists but declares no wiki sections.\n"
+        "\n"
+        "Add a `wiki.sections` block to its YAML frontmatter, for example:\n"
+        "\n" + "\n".join(f"  {line}" for line in yaml_example.splitlines()) + "\n"
+        "See `ken wiki groom --help` for the LLM Wiki pattern."
+    )
+
+
 def _classified_by(cfg: KenConfig) -> str:
     """Best-effort actor label sent to the server's ``classified_by`` column.
 
@@ -960,11 +1001,7 @@ def groom(  # noqa: PLR0913
         # Validate against the architecture before sending.
         _sections, valid = _load_sections(architecture)
         if not valid:
-            raise click.UsageError(
-                f"No sections declared in {architecture}. "
-                "Add a `wiki.sections` block to its YAML frontmatter "
-                "before classifying tasks. See `ken wiki groom --help`.",
-            )
+            raise click.UsageError(_architecture_help(architecture))
         if section not in valid:
             joined = "\n  ".join(valid)
             raise click.UsageError(
@@ -1032,10 +1069,7 @@ def groom(  # noqa: PLR0913
         )
     click.echo("")
     if not paths:
-        click.echo(
-            f"WARNING: no sections declared in {architecture}. "
-            "Add a `wiki.sections` block to its YAML frontmatter.",
-        )
+        click.echo(_architecture_help(architecture))
     else:
         click.echo(f"Sections (from {architecture}):")
         for p in paths:
@@ -1333,11 +1367,7 @@ def wiki_sync(
     architecture = architecture or cfg.architecture
     sections, paths = _load_sections(architecture)
     if not paths:
-        raise click.UsageError(
-            f"No sections declared in {architecture}. "
-            "Add a `wiki.sections` block to its YAML frontmatter "
-            "before running sync. See `ken wiki groom --help`.",
-        )
+        raise click.UsageError(_architecture_help(architecture))
     endpoint = "/api/v1/wiki/all"
     if cfg.project_id:
         endpoint = f"{endpoint}?project={cfg.project_id}"
@@ -1684,11 +1714,7 @@ def wiki_build(
         )
     sections, paths = _load_sections(architecture)
     if not paths:
-        raise click.UsageError(
-            f"No sections declared in {architecture}. "
-            "Add a `wiki.sections` block to its YAML frontmatter "
-            "before running build. See `ken wiki groom --help`.",
-        )
+        raise click.UsageError(_architecture_help(architecture))
     files = _build_html_plan(src, sections)
     _write_html_plan(out, files)
     click.echo(f"Wrote {len(files)} HTML file(s) under {out}/.")
@@ -1817,11 +1843,7 @@ def wiki_lint(
     architecture = architecture or cfg.architecture
     _sections, paths = _load_sections(architecture)
     if not paths:
-        raise click.UsageError(
-            f"No sections declared in {architecture}. "
-            "Add a `wiki.sections` block to its YAML frontmatter "
-            "before running lint. See `ken wiki groom --help`.",
-        )
+        raise click.UsageError(_architecture_help(architecture))
     suffix = f"?project={cfg.project_id}" if cfg.project_id else ""
     classified = _request(cfg, "GET", f"/api/v1/wiki/all{suffix}") or []
     unclassified = _request(cfg, "GET", f"/api/v1/wiki/unclassified{suffix}") or []

@@ -737,6 +737,42 @@ class TestCliMutations:
         assert result.exit_code == 0
         assert "ARCHITECTURE" in result.output
 
+    # #472: missing ARCHITECTURE.md must surface a clear how-to-fix message.
+    def test_wiki_groom_missing_architecture_shows_creation_guide(
+        self, cwd_tmp, runner
+    ):
+        self._setup(cwd_tmp)
+        ctx, _calls = _patch_responses([("GET", "/api/v1/wiki/unclassified", [])])
+        with ctx:
+            result = runner.invoke(ken.cli, ["wiki", "groom"])
+        assert result.exit_code == 0
+        # The help message must (a) say the file is missing, (b) show the
+        # YAML frontmatter to copy-paste, (c) mention the .ken alternative.
+        assert "not found" in result.output
+        assert "wiki:" in result.output
+        assert "sections:" in result.output
+        assert "architecture=" in result.output
+
+    def test_wiki_sync_missing_architecture_shows_creation_guide(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        result = runner.invoke(ken.cli, ["wiki", "sync"])
+        assert result.exit_code != 0
+        assert "not found" in result.output
+        assert "architecture=" in result.output
+
+    def test_wiki_sync_empty_sections_shows_distinct_message(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        # File exists but has no wiki.sections block.
+        (cwd_tmp / "ARCHITECTURE.md").write_text(
+            "---\nfoo: bar\n---\n# arch\n", encoding="utf-8"
+        )
+        result = runner.invoke(ken.cli, ["wiki", "sync"])
+        assert result.exit_code != 0
+        # Distinct wording: file exists but no sections block.
+        assert "exists but declares no wiki sections" in result.output
+        # Still show the YAML example so the operator can fix in-place.
+        assert "wiki:" in result.output
+
     # #376c: ken wiki sync — materialise the MD tree from classifications.
     def test_wiki_sync_writes_tree(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
