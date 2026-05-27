@@ -891,7 +891,9 @@ class TestCliMutations:
         assert (wiki / "frontend" / "index.md").is_file()
         assert (wiki / "log.md").is_file()
         # Task assigned to its section
-        backend_api = (wiki / "backend" / "api" / "index.md").read_text(encoding="utf-8")
+        backend_api = (wiki / "backend" / "api" / "index.md").read_text(
+            encoding="utf-8"
+        )
         assert "T1" in backend_api
         # Empty section has its index but flagged
         backend_root = (wiki / "backend" / "index.md").read_text(encoding="utf-8")
@@ -1205,7 +1207,9 @@ class TestCliMutations:
         with ctx:
             runner.invoke(ken.cli, ["wiki", "sync"])
         runner.invoke(ken.cli, ["wiki", "build"])
-        detail = (cwd_tmp / "wiki-html" / "backend" / "hello-world-7.html").read_text(encoding="utf-8")
+        detail = (cwd_tmp / "wiki-html" / "backend" / "hello-world-7.html").read_text(
+            encoding="utf-8"
+        )
         assert 'class="fullscreen-card"' in detail
         assert 'class="fullscreen-title"' in detail
         assert ">Hello world<" in detail
