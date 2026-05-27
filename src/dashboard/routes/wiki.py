@@ -10,6 +10,7 @@ architecture file out of the DB and out of the server's request path.
 from contextlib import suppress
 from typing import Any
 
+import pymysql.err
 from flask import Blueprint, g, jsonify, request
 from flask_login import current_user
 
@@ -17,6 +18,39 @@ import dashboard.db as db
 from dashboard.auth_user import current_user_can_project
 
 bp = Blueprint("wiki", __name__, url_prefix="/api/v1/wiki")
+
+# MySQL error code surfaced when the queried table is missing. Caught at
+# the blueprint level to turn the otherwise-cryptic 500 from a stale
+# install into an actionable 503 (#472).
+_MYSQL_TABLE_NOT_FOUND = 1146
+
+
+@bp.errorhandler(pymysql.err.ProgrammingError)
+def _handle_missing_wiki_table(exc: pymysql.err.ProgrammingError) -> Any:
+    """Turn a missing-table SQL error into a 503 with a fix-it hint (#472).
+
+    When ``task_wiki_classifications`` is missing on the running instance,
+    every wiki route 500s with ``(1146, "Table 'X' doesn't exist")``. That
+    almost always means the operator upgraded kenboard but forgot to run
+    ``kenboard migrate``. Re-raise anything that isn't error 1146 so the
+    app-level 500 handler keeps doing its job.
+    """
+    code = exc.args[0] if exc.args else None
+    if code != _MYSQL_TABLE_NOT_FOUND:
+        raise exc
+    return (
+        jsonify(
+            {
+                "error": (
+                    "Wiki feature not initialised: a required table is "
+                    "missing. Run `kenboard migrate` to apply pending "
+                    "migrations (#376 / #472)."
+                ),
+                "error_class": "MigrationPending",
+            },
+        ),
+        503,
+    )
 
 
 def _principal_name() -> str:
