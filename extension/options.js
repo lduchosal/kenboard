@@ -42,6 +42,10 @@ async function test() {
   setStatus("Testing…");
   try {
     const resp = await fetch(`${baseUrl}/api/v1/projects`, {
+      // See comment in popup.js — Firefox auto-attaches the kenboard
+      // session cookie cross-origin which throws the auth middleware
+      // onto the cookie-CSRF path. Omit credentials → pure bearer.
+      credentials: "omit",
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!resp.ok) {

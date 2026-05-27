@@ -59,6 +59,12 @@ async function submit(cfg, tab) {
   try {
     resp = await fetch(`${cfg.baseUrl}/api/v1/tasks`, {
       method: "POST",
+      // Strip the kenboard session cookie even if Firefox / Chrome
+      // wants to attach it — otherwise the server's auth middleware
+      // sees a logged-in user and demands a same-origin Origin header,
+      // which we (chrome-extension://…) can't provide → 403 CSRF.
+      // Bearer token below is the only auth we want.
+      credentials: "omit",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${cfg.apiToken}`,
