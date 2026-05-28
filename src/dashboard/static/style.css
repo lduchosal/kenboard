@@ -257,6 +257,44 @@ body {
   margin-top: 4px;
 }
 
+/* Weekly tasks-handled-per-person stacked bar chart (#492). Each ISO week is
+ * one stacked bar; segments are coloured per person using their user colour.
+ * The axis labels share equal columns so they line up with the bar centres. */
+.weekly-svg {
+  width: 100%;
+  height: 150px;
+  display: block;
+}
+.weekly-axis {
+  display: flex;
+  color: var(--dimmed);
+  font-size: 10px;
+  margin-top: 4px;
+}
+.weekly-axis span {
+  flex: 1;
+  text-align: center;
+}
+.weekly-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+.weekly-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--dimmed);
+  font-size: 11px;
+}
+.weekly-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
 /* Header keyboard-shortcuts help button (#253). Subtle round dimmed glyph
  * sitting next to the avatar; opens the kb-help-modal. */
 .kb-help-btn {

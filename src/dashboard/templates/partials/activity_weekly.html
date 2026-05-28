@@ -1,0 +1,32 @@
+{#
+  Weekly tasks-handled-per-person stacked bar chart (#492). Expects:
+  - ``weekly_bars``: precomputed rects {x, y, w, h, color, person, count, week}
+  - ``weekly_axis``: [{x, label}] one ISO-week label per bar
+  - ``weekly_legend``: [{person, color, count}] one per attributed person
+  - ``weekly_total``: sum across the window
+  - ``weekly_vb_w`` / ``weekly_vb_h``: SVG viewBox dimensions
+
+  Geometry is computed in pages.py so this template just paints it (mirrors
+  the inline-SVG, no-charting-lib pattern of activity.html / burndown.html).
+#}
+{% if weekly_bars %}
+<div class="activity-card">
+  <div class="activity-header">
+    <span class="activity-title">Tâches traitées / semaine</span>
+    <span class="activity-total">{{ weekly_total }}</span>
+  </div>
+  <svg viewBox="0 0 {{ weekly_vb_w }} {{ weekly_vb_h }}" class="weekly-svg" preserveAspectRatio="none" aria-label="Weekly tasks handled per person">
+    {% for b in weekly_bars %}
+    <rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" fill="{{ b.color }}"><title>{{ b.person }} — S{{ "%02d" | format(b.week) }}: {{ b.count }}</title></rect>
+    {% endfor %}
+  </svg>
+  <div class="weekly-axis">
+    {% for a in weekly_axis %}<span>{{ a.label }}</span>{% endfor %}
+  </div>
+  <div class="weekly-legend">
+    {% for l in weekly_legend %}
+    <span class="weekly-legend-item"><span class="weekly-legend-dot" style="background: {{ l.color }}"></span>{{ l.person }} ({{ l.count }})</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}

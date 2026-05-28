@@ -1,6 +1,6 @@
 """Page routes — serve dynamic HTML from database."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from flask import Blueprint, abort, render_template
@@ -56,6 +56,152 @@ COLOR_LIST = [
     ("Jaune", "var(--yellow)"),
     ("Gris", "var(--dimmed)"),
 ]
+
+# How many ISO weeks the per-person activity bar chart spans (#492).
+WEEKLY_WINDOW_WEEKS = 12
+
+
+def _resolve_activity_author(raw: str, users_by_id: dict[str, str]) -> str | None:
+    """Map a raw ``activities.user_name`` principal to a person's display name.
+
+    Session writes already store the display name verbatim; token writes store
+    the ``key:<id>:user:<owner>`` principal from the auth middleware, which we
+    resolve back to the owning user's name (#492 — the token owner *is* the
+    author). Returns ``None`` when no human can be attributed (anonymous
+    writes, unowned/legacy ``key:<id>`` tokens, or a since-deleted owner) so
+    the caller drops the row from the per-person chart.
+
+    Args:
+        raw: The stored ``user_name`` value.
+        users_by_id: Map of user id to display name.
+
+    Returns:
+        The resolved display name, or ``None`` when unattributable.
+    """
+    if not raw:
+        return None
+    if raw.startswith("key:"):
+        marker = ":user:"
+        idx = raw.find(marker)
+        if idx == -1:
+            return None
+        return users_by_id.get(raw[idx + len(marker) :])
+    return raw
+
+
+def _build_weekly_author_chart(
+    rows: list[dict[str, Any]],
+    users: list[dict[str, Any]],
+    *,
+    today: date,
+    weeks: int = WEEKLY_WINDOW_WEEKS,
+) -> dict[str, Any]:
+    """Build stacked-bar geometry for the weekly tasks-per-person chart (#492).
+
+    ``rows`` are ``{yearweek, user_name, count}`` aggregates from
+    ``activity_weekly_by_user``. Each principal is resolved to a person and
+    counts are re-aggregated per (ISO week, person). The SVG rects, axis
+    labels, and legend are precomputed here so the template just paints them
+    (mirrors the inline-SVG, no-charting-lib pattern of ``activity.html``).
+
+    Args:
+        rows: Weekly raw-principal aggregates.
+        users: All users (provides id→name and name→color maps).
+        today: Anchor date for the trailing window (injected for testing).
+        weeks: Number of ISO weeks to render, ending with the current one.
+
+    Returns:
+        A context dict with ``weekly_bars``, ``weekly_axis``,
+        ``weekly_legend``, ``weekly_total`` and the SVG viewBox dimensions.
+    """
+    empty: dict[str, Any] = {
+        "weekly_bars": [],
+        "weekly_axis": [],
+        "weekly_legend": [],
+        "weekly_total": 0,
+        "weekly_vb_w": 760,
+        "weekly_vb_h": 150,
+    }
+    users_by_id = {u["id"]: u["name"] for u in users}
+    color_by_name = {u["name"]: u["color"] for u in users}
+
+    monday = today - timedelta(days=today.weekday())
+    week_meta: list[dict[str, Any]] = []
+    for i in range(weeks - 1, -1, -1):
+        wk_monday = monday - timedelta(weeks=i)
+        iso = wk_monday.isocalendar()
+        week_meta.append({"key": iso[0] * 100 + iso[1], "week": iso[1]})
+    week_keys = {m["key"] for m in week_meta}
+
+    per_week: dict[int, dict[str, int]] = {m["key"]: {} for m in week_meta}
+    totals_by_person: dict[str, int] = {}
+    for r in rows:
+        key = int(r["yearweek"])
+        if key not in week_keys:
+            continue
+        person = _resolve_activity_author(str(r["user_name"]), users_by_id)
+        if person is None:
+            continue
+        cnt = int(r["count"])
+        per_week[key][person] = per_week[key].get(person, 0) + cnt
+        totals_by_person[person] = totals_by_person.get(person, 0) + cnt
+
+    if not totals_by_person:
+        return empty
+
+    # Biggest contributor stacked at the bottom for a stable visual order.
+    persons = sorted(totals_by_person, key=lambda p: (-totals_by_person[p], p))
+    default_color = "var(--dimmed)"
+    w, h = 760.0, 150.0
+    pad_top, pad_bottom = 8.0, 4.0
+    plot_h = h - pad_top - pad_bottom
+    band = w / len(week_meta)
+    bar_w = band * 0.66
+    max_total = max(sum(per_week[m["key"]].values()) for m in week_meta) or 1
+
+    bars: list[dict[str, Any]] = []
+    for col, meta in enumerate(week_meta):
+        x = col * band + (band - bar_w) / 2
+        y = h - pad_bottom
+        for person in persons:
+            cnt = per_week[meta["key"]].get(person, 0)
+            if cnt == 0:
+                continue
+            seg_h = (cnt / max_total) * plot_h
+            y -= seg_h
+            bars.append(
+                {
+                    "x": round(x, 1),
+                    "y": round(y, 1),
+                    "w": round(bar_w, 1),
+                    "h": round(seg_h, 1),
+                    "color": color_by_name.get(person, default_color),
+                    "person": person,
+                    "count": cnt,
+                    "week": meta["week"],
+                }
+            )
+
+    axis = [
+        {"x": round(col * band + band / 2, 1), "label": "S%02d" % meta["week"]}
+        for col, meta in enumerate(week_meta)
+    ]
+    legend = [
+        {
+            "person": p,
+            "color": color_by_name.get(p, default_color),
+            "count": totals_by_person[p],
+        }
+        for p in persons
+    ]
+    return {
+        "weekly_bars": bars,
+        "weekly_axis": axis,
+        "weekly_legend": legend,
+        "weekly_total": sum(totals_by_person.values()),
+        "weekly_vb_w": w,
+        "weekly_vb_h": h,
+    }
 
 
 def fmt_date(when_str: str) -> str:
@@ -166,6 +312,16 @@ def index() -> Any:
         # template fills missing days with zero so the SVG span is uniform.
         activity_rows = list(queries.activity_daily_total(conn, days=30))
         activity_by_day = {str(r["day"]): r["count"] for r in activity_rows}
+
+        # Weekly tasks-handled-per-person (#492). Fetch from the Monday of the
+        # oldest week in the window so ISO-week buckets are fully covered.
+        today = date.today()
+        weekly_since = (
+            today
+            - timedelta(days=today.weekday())
+            - timedelta(weeks=WEEKLY_WINDOW_WEEKS - 1)
+        ).isoformat()
+        weekly_rows = list(queries.activity_weekly_by_user(conn, since=weekly_since))
     finally:
         conn.close()
 
@@ -188,9 +344,6 @@ def index() -> Any:
     # Build a contiguous 30-day series (today minus 29 → today) so the
     # template can render a uniform line graph regardless of which days
     # have data. Days without activity get a 0.
-    from datetime import date, timedelta
-
-    today = date.today()
     activity_series = []
     for i in range(29, -1, -1):
         d = today - timedelta(days=i)
@@ -199,6 +352,7 @@ def index() -> Any:
         )
     ctx["activity_series"] = activity_series
     ctx["activity_total"] = sum(s["count"] for s in activity_series)
+    ctx.update(_build_weekly_author_chart(weekly_rows, users, today=today))
     return render_template("index.html", **ctx)
 
 

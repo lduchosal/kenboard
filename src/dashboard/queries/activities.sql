@@ -33,6 +33,21 @@ GROUP BY DATE(occurred_at)
 ORDER BY day ASC;
 
 
+-- name: activity_weekly_by_user
+-- Per-ISO-week activity counts grouped by raw principal (#492). The caller
+-- resolves ``user_name`` to a person (token owner or session user) and
+-- re-aggregates, so this only buckets by raw principal + week. Mode 3 =
+-- ISO weeks (Monday start, range 1-53) so ``YEARWEEK`` matches Python's
+-- ``date.isocalendar()``. Filtered from :since (Monday of the oldest week).
+SELECT YEARWEEK(occurred_at, 3) AS yearweek,
+       user_name,
+       COUNT(*)                 AS count
+FROM activities
+WHERE occurred_at >= :since
+GROUP BY YEARWEEK(occurred_at, 3), user_name
+ORDER BY yearweek ASC;
+
+
 -- name: activity_recent_by_project
 -- Last :limit activities for a single project, newest first. Reserved for
 -- a future per-project activity log; not consumed by the home page yet.

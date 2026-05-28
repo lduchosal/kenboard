@@ -79,6 +79,36 @@ class TestIndexPage:
         resp = client.get("/")
         assert resp.status_code == 200
 
+    def test_weekly_author_chart_attributes_token_to_owner(self, client, db, queries):
+        """The weekly chart shows the token owner, never the raw key principal."""
+        cur = db.cursor()
+        cur.execute(
+            "INSERT INTO users (id, name, color) VALUES (%s, %s, %s)",
+            ("wk-user", "Wanda", "var(--purple)"),
+        )
+        queries.cat_create(
+            db, id="wk-cat", name="WkCat", color="var(--accent)", position=0
+        )
+        queries.proj_create(
+            db,
+            id="wk-proj",
+            cat_id="wk-cat",
+            name="WkProj",
+            acronym="WK",
+            status="active",
+            position=0,
+            default_who="",
+        )
+        cur.execute(
+            "INSERT INTO activities (project_id, user_name, action, target_id) "
+            "VALUES (%s, %s, 'create', '1')",
+            ("wk-proj", "key:k1:user:wk-user"),
+        )
+        html = client.get("/").data.decode()
+        assert "Tâches traitées / semaine" in html
+        assert "Wanda" in html
+        assert "key:k1:user:wk-user" not in html
+
 
 class TestCategoryPage:
     """GET /cat/<cat_id>.html — category detail."""

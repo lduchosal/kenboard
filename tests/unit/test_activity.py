@@ -96,6 +96,28 @@ def test_activity_daily_total_aggregates(db, project):
     assert rows[0]["count"] == 4
 
 
+def test_activity_weekly_by_user_buckets_by_week_and_principal(db, project):
+    """activity_weekly_by_user groups counts per ISO week + raw principal."""
+    from datetime import date, timedelta
+
+    queries = db_module.load_queries()
+    cur = db.cursor()
+    for uname, n in (("Luc", 2), ("key:k1:user:u1", 1)):
+        for _ in range(n):
+            cur.execute(
+                "INSERT INTO activities (project_id, user_name, action, target_id) "
+                "VALUES (%s, %s, 'create', '1')",
+                (project, uname),
+            )
+    today = date.today()
+    since = (today - timedelta(days=today.weekday())).isoformat()
+    rows = list(queries.activity_weekly_by_user(db, since=since))
+    counts = {r["user_name"]: r["count"] for r in rows}
+    assert counts["Luc"] == 2
+    assert counts["key:k1:user:u1"] == 1
+    assert len({r["yearweek"] for r in rows}) == 1
+
+
 def test_create_task_logs_activity(client, db, project):
     """POST /api/v1/tasks appends a 'create' activity row."""
     r = client.post(
