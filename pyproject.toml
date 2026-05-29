@@ -150,6 +150,11 @@ js-lint-fix = { shell = "npx biome check --write src/dashboard/static/js" }
 js-typecheck = { shell = "npx tsc --noEmit -p jsconfig.json" }
 js-test = { shell = "npx vitest run --coverage" }
 js-build = { shell = "npx vite build" }
+# #520 (annotations epic) — bundle the extension content script + its npm deps
+# (dom-anchor-text-quote, dom-anchor-text-position) into a single IIFE file
+# Chrome/Firefox load via content_scripts. Separate from js-build because the
+# extension is shipped as a release zip, not part of the main Vite bundle.
+build-extension = { shell = "npm run build-extension" }
 
 # Composite checks
 check = { composite = ["isort", "docformatter", "format", "typecheck", "flake8", "interrogate", "refurb", "lint", "vulture", "js-lint", "js-typecheck", "js-test", "js-build", "test-quick"] }

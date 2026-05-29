@@ -254,6 +254,11 @@ run_command "git push --tags" "Pushing tags"
 # network), warn and continue — the PyPI upload above has already shipped.
 if [ -d extension ]; then
     print_step "Packaging Browser Extension (#480)"
+    # #520 (annotations epic): rebuild the content-script bundle so the zip
+    # always ships a fresh `extension/content/annotate.bundle.js` matching
+    # the committed source + the pinned npm deps. Fatal if it fails — the
+    # bundle is required by the manifest's content_scripts entry.
+    run_command "pdm run build-extension" "Extension content bundle"
     EXTENSION_ZIP="dist/kenboard-extension-${VERSION}.zip"
     mkdir -p dist
     if ( cd extension && zip -r "../${EXTENSION_ZIP}" . -x "*.DS_Store" ".amo-upload-uuid" ) > /dev/null; then

@@ -9,11 +9,15 @@
     "test": "vitest run",
     "lint": "biome check src/dashboard/static/js",
     "lint:fix": "biome check --write src/dashboard/static/js",
-    "typecheck": "tsc --noEmit -p jsconfig.json"
+    "typecheck": "tsc --noEmit -p jsconfig.json",
+    "build-extension": "esbuild extension/content/annotate.src.js --bundle --outfile=extension/content/annotate.bundle.js --target=chrome120,firefox142 --format=iife --legal-comments=external"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@vitest/coverage-v8": "^2.1.9",
+    "dom-anchor-text-position": "^5.0.0",
+    "dom-anchor-text-quote": "^4.0.2",
+    "esbuild": "^0.24.0",
     "jsdom": "^25.0.1",
     "typescript": "^5.6.3",
     "vite": "^6.0.3",

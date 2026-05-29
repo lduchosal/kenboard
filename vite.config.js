@@ -31,7 +31,16 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: false,
-    include: ['src/dashboard/static/js/**/*.test.js'],
+    include: [
+      'src/dashboard/static/js/**/*.test.js',
+      // #520 (annotations epic): the extension's content-script pure
+      // helpers (e.g. buildMarkdown) live alongside their source under
+      // ``extension/content/`` and use the same vitest harness. The
+      // bundle itself is excluded from coverage like the rest of
+      // ``extension/`` (it is shipped as a release zip, not part of the
+      // Vite-bundled frontend).
+      'extension/content/**/*.test.js',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

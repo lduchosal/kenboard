@@ -88,6 +88,8 @@ validate, then **Save**.
 
 ## Use
 
+### Quick task (popup)
+
 - **Shortcut:** `Ctrl+Shift+K` (macOS: `Cmd+Shift+K`).
 - **Or:** click the toolbar icon.
 
@@ -109,3 +111,30 @@ hit Save. Task lands as `todo` in the configured project.
   not synced across devices). Treat it like a password.
 - Reuses the standard kenboard `POST /api/v1/tasks` endpoint with bearer
   auth — no server-side changes needed for this extension to work.
+
+### Annotate a page (#520)
+
+Pile up quotes and notes across a page, then push them all to kenboard as
+**one** markdown task — pure text, never an image.
+
+- **Activate:** press `Alt+K` on any normal page. A small `kb · 0` badge
+  appears at the top-right of the viewport.
+- **Highlight:** select text. A small toolbar appears next to your
+  selection with `🖍 Surligner`. Click it — the text is highlighted in
+  place and the badge count goes up.
+- **Open the drawer:** click the badge. A side drawer slides in from the
+  right with the list of annotations for this page.
+- **Push to kenboard:** click `Pousser sur kenboard` in the drawer
+  footer. The extension posts a single task whose description is a
+  markdown block: source link + one blockquote per highlight, each with
+  a `[citer](URL#:~:text=…)` link that scrolls a fresh tab back to the
+  exact quote.
+- **Exit:** press `Esc` (closes the toolbar → drawer → annotation mode in
+  that order).
+
+Highlights persist locally per **canonical URL** (`chrome.storage.local`)
+and are re-applied automatically on page reload or SPA route change. They
+are never sent anywhere until you click *Pousser sur kenboard*.
+
+The annotation UI lives inside a Shadow DOM so it can't be styled by the
+host page and doesn't leak its own CSS into the page.
