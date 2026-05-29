@@ -294,8 +294,8 @@ function reapplyAll() {
       let range = quoteToRange(document.body, ann.quote, { hint: ann.position?.start ?? 0 });
       if (!range && ann.position) range = posToRange(document.body, ann.position);
       if (range) wrapRange(range, ann.id);
-    } catch {
-      // anchor not found in current DOM — skip silently
+    } catch (err) {
+      console.warn("[kenboard:annotate] re-anchor failed for #", ann.id, err);
     }
   }
 }
@@ -375,10 +375,14 @@ function addHighlightFromRange(range) {
   try {
     quote = quoteFromRange(document.body, range);
     position = posFromRange(document.body, range);
-  } catch {
+  } catch (err) {
+    console.warn("[kenboard:annotate] could not anchor selection", err);
     return;
   }
-  if (!quote?.exact) return;
+  if (!quote?.exact) {
+    console.warn("[kenboard:annotate] empty quote from range, skipping");
+    return;
+  }
   const ann = {
     id: nextId++,
     quote,
@@ -624,8 +628,10 @@ function deactivate() {
 }
 
 function onKeyDown(e) {
-  // Alt+K toggles annotation mode on/off.
-  if (e.altKey && (e.key === "k" || e.key === "K")) {
+  // Alt+K toggles annotation mode on/off. Use `e.code` (physical key,
+  // layout-independent) — `e.key` on macOS Option+K is "˚" because the
+  // OS injects the dead-key character before the JS event fires.
+  if (e.altKey && e.code === "KeyK") {
     e.preventDefault();
     if (mode) deactivate();
     else activate();
@@ -678,6 +684,10 @@ function patchHistory() {
 }
 
 function bootstrap() {
+  // Visible boot marker so you can confirm the content script actually
+  // injected (DevTools console → look for this line). If you don't see it,
+  // the bundle didn't load (privileged page, blocked by the site, etc.).
+  console.info("[kenboard:annotate] loaded — Alt+K to activate");
   lastUrl = canonicalUrl();
   document.addEventListener("keydown", onKeyDown, true);
   document.addEventListener("selectionchange", onSelectionChange);

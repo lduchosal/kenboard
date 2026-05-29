@@ -2646,7 +2646,8 @@
         let range = (0, import_dom_anchor_text_quote.toRange)(document.body, ann.quote, { hint: ann.position?.start ?? 0 });
         if (!range && ann.position) range = (0, import_dom_anchor_text_position.toRange)(document.body, ann.position);
         if (range) wrapRange(range, ann.id);
-      } catch {
+      } catch (err) {
+        console.warn("[kenboard:annotate] re-anchor failed for #", ann.id, err);
       }
     }
   }
@@ -2715,10 +2716,14 @@
     try {
       quote = (0, import_dom_anchor_text_quote.fromRange)(document.body, range);
       position = (0, import_dom_anchor_text_position.fromRange)(document.body, range);
-    } catch {
+    } catch (err) {
+      console.warn("[kenboard:annotate] could not anchor selection", err);
       return;
     }
-    if (!quote?.exact) return;
+    if (!quote?.exact) {
+      console.warn("[kenboard:annotate] empty quote from range, skipping");
+      return;
+    }
     const ann = {
       id: nextId++,
       quote,
@@ -2938,7 +2943,7 @@
     badgeEl?.classList.remove("on");
   }
   function onKeyDown(e) {
-    if (e.altKey && (e.key === "k" || e.key === "K")) {
+    if (e.altKey && e.code === "KeyK") {
       e.preventDefault();
       if (mode) deactivate();
       else activate();
@@ -2985,6 +2990,7 @@
     window.addEventListener("popstate", onMaybeUrlChange);
   }
   function bootstrap() {
+    console.info("[kenboard:annotate] loaded \u2014 Alt+K to activate");
     lastUrl = canonicalUrl();
     document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("selectionchange", onSelectionChange);
