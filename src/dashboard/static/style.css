@@ -257,44 +257,43 @@ body {
   margin-top: 4px;
 }
 
-/* "Biggest ken tasker" leaderboard (#492). One bar per person, coloured with
- * their user colour, tallest (most active) first. The label cells share equal
- * columns so each name/count lines up under its bar. */
-.leaderboard-svg {
+/* Per-day taskers chart (#507). Grouped bars: one bar per active person
+ * within each of the last 7 days, coloured by user. Day labels share equal
+ * columns (so they line up under each day group); the person legend maps
+ * colour -> name since names can't fit under every grouped bar. */
+.taskers-svg {
   width: 100%;
   height: 150px;
   display: block;
 }
-.leaderboard-axis {
+.taskers-axis {
   display: flex;
-  margin-top: 6px;
+  color: var(--dimmed);
+  font-size: 10px;
+  margin-top: 4px;
 }
-.leaderboard-cell {
+.taskers-axis span {
   flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
+  text-align: center;
 }
-.leaderboard-dot {
+.taskers-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+.taskers-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--dimmed);
+  font-size: 11px;
+}
+.taskers-legend-dot {
   width: 9px;
   height: 9px;
   border-radius: 2px;
   display: inline-block;
-}
-.leaderboard-name {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text);
-  font-size: 11px;
-}
-.leaderboard-count {
-  color: var(--dimmed);
-  font-size: 11px;
-  font-weight: 700;
 }
 
 /* Header keyboard-shortcuts help button (#253). Subtle round dimmed glyph

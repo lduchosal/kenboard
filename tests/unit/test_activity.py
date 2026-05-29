@@ -96,8 +96,8 @@ def test_activity_daily_total_aggregates(db, project):
     assert rows[0]["count"] == 4
 
 
-def test_activity_count_by_user_groups_by_principal(db, project):
-    """activity_count_by_user groups counts per raw principal since :since."""
+def test_activity_daily_by_user_groups_by_day_and_principal(db, project):
+    """activity_daily_by_user groups counts per day + raw principal."""
     from datetime import date, timedelta
 
     queries = db_module.load_queries()
@@ -109,11 +109,13 @@ def test_activity_count_by_user_groups_by_principal(db, project):
                 "VALUES (%s, %s, 'create', '1')",
                 (project, uname),
             )
-    since = (date.today() - timedelta(days=7)).isoformat()
-    rows = list(queries.activity_count_by_user(db, since=since))
+    since = (date.today() - timedelta(days=6)).isoformat()
+    rows = list(queries.activity_daily_by_user(db, since=since))
     counts = {r["user_name"]: r["count"] for r in rows}
     assert counts["Luc"] == 2
     assert counts["key:k1:user:u1"] == 1
+    # all inserted now → a single day bucket
+    assert len({str(r["day"]) for r in rows}) == 1
 
 
 def test_create_task_logs_activity(client, db, project):

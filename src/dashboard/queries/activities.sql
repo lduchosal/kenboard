@@ -33,15 +33,17 @@ GROUP BY DATE(occurred_at)
 ORDER BY day ASC;
 
 
--- name: activity_count_by_user
--- Activity count per raw principal since :since (#492). The caller resolves
--- each ``user_name`` to a person (token owner or session user), sums, and
--- ranks them for the home-page "biggest ken tasker" leaderboard.
-SELECT user_name,
-       COUNT(*) AS count
+-- name: activity_daily_by_user
+-- Per-day activity count per raw principal since :since (#507). The caller
+-- resolves each ``user_name`` to a person (token owner or session user) and
+-- groups into the home-page per-day taskers chart (one bar per person/day).
+SELECT DATE(occurred_at) AS day,
+       user_name,
+       COUNT(*)           AS count
 FROM activities
 WHERE occurred_at >= :since
-GROUP BY user_name;
+GROUP BY DATE(occurred_at), user_name
+ORDER BY day ASC;
 
 
 -- name: activity_recent_by_project

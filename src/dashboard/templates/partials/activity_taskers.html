@@ -1,0 +1,32 @@
+{#
+  Per-day taskers chart (#507). Grouped bars: one bar per active person within
+  each of the last N days. Expects:
+  - ``taskers_bars``: rects {x, y, w, h, color, person, day, count}
+  - ``taskers_axis``: [{label}] one per day, chronological
+  - ``taskers_legend``: [{person, color, count}] one per active person
+  - ``taskers_total`` / ``taskers_window_days`` / SVG viewBox dims
+
+  Inline stretched SVG (preserveAspectRatio=none, no charting lib); day labels
+  and legend live in HTML since the SVG scaling would distort text.
+#}
+{% if taskers_bars %}
+<div class="activity-card">
+  <div class="activity-header">
+    <span class="activity-title">Taskers ({{ taskers_window_days }} derniers jours)</span>
+    <span class="activity-total">{{ taskers_total }}</span>
+  </div>
+  <svg viewBox="0 0 {{ taskers_vb_w }} {{ taskers_vb_h }}" class="taskers-svg" preserveAspectRatio="none" aria-label="Tasks handled per person per day">
+    {% for b in taskers_bars %}
+    <rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" fill="{{ b.color }}"><title>{{ b.person }} — {{ b.day }}: {{ b.count }}</title></rect>
+    {% endfor %}
+  </svg>
+  <div class="taskers-axis">
+    {% for a in taskers_axis %}<span>{{ a.label }}</span>{% endfor %}
+  </div>
+  <div class="taskers-legend">
+    {% for l in taskers_legend %}
+    <span class="taskers-legend-item"><span class="taskers-legend-dot" style="background: {{ l.color }}"></span>{{ l.person }} ({{ l.count }})</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}

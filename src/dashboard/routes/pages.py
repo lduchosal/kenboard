@@ -57,8 +57,8 @@ COLOR_LIST = [
     ("Gris", "var(--dimmed)"),
 ]
 
-# Trailing window (days) for the "biggest ken tasker" leaderboard (#492).
-LEADERBOARD_WINDOW_DAYS = 90
+# Trailing window (days) for the per-day taskers chart (#507).
+TASKERS_WINDOW_DAYS = 7
 
 
 def _resolve_activity_author(raw: str, users_by_id: dict[str, str]) -> str | None:
@@ -89,81 +89,118 @@ def _resolve_activity_author(raw: str, users_by_id: dict[str, str]) -> str | Non
     return raw
 
 
-def _build_author_leaderboard(
+_FR_WEEKDAYS = ("lun", "mar", "mer", "jeu", "ven", "sam", "dim")
+
+
+def _build_taskers_daily_chart(
     rows: list[dict[str, Any]],
     users: list[dict[str, Any]],
+    *,
+    today: date,
+    days: int = TASKERS_WINDOW_DAYS,
 ) -> dict[str, Any]:
-    """Build bar geometry for the "biggest ken tasker" leaderboard (#492).
+    """Build grouped-bar geometry for the per-day taskers chart (#507).
 
-    ``rows`` are ``{user_name, count}`` aggregates from
-    ``activity_count_by_user``. Each raw principal is resolved to a person
-    (token writes fold into the token owner), counts are summed per person,
-    and one vertical bar per person is laid out left-to-right, tallest first
-    — a ranking of who drove the most board activity over the window. The
-    SVG rects are precomputed here so the template just paints them; the
-    name/count labels live in HTML, since the SVG is stretched with
+    ``rows`` are ``{day, user_name, count}`` aggregates from
+    ``activity_daily_by_user``. Each raw principal is resolved to a person
+    (token writes fold into the owner, #492), counts are bucketed per
+    (day, person), and within each of the last ``days`` days one bar per
+    active person is laid out side by side — a per-day comparison of who did
+    the most. The SVG rects are precomputed here; day labels and the person
+    legend live in HTML since the SVG is stretched with
     ``preserveAspectRatio=none`` and text would distort.
 
     Args:
-        rows: Per-principal activity counts over the window.
+        rows: Per-(day, principal) activity counts.
         users: All users (provides id→name and name→color maps).
+        today: Anchor date for the trailing window (injected for testing).
+        days: Number of days to render, ending today.
 
     Returns:
-        A context dict with ``leaderboard_bars``, ``leaderboard_total`` and
-        the SVG viewBox dimensions.
+        A context dict with ``taskers_bars``, ``taskers_axis``,
+        ``taskers_legend``, ``taskers_total`` and the SVG viewBox dimensions.
     """
     w, h = 760.0, 150.0
     empty: dict[str, Any] = {
-        "leaderboard_bars": [],
-        "leaderboard_total": 0,
-        "leaderboard_vb_w": w,
-        "leaderboard_vb_h": h,
+        "taskers_bars": [],
+        "taskers_axis": [],
+        "taskers_legend": [],
+        "taskers_total": 0,
+        "taskers_vb_w": w,
+        "taskers_vb_h": h,
     }
     users_by_id = {u["id"]: u["name"] for u in users}
     color_by_name = {u["name"]: u["color"] for u in users}
 
+    day_seq = [today - timedelta(days=i) for i in range(days - 1, -1, -1)]
+    day_keys = [d.isoformat() for d in day_seq]
+
+    per_day: dict[str, dict[str, int]] = {k: {} for k in day_keys}
     totals_by_person: dict[str, int] = {}
     for r in rows:
+        key = str(r["day"])
+        if key not in per_day:
+            continue
         person = _resolve_activity_author(str(r["user_name"]), users_by_id)
         if person is None:
             continue
-        totals_by_person[person] = totals_by_person.get(person, 0) + int(r["count"])
+        cnt = int(r["count"])
+        per_day[key][person] = per_day[key].get(person, 0) + cnt
+        totals_by_person[person] = totals_by_person.get(person, 0) + cnt
 
     if not totals_by_person:
         return empty
 
-    # Tallest (most active) first — the leaderboard is a ranking.
+    # Stable person order (most active first) shared across every day so a
+    # person keeps the same slot + colour across the week.
     persons = sorted(totals_by_person, key=lambda p: (-totals_by_person[p], p))
     default_color = "var(--dimmed)"
     pad_top, pad_bottom = 8.0, 4.0
     plot_h = h - pad_top - pad_bottom
-    band = w / len(persons)
-    bar_w = band * 0.6
-    max_count = max(totals_by_person.values())
+    band = w / days
+    group_w = band * 0.82
+    slot_w = group_w / len(persons)
+    bar_w = slot_w * 0.85
+    max_count = max(max(d.values()) for d in per_day.values() if d)
 
     bars: list[dict[str, Any]] = []
-    for i, person in enumerate(persons):
-        cnt = totals_by_person[person]
-        bar_h = (cnt / max_count) * plot_h
-        x = i * band + (band - bar_w) / 2
-        bars.append(
-            {
-                "x": round(x, 1),
-                "y": round(h - pad_bottom - bar_h, 1),
-                "w": round(bar_w, 1),
-                "h": round(bar_h, 1),
-                "color": color_by_name.get(person, default_color),
-                "person": person,
-                "count": cnt,
-            }
-        )
+    for di, key in enumerate(day_keys):
+        for pj, person in enumerate(persons):
+            cnt = per_day[key].get(person, 0)
+            if cnt == 0:
+                continue
+            bar_h = (cnt / max_count) * plot_h
+            x = di * band + (band - group_w) / 2 + pj * slot_w + (slot_w - bar_w) / 2
+            bars.append(
+                {
+                    "x": round(x, 1),
+                    "y": round(h - pad_bottom - bar_h, 1),
+                    "w": round(bar_w, 1),
+                    "h": round(bar_h, 1),
+                    "color": color_by_name.get(person, default_color),
+                    "person": person,
+                    "day": key,
+                    "count": cnt,
+                }
+            )
 
+    axis = [{"label": "%s %d" % (_FR_WEEKDAYS[d.weekday()], d.day)} for d in day_seq]
+    legend = [
+        {
+            "person": p,
+            "color": color_by_name.get(p, default_color),
+            "count": totals_by_person[p],
+        }
+        for p in persons
+    ]
     return {
-        "leaderboard_bars": bars,
-        "leaderboard_total": sum(totals_by_person.values()),
-        "leaderboard_window_days": LEADERBOARD_WINDOW_DAYS,
-        "leaderboard_vb_w": w,
-        "leaderboard_vb_h": h,
+        "taskers_bars": bars,
+        "taskers_axis": axis,
+        "taskers_legend": legend,
+        "taskers_total": sum(totals_by_person.values()),
+        "taskers_window_days": days,
+        "taskers_vb_w": w,
+        "taskers_vb_h": h,
     }
 
 
@@ -276,16 +313,11 @@ def index() -> Any:
         activity_rows = list(queries.activity_daily_total(conn, days=30))
         activity_by_day = {str(r["day"]): r["count"] for r in activity_rows}
 
-        # "Biggest ken tasker" leaderboard (#492): one bar per person, their
-        # activity count over the window, token activity folded into the
-        # owning user.
+        # Per-day taskers chart (#507): grouped bars, one per person per day
+        # over the last week, token activity folded into the owning user.
         today = date.today()
-        leaderboard_since = (
-            today - timedelta(days=LEADERBOARD_WINDOW_DAYS)
-        ).isoformat()
-        leaderboard_rows = list(
-            queries.activity_count_by_user(conn, since=leaderboard_since)
-        )
+        taskers_since = (today - timedelta(days=TASKERS_WINDOW_DAYS - 1)).isoformat()
+        taskers_rows = list(queries.activity_daily_by_user(conn, since=taskers_since))
     finally:
         conn.close()
 
@@ -316,7 +348,7 @@ def index() -> Any:
         )
     ctx["activity_series"] = activity_series
     ctx["activity_total"] = sum(s["count"] for s in activity_series)
-    ctx.update(_build_author_leaderboard(leaderboard_rows, users))
+    ctx.update(_build_taskers_daily_chart(taskers_rows, users, today=today))
     return render_template("index.html", **ctx)
 
 
