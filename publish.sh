@@ -256,7 +256,7 @@ if [ -d extension ]; then
     print_step "Packaging Browser Extension (#480)"
     EXTENSION_ZIP="dist/kenboard-extension-${VERSION}.zip"
     mkdir -p dist
-    if ( cd extension && zip -r "../${EXTENSION_ZIP}" . -x "*.DS_Store" ) > /dev/null; then
+    if ( cd extension && zip -r "../${EXTENSION_ZIP}" . -x "*.DS_Store" ".amo-upload-uuid" ) > /dev/null; then
         echo "${GREEN}✓ Extension zipped to ${EXTENSION_ZIP}${NC}"
     else
         echo "${YELLOW}WARN: extension/ not zipped${NC}"
@@ -264,13 +264,33 @@ if [ -d extension ]; then
     fi
 
     if [ -n "${EXTENSION_ZIP}" ] && command -v gh > /dev/null 2>&1; then
-        print_step "Creating GitHub Release with Extension Artifact"
-        gh release create "kenboard-${VERSION}" \
+        print_step "Publishing GitHub Release with Extension Artifact"
+        # #501: the old `gh release create ... || echo WARN` swallowed any
+        # failure, which silently produced a release-less tag (0.1.112) and
+        # an extension that never reached users. Make this idempotent and
+        # LOUD instead:
+        #   - if a release already exists for the tag (prior run, or the CI
+        #     workflow created it on tag push), upload --clobber so the
+        #     extension still lands;
+        #   - otherwise create it;
+        #   - on any failure print a red error + the exact recovery command
+        #     (non-fatal: PyPI already shipped, aborting would mislead).
+        if gh release view "kenboard-${VERSION}" > /dev/null 2>&1; then
+            if gh release upload "kenboard-${VERSION}" "${EXTENSION_ZIP}" --clobber; then
+                echo "${GREEN}✓ Extension attached to existing release kenboard-${VERSION}${NC}"
+            else
+                echo "${RED}${BOLD}✗ FAILED to attach extension to kenboard-${VERSION}${NC}"
+                echo "${RED}  Recover: gh release upload kenboard-${VERSION} ${EXTENSION_ZIP} --clobber${NC}"
+            fi
+        elif gh release create "kenboard-${VERSION}" \
             --title "kenboard ${VERSION}" \
             --generate-notes \
-            "${EXTENSION_ZIP}" && \
-            echo "${GREEN}✓ Release created with extension attached${NC}" || \
-            echo "${YELLOW}WARN: gh release create failed — release / artifact not published${NC}"
+            "${EXTENSION_ZIP}"; then
+            echo "${GREEN}✓ Release created with extension attached${NC}"
+        else
+            echo "${RED}${BOLD}✗ FAILED to create GitHub release kenboard-${VERSION}${NC}"
+            echo "${RED}  Recover: gh release create kenboard-${VERSION} --title \"kenboard ${VERSION}\" --generate-notes ${EXTENSION_ZIP}${NC}"
+        fi
     elif [ -n "${EXTENSION_ZIP}" ]; then
         echo "${YELLOW}WARN: gh CLI not found — skipping GitHub Release. Upload ${EXTENSION_ZIP} manually.${NC}"
     fi

@@ -29,6 +29,17 @@ KENBOARD.md
 .ken3
 .ken*
 
+# Signed Firefox .xpi artifacts (web-ext sign) — account-bound, regenerated
+# on demand by scripts/sign-firefox-extension.sh, never committed. Kept at
+# the repo root (not under extension/) so they never land in the release zip.
+/web-ext-artifacts/
+# AMO API credentials sourced by scripts/sign-firefox-extension.sh — account
+# secrets. Repo root, never under extension/ (which is zipped into releases).
+/.amo-credentials
+# web-ext writes this add-on UUID marker into the source dir on sign; keep it
+# local (helps future re-signs map to the same add-on) but never commit/ship.
+extension/.amo-upload-uuid
+
 # OS / editor noise (#293)
 .DS_Store
 Thumbs.db

@@ -87,6 +87,13 @@ jobs:
       env:
         PDM_PUBLISH_USERNAME: __token__
         PDM_PUBLISH_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        # publish.sh runs `gh release create` to attach the browser
+        # extension zip (#501). The gh CLI authenticates from GH_TOKEN;
+        # GitHub Actions does NOT auto-export the workflow token to step
+        # processes, so without this line every CI/scheduled publish
+        # produced a release-less tag and the extension never shipped.
+        # The default token has contents:write (see permissions above).
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # publish.sh → scripts/sonar_gate.py reads SONAR_TOKEN from env.
         # GitHub Actions repository secrets are NOT auto-exposed to step
         # processes — they must be mapped explicitly via this env block.

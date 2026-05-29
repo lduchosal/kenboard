@@ -3,11 +3,30 @@
   "name": "kenboard quick-task",
   "version": "0.1.113",
   "description": "Capture the current tab as a kenboard task with one keystroke.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "kenboard-quick-task@2113.ch",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
   "permissions": ["storage", "activeTab"],
   "host_permissions": ["<all_urls>"],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Quick task to kenboard"
+    "default_title": "Quick task to kenboard",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
   },
   "options_page": "options.html",
   "commands": {

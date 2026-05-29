@@ -25,13 +25,42 @@ locally, then follow **Install** below pointing to the unzipped folder.
 3. Click **Load unpacked**
 4. Select this `extension/` directory
 
-### Firefox
+### Firefox (temporary — for development)
 
 1. Open `about:debugging#/runtime/this-firefox`
 2. Click **Load Temporary Add-on…**
 3. Pick `extension/manifest.json`
 
-Reload the extension after editing any file.
+Reload the extension after editing any file. **Note:** a temporary
+add-on is dropped every time Firefox restarts — for a permanent install
+use the signed `.xpi` below.
+
+### Firefox (persistent)
+
+Release Firefox only installs **signed** add-ons permanently. The
+manifest carries a stable id (`browser_specific_settings.gecko.id`) so it
+can be signed via Mozilla without publishing to the public store:
+
+1. Create API credentials at
+   <https://addons.mozilla.org/developers/addon/api/key/>.
+2. Put them in a gitignored `.amo-credentials` file at the repo root
+   (or export them as env vars):
+   ```sh
+   AMO_JWT_ISSUER="user:NNNN:NN"
+   AMO_JWT_SECRET="…"
+   ```
+3. Sign in the **unlisted** channel (private — not listed on the store):
+   ```sh
+   sh scripts/sign-firefox-extension.sh
+   ```
+   This produces a signed `.xpi` in `web-ext-artifacts/` at the repo root.
+4. In Firefox open `about:addons` → gear icon → **Install Add-on From
+   File** → pick the `.xpi`. It now survives restarts.
+
+(Fallback without an AMO account: Firefox **Developer Edition / Nightly /
+ESR** can install an unsigned `.xpi` after setting
+`xpinstall.signatures.required = false` in `about:config`. Release
+Firefox cannot.)
 
 ## First-run
 
@@ -39,12 +68,16 @@ Click the extension icon → **Settings** (or right-click → *Options*):
 
 | Field | What |
 |---|---|
+| **Onboarding link** | Fastest path: on a kenboard category, click **Copy onboard link**, paste it here — Base URL, Project ID and API token are filled in automatically. |
 | **Base URL** | Your kenboard instance, e.g. `https://www.kenboard.2113.ch` |
 | **API token** | Get one from `/admin/keys` on the kenboard (scope: at least `write` on the target project) |
 | **Project ID** | UUID of the project tasks land in |
 | **Default who** | Pre-fills the "who" field in the popup |
 
-Click **Test connection** to validate. Save.
+The onboarding link has the shape
+`https://…/onboard/cat/<cat>/project/<project>?token=<key>`; pasting it
+populates the three connection fields. Click **Test connection** to
+validate, then **Save**.
 
 ## Use
 
