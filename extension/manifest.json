@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "kenboard quick-task",
-  "version": "0.1.112",
+  "version": "0.1.113",
   "description": "Capture the current tab as a kenboard task with one keystroke.",
   "permissions": ["storage", "activeTab"],
   "host_permissions": ["<all_urls>"],
