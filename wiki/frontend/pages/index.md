@@ -4,7 +4,12 @@
 
 Section: `frontend/pages`
 
-## Archivé (13)
+## En cours (2)
+
+- [KEN / Task / Author](ken-task-author-492.md) — _review_
+- [DASHBOARD / Taskers : une barre par personne et par jour (7 derniers jours)](dashboard-taskers-une-barre-par-personne-et-par-jour-7-derniers-jours-507.md) — _review_
+
+## Archivé (14)
 
 - [UI / Logo](ui-logo-2.md)
 - [UI / Affichage du numéro de version](ui-affichage-du-num-ro-de-version-22.md)
@@ -19,3 +24,4 @@ Section: `frontend/pages`
 - [UI / IOS / Icon du lien](ui-ios-icon-du-lien-176.md)
 - [ADMIN / USER / Afficher l'email](admin-user-afficher-l-email-233.md)
 - [HOME / Dashboard / Engageement](home-dashboard-engageement-261.md)
+- [WEB / Print detail](web-print-detail-445.md)

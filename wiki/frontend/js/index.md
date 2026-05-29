@@ -4,6 +4,10 @@ ES modules under static/js/ (api.js, tasks.js, keyboard.js, ...).
 
 Section: `frontend/js`
 
+## En cours (1)
+
+- [KEN / WEB CLI](ken-web-cli-480.md) — _review_
+
 ## Archivé (7)
 
 - [BUG / Trier les projets ne fonctionne pas](bug-trier-les-projets-ne-fonctionne-pas-71.md)

@@ -1,7 +1,7 @@
 ---
 id: 424
 title: "WIKI / Refonte format export (#376f)"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-05-24T16:19:58

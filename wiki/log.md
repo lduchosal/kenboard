@@ -2,6 +2,22 @@
 
 Most recent first.
 
+- 2026-05-29T08:50:08 — task #501 (EXTENSION / Release) → `extension` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-29T08:36:01 — task #507 (DASHBOARD / Taskers : une barre par personne et par jour (7 derniers jours)) → `frontend/pages` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-29T08:13:07 — task #485 (DEPLOY / Auto-zip extension dans publish.sh + GitHub Release) → `extension` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-29T08:13:06 — task #503 (EXTENSION / Firefox / Persistante) → `extension` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-29T08:13:06 — task #504 (EXTENSION / Onboarding) → `extension` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-29T08:13:05 — task #502 (EXTENSION / Icon) → `extension` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-29T07:48:07 — task #492 (KEN / Task / Author) → `frontend/pages` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-28T17:56:50 — task #499 (OPS / kenboard update / auto-update bloqué sur le marqueur last-attempted) → `ops` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-28T09:57:14 — task #486 (OPS / pf / table kenboardupdate dediee avec hostnames PyPI) → `ops` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-27T18:02:21 — task #480 (KEN / WEB CLI) → `frontend/js` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-27T13:47:30 — task #479 (WIKI / sync et build / DIR dans le .ken) → `cli/ken` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-27T10:54:58 — task #472 (WIKI / groom) → `backend/api` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-27T10:44:48 — task #473 (WIKI / ARCHITECTURE) → `cli/ken` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-25T14:31:22 — task #447 (AUTO update fails) → `ops` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-25T13:53:53 — task #445 (WEB / Print detail) → `frontend/pages` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
+- 2026-05-25T13:53:52 — task #428 (DOC / README — workflow wiki et agent-driven (#376 suite)) → `docs` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
 - 2026-05-24T18:17:27 — task #422 (WIKI / SPEC / Format de l'export (#376 followup)) → `wiki` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
 - 2026-05-24T18:00:22 — task #425 (WIKI / ken wiki lint (#376e)) → `cli/ken` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)
 - 2026-05-24T16:19:58 — task #424 (WIKI / Refonte format export (#376f)) → `wiki` (by key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e)

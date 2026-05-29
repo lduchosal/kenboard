@@ -46,6 +46,12 @@ wiki:
         - id: ken
           title: ken task CLI
           description: list/show/add/update/move/done + wiki subcommands.
+    - id: extension
+      title: Browser extension
+      description: >-
+        Tout ce qui touche à l'extension navigateur (Chrome/Edge/Brave/Firefox) qui
+        capture la page courante en tâche kenboard : popup, page d'options &
+        onboarding, manifest MV3, icônes, signature Firefox/AMO, packaging & release.
     - id: wiki
       title: Wiki (#376)
       description: LLM-wiki pattern (Karpathy) — classification, sync, build, lint.

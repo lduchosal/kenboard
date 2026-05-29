@@ -1,7 +1,7 @@
 ---
 id: 412
 title: "WIKI / Schema + storage (#376a)"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-05-24T14:24:21

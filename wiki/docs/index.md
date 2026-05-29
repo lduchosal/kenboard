@@ -4,7 +4,7 @@ README, agent_guide.md, doc/*.md, OpenAPI schema, CLAUDE.md.
 
 Section: `docs`
 
-## Archivé (12)
+## Archivé (13)
 
 - [UI / Screenshot pour le README.md](ui-screenshot-pour-le-readme-md-3.md)
 - [DOC / AUTH / Users api](doc-auth-users-api-12.md)
@@ -18,3 +18,4 @@ Section: `docs`
 - [DOC / README / Screenshot missing](doc-readme-screenshot-missing-255.md)
 - [DOC / README / liens cassés vers doc/*.md](doc-readme-liens-cass-s-vers-doc-md-256.md)
 - [DOC / refresh des docs restaurées contre l'état courant du code](doc-refresh-des-docs-restaur-es-contre-l-tat-courant-du-code-260.md)
+- [DOC / README — workflow wiki et agent-driven (#376 suite)](doc-readme-workflow-wiki-et-agent-driven-376-suite-428.md)

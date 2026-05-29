@@ -4,13 +4,7 @@ list/show/add/update/move/done + wiki subcommands.
 
 Section: `cli/ken`
 
-## En cours (3)
-
-- [WIKI / ken wiki groom (#376b)](wiki-ken-wiki-groom-376b-415.md) — _review_
-- [WIKI / ken wiki build (#376d)](wiki-ken-wiki-build-376d-420.md) — _review_
-- [WIKI / ken wiki lint (#376e)](wiki-ken-wiki-lint-376e-425.md) — _review_
-
-## Archivé (15)
+## Archivé (20)
 
 - [CLI / CLI ken pour Claude](cli-cli-ken-pour-claude-5.md)
 - [AGENT / CLI / Bonnes pratiques](agent-cli-bonnes-pratiques-118.md)
@@ -27,3 +21,8 @@ Section: `cli/ken`
 - [AGENT / Onboarding requires python 11+](agent-onboarding-requires-python-11-184.md)
 - [AGENT / .ken2 file](agent-ken2-file-215.md)
 - [CLI / AGENT / help et onboarding](cli-agent-help-et-onboarding-393.md)
+- [WIKI / ken wiki groom (#376b)](wiki-ken-wiki-groom-376b-415.md)
+- [WIKI / ken wiki build (#376d)](wiki-ken-wiki-build-376d-420.md)
+- [WIKI / ken wiki lint (#376e)](wiki-ken-wiki-lint-376e-425.md)
+- [WIKI / ARCHITECTURE](wiki-architecture-473.md)
+- [WIKI / sync et build / DIR dans le .ken](wiki-sync-et-build-dir-dans-le-ken-479.md)

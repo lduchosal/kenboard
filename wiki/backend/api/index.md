@@ -4,7 +4,8 @@
 
 Section: `backend/api`
 
-## Archivé (2)
+## Archivé (3)
 
 - [QUALITY / Sonar - Flask methods explicites](quality-sonar-flask-methods-explicites-80.md)
 - [STATS / stats on categories](stats-stats-on-categories-206.md)
+- [WIKI / groom](wiki-groom-472.md)

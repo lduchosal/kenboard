@@ -1,7 +1,7 @@
 ---
 id: 425
 title: "WIKI / ken wiki lint (#376e)"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-05-24T18:00:22

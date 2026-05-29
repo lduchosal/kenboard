@@ -1,7 +1,7 @@
 ---
 id: 419
 title: "WIKI / ken wiki sync (#376c)"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-05-24T14:55:40
