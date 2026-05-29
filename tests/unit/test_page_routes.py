@@ -79,8 +79,8 @@ class TestIndexPage:
         resp = client.get("/")
         assert resp.status_code == 200
 
-    def test_weekly_author_chart_attributes_token_to_owner(self, client, db, queries):
-        """The weekly chart shows the token owner, never the raw key principal."""
+    def test_leaderboard_attributes_token_to_owner(self, client, db, queries):
+        """The leaderboard shows the token owner, never the raw key principal."""
         cur = db.cursor()
         cur.execute(
             "INSERT INTO users (id, name, color) VALUES (%s, %s, %s)",
@@ -105,7 +105,7 @@ class TestIndexPage:
             ("wk-proj", "key:k1:user:wk-user"),
         )
         html = client.get("/").data.decode()
-        assert "Tâches traitées / semaine" in html
+        assert "Classement des taskers" in html
         assert "Wanda" in html
         assert "key:k1:user:wk-user" not in html
 
