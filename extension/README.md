@@ -85,17 +85,19 @@ validate, then **Save**.
 - **Or:** click the toolbar icon.
 
 The popup pre-fills the title from the page title and the description with
-the source URL + a PNG screenshot of the visible viewport. Edit, hit Save.
-Task lands as `todo` in the configured project.
+a **structured text capture** of the page: source URL, meta description,
+a heading outline (h1–h3), and any text you've selected on the page. Edit,
+hit Save. Task lands as `todo` in the configured project.
 
 ## Notes
 
-- Screenshots can't be captured on `chrome://`, `about:`, `file://`, and
-  some Web Store / privileged pages. The popup still posts the task without
-  the image when capture fails.
-- The screenshot is embedded as a base64 data-URL in the task description.
-  Large captures (>~200 KB) may hit kenboard's description size limit —
-  uncheck **Include screenshot** if the POST fails on big pages.
+- The capture is **plain markdown text**, never an image — it stays small
+  and keeps the board's task descriptions readable and the DB lean.
+- The page outline / selection can't be read on `chrome://`, `about:`,
+  `file://`, and some privileged pages. The popup still posts the task with
+  just the title + source URL when scripting the page fails.
+- Select text on the page before opening the popup to quote it in the task.
+  Uncheck **Include page capture** to post only your note + the source URL.
 - The API token is stored in `chrome.storage.local` (extension-scoped,
   not synced across devices). Treat it like a password.
 - Reuses the standard kenboard `POST /api/v1/tasks` endpoint with bearer

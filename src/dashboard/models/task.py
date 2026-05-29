@@ -1,13 +1,29 @@
 """Task models."""
 
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import AfterValidator, BaseModel, Field
 
 # Reject HTML angle brackets in the title (defense-in-depth against
 # stored XSS via task title — cf. ticket #51).
 NO_ANGLE_BRACKETS = r"^[^<>]*$"
+
+# tasks.description is MySQL TEXT — max 65,535 *bytes* in utf8mb4. Reject
+# anything larger up front so an oversized body is a clean 422 instead of
+# a pymysql DataError 1406 → HTTP 500 (#511). We count encoded bytes (not
+# characters) because that is exactly what the column limit measures.
+DESCRIPTION_MAX_BYTES = 65_535
+
+
+def _within_text_column(value: str) -> str:
+    """Reject a description that would overflow the TEXT column (#511)."""
+    if len(value.encode("utf-8")) > DESCRIPTION_MAX_BYTES:
+        raise ValueError(f"description exceeds {DESCRIPTION_MAX_BYTES} bytes")
+    return value
+
+
+BoundedDescription = Annotated[str, AfterValidator(_within_text_column)]
 
 
 class _DueDateMixin:
@@ -36,7 +52,7 @@ class TaskCreate(_DueDateMixin, BaseModel):
 
     project_id: str = Field(..., min_length=1)
     title: str = Field(..., min_length=1, max_length=250, pattern=NO_ANGLE_BRACKETS)
-    description: str = ""
+    description: BoundedDescription = ""
     status: Literal["todo", "doing", "review", "done"] = "todo"
     who: str = ""
     due_date: date | str | None = None
@@ -49,7 +65,7 @@ class TaskUpdate(_DueDateMixin, BaseModel):
     title: str | None = Field(
         None, min_length=1, max_length=250, pattern=NO_ANGLE_BRACKETS
     )
-    description: str | None = None
+    description: BoundedDescription | None = None
     status: Literal["todo", "doing", "review", "done"] | None = None
     who: str | None = None
     due_date: date | str | None = None

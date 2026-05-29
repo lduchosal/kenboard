@@ -337,6 +337,41 @@ class TestTaskAPI:
         )
         assert resp.status_code == 422
 
+    def test_create_large_description_fits(self, client, db, queries, seed_project):
+        # #511: a normal-sized text description (well under the 64 KB TEXT
+        # column) must persist — the structured page capture from the
+        # extension is plain markdown, not a binary blob.
+        big = "x" * 50_000
+        resp = client.post(
+            "/api/v1/tasks",
+            data=json.dumps(
+                {"project_id": "test-proj", "title": "Capture", "description": big}
+            ),
+            content_type="application/json",
+        )
+        assert resp.status_code == 201
+        assert len(resp.get_json()["description"]) == 50_000
+
+    def test_create_oversized_description_rejected(
+        self, client, db, queries, seed_project
+    ):
+        # #511: a body larger than the TEXT column (65,535 bytes) must be a
+        # clean 422, never a pymysql DataError 1406 → HTTP 500.
+        from dashboard.models.task import DESCRIPTION_MAX_BYTES
+
+        resp = client.post(
+            "/api/v1/tasks",
+            data=json.dumps(
+                {
+                    "project_id": "test-proj",
+                    "title": "Too big",
+                    "description": "x" * (DESCRIPTION_MAX_BYTES + 1),
+                }
+            ),
+            content_type="application/json",
+        )
+        assert resp.status_code == 422
+
     def test_delete(self, client, db, queries, seed_task):
         task_id = seed_task["id"]
         resp = client.delete(f"/api/v1/tasks/{task_id}")

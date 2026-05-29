@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+.aide { max-width: 820px; margin: 0 auto; padding: 4px 16px 40px; }
+.aide-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px 22px;
+  margin-bottom: 18px;
+}
+.aide-card h2 {
+  font-size: 16px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.aide-card .aide-sub { color: var(--dimmed); margin-bottom: 14px; }
+.aide-card h3 { font-size: 13px; margin: 16px 0 6px; color: var(--accent); }
+.aide-card p, .aide-card li { line-height: 1.55; }
+.aide-card ul, .aide-card ol { margin: 0 0 8px 20px; }
+.aide-card a { color: var(--accent); }
+.aide-card kbd {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+.aide-card pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  margin: 0 0 10px;
+}
+.aide-card pre code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+.aide-card code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.aide-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 10px;
+}
+</style>
+{% endblock %}
+
+{% block body %}
+{% include "partials/header.html" %}
+
+{% set base = request.host_url.rstrip('/') %}
+
+<div class="aide">
+
+  <div class="section-title" style="padding-left:0">
+    <span>Aide &mdash; utiliser le kenboard</span>
+  </div>
+
+  <div class="aide-card">
+    <h2><span class="aide-badge" style="background:color-mix(in srgb, var(--purple) 14%, transparent);color:var(--purple)">Bots</span> Le ken pour les agents</h2>
+    <p class="aide-sub">Piloter le board depuis un agent LLM (Claude, GPT&hellip;) ou un terminal, via la CLI <code>ken</code>.</p>
+
+    <h3>1. Installer</h3>
+    <pre><code>python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install kenboard</code></pre>
+
+    <h3>2. Configurer</h3>
+    <p>Le plus simple : sur une cat&eacute;gorie, cliquez <strong>Copy onboard link</strong> et collez l'URL &agrave; votre agent &mdash; il r&eacute;cup&egrave;re un runbook complet et s'auto-configure. Sinon, cr&eacute;ez un fichier <code>.ken</code> (mode 0600) :</p>
+    <pre><code>project_id=&lt;UUID du projet&gt;
+base_url={{ base }}
+api_token=&lt;cl&eacute; API depuis /admin/keys&gt;</code></pre>
+    <p>G&eacute;n&eacute;rez la cl&eacute; sur <a href="{{ prefix }}admin/keys">/admin/keys</a> (scope <code>read</code> ou <code>write</code> sur le projet).</p>
+
+    <h3>3. Travailler</h3>
+    <pre><code>ken list --who Claude --status todo
+ken show &lt;id&gt;
+ken add "MODULE / Titre" --desc "&hellip;" --who Claude --status todo
+ken move &lt;id&gt; --to doing
+ken move &lt;id&gt; --to review</code></pre>
+    <p>Workflow : <code>todo &rarr; doing &rarr; review &rarr; done</code>. L'agent g&egrave;re jusqu'&agrave; <code>review</code> ; seul l'humain finalise en <code>done</code>.</p>
+  </div>
+
+  <div class="aide-card">
+    <h2><span class="aide-badge" style="background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--accent)">Extension</span> Le ken pour le navigateur</h2>
+    <p class="aide-sub">Capturer l'onglet courant comme t&acirc;che en un raccourci, avec capture d'&eacute;cran optionnelle.</p>
+
+    <h3>1. T&eacute;l&eacute;charger</h3>
+    <p>Chaque release attache l'extension : <a href="https://github.com/lduchosal/kenboard/releases" target="_blank" rel="noopener">github.com/lduchosal/kenboard/releases</a> &rarr; <code>kenboard-extension-&lt;version&gt;.zip</code>. D&eacute;zippez-la localement.</p>
+
+    <h3>2. Installer</h3>
+    <p><strong>Chrome / Edge / Brave</strong> : <code>chrome://extensions/</code> &rarr; activer le <em>Mode d&eacute;veloppeur</em> &rarr; <em>Charger l'extension non empaquet&eacute;e</em> &rarr; choisir le dossier d&eacute;zipp&eacute;.</p>
+    <p><strong>Firefox (temporaire)</strong> : <code>about:debugging#/runtime/this-firefox</code> &rarr; <em>Charger un module temporaire</em> &rarr; <code>manifest.json</code>.</p>
+    <p><strong>Firefox (permanent)</strong> : installez le <code>.xpi</code> sign&eacute; via <code>about:addons</code> &rarr; &#9881; &rarr; <em>Installer un module depuis un fichier</em>. Il survit aux red&eacute;marrages.</p>
+
+    <h3>3. Configurer</h3>
+    <p>Cliquez l'ic&ocirc;ne de l'extension &rarr; <strong>R&eacute;glages</strong>, puis collez votre <strong>Copy onboard link</strong> dans le champ <em>Onboarding link</em> : l'URL de base, le projet et le token se remplissent automatiquement. Cliquez <em>Test connection</em> puis <em>Save</em>.</p>
+
+    <h3>4. Utiliser</h3>
+    <p>Raccourci <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> (macOS : <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>), ou l'ic&ocirc;ne de la barre d'outils. Le titre et l'URL de la page sont pr&eacute;-remplis ; &eacute;ditez, puis <em>Save</em>. La t&acirc;che atterrit en <code>todo</code> dans le projet configur&eacute;.</p>
+  </div>
+
+</div>
+{% endblock %}

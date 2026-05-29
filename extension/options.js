@@ -65,25 +65,35 @@ async function save(e) {
 async function test() {
   const baseUrl = $("baseUrl").value.trim().replace(/\/$/, "");
   const token = $("apiToken").value.trim();
-  if (!baseUrl || !token) {
-    setStatus("Fill base_url and api_token first.", "error");
+  const projectId = $("projectId").value.trim();
+  if (!baseUrl || !token || !projectId) {
+    setStatus("Fill base URL, API token and project ID first.", "error");
     return;
   }
   setStatus("Testing…");
   try {
-    const resp = await fetch(`${baseUrl}/api/v1/projects`, {
-      // See comment in popup.js — Firefox auto-attaches the kenboard
-      // session cookie cross-origin which throws the auth middleware
-      // onto the cookie-CSRF path. Omit credentials → pure bearer.
-      credentials: "omit",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    // Probe the project-scoped task list, NOT GET /api/v1/projects:
+    // a per-project / onboarding token can't be scope-checked against the
+    // cross-project /projects endpoint (the server can't resolve a single
+    // project_id for it) and is rejected with 403. /tasks?project=<id>
+    // resolves the project, so this validates base URL + token + the
+    // token's scope on the exact project tasks will land in.
+    const resp = await fetch(
+      `${baseUrl}/api/v1/tasks?project=${encodeURIComponent(projectId)}`,
+      {
+        // See comment in popup.js — Firefox auto-attaches the kenboard
+        // session cookie cross-origin which throws the auth middleware
+        // onto the cookie-CSRF path. Omit credentials → pure bearer.
+        credentials: "omit",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
     if (!resp.ok) {
       setStatus(`HTTP ${resp.status}`, "error");
       return;
     }
-    const projects = await resp.json();
-    setStatus(`OK — ${projects.length} project(s) reachable.`, "success");
+    const tasks = await resp.json();
+    setStatus(`OK — project reachable (${tasks.length} task(s)).`, "success");
   } catch (err) {
     setStatus(`Error: ${err.message}`, "error");
   }

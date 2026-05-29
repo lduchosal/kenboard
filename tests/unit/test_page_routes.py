@@ -384,3 +384,20 @@ class TestAdminKeysPage:
         resp = client.get("/admin/keys")
         html = resp.data.decode()
         assert "TestPageKey" in html
+
+
+class TestAidePage:
+    """GET /aide — help page (#510)."""
+
+    def test_returns_200(self, client, db):
+        """Help page returns 200."""
+        resp = client.get("/aide")
+        assert resp.status_code == 200
+
+    def test_has_both_sections(self, client, db):
+        """Help page renders both the bots and the extension sections."""
+        html = client.get("/aide").data.decode()
+        assert "Le ken pour les agents" in html
+        assert "Le ken pour le navigateur" in html
+        assert "pip install kenboard" in html
+        assert "github.com/lduchosal/kenboard/releases" in html

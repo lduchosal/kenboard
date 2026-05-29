@@ -21,13 +21,50 @@ function setStatus(msg, cls) {
   el.className = cls || "";
 }
 
-function buildDescription(body, sourceUrl, screenshot) {
+// Runs in the page (injected via chrome.scripting.executeScript). Must be
+// self-contained — no closures over popup scope. Returns a plain object of
+// the page's structured text: title, url, meta description, a heading
+// outline, and the user's current selection. No binary, no screenshot.
+function extractPageInfo() {
+  const meta = document.querySelector('meta[name="description"]');
+  const headings = Array.from(document.querySelectorAll("h1, h2, h3"))
+    .map((h) => ({ level: Number(h.tagName[1]), text: h.textContent.trim() }))
+    .filter((h) => h.text)
+    .slice(0, 40);
+  const selection = (window.getSelection && window.getSelection().toString()) || "";
+  return {
+    title: document.title || "",
+    url: location.href,
+    description: (meta && meta.content ? meta.content : "").trim(),
+    headings,
+    selection: selection.trim(),
+  };
+}
+
+// Compose the task description as markdown: the user's note, then a
+// structured textual capture of the page (#514). No image is embedded —
+// the description stays plain text so it fits the TEXT column (#511).
+function buildDescription(body, sourceUrl, page) {
   const parts = [];
   if (body) parts.push(body);
-  parts.push(`---\n\n**Source:** ${sourceUrl}`);
-  if (screenshot) {
-    parts.push(`![screenshot](${screenshot})`);
+  const cap = [`**Source:** ${sourceUrl}`];
+  if (page) {
+    if (page.description) cap.push(page.description);
+    if (page.headings && page.headings.length) {
+      const outline = page.headings
+        .map((h) => `${"  ".repeat(h.level - 1)}- ${h.text}`)
+        .join("\n");
+      cap.push(`**Outline:**\n\n${outline}`);
+    }
+    if (page.selection) {
+      const quoted = page.selection
+        .split("\n")
+        .map((l) => `> ${l}`)
+        .join("\n");
+      cap.push(`**Selection:**\n\n${quoted}`);
+    }
   }
+  parts.push(`---\n\n${cap.join("\n\n")}`);
   return parts.join("\n\n");
 }
 
@@ -36,14 +73,17 @@ async function submit(cfg, tab) {
   btn.disabled = true;
   setStatus("Capturing…");
 
-  let screenshot = null;
-  if ($("include-screenshot").checked) {
+  let page = null;
+  if ($("include-capture").checked) {
     try {
-      screenshot = await chrome.tabs.captureVisibleTab(tab.windowId, {
-        format: "png",
+      const [res] = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: extractPageInfo,
       });
+      page = (res && res.result) || null;
     } catch (err) {
-      // chrome://, file://, store pages, etc. can't be captured — proceed without.
+      // chrome://, about:, file://, store pages, etc. can't be scripted —
+      // proceed with just the title + source URL.
       setStatus(`Capture skipped: ${err.message}`, "error");
     }
   }
@@ -51,7 +91,7 @@ async function submit(cfg, tab) {
   const description = buildDescription(
     $("description").value.trim(),
     tab.url,
-    screenshot,
+    page,
   );
 
   setStatus("Posting…");

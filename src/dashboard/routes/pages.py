@@ -444,6 +444,26 @@ def admin_board() -> Any:
     return render_template("admin_board.html", **ctx)
 
 
+@bp.route("/aide", methods=["GET"])
+@login_required
+def aide() -> Any:
+    """Serve the help page: using ken for bots and the browser extension."""
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        categories = list(queries.cat_get_all(conn))
+        all_projects = list(queries.proj_get_all(conn))
+        users = list(queries.usr_get_all(conn))
+        visible = _visible_category_ids()
+        categories, all_projects = _filter_by_scope(categories, all_projects, visible)
+    finally:
+        conn.close()
+
+    ctx = _build_context(categories, all_projects, users, prefix="/")
+    ctx["title"] = "KEN / Aide"
+    return render_template("aide.html", **ctx)
+
+
 @bp.route("/cat/<cat_id>.html", methods=["GET"])
 @login_required
 def category(cat_id: str) -> Any:
