@@ -207,9 +207,9 @@ def _build_taskers_daily_chart(
 def _build_wiki_sections_chart(rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Build horizontal-bar data for the tasks-per-wiki-section chart (#516).
 
-    ``rows`` are ``{section_path, count}`` aggregates from
-    ``wiki_section_counts`` (already busiest-first). Each bar's width is its
-    share of the busiest section so the longest bar fills the track.
+    ``rows`` are ``{section_path, count}`` aggregates from ``wiki_section_counts``
+    (already busiest-first). Each bar's width is its share of the busiest section so the
+    longest bar fills the track.
     """
     counts = [(str(r["section_path"]), int(r["count"])) for r in rows]
     max_count = max((c for _, c in counts), default=0)

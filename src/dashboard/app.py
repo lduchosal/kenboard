@@ -212,9 +212,7 @@ def _autocreate_error_task(
                 due_date=None,
                 position=max_pos + 1,
             )
-            log.info(
-                "autocreate_error_task", error_id=error_id, project_id=project_id
-            )
+            log.info("autocreate_error_task", error_id=error_id, project_id=project_id)
         finally:
             conn.close()
     except Exception:

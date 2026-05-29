@@ -92,7 +92,9 @@ def test_404_passes_through(boom_app):
 def test_500_autocreates_task_when_configured(
     boom_app, db, queries, seed_project, monkeypatch
 ):
-    """When KENBOARD_ERROR_PROJECT_ID is set, a 500 files one BUG task and dedups (#517)."""
+    """When KENBOARD_ERROR_PROJECT_ID is set, a 500 files one BUG task and dedups
+    (#517).
+    """
     from dashboard.config import Config
 
     monkeypatch.setattr(Config, "KENBOARD_ERROR_PROJECT_ID", "test-proj")
@@ -119,9 +121,7 @@ def test_500_autocreates_task_when_configured(
     assert len(bugs2) == 1
 
 
-def test_500_no_autocreate_when_unset(
-    boom_app, db, queries, seed_project, monkeypatch
-):
+def test_500_no_autocreate_when_unset(boom_app, db, queries, seed_project, monkeypatch):
     """Default (no project id) → no task created — feature is OFF (#517)."""
     from dashboard.config import Config
 
