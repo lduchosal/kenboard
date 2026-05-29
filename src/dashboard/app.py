@@ -3,6 +3,8 @@
 import os
 import secrets
 import time
+import traceback
+from datetime import datetime, timezone
 from typing import Any
 
 from flask import Flask, jsonify, make_response, render_template, request
@@ -151,6 +153,74 @@ def _extract_password_error(details: list[dict[str, Any]]) -> str | None:
     return None
 
 
+def _autocreate_error_task(
+    error_id: str, error_class: str, original: BaseException, route: str
+) -> None:
+    """Best-effort: file an unhandled 500 as a BUG task on the configured board.
+
+    Off unless ``KENBOARD_ERROR_PROJECT_ID`` is set (#517). Inserts directly via the
+    query layer (no self-HTTP → no auth juggling or recursion) and dedups on an open
+    task with the same signature so a recurring error doesn't spam the board. Never
+    raises — a failure here must not mask the 500 already being returned to the caller.
+    """
+    project_id = Config.KENBOARD_ERROR_PROJECT_ID
+    if not project_id:
+        return
+    # Anti-loop: a failure on the task-create path must not try to create a task.
+    if request.path.startswith("/api/v1/tasks"):
+        return
+    try:
+        import dashboard.db as db
+
+        title = f"BUG / 500 {error_class} @ {route}"[:250]
+        conn = db.get_connection()
+        queries = db.load_queries()
+        try:
+            if queries.task_find_open_by_title(
+                conn, project_id=project_id, title=title
+            ):
+                return  # already filed and still open — don't duplicate
+            tb = "".join(
+                traceback.format_exception(
+                    type(original), original, original.__traceback__
+                )
+            )
+            now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            description = (
+                "## Erreur 500 auto-détectée (#517)\n\n"
+                f"- **error_id:** {error_id}\n"
+                f"- **Route:** {request.method} {request.path} (rule: {route})\n"
+                f"- **Type:** {error_class}\n"
+                f"- **Message:** {original}\n"
+                f"- **Quand:** {now}\n\n"
+                "### Traceback\n\n```\n" + tb + "\n```\n\n"
+                "### À faire\n\n"
+                "- [ ] Reproduire\n"
+                "- [ ] Écrire un test de non-régression\n"
+                "- [ ] Corriger\n"
+            )[:60000]
+            max_pos = queries.task_max_position(
+                conn, project_id=project_id, status="todo"
+            )
+            queries.task_create(
+                conn,
+                project_id=project_id,
+                title=title,
+                description=description,
+                status="todo",
+                who=Config.KENBOARD_ERROR_WHO,
+                due_date=None,
+                position=max_pos + 1,
+            )
+            log.info(
+                "autocreate_error_task", error_id=error_id, project_id=project_id
+            )
+        finally:
+            conn.close()
+    except Exception:
+        log.warning("autocreate_error_task_failed", error_id=error_id, exc_info=True)
+
+
 def _register_error_handlers(app: Flask, debug: bool) -> None:
     """Register Pydantic validation and generic error handlers."""
     from pydantic import ValidationError
@@ -204,6 +274,9 @@ def _register_error_handlers(app: Flask, debug: bool) -> None:
             error_id=error_id,
             exc_info=True,
         )
+        # #517: best-effort — file this 500 as a task on the configured board.
+        route = str(request.url_rule) if request.url_rule else request.path
+        _autocreate_error_task(error_id, error_class, original, route)
         if _wants_json(request):
             return make_response(
                 jsonify({"error": "Internal server error", "error_id": error_id}),

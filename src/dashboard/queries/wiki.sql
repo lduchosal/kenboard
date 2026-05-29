@@ -38,6 +38,16 @@ JOIN tasks t ON t.id = c.task_id
 ORDER BY c.section_path ASC, c.task_id ASC;
 
 
+-- name: wiki_section_counts
+-- Count classified tasks per wiki section, busiest first. Powers the
+-- dashboard "tasks per wiki section" chart (#516). Global across projects,
+-- like the other dashboard aggregates (activity, taskers).
+SELECT section_path, COUNT(*) AS count
+FROM task_wiki_classifications
+GROUP BY section_path
+ORDER BY count DESC, section_path ASC;
+
+
 -- name: wiki_get_unclassified_tasks
 -- Tasks that have no row in task_wiki_classifications. Consumed by
 -- ``ken wiki groom`` so the agent knows what's left to triage. Ordered

@@ -35,6 +35,18 @@ class TestIndexPage:
         html = resp.data.decode()
         assert "KEN" in html
 
+    def test_shows_wiki_section_chart(self, client, db, queries, seed_task):
+        """Classified tasks appear in the per-wiki-section chart (#516)."""
+        queries.wiki_classify(
+            db,
+            task_id=seed_task["id"],
+            section_path="backend/api",
+            classified_by="test",
+        )
+        html = client.get("/").data.decode()
+        assert "Tâches par section wiki" in html
+        assert "backend/api" in html
+
     def test_shows_doing_tasks(self, client, db, queries):
         """Doing tasks appear in the index overview."""
         queries.cat_create(

@@ -59,6 +59,14 @@ WHERE id = :id;
 SELECT COALESCE(MAX(position), -1) FROM tasks
 WHERE project_id = :project_id AND status = :status;
 
+-- name: task_find_open_by_title^
+-- Find an open (not done) task with an exact title in a project, or NULL.
+-- Used to dedup auto-filed error tasks so a recurring 500 doesn't spam the
+-- board (#517).
+SELECT id FROM tasks
+WHERE project_id = :project_id AND title = :title AND status != 'done'
+LIMIT 1;
+
 -- name: task_counts_by_project
 -- Get total and done counts per project in one query (#226).
 SELECT project_id,

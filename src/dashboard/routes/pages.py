@@ -204,6 +204,29 @@ def _build_taskers_daily_chart(
     }
 
 
+def _build_wiki_sections_chart(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Build horizontal-bar data for the tasks-per-wiki-section chart (#516).
+
+    ``rows`` are ``{section_path, count}`` aggregates from
+    ``wiki_section_counts`` (already busiest-first). Each bar's width is its
+    share of the busiest section so the longest bar fills the track.
+    """
+    counts = [(str(r["section_path"]), int(r["count"])) for r in rows]
+    max_count = max((c for _, c in counts), default=0)
+    sections = [
+        {
+            "section": name,
+            "count": cnt,
+            "pct": round(100 * cnt / max_count, 1) if max_count else 0,
+        }
+        for name, cnt in counts
+    ]
+    return {
+        "wiki_sections": sections,
+        "wiki_sections_total": sum(c for _, c in counts),
+    }
+
+
 def fmt_date(when_str: str) -> str:
     """Format ISO date to dd.mm."""
     d = date.fromisoformat(when_str)
@@ -318,6 +341,9 @@ def index() -> Any:
         today = date.today()
         taskers_since = (today - timedelta(days=TASKERS_WINDOW_DAYS - 1)).isoformat()
         taskers_rows = list(queries.activity_daily_by_user(conn, since=taskers_since))
+
+        # Tasks-per-wiki-section chart (#516): global counts by classification.
+        wiki_section_rows = list(queries.wiki_section_counts(conn))
     finally:
         conn.close()
 
@@ -349,6 +375,7 @@ def index() -> Any:
     ctx["activity_series"] = activity_series
     ctx["activity_total"] = sum(s["count"] for s in activity_series)
     ctx.update(_build_taskers_daily_chart(taskers_rows, users, today=today))
+    ctx.update(_build_wiki_sections_chart(wiki_section_rows))
     return render_template("index.html", **ctx)
 
 

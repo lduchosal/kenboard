@@ -101,6 +101,7 @@ async function test() {
 
 document.addEventListener("DOMContentLoaded", () => {
   load();
+  $("ext-version").textContent = `v${chrome.runtime.getManifest().version}`;
   $("settings").addEventListener("submit", save);
   $("test").addEventListener("click", test);
   $("onboardLink").addEventListener("input", (e) => applyOnboardLink(e.target.value));

@@ -87,3 +87,50 @@ def test_404_passes_through(boom_app):
     assert r.status_code == 404
     # 404 returns Werkzeug's default page, not our fatal-error template.
     assert b"Une erreur fatale est survenue" not in r.data
+
+
+def test_500_autocreates_task_when_configured(
+    boom_app, db, queries, seed_project, monkeypatch
+):
+    """When KENBOARD_ERROR_PROJECT_ID is set, a 500 files one BUG task and dedups (#517)."""
+    from dashboard.config import Config
+
+    monkeypatch.setattr(Config, "KENBOARD_ERROR_PROJECT_ID", "test-proj")
+    client = boom_app.test_client()
+
+    # First hit → one BUG task created.
+    assert client.get("/__test_boom__").status_code == 500
+    bugs = [
+        r
+        for r in queries.task_get_by_project(db, project_id="test-proj")
+        if r["title"].startswith("BUG / 500")
+    ]
+    assert len(bugs) == 1
+    assert "RuntimeError" in bugs[0]["title"]
+    assert "error_id" in bugs[0]["description"]
+
+    # Second hit → same signature, task still open → deduped (no new row).
+    assert client.get("/__test_boom__").status_code == 500
+    bugs2 = [
+        r
+        for r in queries.task_get_by_project(db, project_id="test-proj")
+        if r["title"].startswith("BUG / 500")
+    ]
+    assert len(bugs2) == 1
+
+
+def test_500_no_autocreate_when_unset(
+    boom_app, db, queries, seed_project, monkeypatch
+):
+    """Default (no project id) → no task created — feature is OFF (#517)."""
+    from dashboard.config import Config
+
+    monkeypatch.setattr(Config, "KENBOARD_ERROR_PROJECT_ID", "")
+    client = boom_app.test_client()
+    assert client.get("/__test_boom__").status_code == 500
+    bugs = [
+        r
+        for r in queries.task_get_by_project(db, project_id="test-proj")
+        if r["title"].startswith("BUG / 500")
+    ]
+    assert not bugs

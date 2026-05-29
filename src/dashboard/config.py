@@ -54,6 +54,11 @@ class Config:
     # a TLS-terminating reverse proxy). Enables Secure cookies and HSTS.
     KENBOARD_HTTPS: bool = os.getenv("KENBOARD_HTTPS", "false").lower() == "true"
 
+    # #517: auto-file unhandled 500s as a BUG task on this project so errors
+    # don't get lost. Empty (default) → feature OFF, no behaviour change.
+    KENBOARD_ERROR_PROJECT_ID: str = os.getenv("KENBOARD_ERROR_PROJECT_ID", "")
+    KENBOARD_ERROR_WHO: str = os.getenv("KENBOARD_ERROR_WHO", "kenboard")
+
     # -- OIDC (optional, cf. doc/auth-user.md) --------------------------------
     # When all three are set, the login page shows a "Sign in with OIDC"
     # button and the /oidc/login + /oidc/callback routes become active.

@@ -39,7 +39,14 @@ use the signed `.xpi` below.
 
 Release Firefox only installs **signed** add-ons permanently. The
 manifest carries a stable id (`browser_specific_settings.gecko.id`) so it
-can be signed via Mozilla without publishing to the public store:
+can be signed via Mozilla without publishing to the public store.
+
+**Easiest:** tagged releases attach a signed `.xpi` (filename ends in
+`-<version>.xpi`) next to the zip, when the publisher has AMO credentials
+configured — grab it from
+<https://github.com/lduchosal/kenboard/releases>, then jump to step 4.
+
+To sign one yourself:
 
 1. Create API credentials at
    <https://addons.mozilla.org/developers/addon/api/key/>.

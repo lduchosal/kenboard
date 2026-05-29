@@ -296,6 +296,31 @@ if [ -d extension ]; then
     fi
 fi
 
+# #503/#518: sign the extension for *persistent* Firefox install and attach
+# the signed .xpi to the same release. Runs after the version bump so AMO
+# gets a fresh, unique version each time. Gated on AMO credentials being
+# present (env or .amo-credentials at the repo root) so a publish without
+# them (e.g. CI without the AMO secret) skips cleanly. Best-effort: a
+# signing failure never aborts — PyPI and the release zip already shipped.
+if [ -d extension ] && { [ -f .amo-credentials ] || { [ -n "${AMO_JWT_ISSUER:-}" ] && [ -n "${AMO_JWT_SECRET:-}" ]; }; }; then
+    echo ""
+    echo "${BLUE}${BOLD}Signing Firefox Extension (#503)${NC}"
+    if sh scripts/sign-firefox-extension.sh; then
+        SIGNED_XPI=$(ls -t web-ext-artifacts/*-"${VERSION}".xpi 2>/dev/null | head -1)
+        if [ -n "${SIGNED_XPI}" ] && command -v gh > /dev/null 2>&1; then
+            gh release upload "kenboard-${VERSION}" "${SIGNED_XPI}" --clobber \
+                && echo "${GREEN}✓ Signed .xpi attached to kenboard-${VERSION}${NC}" \
+                || echo "${YELLOW}WARN: could not attach signed .xpi to the release${NC}"
+        else
+            echo "${YELLOW}WARN: signed .xpi for ${VERSION} not found in web-ext-artifacts/${NC}"
+        fi
+    else
+        echo "${YELLOW}WARN: Firefox signing failed — release has the zip but no signed .xpi${NC}"
+    fi
+elif [ -d extension ]; then
+    echo "${BLUE}Skipping Firefox signing (no AMO credentials).${NC}"
+fi
+
 print_step "Cleaning Previous Build (pdm run clean)"
 run_command "pdm run clean" "Clean"
 

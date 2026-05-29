@@ -18,10 +18,11 @@ button.secondary:hover { background: #eaeef2; }
 #status.success { color: #1a7f37; }
 #status.error { color: #cf222e; }
 small { color: #57606a; font-weight: 400; }
+.ver { font-size: 11px; font-weight: 400; color: #57606a; }
 </style>
 </head>
 <body>
-<h1>kenboard quick-task — Settings</h1>
+<h1>kenboard quick-task — Settings <span id="ext-version" class="ver"></span></h1>
 <form id="settings">
   <label>Onboarding link <small>(paste "Copy onboard link" from the kenboard — fills the fields below)</small>
     <input id="onboardLink" type="url" placeholder="https://…/onboard/cat/…/project/…?token=…" autocomplete="off">
