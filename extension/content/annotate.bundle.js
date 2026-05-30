@@ -717,6 +717,17 @@
     paletteEl?.classList.remove("on");
     badgeEl?.classList.remove("on");
   }
+  function isTyping() {
+    if (composerEl?.classList.contains("on")) return true;
+    const inShadow = shadow?.activeElement;
+    if (inShadow && (inShadow.tagName === "INPUT" || inShadow.tagName === "TEXTAREA")) {
+      return true;
+    }
+    const ae = document.activeElement;
+    if (!ae) return false;
+    const tag = ae.tagName;
+    return tag === "INPUT" || tag === "TEXTAREA" || ae.isContentEditable === true;
+  }
   function onKeyDown(e) {
     if (e.altKey && e.code === "KeyP") {
       e.preventDefault();
@@ -725,13 +736,13 @@
       return;
     }
     if (!mode) return;
-    if (!e.altKey && !e.ctrlKey && !e.metaKey) {
-      if (e.code === "KeyR" && document.activeElement?.tagName !== "INPUT") {
+    if (!e.altKey && !e.ctrlKey && !e.metaKey && !isTyping()) {
+      if (e.code === "KeyR") {
         e.preventDefault();
         setTool("rect");
         return;
       }
-      if (e.code === "KeyT" && document.activeElement?.tagName !== "INPUT") {
+      if (e.code === "KeyT") {
         e.preventDefault();
         setTool("text");
         return;

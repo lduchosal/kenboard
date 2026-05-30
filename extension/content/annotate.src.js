@@ -795,6 +795,22 @@ function deactivate() {
   badgeEl?.classList.remove("on");
 }
 
+function isTyping() {
+  // When focus is inside our Shadow DOM, ``document.activeElement`` from the
+  // outer document returns the **host** (a <div>), not the actual input.
+  // We must also check ``shadow.activeElement`` so the R / T tool shortcuts
+  // don't eat keystrokes while the user is typing a note (#555).
+  if (composerEl?.classList.contains("on")) return true;
+  const inShadow = shadow?.activeElement;
+  if (inShadow && (inShadow.tagName === "INPUT" || inShadow.tagName === "TEXTAREA")) {
+    return true;
+  }
+  const ae = document.activeElement;
+  if (!ae) return false;
+  const tag = ae.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || ae.isContentEditable === true;
+}
+
 function onKeyDown(e) {
   // Alt+P toggles paintbrush mode. ``e.code`` is layout-independent
   // (macOS Option+P would otherwise come through as "π" via e.key).
@@ -805,14 +821,14 @@ function onKeyDown(e) {
     return;
   }
   if (!mode) return;
-  // Tool switch shortcuts (only when mode is on).
-  if (!e.altKey && !e.ctrlKey && !e.metaKey) {
-    if (e.code === "KeyR" && document.activeElement?.tagName !== "INPUT") {
+  // Tool switch shortcuts (only when mode is on and the user is not typing).
+  if (!e.altKey && !e.ctrlKey && !e.metaKey && !isTyping()) {
+    if (e.code === "KeyR") {
       e.preventDefault();
       setTool("rect");
       return;
     }
-    if (e.code === "KeyT" && document.activeElement?.tagName !== "INPUT") {
+    if (e.code === "KeyT") {
       e.preventDefault();
       setTool("text");
       return;
