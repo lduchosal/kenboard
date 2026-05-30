@@ -676,9 +676,30 @@ function escapeXml(s) {
  * Bounded by MAX_ELEMENTS and MAX_SKELETON_BYTES — returns "" early if
  * the budget is exceeded.
  */
+function isTransparentBg(bg) {
+  // ``getComputedStyle`` returns ``rgba(0, 0, 0, 0)`` for unset / explicit
+  // transparent backgrounds. The literal "transparent" can also slip
+  // through on some engines.
+  if (!bg) return true;
+  if (bg === "transparent") return true;
+  const m = bg.match(/^rgba?\(([^)]+)\)$/);
+  if (!m) return false;
+  const parts = m[1].split(",").map((s) => s.trim());
+  // rgba: 4 parts → check alpha.
+  if (parts.length === 4) return parseFloat(parts[3]) === 0;
+  return false;
+}
+
 function buildSkeletonSvg() {
+  // #567: capture is viewport-only — we walk the live DOM but skip
+  // anything whose bbox is fully outside the visible area. Coordinates
+  // stay page-relative because the annotations layer is in page coords
+  // too; ``serialiseSvg`` sets viewBox = the viewport so the SVG opens
+  // pre-scrolled to the right spot.
   const sx = window.scrollX;
   const sy = window.scrollY;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
   const parts = [];
   let bytes = 0;
   let count = 0;
@@ -693,6 +714,9 @@ function buildSkeletonSvg() {
     }
     const rect = el.getBoundingClientRect();
     if (rect.width < 1 || rect.height < 1) continue;
+    // Viewport cull: discard anything entirely off-screen at push time.
+    if (rect.bottom <= 0 || rect.top >= vh) continue;
+    if (rect.right <= 0 || rect.left >= vw) continue;
     const cs = getComputedStyle(el);
     if (cs.visibility === "hidden" || cs.display === "none") continue;
     const opacity = parseFloat(cs.opacity);
@@ -702,11 +726,20 @@ function buildSkeletonSvg() {
     const w = Math.round(rect.width);
     const h = Math.round(rect.height);
 
-    // Image-like placeholder (one element-budget).
-    if (tag === "IMG" || tag === "VIDEO" || tag === "CANVAS" || tag === "PICTURE") {
-      const part = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#d0d7de" stroke="#57606a" stroke-width="0.5"/>`;
+    // Background colour: emit a filled rect when non-transparent. DOM
+    // order = parent first, so children paint above their container.
+    const bg = cs.backgroundColor;
+    if (!isTransparentBg(bg)) {
+      const part = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${bg}"/>`;
       parts.push(part);
       bytes += part.length;
+    }
+
+    // Image-like placeholder (one element-budget).
+    if (tag === "IMG" || tag === "VIDEO" || tag === "CANVAS" || tag === "PICTURE") {
+      const ph = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#d0d7de" stroke="#57606a" stroke-width="0.5"/>`;
+      parts.push(ph);
+      bytes += ph.length;
       const alt = (el.getAttribute("alt") || tag.toLowerCase()).slice(0, 60);
       const label = `<text x="${x + 4}" y="${y + 14}" font-size="10" fill="#57606a" font-family="sans-serif">${escapeXml(alt)}</text>`;
       parts.push(label);
@@ -731,8 +764,8 @@ function buildSkeletonSvg() {
       const part = `<text x="${x}" y="${y + fontSize}" font-size="${fontSize}" fill="${color}" font-family="${escapeXml(fam)}">${escapeXml(text)}</text>`;
       parts.push(part);
       bytes += part.length;
-      count++;
     }
+    count++;
   }
   if (bytes >= MAX_SKELETON_BYTES) {
     console.warn("[kenboard:paintbrush] skeleton truncated — exceeded byte budget");
@@ -742,15 +775,13 @@ function buildSkeletonSvg() {
 
 function serialiseSvg() {
   if (shapes.length === 0) return "";
-  // viewBox = full document (so the skeleton + annotations align in page coords).
-  const docW = Math.max(
-    document.documentElement.scrollWidth,
-    document.body.scrollWidth,
-  );
-  const docH = Math.max(
-    document.documentElement.scrollHeight,
-    document.body.scrollHeight,
-  );
+  // #567: viewBox = current viewport (in page coords) — the skeleton + the
+  // annotations were both captured against what the user actually sees, so
+  // the SVG opens framed on the visible area at push time.
+  const sx = window.scrollX;
+  const sy = window.scrollY;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
   const skeleton = buildSkeletonSvg();
   // Annotations layer: stringify our shapes (must escape user-supplied text).
   const annParts = [];
@@ -765,11 +796,11 @@ function serialiseSvg() {
       );
     }
   }
-  const width = Math.min(1600, docW);
+  const displayW = Math.min(1600, vw);
   return (
-    `<svg xmlns="${SVG_NS}" viewBox="0 0 ${docW} ${docH}" width="${width}">` +
-    `<rect x="0" y="0" width="${docW}" height="${docH}" fill="#ffffff"/>` +
-    (skeleton ? `<g class="kb-skel" opacity="0.85">${skeleton}</g>` : "") +
+    `<svg xmlns="${SVG_NS}" viewBox="${sx} ${sy} ${vw} ${vh}" width="${displayW}">` +
+    `<rect x="${sx}" y="${sy}" width="${vw}" height="${vh}" fill="#ffffff"/>` +
+    (skeleton ? `<g class="kb-skel">${skeleton}</g>` : "") +
     `<g class="kb-annotations">${annParts.join("")}</g>` +
     `</svg>`
   );

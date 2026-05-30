@@ -591,9 +591,20 @@
   function escapeXml(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
+  function isTransparentBg(bg) {
+    if (!bg) return true;
+    if (bg === "transparent") return true;
+    const m = bg.match(/^rgba?\(([^)]+)\)$/);
+    if (!m) return false;
+    const parts = m[1].split(",").map((s) => s.trim());
+    if (parts.length === 4) return parseFloat(parts[3]) === 0;
+    return false;
+  }
   function buildSkeletonSvg() {
     const sx = window.scrollX;
     const sy = window.scrollY;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
     const parts = [];
     let bytes = 0;
     let count = 0;
@@ -608,6 +619,8 @@
       }
       const rect = el.getBoundingClientRect();
       if (rect.width < 1 || rect.height < 1) continue;
+      if (rect.bottom <= 0 || rect.top >= vh) continue;
+      if (rect.right <= 0 || rect.left >= vw) continue;
       const cs = getComputedStyle(el);
       if (cs.visibility === "hidden" || cs.display === "none") continue;
       const opacity = parseFloat(cs.opacity);
@@ -616,10 +629,16 @@
       const y = Math.round(rect.top + sy);
       const w = Math.round(rect.width);
       const h = Math.round(rect.height);
-      if (tag === "IMG" || tag === "VIDEO" || tag === "CANVAS" || tag === "PICTURE") {
-        const part = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#d0d7de" stroke="#57606a" stroke-width="0.5"/>`;
+      const bg = cs.backgroundColor;
+      if (!isTransparentBg(bg)) {
+        const part = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${bg}"/>`;
         parts.push(part);
         bytes += part.length;
+      }
+      if (tag === "IMG" || tag === "VIDEO" || tag === "CANVAS" || tag === "PICTURE") {
+        const ph = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#d0d7de" stroke="#57606a" stroke-width="0.5"/>`;
+        parts.push(ph);
+        bytes += ph.length;
         const alt = (el.getAttribute("alt") || tag.toLowerCase()).slice(0, 60);
         const label = `<text x="${x + 4}" y="${y + 14}" font-size="10" fill="#57606a" font-family="sans-serif">${escapeXml(alt)}</text>`;
         parts.push(label);
@@ -642,8 +661,8 @@
         const part = `<text x="${x}" y="${y + fontSize}" font-size="${fontSize}" fill="${color}" font-family="${escapeXml(fam)}">${escapeXml(text)}</text>`;
         parts.push(part);
         bytes += part.length;
-        count++;
       }
+      count++;
     }
     if (bytes >= MAX_SKELETON_BYTES) {
       console.warn("[kenboard:paintbrush] skeleton truncated \u2014 exceeded byte budget");
@@ -652,14 +671,10 @@
   }
   function serialiseSvg() {
     if (shapes.length === 0) return "";
-    const docW = Math.max(
-      document.documentElement.scrollWidth,
-      document.body.scrollWidth
-    );
-    const docH = Math.max(
-      document.documentElement.scrollHeight,
-      document.body.scrollHeight
-    );
+    const sx = window.scrollX;
+    const sy = window.scrollY;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
     const skeleton = buildSkeletonSvg();
     const annParts = [];
     for (const s of shapes) {
@@ -673,8 +688,8 @@
         );
       }
     }
-    const width = Math.min(1600, docW);
-    return `<svg xmlns="${SVG_NS}" viewBox="0 0 ${docW} ${docH}" width="${width}"><rect x="0" y="0" width="${docW}" height="${docH}" fill="#ffffff"/>` + (skeleton ? `<g class="kb-skel" opacity="0.85">${skeleton}</g>` : "") + `<g class="kb-annotations">${annParts.join("")}</g></svg>`;
+    const displayW = Math.min(1600, vw);
+    return `<svg xmlns="${SVG_NS}" viewBox="${sx} ${sy} ${vw} ${vh}" width="${displayW}"><rect x="${sx}" y="${sy}" width="${vw}" height="${vh}" fill="#ffffff"/>` + (skeleton ? `<g class="kb-skel">${skeleton}</g>` : "") + `<g class="kb-annotations">${annParts.join("")}</g></svg>`;
   }
   async function pushToKenboard() {
     setDrawerStatus("");
