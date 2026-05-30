@@ -300,9 +300,14 @@ body {
 .wiki-bars { display: flex; flex-direction: column; gap: 5px; }
 .wiki-bar-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 .wiki-bar-label {
-  flex: 0 0 32%;
+  /* #579: 32% was too tight for monospace ``backend/auth`` etc on the
+   * 260px-min cards (per-project per-category, #572 ; per-cat dashboard,
+   * #540). 50% + 11px gives the full label room without strangling the
+   * bar track. */
+  flex: 0 0 50%;
   color: var(--text);
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
