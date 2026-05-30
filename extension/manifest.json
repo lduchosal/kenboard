@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "kenboard quick-task",
-  "version": "0.1.120",
+  "version": "0.1.121",
   "description": "Capture the current tab as a kenboard task with one keystroke.",
   "browser_specific_settings": {
     "gecko": {

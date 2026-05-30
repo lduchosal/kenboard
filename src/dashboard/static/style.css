@@ -342,6 +342,26 @@ body {
 .wiki-cat-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .wiki-cat-total { font-size: 14px; font-weight: 700; color: var(--text); }
 
+/* Paintbrush attachement panel on the task modal (#541 Phase 2). The
+ * SVG is just the annotations layer (rectangles + texts, transparent),
+ * so we render it on a light checkerboard so the red shapes stand out. */
+.task-modal-attachement {
+  margin: 0 0 8px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background:
+    repeating-conic-gradient(#f0f2f5 0% 25%, #ffffff 0% 50%) 0 0 / 12px 12px;
+  max-height: 240px;
+  overflow: auto;
+  text-align: center;
+}
+.task-modal-attachement svg {
+  max-width: 100%;
+  max-height: 220px;
+  height: auto;
+}
+
 /* Header keyboard-shortcuts help button (#253). Subtle round dimmed glyph
  * sitting next to the avatar; opens the kb-help-modal. */
 .kb-help-btn {

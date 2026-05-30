@@ -26,6 +26,13 @@ export async function openEditTask(btn, id) {
   document.getElementById('task-modal-desc').value = '';
   document.getElementById('task-modal-when').value = '';
   document.getElementById('task-modal-status').value = status;
+  // #541 Phase 2: hide the attachement panel until we know whether the
+  // fetched task has one. ``renderAttachement`` re-shows it if non-empty.
+  const attBefore = document.getElementById('task-modal-attachement');
+  if (attBefore) {
+    attBefore.innerHTML = '';
+    attBefore.style.display = 'none';
+  }
   const delBtn = document.getElementById('task-modal-delete');
   if (delBtn) delBtn.style.display = id ? '' : 'none';
   const dupBtn = document.getElementById('task-modal-duplicate');
@@ -39,6 +46,20 @@ export async function openEditTask(btn, id) {
     document.getElementById('task-modal-desc').value = t.description || '';
     document.getElementById('task-modal-when').value = t.due_date ? fmtDate(t.due_date) : '';
     document.getElementById('task-modal-status').value = t.status || status;
+    // #541 Phase 2: render the paintbrush SVG annotation layer inline,
+    // sanitised via DOMPurify (already loaded globally in base.html).
+    const attEl = document.getElementById('task-modal-attachement');
+    if (attEl) {
+      if (t.attachement) {
+        attEl.innerHTML = DOMPurify.sanitize(t.attachement, {
+          USE_PROFILES: { svg: true, svgFilters: true },
+        });
+        attEl.style.display = '';
+      } else {
+        attEl.innerHTML = '';
+        attEl.style.display = 'none';
+      }
+    }
     const whoSelect = document.getElementById('task-modal-who');
     const effectiveWho = t.who || projectDefaultWho;
     if (whoSelect && effectiveWho && [...whoSelect.options].some((o) => o.value === effectiveWho)) {
