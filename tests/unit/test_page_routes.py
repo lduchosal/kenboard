@@ -35,10 +35,15 @@ class TestIndexPage:
         html = resp.data.decode()
         assert "KEN" in html
 
-    def test_dashboard_does_not_show_wiki_chart_anymore(
+    def test_dashboard_shows_wiki_minichart_per_category(
         self, client, db, queries, seed_task
     ):
-        """Wiki-section chart moved off the dashboard (#533) to category pages."""
+        """Dashboard shows a per-category mini-chart grid (#540).
+
+        Replaces the global aggregate (#516) that mixed unrelated boards (#532).
+        Each visible category gets a small card with its own top sections; the
+        detailed view stays scoped to the category page (#533).
+        """
         queries.wiki_classify(
             db,
             task_id=seed_task["id"],
@@ -46,7 +51,13 @@ class TestIndexPage:
             classified_by="test",
         )
         html = client.get("/").data.decode()
-        assert "Tâches par section wiki" not in html
+        # The grid header carries the per-category title; the category name
+        # of the seeded task ('Test Category') and its section_path must
+        # appear in the card.
+        assert "Tâches par section wiki — par catégorie" in html
+        assert "backend/api" in html
+        # seed_category creates one named "Test" — must appear in the card.
+        assert ">Test<" in html
 
     def test_shows_doing_tasks(self, client, db, queries):
         """Doing tasks appear in the index overview."""

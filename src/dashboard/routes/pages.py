@@ -227,6 +227,59 @@ def _build_wiki_sections_chart(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _build_wiki_sections_per_category_chart(
+    rows: list[dict[str, Any]],
+    categories: list[dict[str, Any]],
+    *,
+    top_n: int = 6,
+) -> dict[str, Any]:
+    """Build per-category mini-chart data for the dashboard (#540).
+
+    ``rows`` are ``{category_id, section_path, count}`` aggregates from
+    ``wiki_section_counts_grouped`` (already ordered by category, then count desc).
+    ``categories`` is the visible-to-user list — categories without classifications are
+    dropped, the rest follow ``categories`` order (== the user's preferred category
+    order). Each category card shows its top ``top_n`` sections, scaled to its own
+    busiest section so bars stay comparable within a card.
+
+    Args:
+        rows: Per-(category, section) classification counts.
+        categories: Visible categories in display order.
+        top_n: Maximum number of section rows per mini-card.
+
+    Returns:
+        A context dict with ``wiki_by_category`` (list of cards, each with
+        ``cat``, ``sections``, ``total``) and ``wiki_by_category_total``.
+    """
+    by_cat: dict[str, list[tuple[str, int]]] = {}
+    for r in rows:
+        cid = str(r["category_id"])
+        by_cat.setdefault(cid, []).append((str(r["section_path"]), int(r["count"])))
+
+    cards: list[dict[str, Any]] = []
+    grand_total = 0
+    for c in categories:
+        cat_rows = by_cat.get(c["id"], [])
+        if not cat_rows:
+            continue
+        max_count = cat_rows[0][1]
+        sections = [
+            {
+                "section": name,
+                "count": cnt,
+                "pct": round(100 * cnt / max_count, 1) if max_count else 0,
+            }
+            for name, cnt in cat_rows[:top_n]
+        ]
+        total = sum(cnt for _, cnt in cat_rows)
+        grand_total += total
+        cards.append({"cat": c, "sections": sections, "total": total})
+    return {
+        "wiki_by_category": cards,
+        "wiki_by_category_total": grand_total,
+    }
+
+
 def fmt_date(when_str: str) -> str:
     """Format ISO date to dd.mm."""
     d = date.fromisoformat(when_str)
@@ -341,6 +394,11 @@ def index() -> Any:
         today = date.today()
         taskers_since = (today - timedelta(days=TASKERS_WINDOW_DAYS - 1)).isoformat()
         taskers_rows = list(queries.activity_daily_by_user(conn, since=taskers_since))
+
+        # Per-category wiki mini-chart (#540): scoped signal on the home,
+        # one small card per visible category. The detailed per-section
+        # view stays on /cat/<id>.html (#533).
+        wiki_grouped_rows = list(queries.wiki_section_counts_grouped(conn))
     finally:
         conn.close()
 
@@ -372,6 +430,7 @@ def index() -> Any:
     ctx["activity_series"] = activity_series
     ctx["activity_total"] = sum(s["count"] for s in activity_series)
     ctx.update(_build_taskers_daily_chart(taskers_rows, users, today=today))
+    ctx.update(_build_wiki_sections_per_category_chart(wiki_grouped_rows, categories))
     return render_template("index.html", **ctx)
 
 

@@ -322,6 +322,26 @@ body {
 }
 .wiki-bar-count { flex: 0 0 auto; color: var(--dimmed); min-width: 1.5em; text-align: right; }
 
+/* Per-category mini-chart grid on the dashboard (#540). */
+.wiki-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+.wiki-cat-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  text-decoration: none;
+  color: var(--text);
+  display: block;
+}
+.wiki-cat-card:hover { background: var(--card); }
+.wiki-cat-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.wiki-cat-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.wiki-cat-total { font-size: 14px; font-weight: 700; color: var(--text); }
+
 /* Header keyboard-shortcuts help button (#253). Subtle round dimmed glyph
  * sitting next to the avatar; opens the kb-help-modal. */
 .kb-help-btn {
