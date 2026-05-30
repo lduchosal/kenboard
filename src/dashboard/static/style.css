@@ -854,6 +854,25 @@ body {
 .fullscreen-desc ul, .fullscreen-desc ol {
   padding-left: 20px;
 }
+
+/* Paintbrush attachement panel on the fullscreen task view (#575). Like
+ * the edit-modal variant but uncapped on height — the fullscreen modal
+ * has the real estate, so we let the SVG breathe. */
+.fullscreen-attachement {
+  margin: 16px 0 0;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background:
+    repeating-conic-gradient(#f0f2f5 0% 25%, #ffffff 0% 50%) 0 0 / 16px 16px;
+  text-align: center;
+}
+.fullscreen-attachement svg {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+}
+
 .fullscreen-actions {
   display: flex;
   gap: 8px;

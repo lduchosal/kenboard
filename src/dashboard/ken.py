@@ -521,8 +521,20 @@ def list_tasks(
 @cli.command()
 @click.argument("task_id", type=int)
 @click.option("--json", "json_mode", is_flag=True, help="Output as JSON")
+@click.option(
+    "--save-attachement",
+    "save_attachement",
+    type=click.Path(dir_okay=False, writable=True),
+    default=None,
+    help="Write the task's SVG attachement (#541) to this path and exit",
+)
 @click.pass_context
-def show(ctx: click.Context, task_id: int, json_mode: bool) -> None:
+def show(
+    ctx: click.Context,
+    task_id: int,
+    json_mode: bool,
+    save_attachement: str | None,
+) -> None:
     """Show full details of a task."""
     cfg: KenConfig = ctx.obj["cfg"]
     project_id = _require_project(cfg)
@@ -534,6 +546,23 @@ def show(ctx: click.Context, task_id: int, json_mode: bool) -> None:
             err=True,
         )
         sys.exit(1)
+    # --save-attachement: write the SVG and exit (no other output on success
+    # except a short stderr confirmation — keeps stdout clean for shell pipes).
+    if save_attachement is not None:
+        att = task.get("attachement")
+        if not att:
+            click.echo(f"Error: task #{task_id} has no attachement", err=True)
+            sys.exit(1)
+        try:
+            Path(save_attachement).write_text(att, encoding="utf-8")
+        except OSError as e:
+            click.echo(f"Error: cannot write attachement: {e}", err=True)
+            sys.exit(1)
+        click.echo(
+            f"Wrote {len(att.encode('utf-8'))} bytes to {save_attachement}",
+            err=True,
+        )
+        return
     if json_mode:
         click.echo(json_lib.dumps(task, indent=2, default=str))
         return
@@ -548,6 +577,44 @@ def show(ctx: click.Context, task_id: int, json_mode: bool) -> None:
         "updated_at",
     ):
         click.echo(f"{key:12s}: {task.get(key) if task.get(key) is not None else ''}")
+    # Attachement hint (#574) — show size + how to retrieve, but never the
+    # raw SVG (would flood the terminal).
+    att = task.get("attachement")
+    if att:
+        size_kb = len(att.encode("utf-8")) / 1024
+        click.echo(
+            f"{'attachement':12s}: {size_kb:.1f} KB SVG "
+            f"(use `ken show {task_id} --save-attachement <path>` to write)"
+        )
+
+
+# tasks.attachement is MEDIUMTEXT (16 MB) — pre-check on the client so an
+# oversized SVG fails with a clear CLI error instead of a 422 round-trip.
+_ATTACHEMENT_MAX_BYTES = 16 * 1024 * 1024 - 1
+
+
+def _read_attachement_file(path: str | None) -> str | None:
+    """Read an attachement SVG from disk for ``ken add`` / ``ken update`` (#574).
+
+    Used by both commands to populate ``tasks.attachement`` (the paintbrush
+    extension's annotation layer, #541). Returns ``None`` when the path is not
+    supplied. Pre-checks the encoded size against the MEDIUMTEXT column cap so
+    an oversized payload fails with a clear CLI error instead of a 422 from
+    the server.
+    """
+    if path is None:
+        return None
+    try:
+        content = Path(path).read_text(encoding="utf-8")
+    except OSError as e:
+        raise click.UsageError(f"Cannot read --attachement-file: {e}") from e
+    n = len(content.encode("utf-8"))
+    if n > _ATTACHEMENT_MAX_BYTES:
+        raise click.UsageError(
+            f"--attachement-file is too large ({n} bytes); "
+            f"the tasks.attachement column caps at {_ATTACHEMENT_MAX_BYTES} bytes."
+        )
+    return content
 
 
 def _resolve_desc(desc: str | None, desc_file: str | None = None) -> str | None:
@@ -595,6 +662,13 @@ def _resolve_desc(desc: str | None, desc_file: str | None = None) -> str | None:
 @click.option("--who", default="", help="Assignee")
 @click.option("--status", type=click.Choice(VALID_STATUSES), default="todo")
 @click.option("--when", help="Due date YYYY-MM-DD")
+@click.option(
+    "--attachement-file",
+    "attachement_file",
+    type=click.Path(dir_okay=False, readable=True),
+    default=None,
+    help="Read an SVG attachement (#541) from this path",
+)
 @click.option("--json", "json_mode", is_flag=True, help="Output as JSON")
 # One option per task field, by design — silence the "too many arguments" warning.
 @click.pass_context
@@ -606,6 +680,7 @@ def add(  # noqa: PLR0913
     who: str,
     status: str,
     when: str | None,
+    attachement_file: str | None,
     json_mode: bool,
 ) -> None:
     r"""Add a new task to the current project.
@@ -625,6 +700,9 @@ def add(  # noqa: PLR0913
         "status": status,
         "due_date": when,
     }
+    attachement = _read_attachement_file(attachement_file)
+    if attachement is not None:
+        body["attachement"] = attachement
     task = _request(cfg, "POST", "/api/v1/tasks", body=body)
     _output(task, json_mode, columns=TASK_COLUMNS)
 
@@ -645,6 +723,13 @@ def add(  # noqa: PLR0913
 @click.option("--who", help="New assignee")
 @click.option("--status", type=click.Choice(VALID_STATUSES), help="New status")
 @click.option("--when", help="New due date YYYY-MM-DD")
+@click.option(
+    "--attachement-file",
+    "attachement_file",
+    type=click.Path(dir_okay=False, readable=True),
+    default=None,
+    help="Read an SVG attachement (#541) from this path",
+)
 @click.option("--json", "json_mode", is_flag=True, help="Output as JSON")
 # One option per task field, by design — silence the "too many arguments" warning.
 @click.pass_context
@@ -657,6 +742,7 @@ def update(  # noqa: PLR0913
     who: str | None,
     status: str | None,
     when: str | None,
+    attachement_file: str | None,
     json_mode: bool,
 ) -> None:
     r"""Update an existing task (only the fields you pass).
@@ -680,10 +766,12 @@ def update(  # noqa: PLR0913
         body["status"] = status
     if when is not None:
         body["due_date"] = when
+    if attachement_file is not None:
+        body["attachement"] = _read_attachement_file(attachement_file)
     if not body:
         click.echo(
             "Error: nothing to update. Pass at least one of "
-            "--title/--desc/--who/--status/--when",
+            "--title/--desc/--who/--status/--when/--attachement-file",
             err=True,
         )
         sys.exit(1)

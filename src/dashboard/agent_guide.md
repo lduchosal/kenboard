@@ -178,6 +178,27 @@ Example:
 
     ken add "SEC / XSS sanitize onboarding IDs" --desc "..." --who Claude
 
+## Attachements (SVG paintbrush)
+
+The browser extension's paintbrush mode (#541) pushes an SVG annotation
+layer into `tasks.attachement`. The `ken` CLI exposes it on three
+commands:
+
+    ken add "BUG / X" --attachement-file paint.svg --who Claude --status todo
+    ken update <id> --attachement-file paint.svg
+    ken show <id>                          # prints size + how to retrieve
+    ken show <id> --save-attachement out.svg   # writes the SVG to disk
+
+`ken show` never prints the raw SVG (it would flood the terminal); it
+shows the size and tells you the `--save-attachement` flag. The server
+caps the column at 16 MB (MEDIUMTEXT); the CLI rejects oversized files
+up front with a clear error.
+
+When an agent picks up a paintbrush task off the queue, the typical
+flow is: `ken show <id> --save-attachement /tmp/p.svg`, open the SVG to
+see what was annotated, then reformulate the title/description with
+context from both the description (boxed text + notes) and the SVG.
+
 ## Other practices
 
 - The `ken` binary uses only the stdlib for HTTP. Do **not** add

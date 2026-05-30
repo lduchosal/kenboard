@@ -554,6 +554,100 @@ class TestCliMutations:
         assert result.exit_code == 0, result.output
         assert calls[0][2] == {"description": body}
 
+    def test_add_with_attachement_file_sends_svg_in_body(self, cwd_tmp, runner):
+        """#574: --attachement-file reads the SVG and includes it in the POST."""
+        self._setup(cwd_tmp)
+        svg = "<svg xmlns='http://www.w3.org/2000/svg'><rect/></svg>"
+        path = cwd_tmp / "paint.svg"
+        path.write_text(svg, encoding="utf-8")
+        ctx, calls = _patch_responses(
+            [("POST", "/api/v1/tasks", {"id": 7, "title": "T", "status": "todo"})]
+        )
+        with ctx:
+            result = runner.invoke(
+                ken.cli, ["add", "T", "--attachement-file", str(path)]
+            )
+        assert result.exit_code == 0, result.output
+        assert calls[0][2]["attachement"] == svg
+
+    def test_update_with_attachement_file_sends_svg_in_patch(self, cwd_tmp, runner):
+        """#574: update --attachement-file writes the SVG into the PATCH body."""
+        self._setup(cwd_tmp)
+        svg = "<svg xmlns='http://www.w3.org/2000/svg'/>"
+        path = cwd_tmp / "p.svg"
+        path.write_text(svg, encoding="utf-8")
+        ctx, calls = _patch_responses(
+            [("PATCH", "/api/v1/tasks/9", {"id": 9, "status": "todo"})]
+        )
+        with ctx:
+            result = runner.invoke(
+                ken.cli, ["update", "9", "--attachement-file", str(path)]
+            )
+        assert result.exit_code == 0, result.output
+        assert calls[0][2] == {"attachement": svg}
+
+    def test_attachement_file_too_large_fails_at_cli(self, cwd_tmp, runner):
+        """#574: oversized --attachement-file fails on the client, not server."""
+        self._setup(cwd_tmp)
+        path = cwd_tmp / "huge.svg"
+        # Just over the MEDIUMTEXT cap. We monkeypatch the cap to keep
+        # the test fast — writing 16 MB to disk would be wasteful.
+        path.write_text("x" * 1000, encoding="utf-8")
+        import dashboard.ken as ken_mod
+
+        original = ken_mod._ATTACHEMENT_MAX_BYTES
+        ken_mod._ATTACHEMENT_MAX_BYTES = 100
+        try:
+            result = runner.invoke(
+                ken.cli, ["add", "T", "--attachement-file", str(path)]
+            )
+        finally:
+            ken_mod._ATTACHEMENT_MAX_BYTES = original
+        assert result.exit_code != 0
+        assert "too large" in result.output.lower()
+
+    def test_show_displays_attachement_hint(self, cwd_tmp, runner):
+        """#574: ken show prints a size hint when the task has an attachement."""
+        self._setup(cwd_tmp)
+        svg = "<svg/>" * 50
+        ctx, _ = _patch_responses(
+            [
+                (
+                    "GET",
+                    "/api/v1/tasks?project=p1",
+                    [{"id": 42, "title": "T", "status": "todo", "attachement": svg}],
+                )
+            ]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["show", "42"])
+        assert result.exit_code == 0, result.output
+        assert "attachement" in result.output
+        assert "--save-attachement" in result.output
+        # The raw SVG must NOT be printed (would flood the terminal).
+        assert svg not in result.output
+
+    def test_show_save_attachement_writes_file(self, cwd_tmp, runner):
+        """#574: --save-attachement writes the SVG to disk and skips normal output."""
+        self._setup(cwd_tmp)
+        svg = "<svg xmlns='http://www.w3.org/2000/svg'><rect/></svg>"
+        out = cwd_tmp / "saved.svg"
+        ctx, _ = _patch_responses(
+            [
+                (
+                    "GET",
+                    "/api/v1/tasks?project=p1",
+                    [{"id": 5, "title": "T", "status": "todo", "attachement": svg}],
+                )
+            ]
+        )
+        with ctx:
+            result = runner.invoke(
+                ken.cli, ["show", "5", "--save-attachement", str(out)]
+            )
+        assert result.exit_code == 0, result.output
+        assert out.read_text(encoding="utf-8") == svg
+
     def test_desc_and_desc_file_are_mutually_exclusive(self, cwd_tmp, runner):
         """Passing both --desc and --desc-file fails with a clear UsageError."""
         self._setup(cwd_tmp)
