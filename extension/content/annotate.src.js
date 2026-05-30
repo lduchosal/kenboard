@@ -21,7 +21,15 @@ const STORAGE_PREFIX = "kb_paint:";
 const HOST_ID = "kb-paintbrush-root";
 const OVERLAY_ID = "kb-paintbrush-overlay";
 const SVG_NS = "http://www.w3.org/2000/svg";
-const Z = 2147483647;
+// 32-bit signed int max — anything larger silently falls back to ``auto``
+// in CSS (the user pointed this out in #556: ``${Z + 1}`` was overflowing
+// and the badge/palette/drawer ended up *under* the transparent capture
+// pane, intercepting their clicks). We keep a safe ladder *under* the cap.
+const Z_SVG = 2147483630;
+const Z_CAPTURE = 2147483631;
+const Z_UI = 2147483640;
+const Z_DRAWER = 2147483645;
+const Z_COMPOSER = 2147483646;
 
 const RED = "#cf222e";
 const RECT_STROKE = 5;
@@ -33,7 +41,7 @@ const SHADOW_CSS = `
   button { font: inherit; cursor: pointer; }
 
   .capture {
-    position: fixed; inset: 0; z-index: ${Z};
+    position: fixed; inset: 0; z-index: ${Z_CAPTURE};
     background: transparent;
     cursor: crosshair;
     display: none;
@@ -42,7 +50,7 @@ const SHADOW_CSS = `
   .capture[data-tool="text"] { cursor: text; }
 
   .badge {
-    position: fixed; top: 14px; right: 14px; z-index: ${Z + 1};
+    position: fixed; top: 14px; right: 14px; z-index: ${Z_UI};
     display: none; align-items: center; gap: 6px;
     background: #ffffff; color: #1f2328;
     border: 1px solid #d0d7de; border-radius: 999px;
@@ -55,7 +63,7 @@ const SHADOW_CSS = `
   .badge-dot { width: 8px; height: 8px; border-radius: 50%; background: ${RED}; }
 
   .palette {
-    position: fixed; top: 56px; right: 14px; z-index: ${Z + 1};
+    position: fixed; top: 56px; right: 14px; z-index: ${Z_UI};
     display: none; flex-direction: column; gap: 4px;
     background: #1f2328; color: #ffffff;
     border-radius: 6px; padding: 4px;
@@ -71,7 +79,7 @@ const SHADOW_CSS = `
   .palette-btn.active { background: ${RED}; }
 
   .composer {
-    position: fixed; z-index: ${Z + 2};
+    position: fixed; z-index: ${Z_COMPOSER};
     background: #ffffff; border: 1px solid ${RED}; border-radius: 3px;
     padding: 2px 4px; font-size: ${TEXT_SIZE}px;
     color: ${RED}; min-width: 100px;
@@ -86,7 +94,7 @@ const SHADOW_CSS = `
 
   .drawer {
     position: fixed; top: 0; right: 0; height: 100vh; width: 320px;
-    z-index: ${Z + 1};
+    z-index: ${Z_DRAWER};
     background: #ffffff; color: #1f2328;
     border-left: 1px solid #d0d7de;
     box-shadow: -4px 0 16px rgba(0,0,0,0.10);
@@ -214,7 +222,7 @@ function ensureHost() {
   if (host) return;
   host = document.createElement("div");
   host.id = HOST_ID;
-  host.style.cssText = `all: initial; position: static; z-index: ${Z};`;
+  host.style.cssText = `all: initial; position: static; z-index: ${Z_COMPOSER};`;
   document.documentElement.appendChild(host);
   shadow = host.attachShadow({ mode: "open" });
   const style = document.createElement("style");
@@ -237,7 +245,7 @@ function ensureOverlay() {
   // capture pane in the shadow handles drawing input separately.
   svgOverlay.setAttribute(
     "style",
-    `position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: ${Z - 1};`,
+    `position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: ${Z_SVG};`,
   );
   document.documentElement.appendChild(svgOverlay);
   updateOverlayViewBox();
