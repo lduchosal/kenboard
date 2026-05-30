@@ -82,6 +82,7 @@ class TestIndexPage:
             status="doing",
             who="Q",
             due_date=None,
+            attachement=None,
             position=0,
         )
         queries.task_create(
@@ -92,6 +93,7 @@ class TestIndexPage:
             status="done",
             who="Q",
             due_date=None,
+            attachement=None,
             position=1,
         )
         resp = client.get("/")
@@ -201,6 +203,7 @@ class TestCategoryPage:
             status="todo",
             who="",
             due_date=None,
+            attachement=None,
             position=0,
         )
         cur = db.cursor()
@@ -232,6 +235,7 @@ class TestCategoryPage:
             status="todo",
             who="",
             due_date=None,
+            attachement=None,
             position=0,
         )
         cur.execute("SELECT LAST_INSERT_ID()")
@@ -274,6 +278,7 @@ class TestCategoryPage:
             status="todo",
             who="Q",
             due_date=None,
+            attachement=None,
             position=0,
         )
         resp = client.get("/cat/cat-tasks.html")
@@ -316,6 +321,7 @@ class TestCategoryPage:
                 status="todo",
                 who="Q",
                 due_date=None,
+                attachement=None,
                 position=0,
             )
 
@@ -379,6 +385,7 @@ class TestCategoryPage:
             status="todo",
             who="Q",
             due_date=None,
+            attachement=None,
             position=0,
         )
         resp = client.get("/cat/cat-a.html")

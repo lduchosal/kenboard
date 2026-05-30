@@ -123,6 +123,7 @@ class TestTaskQueries:
             status="todo",
             who="Q",
             due_date=None,
+            attachement=None,
             position=0,
         )
         cur = db.cursor()

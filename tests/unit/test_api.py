@@ -372,6 +372,61 @@ class TestTaskAPI:
         )
         assert resp.status_code == 422
 
+    def test_create_with_attachement_persists_and_returns(
+        self, client, db, queries, seed_project
+    ):
+        # #541 Phase 1: the paintbrush extension pushes an SVG layer in
+        # ``attachement``. It must be persisted and echoed back on create.
+        svg = "<svg xmlns='http://www.w3.org/2000/svg'><rect x='1' y='2' width='3' height='4'/></svg>"
+        resp = client.post(
+            "/api/v1/tasks",
+            data=json.dumps(
+                {
+                    "project_id": "test-proj",
+                    "title": "Painted",
+                    "description": "with rect",
+                    "attachement": svg,
+                }
+            ),
+            content_type="application/json",
+        )
+        assert resp.status_code == 201
+        body = resp.get_json()
+        assert body["attachement"] == svg
+
+    def test_create_without_attachement_keeps_it_null(
+        self, client, db, queries, seed_project
+    ):
+        # #541: attachement is optional — POST without it leaves it null.
+        resp = client.post(
+            "/api/v1/tasks",
+            data=json.dumps(
+                {"project_id": "test-proj", "title": "Plain", "description": "no svg"}
+            ),
+            content_type="application/json",
+        )
+        assert resp.status_code == 201
+        assert resp.get_json()["attachement"] is None
+
+    def test_create_oversized_attachement_rejected(
+        self, client, db, queries, seed_project
+    ):
+        # #541: beyond MEDIUMTEXT capacity → clean 422, never a 500 from the DB.
+        from dashboard.models.task import ATTACHEMENT_MAX_BYTES
+
+        resp = client.post(
+            "/api/v1/tasks",
+            data=json.dumps(
+                {
+                    "project_id": "test-proj",
+                    "title": "Huge",
+                    "attachement": "x" * (ATTACHEMENT_MAX_BYTES + 1),
+                }
+            ),
+            content_type="application/json",
+        )
+        assert resp.status_code == 422
+
     def test_delete(self, client, db, queries, seed_task):
         task_id = seed_task["id"]
         resp = client.delete(f"/api/v1/tasks/{task_id}")

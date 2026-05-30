@@ -70,6 +70,7 @@ def create_task() -> Any:
             project_id=data.project_id,
             title=data.title,
             description=data.description,
+            attachement=data.attachement,
             status=data.status,
             who=data.who,
             due_date=data.parsed_due_date(),
@@ -135,6 +136,7 @@ def _has_field_updates(data: TaskUpdate) -> bool:
         [
             data.title,
             data.description is not None,
+            data.attachement is not None,
             data.who is not None,
             data.parsed_due_date(),
         ]
@@ -157,6 +159,11 @@ def _apply_field_updates(
             data.description
             if data.description is not None
             else existing["description"]
+        ),
+        attachement=(
+            data.attachement
+            if data.attachement is not None
+            else existing.get("attachement")
         ),
         status=data.status or existing["status"],
         who=data.who if data.who is not None else existing["who"],

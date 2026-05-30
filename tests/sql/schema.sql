@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     project_id VARCHAR(36) NOT NULL,
     title VARCHAR(250) NOT NULL,
     description TEXT NOT NULL DEFAULT (''),
+    attachement MEDIUMTEXT NULL,
     status ENUM('todo', 'doing', 'review', 'done') NOT NULL DEFAULT 'todo',
     who VARCHAR(100) NOT NULL DEFAULT '',
     due_date DATE NULL,

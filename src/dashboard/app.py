@@ -207,6 +207,7 @@ def _autocreate_error_task(
                 project_id=project_id,
                 title=title,
                 description=description,
+                attachement=None,
                 status="todo",
                 who=Config.KENBOARD_ERROR_WHO,
                 due_date=None,

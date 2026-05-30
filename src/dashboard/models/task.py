@@ -26,6 +26,23 @@ def _within_text_column(value: str) -> str:
 BoundedDescription = Annotated[str, AfterValidator(_within_text_column)]
 
 
+# tasks.attachement is MySQL MEDIUMTEXT — max 16 MB *bytes* in utf8mb4.
+# Stores the paintbrush extension's SVG annotation layer (#541, epic
+# decision (b): annotations only, transparent). Reject anything larger
+# up front for the same reason as ``description``.
+ATTACHEMENT_MAX_BYTES = 16_777_215
+
+
+def _within_mediumtext_column(value: str) -> str:
+    """Reject an attachement that would overflow the MEDIUMTEXT column (#541)."""
+    if len(value.encode("utf-8")) > ATTACHEMENT_MAX_BYTES:
+        raise ValueError(f"attachement exceeds {ATTACHEMENT_MAX_BYTES} bytes")
+    return value
+
+
+BoundedAttachement = Annotated[str, AfterValidator(_within_mediumtext_column)]
+
+
 class _DueDateMixin:
     """Mixin for parsing due_date from dd.mm or ISO format."""
 
@@ -53,6 +70,7 @@ class TaskCreate(_DueDateMixin, BaseModel):
     project_id: str = Field(..., min_length=1)
     title: str = Field(..., min_length=1, max_length=250, pattern=NO_ANGLE_BRACKETS)
     description: BoundedDescription = ""
+    attachement: BoundedAttachement | None = None
     status: Literal["todo", "doing", "review", "done"] = "todo"
     who: str = ""
     due_date: date | str | None = None
@@ -66,6 +84,7 @@ class TaskUpdate(_DueDateMixin, BaseModel):
         None, min_length=1, max_length=250, pattern=NO_ANGLE_BRACKETS
     )
     description: BoundedDescription | None = None
+    attachement: BoundedAttachement | None = None
     status: Literal["todo", "doing", "review", "done"] | None = None
     who: str | None = None
     due_date: date | str | None = None
@@ -79,6 +98,7 @@ class Task(BaseModel):
     project_id: str
     title: str
     description: str
+    attachement: str | None = None
     status: str
     who: str
     due_date: date | None

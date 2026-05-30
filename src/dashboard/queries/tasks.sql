@@ -1,7 +1,7 @@
 -- name: task_get_by_project
 -- Get tasks for a project ordered by position.
-SELECT id, project_id, title, description, status, who, due_date, position,
-       created_at, updated_at
+SELECT id, project_id, title, description, attachement, status, who,
+       due_date, position, created_at, updated_at
 FROM tasks
 WHERE project_id = :project_id
 ORDER BY position ASC;
@@ -11,8 +11,8 @@ ORDER BY position ASC;
 -- position. Consumed by the category page to avoid the N+1 fan-out of
 -- calling ``task_get_by_project`` once per project (#338). The caller
 -- groups by ``project_id`` in Python.
-SELECT t.id, t.project_id, t.title, t.description, t.status, t.who,
-       t.due_date, t.position, t.created_at, t.updated_at
+SELECT t.id, t.project_id, t.title, t.description, t.attachement,
+       t.status, t.who, t.due_date, t.position, t.created_at, t.updated_at
 FROM tasks t
 JOIN projects p ON p.id = t.project_id
 WHERE p.cat_id = :category_id
@@ -20,21 +20,24 @@ ORDER BY t.project_id ASC, t.position ASC;
 
 -- name: task_get_by_id^
 -- Get a single task by id.
-SELECT id, project_id, title, description, status, who, due_date, position,
-       created_at, updated_at
+SELECT id, project_id, title, description, attachement, status, who,
+       due_date, position, created_at, updated_at
 FROM tasks
 WHERE id = :id;
 
 -- name: task_create!
--- Create a new task.
-INSERT INTO tasks (project_id, title, description, status, who, due_date, position)
-VALUES (:project_id, :title, :description, :status, :who, :due_date, :position);
+-- Create a new task. ``attachement`` is the SVG annotations layer pushed
+-- by the paintbrush extension (#541) — NULL when absent.
+INSERT INTO tasks (project_id, title, description, attachement,
+                   status, who, due_date, position)
+VALUES (:project_id, :title, :description, :attachement,
+        :status, :who, :due_date, :position);
 
 -- name: task_update!
 -- Update a task.
 UPDATE tasks
-SET title = :title, description = :description, status = :status,
-    who = :who, due_date = :due_date
+SET title = :title, description = :description, attachement = :attachement,
+    status = :status, who = :who, due_date = :due_date
 WHERE id = :id;
 
 -- name: task_update_status!

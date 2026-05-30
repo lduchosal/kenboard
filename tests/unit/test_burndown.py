@@ -92,6 +92,7 @@ class TestSnapshotCLI:
             status="todo",
             who="",
             due_date=None,
+            attachement=None,
             position=0,
         )
         runner = CliRunner()

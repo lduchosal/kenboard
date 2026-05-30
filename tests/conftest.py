@@ -130,6 +130,16 @@ def _backfill_legacy_columns(cur: pymysql.cursors.Cursor) -> None:
             "ALTER TABLE projects "
             "ADD COLUMN default_who VARCHAR(100) NOT NULL DEFAULT ''"
         )
+    # tasks.attachement — migration 0022 (#541, paintbrush epic). MEDIUMTEXT
+    # NULL = no attachment by default.
+    cur.execute(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+        "WHERE TABLE_SCHEMA = DATABASE() "
+        "AND TABLE_NAME = 'tasks' "
+        "AND COLUMN_NAME = 'attachement'"
+    )
+    if cur.fetchone()[0] == 0:
+        cur.execute("ALTER TABLE tasks ADD COLUMN attachement MEDIUMTEXT NULL")
 
 
 def _get_test_connection() -> pymysql.Connection:
@@ -292,6 +302,7 @@ def seed_task(db, queries, seed_project):
         status="todo",
         who="Q",
         due_date=None,
+        attachement=None,
         position=0,
     )
     cur = db.cursor()
