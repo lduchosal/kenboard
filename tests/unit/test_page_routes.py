@@ -40,9 +40,9 @@ class TestIndexPage:
     ):
         """Dashboard shows a per-category mini-chart grid (#540).
 
-        Replaces the global aggregate (#516) that mixed unrelated boards (#532).
-        Each visible category gets a small card with its own top sections; the
-        detailed view stays scoped to the category page (#533).
+        Replaces the global aggregate (#516) that mixed unrelated boards (#532). Each
+        visible category gets a small card with its own top sections; the detailed view
+        stays scoped to the category page (#533).
         """
         queries.wiki_classify(
             db,
