@@ -204,26 +204,59 @@ def _build_taskers_daily_chart(
     }
 
 
-def _build_wiki_sections_chart(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    """Build horizontal-bar data for the tasks-per-wiki-section chart (#516).
+def _build_wiki_sections_per_project_chart(
+    rows: list[dict[str, Any]],
+    projects: list[dict[str, Any]],
+    *,
+    top_n: int = 8,
+) -> dict[str, Any]:
+    """Build per-project mini-chart data for the category page (#572).
 
-    ``rows`` are ``{section_path, count}`` aggregates from ``wiki_section_counts``
-    (already busiest-first). Each bar's width is its share of the busiest section so the
-    longest bar fills the track.
+    Replaces the per-category aggregate (#533) that still mixed métiers — a finance
+    board and a server board under the same cat have nothing in common, so each
+    project gets its own bars.
+
+    ``rows`` are ``{project_id, section_path, count}`` from
+    ``wiki_section_counts_by_category_per_project`` (already ordered by project,
+    then count desc). ``projects`` is the category's project list in display order;
+    projects with no classifications are dropped. Bars within a card scale to that
+    project's busiest section so they stay comparable inside the card.
+
+    Args:
+        rows: Per-(project, section) classification counts for one category.
+        projects: Visible projects of the category in display order.
+        top_n: Maximum number of section rows per mini-card.
+
+    Returns:
+        A context dict with ``wiki_by_project`` (list of cards, each with ``project``,
+        ``sections``, ``total``) and ``wiki_by_project_total``.
     """
-    counts = [(str(r["section_path"]), int(r["count"])) for r in rows]
-    max_count = max((c for _, c in counts), default=0)
-    sections = [
-        {
-            "section": name,
-            "count": cnt,
-            "pct": round(100 * cnt / max_count, 1) if max_count else 0,
-        }
-        for name, cnt in counts
-    ]
+    by_proj: dict[str, list[tuple[str, int]]] = {}
+    for r in rows:
+        pid = str(r["project_id"])
+        by_proj.setdefault(pid, []).append((str(r["section_path"]), int(r["count"])))
+
+    cards: list[dict[str, Any]] = []
+    grand_total = 0
+    for p in projects:
+        proj_rows = by_proj.get(p["id"], [])
+        if not proj_rows:
+            continue
+        max_count = proj_rows[0][1]
+        sections = [
+            {
+                "section": name,
+                "count": cnt,
+                "pct": round(100 * cnt / max_count, 1) if max_count else 0,
+            }
+            for name, cnt in proj_rows[:top_n]
+        ]
+        total = sum(cnt for _, cnt in proj_rows)
+        grand_total += total
+        cards.append({"project": p, "sections": sections, "total": total})
     return {
-        "wiki_sections": sections,
-        "wiki_sections_total": sum(c for _, c in counts),
+        "wiki_by_project": cards,
+        "wiki_by_project_total": grand_total,
     }
 
 
@@ -608,12 +641,14 @@ def category(cat_id: str) -> Any:
             queries.burndown_get_by_category(conn, category_id=cat_id, days=60)
         )
 
-        # Tasks-per-wiki-section chart (#533): scoped to this category's
-        # projects so the bars carry real signal — the global aggregate
-        # (formerly on the dashboard, #516) mixed sections from unrelated
-        # boards (#532).
+        # Tasks-per-wiki-section grid (#572): one mini-chart per project so
+        # the bars carry real signal. The category-wide aggregate (#533)
+        # still mixed métiers — finance + server boards live under the
+        # same KEN cat — so each board now draws its own card.
         wiki_section_rows = list(
-            queries.wiki_section_counts_by_category(conn, category_id=cat_id)
+            queries.wiki_section_counts_by_category_per_project(
+                conn, category_id=cat_id
+            )
         )
     finally:
         conn.close()
@@ -634,5 +669,5 @@ def category(cat_id: str) -> Any:
     ctx["archived_projects"] = [
         p for p in cat_projects if p.get("status") == "archived"
     ]
-    ctx.update(_build_wiki_sections_chart(wiki_section_rows))
+    ctx.update(_build_wiki_sections_per_project_chart(wiki_section_rows, cat_projects))
     return render_template("category.html", **ctx)

@@ -1,0 +1,39 @@
+{#
+  Per-project wiki mini-chart grid for the category page (#572). One small
+  card per project of the current category that has at least one classified
+  task. Replaces the per-category aggregate (#533) which still mixed
+  unrelated métiers (e.g. finance vs. server boards under the same cat).
+
+  Expects:
+  - ``wiki_by_project``: list of {project, sections, total} (already ordered)
+  - ``wiki_by_project_total``: grand total across cards
+  - ``cat``: current category (for the accent color)
+#}
+{% if wiki_by_project %}
+<div class="activity-card">
+  <div class="activity-header">
+    <span class="activity-title">Tâches par section wiki — par projet</span>
+    <span class="activity-total">{{ wiki_by_project_total }}</span>
+  </div>
+  <div class="wiki-cat-grid">
+    {% for entry in wiki_by_project %}
+    <a class="wiki-cat-card" href="#{{ entry.project.id }}"
+       style="border-left: 3px solid {{ cat.color }}">
+      <div class="wiki-cat-head">
+        <span class="wiki-cat-name">{{ entry.project.acronym or entry.project.name[:4] | upper }} / {{ entry.project.name }}</span>
+        <span class="wiki-cat-total">{{ entry.total }}</span>
+      </div>
+      <div class="wiki-bars">
+        {% for s in entry.sections %}
+        <div class="wiki-bar-row">
+          <span class="wiki-bar-label" title="{{ s.section }}">{{ s.section }}</span>
+          <span class="wiki-bar-track"><span class="wiki-bar-fill" style="width: {{ s.pct }}%; background: {{ cat.color }}"></span></span>
+          <span class="wiki-bar-count">{{ s.count }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}

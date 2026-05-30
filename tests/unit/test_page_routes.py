@@ -177,7 +177,8 @@ class TestCategoryPage:
         assert "MyCatName" in html
 
     def test_wiki_chart_scoped_to_category(self, client, db, queries):
-        """Wiki section chart shows the current category's classifications only (#533).
+        """Wiki section chart shows the current category's classifications only (#533,
+        #572).
 
         A classification in another category must not appear on this page.
         """
@@ -254,6 +255,68 @@ class TestCategoryPage:
         html_b = client.get("/cat/wcat-b.html").data.decode()
         assert "frontend/ux" in html_b
         assert "backend/api" not in html_b
+
+    def test_wiki_chart_splits_per_project_within_category(self, client, db, queries):
+        """Within one category, each project gets its own card (#572).
+
+        Aggregating sections across all projects of a cat mixes métiers (e.g. finance +
+        server boards live under the same KEN cat), so the chart must draw one card per
+        project and never sum their bars.
+        """
+        queries.cat_create(
+            db, id="pcat", name="PCat", color="var(--accent)", position=0
+        )
+        # Two projects in the same category, each with its own classification.
+        queries.proj_create(
+            db,
+            id="pfin",
+            cat_id="pcat",
+            name="Finance",
+            acronym="FIN",
+            status="active",
+            position=0,
+            default_who="",
+        )
+        queries.proj_create(
+            db,
+            id="psrv",
+            cat_id="pcat",
+            name="Server",
+            acronym="SRV",
+            status="active",
+            position=1,
+            default_who="",
+        )
+        cur = db.cursor()
+        for proj_id, section in (
+            ("pfin", "backend/billing"),
+            ("psrv", "ops/monitoring"),
+        ):
+            queries.task_create(
+                db,
+                project_id=proj_id,
+                title=f"T-{proj_id}",
+                description="",
+                status="todo",
+                who="",
+                due_date=None,
+                attachement=None,
+                position=0,
+            )
+            cur.execute("SELECT LAST_INSERT_ID()")
+            tid = cur.fetchone()["LAST_INSERT_ID()"]
+            queries.wiki_classify(
+                db, task_id=tid, section_path=section, classified_by="t"
+            )
+
+        html = client.get("/cat/pcat.html").data.decode()
+        # Per-project header (not the per-category one from the dashboard).
+        assert "Tâches par section wiki — par projet" in html
+        # Each project must appear as its own card with its own section.
+        assert "FIN / Finance" in html
+        assert "SRV / Server" in html
+        assert "backend/billing" in html
+        assert "ops/monitoring" in html
 
     def test_shows_project_tasks(self, client, db, queries):
         """Tasks of the category's projects appear in the page."""

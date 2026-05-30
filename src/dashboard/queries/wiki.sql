@@ -52,18 +52,21 @@ GROUP BY p.cat_id, c.section_path
 ORDER BY p.cat_id ASC, count DESC, c.section_path ASC;
 
 
--- name: wiki_section_counts_by_category
--- Count classified tasks per wiki section, busiest first, **scoped to the
--- projects of a single category** (#533). Powers the per-board chart on
--- the category page. A global aggregate across categories mixes signals
--- (#532) so it lived briefly on the dashboard (#516) and was moved here.
-SELECT c.section_path, COUNT(*) AS count
+-- name: wiki_section_counts_by_category_per_project
+-- Count classified tasks per (project, section_path) for a single category,
+-- ordered busiest-first within each project (#572). Powers the per-board
+-- chart grid on the category page. Aggregating across the whole category
+-- (#533) still mixed unrelated métiers — a finance board and a server
+-- board under the same cat have nothing in common — so each project draws
+-- its own bars. Rows come grouped by project then count desc so the
+-- Python side can walk them with a single ``defaultdict`` pass.
+SELECT t.project_id, c.section_path, COUNT(*) AS count
 FROM task_wiki_classifications c
 JOIN tasks t ON t.id = c.task_id
 JOIN projects p ON p.id = t.project_id
 WHERE p.cat_id = :category_id
-GROUP BY c.section_path
-ORDER BY count DESC, c.section_path ASC;
+GROUP BY t.project_id, c.section_path
+ORDER BY t.project_id ASC, count DESC, c.section_path ASC;
 
 
 -- name: wiki_get_unclassified_tasks

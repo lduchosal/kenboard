@@ -596,11 +596,10 @@ _ATTACHEMENT_MAX_BYTES = 16 * 1024 * 1024 - 1
 def _read_attachement_file(path: str | None) -> str | None:
     """Read an attachement SVG from disk for ``ken add`` / ``ken update`` (#574).
 
-    Used by both commands to populate ``tasks.attachement`` (the paintbrush
-    extension's annotation layer, #541). Returns ``None`` when the path is not
-    supplied. Pre-checks the encoded size against the MEDIUMTEXT column cap so
-    an oversized payload fails with a clear CLI error instead of a 422 from
-    the server.
+    Used by both commands to populate ``tasks.attachement`` (the paintbrush extension's
+    annotation layer, #541). Returns ``None`` when the path is not supplied. Pre-checks
+    the encoded size against the MEDIUMTEXT column cap so an oversized payload fails
+    with a clear CLI error instead of a 422 from the server.
     """
     if path is None:
         return None
