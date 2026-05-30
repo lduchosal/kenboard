@@ -38,14 +38,18 @@ JOIN tasks t ON t.id = c.task_id
 ORDER BY c.section_path ASC, c.task_id ASC;
 
 
--- name: wiki_section_counts
--- Count classified tasks per wiki section, busiest first. Powers the
--- dashboard "tasks per wiki section" chart (#516). Global across projects,
--- like the other dashboard aggregates (activity, taskers).
-SELECT section_path, COUNT(*) AS count
-FROM task_wiki_classifications
-GROUP BY section_path
-ORDER BY count DESC, section_path ASC;
+-- name: wiki_section_counts_by_category
+-- Count classified tasks per wiki section, busiest first, **scoped to the
+-- projects of a single category** (#533). Powers the per-board chart on
+-- the category page. A global aggregate across categories mixes signals
+-- (#532) so it lived briefly on the dashboard (#516) and was moved here.
+SELECT c.section_path, COUNT(*) AS count
+FROM task_wiki_classifications c
+JOIN tasks t ON t.id = c.task_id
+JOIN projects p ON p.id = t.project_id
+WHERE p.cat_id = :category_id
+GROUP BY c.section_path
+ORDER BY count DESC, c.section_path ASC;
 
 
 -- name: wiki_get_unclassified_tasks

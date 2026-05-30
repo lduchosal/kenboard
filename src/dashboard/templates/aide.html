@@ -90,7 +90,7 @@ ken move &lt;id&gt; --to review</code></pre>
 
   <div class="aide-card">
     <h2><span class="aide-badge" style="background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--accent)">Extension</span> Le ken pour le navigateur</h2>
-    <p class="aide-sub">Capturer l'onglet courant comme t&acirc;che en un raccourci, avec capture d'&eacute;cran optionnelle.</p>
+    <p class="aide-sub">Capturer l'onglet courant comme t&acirc;che en un raccourci (titre + URL + plan textuel de la page), ou surligner du texte sur la page et tout pousser en bloc.</p>
 
     <h3>1. T&eacute;l&eacute;charger</h3>
     <p>Chaque release attache l'extension : <a href="https://github.com/lduchosal/kenboard/releases" target="_blank" rel="noopener">github.com/lduchosal/kenboard/releases</a> &rarr; <code>kenboard-extension-&lt;version&gt;.zip</code>. D&eacute;zippez-la localement.</p>
@@ -103,8 +103,12 @@ ken move &lt;id&gt; --to review</code></pre>
     <h3>3. Configurer</h3>
     <p>Cliquez l'ic&ocirc;ne de l'extension &rarr; <strong>R&eacute;glages</strong>, puis collez votre <strong>Copy onboard link</strong> dans le champ <em>Onboarding link</em> : l'URL de base, le projet et le token se remplissent automatiquement. Cliquez <em>Test connection</em> puis <em>Save</em>.</p>
 
-    <h3>4. Utiliser</h3>
-    <p>Raccourci <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> (macOS : <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>), ou l'ic&ocirc;ne de la barre d'outils. Le titre et l'URL de la page sont pr&eacute;-remplis ; &eacute;ditez, puis <em>Save</em>. La t&acirc;che atterrit en <code>todo</code> dans le projet configur&eacute;.</p>
+    <h3>4. Capture rapide (popup)</h3>
+    <p>Raccourci <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> (macOS : <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>), ou l'ic&ocirc;ne de la barre d'outils. Le titre et l'URL de la page sont pr&eacute;-remplis, plus un plan h1&ndash;h3 et la s&eacute;lection courante si tu en avais une ; &eacute;ditez, puis <em>Save</em>. La t&acirc;che atterrit en <code>todo</code> dans le projet configur&eacute;.</p>
+
+    <h3>5. Annoter une page</h3>
+    <p>Raccourci <kbd>Alt</kbd>+<kbd>K</kbd> (macOS : <kbd>Option</kbd>+<kbd>K</kbd>) sur n'importe quelle page normale : un badge <code>kb &middot; 0</code> appara&icirc;t en haut &agrave; droite. S&eacute;lectionne du texte &rarr; mini-barre <em>&#x1f58d; Surligner</em> &rarr; le passage est conserv&eacute; localement (par URL canonique).</p>
+    <p>Clic sur le badge &rarr; panneau lat&eacute;ral avec la liste des surlignages &rarr; bouton <strong>Pousser sur kenboard</strong> : une seule t&acirc;che markdown avec les blockquotes et un lien <code>[citer](&hellip;#:~:text=&hellip;)</code> par passage (clic = scroll au passage d'origine). <kbd>Esc</kbd> ferme le panneau, encore <kbd>Esc</kbd> sort du mode.</p>
   </div>
 
 </div>

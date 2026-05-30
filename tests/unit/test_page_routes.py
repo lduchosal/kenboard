@@ -35,8 +35,10 @@ class TestIndexPage:
         html = resp.data.decode()
         assert "KEN" in html
 
-    def test_shows_wiki_section_chart(self, client, db, queries, seed_task):
-        """Classified tasks appear in the per-wiki-section chart (#516)."""
+    def test_dashboard_does_not_show_wiki_chart_anymore(
+        self, client, db, queries, seed_task
+    ):
+        """Wiki-section chart moved off the dashboard (#533) to category pages."""
         queries.wiki_classify(
             db,
             task_id=seed_task["id"],
@@ -44,8 +46,7 @@ class TestIndexPage:
             classified_by="test",
         )
         html = client.get("/").data.decode()
-        assert "Tâches par section wiki" in html
-        assert "backend/api" in html
+        assert "Tâches par section wiki" not in html
 
     def test_shows_doing_tasks(self, client, db, queries):
         """Doing tasks appear in the index overview."""
@@ -161,6 +162,83 @@ class TestCategoryPage:
         resp = client.get("/cat/cat-name.html")
         html = resp.data.decode()
         assert "MyCatName" in html
+
+    def test_wiki_chart_scoped_to_category(self, client, db, queries):
+        """Wiki section chart shows the current category's classifications only (#533).
+
+        A classification in another category must not appear on this page.
+        """
+        # Category A with a task classified to backend/api
+        queries.cat_create(
+            db, id="wcat-a", name="WCatA", color="var(--accent)", position=0
+        )
+        queries.proj_create(
+            db,
+            id="wproj-a",
+            cat_id="wcat-a",
+            name="PA",
+            acronym="PA",
+            status="active",
+            position=0,
+            default_who="",
+        )
+        queries.task_create(
+            db,
+            project_id="wproj-a",
+            title="A",
+            description="",
+            status="todo",
+            who="",
+            due_date=None,
+            position=0,
+        )
+        cur = db.cursor()
+        cur.execute("SELECT LAST_INSERT_ID()")
+        task_a = cur.fetchone()["LAST_INSERT_ID()"]
+        queries.wiki_classify(
+            db, task_id=task_a, section_path="backend/api", classified_by="t"
+        )
+
+        # Category B with a task classified to frontend/ux — must not leak
+        queries.cat_create(
+            db, id="wcat-b", name="WCatB", color="var(--purple)", position=0
+        )
+        queries.proj_create(
+            db,
+            id="wproj-b",
+            cat_id="wcat-b",
+            name="PB",
+            acronym="PB",
+            status="active",
+            position=0,
+            default_who="",
+        )
+        queries.task_create(
+            db,
+            project_id="wproj-b",
+            title="B",
+            description="",
+            status="todo",
+            who="",
+            due_date=None,
+            position=0,
+        )
+        cur.execute("SELECT LAST_INSERT_ID()")
+        task_b = cur.fetchone()["LAST_INSERT_ID()"]
+        queries.wiki_classify(
+            db, task_id=task_b, section_path="frontend/ux", classified_by="t"
+        )
+
+        # Visit category A: backend/api shows up, frontend/ux must not.
+        html = client.get("/cat/wcat-a.html").data.decode()
+        assert "Tâches par section wiki" in html
+        assert "backend/api" in html
+        assert "frontend/ux" not in html
+
+        # Visit category B: the reverse.
+        html_b = client.get("/cat/wcat-b.html").data.decode()
+        assert "frontend/ux" in html_b
+        assert "backend/api" not in html_b
 
     def test_shows_project_tasks(self, client, db, queries):
         """Tasks of the category's projects appear in the page."""

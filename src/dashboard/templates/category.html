@@ -3,6 +3,10 @@
 {% block body %}
 {% include "partials/header.html" %}
 
+<div class="section" style="padding-top:0">
+  {% include "partials/wiki_sections.html" %}
+</div>
+
 {% if not active_projects and not archived_projects %}
 {% set es_badge = "Catégorie" %}
 {% set es_title = "Aucun projet" %}

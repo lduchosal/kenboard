@@ -341,9 +341,6 @@ def index() -> Any:
         today = date.today()
         taskers_since = (today - timedelta(days=TASKERS_WINDOW_DAYS - 1)).isoformat()
         taskers_rows = list(queries.activity_daily_by_user(conn, since=taskers_since))
-
-        # Tasks-per-wiki-section chart (#516): global counts by classification.
-        wiki_section_rows = list(queries.wiki_section_counts(conn))
     finally:
         conn.close()
 
@@ -375,7 +372,6 @@ def index() -> Any:
     ctx["activity_series"] = activity_series
     ctx["activity_total"] = sum(s["count"] for s in activity_series)
     ctx.update(_build_taskers_daily_chart(taskers_rows, users, today=today))
-    ctx.update(_build_wiki_sections_chart(wiki_section_rows))
     return render_template("index.html", **ctx)
 
 
@@ -552,6 +548,14 @@ def category(cat_id: str) -> Any:
         cat_snapshots[cat_id] = list(
             queries.burndown_get_by_category(conn, category_id=cat_id, days=60)
         )
+
+        # Tasks-per-wiki-section chart (#533): scoped to this category's
+        # projects so the bars carry real signal — the global aggregate
+        # (formerly on the dashboard, #516) mixed sections from unrelated
+        # boards (#532).
+        wiki_section_rows = list(
+            queries.wiki_section_counts_by_category(conn, category_id=cat_id)
+        )
     finally:
         conn.close()
 
@@ -571,4 +575,5 @@ def category(cat_id: str) -> Any:
     ctx["archived_projects"] = [
         p for p in cat_projects if p.get("status") == "archived"
     ]
+    ctx.update(_build_wiki_sections_chart(wiki_section_rows))
     return render_template("category.html", **ctx)
