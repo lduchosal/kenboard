@@ -61,4 +61,16 @@ describe("buildMarkdown", () => {
     expect(md).toContain("## Annotations");
     expect(md.split("\n").length).toBeGreaterThan(0);
   });
+
+  it("appends a Note paragraph when the annotation carries one (#541)", () => {
+    const md = buildMarkdown({
+      pageTitle: "T",
+      pageUrl: "https://u",
+      annotations: [
+        { quote: "captured text", note: "the user's annotation" },
+      ],
+    });
+    expect(md).toContain("> captured text");
+    expect(md).toContain("**Note :** the user's annotation");
+  });
 });

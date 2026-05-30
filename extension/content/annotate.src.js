@@ -1,41 +1,48 @@
-// kenboard annotations — content script (#520).
+// kenboard paintbrush content script (#541 — replaces the #520 quote mode).
 //
-// Layout of this file (one self-contained MV3 content script):
-//   1.  constants (storage keys, ids, CSS)
+// Layout:
+//   1.  constants (storage key, ids, CSS, SVG ns)
 //   2.  state
 //   3.  URL + storage helpers
-//   4.  Shadow DOM host (encapsulated CSS for our UI)
-//   5.  highlight rendering (in-page <span>, not in shadow)
-//   6.  re-apply on page load + on SPA route change
-//   7.  selection adder (floating toolbar)
-//   8.  badge (top-right pill, count)
-//   9.  drawer (annotation list + push button)
-//  10.  markdown push to /api/v1/tasks
-//  11.  activation flow (Alt+K toggle, ESC to exit, popup message)
-//  12.  bootstrap
-
-import { fromRange as quoteFromRange, toRange as quoteToRange } from "dom-anchor-text-quote";
-import { fromRange as posFromRange, toRange as posToRange } from "dom-anchor-text-position";
+//   4.  Shadow DOM host (badge + tool palette + drawer + capture pane)
+//   5.  SVG overlay (live drawing + persistent shapes, page coords)
+//   6.  rectangle tool (drag-to-draw, captures elements under it)
+//   7.  text tool (click-to-place, inline composer)
+//   8.  drawer (list + delete + push)
+//   9.  push: serialise the SVG + extract MD → POST /api/v1/tasks
+//  10.  activation flow (Alt+P toggle, ESC cascade, R/T tool switch)
+//  11.  SPA navigation + bootstrap
 
 import { buildMarkdown } from "./buildMarkdown.js";
 
 // ---------- 1. constants ----------
 
-const STORAGE_PREFIX = "kb_anno:";
-const HOST_ID = "kb-annotate-root";
-const PAGE_STYLE_ID = "kb-annotate-page-style";
-const HL_CLASS = "kb-hl";
-const Z = 2147483647; // max int32 — sits above everything
+const STORAGE_PREFIX = "kb_paint:";
+const HOST_ID = "kb-paintbrush-root";
+const OVERLAY_ID = "kb-paintbrush-overlay";
+const SVG_NS = "http://www.w3.org/2000/svg";
+const Z = 2147483647;
 
-// CSS injected into the Shadow DOM (encapsulated). Owns the badge, adder,
-// drawer. None of these rules leak into the page.
+const RED = "#cf222e";
+const RECT_STROKE = 5;
+const TEXT_SIZE = 12;
+
 const SHADOW_CSS = `
   :host { all: initial; }
   * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   button { font: inherit; cursor: pointer; }
 
+  .capture {
+    position: fixed; inset: 0; z-index: ${Z};
+    background: transparent;
+    cursor: crosshair;
+    display: none;
+  }
+  .capture.on { display: block; }
+  .capture[data-tool="text"] { cursor: text; }
+
   .badge {
-    position: fixed; top: 16px; right: 16px; z-index: ${Z};
+    position: fixed; top: 14px; right: 14px; z-index: ${Z + 1};
     display: none; align-items: center; gap: 6px;
     background: #ffffff; color: #1f2328;
     border: 1px solid #d0d7de; border-radius: 999px;
@@ -45,28 +52,41 @@ const SHADOW_CSS = `
   }
   .badge.on { display: inline-flex; }
   .badge:hover { background: #f6f8fa; }
-  .badge-dot {
-    width: 8px; height: 8px; border-radius: 50%; background: #0969da;
-  }
+  .badge-dot { width: 8px; height: 8px; border-radius: 50%; background: ${RED}; }
 
-  .adder {
-    position: fixed; z-index: ${Z};
-    display: none; gap: 4px;
+  .palette {
+    position: fixed; top: 56px; right: 14px; z-index: ${Z + 1};
+    display: none; flex-direction: column; gap: 4px;
     background: #1f2328; color: #ffffff;
     border-radius: 6px; padding: 4px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   }
-  .adder.on { display: inline-flex; }
-  .adder-btn {
+  .palette.on { display: flex; }
+  .palette-btn {
     background: transparent; color: inherit; border: 0;
     padding: 4px 10px; border-radius: 4px; font-size: 12px;
+    text-align: left;
   }
-  .adder-btn:hover { background: rgba(255,255,255,0.12); }
-  .adder-btn.dismiss { padding: 4px 8px; color: rgba(255,255,255,0.55); }
+  .palette-btn:hover { background: rgba(255,255,255,0.12); }
+  .palette-btn.active { background: ${RED}; }
+
+  .composer {
+    position: fixed; z-index: ${Z + 2};
+    background: #ffffff; border: 1px solid ${RED}; border-radius: 3px;
+    padding: 2px 4px; font-size: ${TEXT_SIZE}px;
+    color: ${RED}; min-width: 100px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  }
+  .composer.on { display: block; }
+  .composer.off { display: none; }
+  .composer input {
+    border: 0; outline: 0; background: transparent; color: ${RED};
+    font: inherit; width: 100%;
+  }
 
   .drawer {
     position: fixed; top: 0; right: 0; height: 100vh; width: 320px;
-    z-index: ${Z};
+    z-index: ${Z + 1};
     background: #ffffff; color: #1f2328;
     border-left: 1px solid #d0d7de;
     box-shadow: -4px 0 16px rgba(0,0,0,0.10);
@@ -74,10 +94,9 @@ const SHADOW_CSS = `
     display: flex; flex-direction: column;
   }
   .drawer.open { transform: translateX(0); }
-  @media (prefers-reduced-motion: reduce) {
-    .drawer { transition: none; }
-  }
-  .drawer-header { padding: 12px 16px; border-bottom: 1px solid #d0d7de; }
+  @media (prefers-reduced-motion: reduce) { .drawer { transition: none; } }
+
+  .drawer-header { padding: 12px 16px; border-bottom: 1px solid #d0d7de; position: relative; }
   .drawer-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; word-break: break-word; }
   .drawer-url { font-size: 11px; color: #57606a; word-break: break-all; }
   .drawer-count { font-size: 11px; color: #57606a; margin-top: 4px; }
@@ -94,64 +113,64 @@ const SHADOW_CSS = `
     display: flex; gap: 8px; align-items: flex-start;
   }
   .drawer-item:hover { background: #f6f8fa; }
-  .drawer-quote {
+  .drawer-item-body {
     flex: 1; font-size: 12px; line-height: 1.4;
-    border-left: 3px solid rgba(9,105,218,0.4); padding-left: 8px;
+    border-left: 3px solid ${RED}; padding-left: 8px;
     color: #1f2328;
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  .drawer-item-kind {
+    font-size: 10px; color: #57606a; text-transform: uppercase;
+    letter-spacing: 0.05em; margin-right: 4px;
+  }
   .drawer-del {
-    background: transparent; border: 0; color: #cf222e; font-size: 13px;
+    background: transparent; border: 0; color: ${RED}; font-size: 13px;
     padding: 2px 6px; border-radius: 4px; opacity: 0.6;
   }
   .drawer-del:hover { background: rgba(207,34,46,0.10); opacity: 1; }
   .drawer-footer { padding: 12px 16px; border-top: 1px solid #d0d7de; }
   .drawer-push {
-    width: 100%; background: #0969da; color: #ffffff; border: 0;
+    width: 100%; background: ${RED}; color: #ffffff; border: 0;
     padding: 8px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
   }
-  .drawer-push:hover:not(:disabled) { background: #0860c4; }
+  .drawer-push:hover:not(:disabled) { background: #a40e1a; }
   .drawer-push:disabled { background: #adbac7; cursor: not-allowed; }
   .drawer-status { font-size: 11px; color: #57606a; margin-top: 6px; min-height: 14px; }
   .drawer-status.success { color: #1a7f37; }
-  .drawer-status.error { color: #cf222e; }
-`;
-
-// CSS injected into the *page* (not shadow) — styles the highlight spans
-// we wrap around selected text. mix-blend-mode keeps the highlight visible
-// on both light and dark backgrounds.
-const PAGE_CSS = `
-  .${HL_CLASS} {
-    background-color: rgba(9, 105, 218, 0.22);
-    mix-blend-mode: multiply;
-    border-radius: 2px;
-    box-shadow: 0 1px 0 rgba(9, 105, 218, 0.35);
-    cursor: pointer;
-  }
+  .drawer-status.error { color: ${RED}; }
 `;
 
 // ---------- 2. state ----------
 
 let mode = false;
-/** @type {Array<{id:number, quote:any, position:any, createdAt:string}>} */
-let annotations = [];
+let tool = "rect"; // "rect" | "text"
+/**
+ * @typedef {{id:number, type:'rect', x:number, y:number, w:number, h:number,
+ *            capturedText:string, note:string|null}} RectShape
+ * @typedef {{id:number, type:'text', x:number, y:number, content:string}} TextShape
+ * @type {(RectShape | TextShape)[]}
+ */
+let shapes = [];
 let host = null;
 let shadow = null;
+let capturePane = null;
+let svgOverlay = null;
 let badgeEl = null;
-let adderEl = null;
+let paletteEl = null;
 let drawerEl = null;
 let drawerStatusEl = null;
 let drawerPushBtn = null;
+let composerEl = null;
+let composerInput = null;
 let nextId = 1;
-let currentRange = null;
-let selectionDebounce = null;
+let dragStart = null;
+let dragPreview = null;
 let lastUrl = "";
 
 // ---------- 3. URL + storage helpers ----------
 
-/** Strip tracking params (utm_*, fbclid, gclid, mc_*) from a URL. */
-function stripTrackingParams(u) {
+function stripTracking(u) {
   try {
     const url = new URL(u);
     const drop = [];
@@ -169,32 +188,24 @@ function stripTrackingParams(u) {
 
 function canonicalUrl() {
   const link = document.querySelector('link[rel="canonical"]');
-  if (link?.href) return stripTrackingParams(link.href);
-  return stripTrackingParams(location.origin + location.pathname + location.search);
+  if (link?.href) return stripTracking(link.href);
+  return stripTracking(location.origin + location.pathname + location.search);
 }
 
 function storageKey() {
   return STORAGE_PREFIX + canonicalUrl();
 }
 
-/** Build a text-fragment URL that scrolls a fresh tab to the quoted text. */
-function textFragmentUrl(quote) {
-  const exact = String(quote?.exact ?? "").slice(0, 200);
-  if (!exact) return null;
-  return canonicalUrl() + "#:~:text=" + encodeURIComponent(exact);
-}
-
-async function loadAnnotations() {
+async function loadShapes() {
   const key = storageKey();
   const data = await chrome.storage.local.get(key);
-  annotations = Array.isArray(data[key]) ? data[key] : [];
-  // Make sure nextId stays unique within this page session.
-  for (const a of annotations) if (a.id >= nextId) nextId = a.id + 1;
+  shapes = Array.isArray(data[key]) ? data[key] : [];
+  for (const s of shapes) if (s.id >= nextId) nextId = s.id + 1;
 }
 
-async function saveAnnotations() {
+async function saveShapes() {
   const key = storageKey();
-  await chrome.storage.local.set({ [key]: annotations });
+  await chrome.storage.local.set({ [key]: shapes });
 }
 
 // ---------- 4. Shadow DOM host ----------
@@ -203,206 +214,282 @@ function ensureHost() {
   if (host) return;
   host = document.createElement("div");
   host.id = HOST_ID;
-  // Inline reset so the page can't style us before the Shadow DOM is built.
   host.style.cssText = `all: initial; position: static; z-index: ${Z};`;
   document.documentElement.appendChild(host);
   shadow = host.attachShadow({ mode: "open" });
   const style = document.createElement("style");
   style.textContent = SHADOW_CSS;
   shadow.appendChild(style);
+  buildBadge();
+  buildPalette();
+  buildCapture();
+  buildDrawer();
+  buildComposer();
+}
 
-  // Page-level highlight CSS (must live outside the shadow to style page DOM).
-  if (!document.getElementById(PAGE_STYLE_ID)) {
-    const pageStyle = document.createElement("style");
-    pageStyle.id = PAGE_STYLE_ID;
-    pageStyle.textContent = PAGE_CSS;
-    (document.head || document.documentElement).appendChild(pageStyle);
+// ---------- 5. SVG overlay (page coords via viewBox = scroll) ----------
+
+function ensureOverlay() {
+  if (svgOverlay) return;
+  svgOverlay = document.createElementNS(SVG_NS, "svg");
+  svgOverlay.setAttribute("id", OVERLAY_ID);
+  // pointer-events: none → page can be clicked/scrolled normally; the
+  // capture pane in the shadow handles drawing input separately.
+  svgOverlay.setAttribute(
+    "style",
+    `position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: ${Z - 1};`,
+  );
+  document.documentElement.appendChild(svgOverlay);
+  updateOverlayViewBox();
+  window.addEventListener("scroll", updateOverlayViewBox, { passive: true });
+  window.addEventListener("resize", updateOverlayViewBox, { passive: true });
+}
+
+function updateOverlayViewBox() {
+  if (!svgOverlay) return;
+  svgOverlay.setAttribute(
+    "viewBox",
+    `${window.scrollX} ${window.scrollY} ${window.innerWidth} ${window.innerHeight}`,
+  );
+}
+
+function renderOverlay() {
+  if (!svgOverlay) return;
+  svgOverlay.replaceChildren();
+  for (const s of shapes) {
+    if (s.type === "rect") svgOverlay.appendChild(svgRect(s.x, s.y, s.w, s.h, false));
+    else if (s.type === "text") svgOverlay.appendChild(svgText(s.x, s.y, s.content));
   }
-}
-
-// ---------- 5. highlight rendering ----------
-
-/**
- * Wrap each text-node slice of ``range`` in a <span class="kb-hl">. Robust
- * across element boundaries (which surroundContents() can't handle).
- */
-function wrapRange(range, dataId) {
-  const ancestor = range.commonAncestorContainer;
-  const root = ancestor.nodeType === Node.ELEMENT_NODE ? ancestor : ancestor.parentNode;
-  if (!root) return;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  /** @type {Text[]} */
-  const inRange = [];
-  while (walker.nextNode()) {
-    const n = /** @type {Text} */ (walker.currentNode);
-    if (range.intersectsNode(n)) inRange.push(n);
-  }
-  for (let n of inRange) {
-    let startOffset = 0;
-    let endOffset = n.length;
-    if (n === range.startContainer) startOffset = range.startOffset;
-    if (n === range.endContainer) endOffset = range.endOffset;
-    if (startOffset >= endOffset) continue;
-
-    let target = n;
-    if (startOffset > 0) {
-      target = n.splitText(startOffset);
-      endOffset -= startOffset;
-    }
-    if (endOffset < target.length) {
-      target.splitText(endOffset);
-    }
-    // Don't wrap inside our own host or other kb-hl spans.
-    if (host && host.contains(target)) continue;
-    if (target.parentElement?.classList.contains(HL_CLASS)) continue;
-
-    const span = document.createElement("span");
-    span.className = HL_CLASS;
-    span.dataset.kbId = String(dataId);
-    const parent = target.parentNode;
-    if (!parent) continue;
-    parent.insertBefore(span, target);
-    span.appendChild(target);
-  }
-}
-
-function unwrapHighlight(id) {
-  const spans = document.querySelectorAll(`.${HL_CLASS}[data-kb-id="${id}"]`);
-  for (const s of spans) {
-    const parent = s.parentNode;
-    if (!parent) continue;
-    while (s.firstChild) parent.insertBefore(s.firstChild, s);
-    parent.removeChild(s);
-  }
-}
-
-function unwrapAllHighlights() {
-  for (const s of document.querySelectorAll(`.${HL_CLASS}`)) {
-    const parent = s.parentNode;
-    if (!parent) continue;
-    while (s.firstChild) parent.insertBefore(s.firstChild, s);
-    parent.removeChild(s);
-  }
-}
-
-// ---------- 6. anchor / re-apply ----------
-
-function reapplyAll() {
-  for (const ann of annotations) {
-    try {
-      // Quote first — survives small DOM edits.
-      let range = quoteToRange(document.body, ann.quote, { hint: ann.position?.start ?? 0 });
-      if (!range && ann.position) range = posToRange(document.body, ann.position);
-      if (range) wrapRange(range, ann.id);
-    } catch (err) {
-      console.warn("[kenboard:annotate] re-anchor failed for #", ann.id, err);
-    }
-  }
-}
-
-// ---------- 7. selection adder ----------
-
-function buildAdder() {
-  adderEl = document.createElement("div");
-  adderEl.className = "adder";
-  const hl = document.createElement("button");
-  hl.className = "adder-btn";
-  hl.type = "button";
-  hl.textContent = "🖍 Surligner";
-  hl.addEventListener("mousedown", (e) => e.preventDefault());
-  hl.addEventListener("click", () => {
-    if (currentRange) addHighlightFromRange(currentRange);
-    hideAdder();
-  });
-  const close = document.createElement("button");
-  close.className = "adder-btn dismiss";
-  close.type = "button";
-  close.textContent = "✕";
-  close.addEventListener("mousedown", (e) => e.preventDefault());
-  close.addEventListener("click", hideAdder);
-  adderEl.appendChild(hl);
-  adderEl.appendChild(close);
-  shadow.appendChild(adderEl);
-}
-
-function showAdder(range) {
-  if (!adderEl) buildAdder();
-  const rect = range.getBoundingClientRect();
-  if (!rect.width && !rect.height) return;
-  // Position near the end of the selection, clamped to viewport.
-  const W = 180;
-  const H = 32;
-  let x = rect.right + 4;
-  let y = rect.bottom + 4;
-  if (x + W > window.innerWidth - 8) x = Math.max(8, window.innerWidth - W - 8);
-  if (y + H > window.innerHeight - 8) y = Math.max(8, rect.top - H - 4);
-  adderEl.style.left = `${x}px`;
-  adderEl.style.top = `${y}px`;
-  adderEl.classList.add("on");
-}
-
-function hideAdder() {
-  adderEl?.classList.remove("on");
-}
-
-function onSelectionChange() {
-  if (!mode) return;
-  clearTimeout(selectionDebounce);
-  selectionDebounce = setTimeout(() => {
-    const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || sel.toString().trim().length < 2) {
-      hideAdder();
-      return;
-    }
-    const range = sel.getRangeAt(0);
-    // Don't trigger inside our shadow host or inside password fields.
-    const node = range.commonAncestorContainer;
-    if (host?.contains(node)) return;
-    const editable = (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement)?.closest?.(
-      'input[type="password"], [contenteditable]',
+  if (dragPreview) {
+    svgOverlay.appendChild(
+      svgRect(dragPreview.x, dragPreview.y, dragPreview.w, dragPreview.h, true),
     );
-    if (editable) return;
-    currentRange = range.cloneRange();
-    showAdder(range);
-  }, 200);
+  }
 }
 
-function addHighlightFromRange(range) {
-  /** @type {any} */
-  let quote;
-  /** @type {any} */
-  let position;
-  try {
-    quote = quoteFromRange(document.body, range);
-    position = posFromRange(document.body, range);
-  } catch (err) {
-    console.warn("[kenboard:annotate] could not anchor selection", err);
+function svgRect(x, y, w, h, dashed) {
+  const r = document.createElementNS(SVG_NS, "rect");
+  r.setAttribute("x", String(x));
+  r.setAttribute("y", String(y));
+  r.setAttribute("width", String(w));
+  r.setAttribute("height", String(h));
+  r.setAttribute("fill", "transparent");
+  r.setAttribute("stroke", RED);
+  r.setAttribute("stroke-width", String(RECT_STROKE));
+  if (dashed) r.setAttribute("stroke-dasharray", "6 4");
+  return r;
+}
+
+function svgText(x, y, content) {
+  const t = document.createElementNS(SVG_NS, "text");
+  t.setAttribute("x", String(x));
+  t.setAttribute("y", String(y));
+  t.setAttribute("fill", RED);
+  t.setAttribute("font-size", String(TEXT_SIZE));
+  t.setAttribute("font-family", "sans-serif");
+  t.textContent = content;
+  return t;
+}
+
+// ---------- 6. rectangle tool ----------
+
+function captureUnderRect(rect) {
+  // For each rectangle, grab the topmost non-extension elements at the
+  // centre + 4 corners, deduped, and collect their innerText. ``rect`` is
+  // in page coords; convert back to client coords for elementsFromPoint.
+  const sx = window.scrollX;
+  const sy = window.scrollY;
+  const probes = [
+    [rect.x + rect.w / 2, rect.y + rect.h / 2],
+    [rect.x + 4, rect.y + 4],
+    [rect.x + rect.w - 4, rect.y + 4],
+    [rect.x + 4, rect.y + rect.h - 4],
+    [rect.x + rect.w - 4, rect.y + rect.h - 4],
+  ];
+  /** @type {Set<Element>} */
+  const seen = new Set();
+  for (const [px, py] of probes) {
+    const cx = px - sx;
+    const cy = py - sy;
+    if (cx < 0 || cy < 0 || cx >= window.innerWidth || cy >= window.innerHeight) continue;
+    const els = document.elementsFromPoint(cx, cy);
+    for (const el of els) {
+      if (host?.contains(el) || svgOverlay?.contains(el)) continue;
+      // Skip very generic ancestors (html, body) and inline svg overlay siblings.
+      if (el === document.documentElement || el === document.body) continue;
+      seen.add(el);
+      break; // top-most per probe is enough
+    }
+  }
+  const out = [];
+  for (const el of seen) {
+    const txt = String(el.innerText || el.textContent || "").trim();
+    if (txt) out.push(txt.slice(0, 240));
+  }
+  // De-dup identical strings (a single big <article> is the same on all probes).
+  return [...new Set(out)].join("\n").slice(0, 600);
+}
+
+function buildCapture() {
+  capturePane = document.createElement("div");
+  capturePane.className = "capture";
+  capturePane.dataset.tool = "rect";
+  capturePane.addEventListener("pointerdown", onPointerDown);
+  capturePane.addEventListener("pointermove", onPointerMove);
+  capturePane.addEventListener("pointerup", onPointerUp);
+  capturePane.addEventListener("pointercancel", () => {
+    dragStart = null;
+    dragPreview = null;
+    renderOverlay();
+  });
+  shadow.appendChild(capturePane);
+}
+
+function clientToPage(e) {
+  return { x: e.clientX + window.scrollX, y: e.clientY + window.scrollY };
+}
+
+function onPointerDown(e) {
+  if (!mode) return;
+  if (tool === "text") {
+    showComposer(clientToPage(e), e.clientX, e.clientY);
     return;
   }
-  if (!quote?.exact) {
-    console.warn("[kenboard:annotate] empty quote from range, skipping");
+  // Rectangle tool: start drag.
+  capturePane.setPointerCapture(e.pointerId);
+  const p = clientToPage(e);
+  dragStart = p;
+  dragPreview = { x: p.x, y: p.y, w: 0, h: 0 };
+  renderOverlay();
+}
+
+function onPointerMove(e) {
+  if (!mode || !dragStart) return;
+  const p = clientToPage(e);
+  const x = Math.min(dragStart.x, p.x);
+  const y = Math.min(dragStart.y, p.y);
+  const w = Math.abs(p.x - dragStart.x);
+  const h = Math.abs(p.y - dragStart.y);
+  dragPreview = { x, y, w, h };
+  renderOverlay();
+}
+
+function onPointerUp(e) {
+  if (!mode || !dragStart || !dragPreview) {
+    dragStart = null;
+    dragPreview = null;
     return;
   }
-  const ann = {
+  capturePane.releasePointerCapture(e.pointerId);
+  const r = dragPreview;
+  dragStart = null;
+  dragPreview = null;
+  // Discard tiny rects (likely accidental clicks).
+  if (r.w < 8 || r.h < 8) {
+    renderOverlay();
+    return;
+  }
+  const captured = captureUnderRect(r);
+  shapes.push({
     id: nextId++,
-    quote,
-    position,
-    createdAt: new Date().toISOString(),
-  };
-  annotations.push(ann);
-  wrapRange(range, ann.id);
-  saveAnnotations();
+    type: "rect",
+    x: Math.round(r.x),
+    y: Math.round(r.y),
+    w: Math.round(r.w),
+    h: Math.round(r.h),
+    capturedText: captured,
+    note: null,
+  });
+  saveShapes();
+  renderOverlay();
   renderBadge();
   if (drawerEl?.classList.contains("open")) renderDrawer();
-  window.getSelection()?.removeAllRanges();
 }
 
-// ---------- 8. badge ----------
+// ---------- 7. text tool ----------
+
+function buildComposer() {
+  composerEl = document.createElement("div");
+  composerEl.className = "composer off";
+  composerInput = document.createElement("input");
+  composerInput.type = "text";
+  composerInput.placeholder = "Annotation";
+  composerInput.addEventListener("keydown", (e) => {
+    e.stopPropagation();
+    if (e.key === "Enter") commitComposer();
+    else if (e.key === "Escape") hideComposer();
+  });
+  composerEl.appendChild(composerInput);
+  shadow.appendChild(composerEl);
+}
+
+let composerPagePoint = null;
+function showComposer(pagePoint, clientX, clientY) {
+  composerPagePoint = pagePoint;
+  composerEl.style.left = `${clientX}px`;
+  composerEl.style.top = `${clientY}px`;
+  composerEl.classList.remove("off");
+  composerEl.classList.add("on");
+  composerInput.value = "";
+  setTimeout(() => composerInput.focus(), 0);
+}
+
+function hideComposer() {
+  composerEl?.classList.add("off");
+  composerEl?.classList.remove("on");
+  composerPagePoint = null;
+}
+
+function commitComposer() {
+  const content = composerInput.value.trim();
+  if (!content || !composerPagePoint) {
+    hideComposer();
+    return;
+  }
+  // Attach to nearest rectangle if close, otherwise free-standing text.
+  const point = composerPagePoint;
+  const nearestRect = nearestRectTo(point);
+  if (nearestRect) nearestRect.note = content;
+  shapes.push({
+    id: nextId++,
+    type: "text",
+    x: point.x,
+    y: point.y,
+    content,
+  });
+  hideComposer();
+  saveShapes();
+  renderOverlay();
+  renderBadge();
+  if (drawerEl?.classList.contains("open")) renderDrawer();
+}
+
+function nearestRectTo(point) {
+  let best = null;
+  let bestDist = Infinity;
+  for (const s of shapes) {
+    if (s.type !== "rect") continue;
+    const cx = s.x + s.w / 2;
+    const cy = s.y + s.h / 2;
+    const dx = point.x - cx;
+    const dy = point.y - cy;
+    const dist = Math.hypot(dx, dy);
+    // Within 1.5x the rect's half-diagonal counts as "near".
+    const reach = Math.hypot(s.w, s.h);
+    if (dist < bestDist && dist < reach) {
+      best = s;
+      bestDist = dist;
+    }
+  }
+  return best;
+}
+
+// ---------- 8. badge + palette + drawer ----------
 
 function buildBadge() {
   badgeEl = document.createElement("div");
   badgeEl.className = "badge";
-  badgeEl.title = "Annotations kenboard — clic pour ouvrir le panneau";
+  badgeEl.title = "Annotations paintbrush — clic pour ouvrir le panneau (kenboard)";
   const dot = document.createElement("span");
   dot.className = "badge-dot";
   const txt = document.createElement("span");
@@ -414,12 +501,38 @@ function buildBadge() {
 }
 
 function renderBadge() {
-  if (!badgeEl) buildBadge();
-  badgeEl.querySelector(".badge-text").textContent = `kb · ${annotations.length}`;
+  if (!badgeEl) return;
+  badgeEl.querySelector(".badge-text").textContent = `kb · ${shapes.length}`;
   badgeEl.classList.toggle("on", mode);
 }
 
-// ---------- 9. drawer ----------
+function buildPalette() {
+  paletteEl = document.createElement("div");
+  paletteEl.className = "palette";
+  const r = document.createElement("button");
+  r.className = "palette-btn active";
+  r.dataset.tool = "rect";
+  r.type = "button";
+  r.textContent = "▭ Rectangle (R)";
+  r.addEventListener("click", () => setTool("rect"));
+  const t = document.createElement("button");
+  t.className = "palette-btn";
+  t.dataset.tool = "text";
+  t.type = "button";
+  t.textContent = "T Texte (T)";
+  t.addEventListener("click", () => setTool("text"));
+  paletteEl.appendChild(r);
+  paletteEl.appendChild(t);
+  shadow.appendChild(paletteEl);
+}
+
+function setTool(name) {
+  tool = name;
+  capturePane.dataset.tool = name;
+  for (const btn of paletteEl.querySelectorAll(".palette-btn")) {
+    btn.classList.toggle("active", btn.dataset.tool === name);
+  }
+}
 
 function buildDrawer() {
   drawerEl = document.createElement("div");
@@ -428,7 +541,7 @@ function buildDrawer() {
 }
 
 function openDrawer() {
-  if (!drawerEl) buildDrawer();
+  if (!drawerEl) return;
   renderDrawer();
   drawerEl.classList.add("open");
 }
@@ -457,41 +570,51 @@ function renderDrawer() {
   url.textContent = canonicalUrl();
   const count = document.createElement("div");
   count.className = "drawer-count";
-  count.textContent = `${annotations.length} annotation${annotations.length === 1 ? "" : "s"}`;
-  header.appendChild(close);
-  header.appendChild(title);
-  header.appendChild(url);
-  header.appendChild(count);
+  const nRect = shapes.filter((s) => s.type === "rect").length;
+  const nText = shapes.filter((s) => s.type === "text").length;
+  count.textContent = `${nRect} rectangle${nRect === 1 ? "" : "s"} · ${nText} note${nText === 1 ? "" : "s"}`;
+  header.append(close, title, url, count);
   drawerEl.appendChild(header);
 
   const list = document.createElement("div");
   list.className = "drawer-list";
-  if (annotations.length === 0) {
+  if (shapes.length === 0) {
     const empty = document.createElement("div");
     empty.className = "drawer-empty";
-    empty.textContent = "Aucune annotation. Sélectionnez du texte sur la page puis cliquez « 🖍 Surligner ».";
+    empty.textContent = "Aucune annotation. Choisissez Rectangle ou Texte dans la palette puis dessinez sur la page.";
     list.appendChild(empty);
   } else {
-    for (const ann of annotations) {
+    for (const s of shapes) {
       const item = document.createElement("div");
       item.className = "drawer-item";
-      const q = document.createElement("div");
-      q.className = "drawer-quote";
-      q.textContent = String(ann.quote?.exact ?? "");
+      const body = document.createElement("div");
+      body.className = "drawer-item-body";
+      const kind = document.createElement("span");
+      kind.className = "drawer-item-kind";
+      if (s.type === "rect") {
+        kind.textContent = "Rect";
+        const text = document.createTextNode(
+          (s.capturedText || "(pas de texte capturé)") + (s.note ? ` — « ${s.note} »` : ""),
+        );
+        body.append(kind, text);
+      } else {
+        kind.textContent = "Note";
+        const text = document.createTextNode(s.content);
+        body.append(kind, text);
+      }
       const del = document.createElement("button");
       del.className = "drawer-del";
       del.type = "button";
-      del.title = "Supprimer cette annotation";
+      del.title = "Supprimer";
       del.textContent = "🗑";
       del.addEventListener("click", () => {
-        annotations = annotations.filter((a) => a.id !== ann.id);
-        unwrapHighlight(ann.id);
-        saveAnnotations();
+        shapes = shapes.filter((x) => x.id !== s.id);
+        saveShapes();
+        renderOverlay();
         renderBadge();
         renderDrawer();
       });
-      item.appendChild(q);
-      item.appendChild(del);
+      item.append(body, del);
       list.appendChild(item);
     }
   }
@@ -503,14 +626,13 @@ function renderDrawer() {
   drawerPushBtn.className = "drawer-push";
   drawerPushBtn.type = "button";
   drawerPushBtn.textContent = "Pousser sur kenboard";
-  drawerPushBtn.disabled = annotations.length === 0;
+  drawerPushBtn.disabled = shapes.length === 0;
   drawerPushBtn.addEventListener("click", () => {
     pushToKenboard().catch((err) => setDrawerStatus(`Erreur: ${err?.message ?? err}`, "error"));
   });
   drawerStatusEl = document.createElement("div");
   drawerStatusEl.className = "drawer-status";
-  footer.appendChild(drawerPushBtn);
-  footer.appendChild(drawerStatusEl);
+  footer.append(drawerPushBtn, drawerStatusEl);
   drawerEl.appendChild(footer);
 }
 
@@ -520,7 +642,43 @@ function setDrawerStatus(msg, cls = "") {
   drawerStatusEl.className = "drawer-status" + (cls ? " " + cls : "");
 }
 
-// ---------- 10. push to kenboard ----------
+// ---------- 9. push: serialise SVG + extract MD ----------
+
+function serialiseSvg() {
+  // Bounding box covering every shape, padded.
+  const PAD = 16;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const s of shapes) {
+    if (s.type === "rect") {
+      minX = Math.min(minX, s.x);
+      minY = Math.min(minY, s.y);
+      maxX = Math.max(maxX, s.x + s.w);
+      maxY = Math.max(maxY, s.y + s.h);
+    } else {
+      minX = Math.min(minX, s.x);
+      minY = Math.min(minY, s.y - TEXT_SIZE);
+      maxX = Math.max(maxX, s.x + 240);
+      maxY = Math.max(maxY, s.y + TEXT_SIZE);
+    }
+  }
+  if (!isFinite(minX)) return "";
+  const vx = minX - PAD;
+  const vy = minY - PAD;
+  const vw = maxX - minX + 2 * PAD;
+  const vh = maxY - minY + 2 * PAD;
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("xmlns", SVG_NS);
+  svg.setAttribute("viewBox", `${vx} ${vy} ${vw} ${vh}`);
+  svg.setAttribute("width", String(Math.min(900, vw)));
+  for (const s of shapes) {
+    if (s.type === "rect") svg.appendChild(svgRect(s.x, s.y, s.w, s.h, false));
+    else svg.appendChild(svgText(s.x, s.y, s.content));
+  }
+  return new XMLSerializer().serializeToString(svg);
+}
 
 async function pushToKenboard() {
   setDrawerStatus("");
@@ -529,27 +687,42 @@ async function pushToKenboard() {
     setDrawerStatus("Configurez baseUrl / apiToken / projectId dans les réglages.", "error");
     return;
   }
-  if (annotations.length === 0) return;
+  if (shapes.length === 0) return;
 
   if (drawerPushBtn) drawerPushBtn.disabled = true;
   setDrawerStatus("Envoi…");
 
+  // Markdown: one block per rect with its captured text + nearby note.
+  const annotations = shapes
+    .filter((s) => s.type === "rect")
+    .map((s) => ({
+      quote: s.capturedText || "(rien capturé sous le rectangle)",
+      textFragmentUrl: null,
+      note: s.note,
+    }));
+  // Free-standing text notes (not attached to a rect) get appended as their own annotations.
+  const linkedNoteIds = new Set(shapes.filter((s) => s.type === "rect" && s.note).map((s) => s.id));
+  for (const s of shapes) {
+    if (s.type !== "text") continue;
+    const isLinked = shapes.some(
+      (r) => r.type === "rect" && r.note === s.content && linkedNoteIds.has(r.id),
+    );
+    if (isLinked) continue;
+    annotations.push({ quote: s.content, textFragmentUrl: null, note: null });
+  }
   const description = buildMarkdown({
     pageTitle: document.title,
     pageUrl: canonicalUrl(),
-    annotations: annotations.map((a) => ({
-      quote: String(a.quote?.exact ?? ""),
-      textFragmentUrl: textFragmentUrl(a.quote),
-    })),
+    annotations,
   });
+
+  const attachement = serialiseSvg();
   const title = (document.title || canonicalUrl()).slice(0, 250);
 
   let resp;
   try {
     resp = await fetch(`${cfg.baseUrl}/api/v1/tasks`, {
       method: "POST",
-      // Same as popup.js: strip the session cookie so the auth middleware
-      // stays on the bearer path (avoids the same-origin CSRF check).
       credentials: "omit",
       headers: {
         "Content-Type": "application/json",
@@ -559,6 +732,7 @@ async function pushToKenboard() {
         project_id: cfg.projectId,
         title,
         description,
+        attachement,
         status: "todo",
         who: cfg.defaultWho || "",
       }),
@@ -575,8 +749,8 @@ async function pushToKenboard() {
     return;
   }
   const task = await resp.json();
-  setDrawerStatus(`Tâche #${task.id} créée. Vider les annotations ?`, "success");
-  // Replace the push button with Clear / Keep.
+  setDrawerStatus(`Tâche #${task.id} créée.`, "success");
+  // Replace push button with Clear / Keep.
   if (drawerPushBtn?.parentNode) {
     const wrap = drawerPushBtn.parentNode;
     drawerPushBtn.remove();
@@ -584,63 +758,70 @@ async function pushToKenboard() {
     clearBtn.className = "drawer-push";
     clearBtn.type = "button";
     clearBtn.textContent = "Vider les annotations";
-    clearBtn.style.background = "#cf222e";
+    clearBtn.style.background = "#57606a";
     clearBtn.addEventListener("click", () => {
-      for (const a of annotations) unwrapHighlight(a.id);
-      annotations = [];
-      saveAnnotations();
+      shapes = [];
+      saveShapes();
+      renderOverlay();
       renderBadge();
       renderDrawer();
     });
     wrap.insertBefore(clearBtn, drawerStatusEl);
-    const keepBtn = document.createElement("button");
-    keepBtn.className = "drawer-push";
-    keepBtn.type = "button";
-    keepBtn.textContent = "Garder pour itérer";
-    keepBtn.style.background = "#57606a";
-    keepBtn.style.marginTop = "6px";
-    keepBtn.addEventListener("click", () => {
-      setDrawerStatus(`Tâche #${task.id} créée.`, "success");
-      renderDrawer();
-    });
-    wrap.insertBefore(keepBtn, drawerStatusEl);
   }
 }
 
-// ---------- 11. activation ----------
+// ---------- 10. activation ----------
 
 function activate() {
   if (mode) return;
   ensureHost();
+  ensureOverlay();
   mode = true;
-  loadAnnotations().then(() => {
-    reapplyAll();
+  loadShapes().then(() => {
+    renderOverlay();
     renderBadge();
+    capturePane.classList.add("on");
+    paletteEl.classList.add("on");
   });
 }
 
 function deactivate() {
   if (!mode) return;
   mode = false;
-  hideAdder();
+  hideComposer();
   closeDrawer();
+  capturePane?.classList.remove("on");
+  paletteEl?.classList.remove("on");
   badgeEl?.classList.remove("on");
 }
 
 function onKeyDown(e) {
-  // Alt+K toggles annotation mode on/off. Use `e.code` (physical key,
-  // layout-independent) — `e.key` on macOS Option+K is "˚" because the
-  // OS injects the dead-key character before the JS event fires.
-  if (e.altKey && e.code === "KeyK") {
+  // Alt+P toggles paintbrush mode. ``e.code`` is layout-independent
+  // (macOS Option+P would otherwise come through as "π" via e.key).
+  if (e.altKey && e.code === "KeyP") {
     e.preventDefault();
     if (mode) deactivate();
     else activate();
     return;
   }
-  // ESC: dismiss adder first, then drawer, then exit mode.
-  if (e.key === "Escape" && mode) {
-    if (adderEl?.classList.contains("on")) {
-      hideAdder();
+  if (!mode) return;
+  // Tool switch shortcuts (only when mode is on).
+  if (!e.altKey && !e.ctrlKey && !e.metaKey) {
+    if (e.code === "KeyR" && document.activeElement?.tagName !== "INPUT") {
+      e.preventDefault();
+      setTool("rect");
+      return;
+    }
+    if (e.code === "KeyT" && document.activeElement?.tagName !== "INPUT") {
+      e.preventDefault();
+      setTool("text");
+      return;
+    }
+  }
+  // ESC cascades: composer → drawer → mode.
+  if (e.key === "Escape") {
+    if (composerEl?.classList.contains("on")) {
+      hideComposer();
     } else if (drawerEl?.classList.contains("open")) {
       closeDrawer();
     } else {
@@ -649,18 +830,18 @@ function onKeyDown(e) {
   }
 }
 
-// ---------- 12. SPA navigation + bootstrap ----------
+// ---------- 11. SPA navigation + bootstrap ----------
 
 function onMaybeUrlChange() {
   const cur = canonicalUrl();
   if (cur === lastUrl) return;
   lastUrl = cur;
-  unwrapAllHighlights();
-  annotations = [];
+  shapes = [];
+  renderOverlay();
   renderBadge();
   if (mode) {
-    loadAnnotations().then(() => {
-      reapplyAll();
+    loadShapes().then(() => {
+      renderOverlay();
       renderBadge();
       if (drawerEl?.classList.contains("open")) renderDrawer();
     });
@@ -684,15 +865,10 @@ function patchHistory() {
 }
 
 function bootstrap() {
-  // Visible boot marker so you can confirm the content script actually
-  // injected (DevTools console → look for this line). If you don't see it,
-  // the bundle didn't load (privileged page, blocked by the site, etc.).
-  console.info("[kenboard:annotate] loaded — Alt+K to activate");
+  console.info("[kenboard:paintbrush] loaded — Alt+P (macOS: Option+P) to activate");
   lastUrl = canonicalUrl();
   document.addEventListener("keydown", onKeyDown, true);
-  document.addEventListener("selectionchange", onSelectionChange);
   patchHistory();
-  // Popup → content: a future "Annoter cette page" button can trigger this.
   if (typeof chrome !== "undefined" && chrome.runtime?.onMessage) {
     chrome.runtime.onMessage.addListener((msg) => {
       if (msg?.type === "kb-annotate-start") activate();
