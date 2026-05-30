@@ -15,8 +15,6 @@
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@vitest/coverage-v8": "^2.1.9",
-    "dom-anchor-text-position": "^5.0.0",
-    "dom-anchor-text-quote": "^4.0.2",
     "esbuild": "^0.24.0",
     "jsdom": "^25.0.1",
     "typescript": "^5.6.3",

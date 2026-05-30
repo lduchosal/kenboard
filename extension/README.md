@@ -112,29 +112,42 @@ hit Save. Task lands as `todo` in the configured project.
 - Reuses the standard kenboard `POST /api/v1/tasks` endpoint with bearer
   auth — no server-side changes needed for this extension to work.
 
-### Annotate a page (#520)
+### Annotate a page (paintbrush, #541)
 
-Pile up quotes and notes across a page, then push them all to kenboard as
-**one** markdown task — pure text, never an image.
+Draw red rectangles around things on a page, drop short red text
+annotations next to them, then push the lot to kenboard as **one** task
+— with the description in markdown **and** an SVG annotation layer
+attached (text-only, no binary).
 
-- **Activate:** press `Alt+K` on any normal page. A small `kb · 0` badge
-  appears at the top-right of the viewport.
-- **Highlight:** select text. A small toolbar appears next to your
-  selection with `🖍 Surligner`. Click it — the text is highlighted in
-  place and the badge count goes up.
-- **Open the drawer:** click the badge. A side drawer slides in from the
-  right with the list of annotations for this page.
+- **Activate:** press `Alt+P` (macOS: `Option+P`) on any normal page. A
+  small `kb · 0` badge appears at the top-right of the viewport, plus a
+  small palette `▭ Rectangle (R)` / `T Texte (T)`.
+- **Rectangle tool** (default): drag on the page to outline an element.
+  The extension hit-tests under the rectangle and grabs the underlying
+  innerText (up to 600 chars per box) so the task description carries
+  the actual content of what you boxed.
+- **Texte tool**: switch with `T` (or click the palette). Click anywhere
+  on the page → an inline composer (red 12 px) opens → type your note →
+  Enter. The note attaches to the nearest rectangle, or stands free.
+- **Drawer**: click the badge → a side drawer slides in from the right
+  with the list of rectangles + notes, with a 🗑 per item.
 - **Push to kenboard:** click `Pousser sur kenboard` in the drawer
-  footer. The extension posts a single task whose description is a
-  markdown block: source link + one blockquote per highlight, each with
-  a `[citer](URL#:~:text=…)` link that scrolls a fresh tab back to the
-  exact quote.
-- **Exit:** press `Esc` (closes the toolbar → drawer → annotation mode in
-  that order).
+  footer. The extension serialises a viewport-framed SVG containing the
+  page **skeleton** (light DOM walk: text with computed font-size, image
+  placeholders, background colours of containers) overlaid by your red
+  rectangles + texts, and posts a task with that SVG in
+  `tasks.attachement` plus a markdown description (one blockquote per
+  rectangle with its captured text + your note).
+- **Exit:** press `Esc` (closes the composer → drawer → mode, in that
+  order).
 
-Highlights persist locally per **canonical URL** (`chrome.storage.local`)
-and are re-applied automatically on page reload or SPA route change. They
-are never sent anywhere until you click *Pousser sur kenboard*.
+Annotations persist locally per **canonical URL**
+(`chrome.storage.local`) and are re-drawn automatically on page reload
+or SPA route change. They are never sent anywhere until you click
+*Pousser sur kenboard*.
 
-The annotation UI lives inside a Shadow DOM so it can't be styled by the
-host page and doesn't leak its own CSS into the page.
+The paintbrush UI lives inside a Shadow DOM so it can't be styled by
+the host page and doesn't leak its own CSS into the page. The SVG
+overlay (where rectangles are drawn) sits below the badge / palette /
+drawer in the z-index stack so those UI elements stay clickable while
+the mode is active.

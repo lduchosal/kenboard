@@ -26,19 +26,48 @@
     return lines.join("\n");
   }
 
+  // extension/content/paintbrushSvg.js
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  var RED = "#cf222e";
+  var RECT_STROKE = 5;
+  var TEXT_SIZE = 12;
+  function escapeXml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function serialiseSvg({
+    shapes: shapes2,
+    scrollX,
+    scrollY,
+    innerWidth,
+    innerHeight,
+    skeleton = ""
+  }) {
+    if (!Array.isArray(shapes2) || shapes2.length === 0) return "";
+    const annParts = [];
+    for (const s of shapes2) {
+      if (s.type === "rect") {
+        annParts.push(
+          `<rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" fill="transparent" stroke="${RED}" stroke-width="${RECT_STROKE}"/>`
+        );
+      } else {
+        annParts.push(
+          `<text x="${s.x}" y="${s.y}" fill="${RED}" font-size="${TEXT_SIZE}" font-family="sans-serif">${escapeXml(s.content)}</text>`
+        );
+      }
+    }
+    const displayW = Math.min(1600, innerWidth);
+    return `<svg xmlns="${SVG_NS}" viewBox="${scrollX} ${scrollY} ${innerWidth} ${innerHeight}" width="${displayW}"><rect x="${scrollX}" y="${scrollY}" width="${innerWidth}" height="${innerHeight}" fill="#ffffff"/>` + (skeleton ? `<g class="kb-skel">${skeleton}</g>` : "") + `<g class="kb-annotations">${annParts.join("")}</g></svg>`;
+  }
+
   // extension/content/annotate.src.js
   var STORAGE_PREFIX = "kb_paint:";
   var HOST_ID = "kb-paintbrush-root";
   var OVERLAY_ID = "kb-paintbrush-overlay";
-  var SVG_NS = "http://www.w3.org/2000/svg";
   var Z_SVG = 2147483630;
   var Z_CAPTURE = 2147483631;
   var Z_UI = 2147483640;
   var Z_DRAWER = 2147483645;
   var Z_COMPOSER = 2147483646;
-  var RED = "#cf222e";
-  var RECT_STROKE = 5;
-  var TEXT_SIZE = 12;
   var SHADOW_CSS = `
   :host { all: initial; }
   * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
@@ -588,9 +617,6 @@
   }
   var MAX_ELEMENTS = 2e3;
   var MAX_SKELETON_BYTES = 25e4;
-  function escapeXml(s) {
-    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  }
   function isTransparentBg(bg) {
     if (!bg) return true;
     if (bg === "transparent") return true;
@@ -669,27 +695,15 @@
     }
     return parts.join("");
   }
-  function serialiseSvg() {
-    if (shapes.length === 0) return "";
-    const sx = window.scrollX;
-    const sy = window.scrollY;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const skeleton = buildSkeletonSvg();
-    const annParts = [];
-    for (const s of shapes) {
-      if (s.type === "rect") {
-        annParts.push(
-          `<rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" fill="transparent" stroke="${RED}" stroke-width="${RECT_STROKE}"/>`
-        );
-      } else {
-        annParts.push(
-          `<text x="${s.x}" y="${s.y}" fill="${RED}" font-size="${TEXT_SIZE}" font-family="sans-serif">${escapeXml(s.content)}</text>`
-        );
-      }
-    }
-    const displayW = Math.min(1600, vw);
-    return `<svg xmlns="${SVG_NS}" viewBox="${sx} ${sy} ${vw} ${vh}" width="${displayW}"><rect x="${sx}" y="${sy}" width="${vw}" height="${vh}" fill="#ffffff"/>` + (skeleton ? `<g class="kb-skel">${skeleton}</g>` : "") + `<g class="kb-annotations">${annParts.join("")}</g></svg>`;
+  function serialiseSvg2() {
+    return serialiseSvg({
+      shapes,
+      scrollX: window.scrollX,
+      scrollY: window.scrollY,
+      innerWidth: window.innerWidth,
+      innerHeight: window.innerHeight,
+      skeleton: buildSkeletonSvg()
+    });
   }
   async function pushToKenboard() {
     setDrawerStatus("");
@@ -720,7 +734,7 @@
       pageUrl: canonicalUrl(),
       annotations
     });
-    const attachement = serialiseSvg();
+    const attachement = serialiseSvg2();
     const title = (document.title || canonicalUrl()).slice(0, 250);
     let resp;
     try {

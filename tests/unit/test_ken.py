@@ -627,6 +627,70 @@ class TestCliMutations:
         # The raw SVG must NOT be printed (would flood the terminal).
         assert svg not in result.output
 
+    def test_polish_writes_desc_and_svg_and_prints_prompt(self, cwd_tmp, runner):
+        """#550: ken polish dumps desc + SVG and prints a structured agent prompt."""
+        self._setup(cwd_tmp)
+        svg = "<svg xmlns='http://www.w3.org/2000/svg'><rect/></svg>"
+        ctx, _ = _patch_responses(
+            [
+                (
+                    "GET",
+                    "/api/v1/tasks?project=p1",
+                    [
+                        {
+                            "id": 88,
+                            "title": "raw paintbrush",
+                            "status": "todo",
+                            "description": "BLOCKQUOTE text",
+                            "attachement": svg,
+                        }
+                    ],
+                )
+            ]
+        )
+        with ctx:
+            result = runner.invoke(
+                ken.cli, ["polish", "88", "--tmp-dir", str(cwd_tmp)]
+            )
+        assert result.exit_code == 0, result.output
+        desc_path = cwd_tmp / "kenboard-polish-88.md"
+        svg_path = cwd_tmp / "kenboard-polish-88.svg"
+        assert desc_path.read_text(encoding="utf-8") == "BLOCKQUOTE text"
+        assert svg_path.read_text(encoding="utf-8") == svg
+        # The prompt mentions the artefacts + the apply command.
+        assert "kenboard-polish-88.md" in result.output
+        assert "kenboard-polish-88.svg" in result.output
+        assert "ken update 88" in result.output
+
+    def test_polish_without_attachement_skips_svg_file(self, cwd_tmp, runner):
+        """#550: ken polish on a task without attachement still works (no SVG)."""
+        self._setup(cwd_tmp)
+        ctx, _ = _patch_responses(
+            [
+                (
+                    "GET",
+                    "/api/v1/tasks?project=p1",
+                    [
+                        {
+                            "id": 9,
+                            "title": "plain",
+                            "status": "todo",
+                            "description": "no SVG here",
+                            "attachement": None,
+                        }
+                    ],
+                )
+            ]
+        )
+        with ctx:
+            result = runner.invoke(
+                ken.cli, ["polish", "9", "--tmp-dir", str(cwd_tmp)]
+            )
+        assert result.exit_code == 0, result.output
+        assert (cwd_tmp / "kenboard-polish-9.md").exists()
+        assert not (cwd_tmp / "kenboard-polish-9.svg").exists()
+        assert "(aucun)" in result.output
+
     def test_show_save_attachement_writes_file(self, cwd_tmp, runner):
         """#574: --save-attachement writes the SVG to disk and skips normal output."""
         self._setup(cwd_tmp)

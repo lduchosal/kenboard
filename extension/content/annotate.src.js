@@ -14,13 +14,20 @@
 //  11.  SPA navigation + bootstrap
 
 import { buildMarkdown } from "./buildMarkdown.js";
+import {
+  escapeXml,
+  RECT_STROKE,
+  RED,
+  serialiseSvg as serialiseSvgPure,
+  SVG_NS,
+  TEXT_SIZE,
+} from "./paintbrushSvg.js";
 
 // ---------- 1. constants ----------
 
 const STORAGE_PREFIX = "kb_paint:";
 const HOST_ID = "kb-paintbrush-root";
 const OVERLAY_ID = "kb-paintbrush-overlay";
-const SVG_NS = "http://www.w3.org/2000/svg";
 // 32-bit signed int max — anything larger silently falls back to ``auto``
 // in CSS (the user pointed this out in #556: ``${Z + 1}`` was overflowing
 // and the badge/palette/drawer ended up *under* the transparent capture
@@ -30,10 +37,6 @@ const Z_CAPTURE = 2147483631;
 const Z_UI = 2147483640;
 const Z_DRAWER = 2147483645;
 const Z_COMPOSER = 2147483646;
-
-const RED = "#cf222e";
-const RECT_STROKE = 5;
-const TEXT_SIZE = 12;
 
 const SHADOW_CSS = `
   :host { all: initial; }
@@ -658,14 +661,6 @@ function setDrawerStatus(msg, cls = "") {
 const MAX_ELEMENTS = 2000;
 const MAX_SKELETON_BYTES = 250_000;
 
-function escapeXml(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 /**
  * Walk the live DOM and emit a lightweight SVG skeleton (#564): one
  * <rect> per visible element (transparent fill, thin grey stroke), <text>
@@ -774,36 +769,17 @@ function buildSkeletonSvg() {
 }
 
 function serialiseSvg() {
-  if (shapes.length === 0) return "";
-  // #567: viewBox = current viewport (in page coords) — the skeleton + the
-  // annotations were both captured against what the user actually sees, so
-  // the SVG opens framed on the visible area at push time.
-  const sx = window.scrollX;
-  const sy = window.scrollY;
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const skeleton = buildSkeletonSvg();
-  // Annotations layer: stringify our shapes (must escape user-supplied text).
-  const annParts = [];
-  for (const s of shapes) {
-    if (s.type === "rect") {
-      annParts.push(
-        `<rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" fill="transparent" stroke="${RED}" stroke-width="${RECT_STROKE}"/>`,
-      );
-    } else {
-      annParts.push(
-        `<text x="${s.x}" y="${s.y}" fill="${RED}" font-size="${TEXT_SIZE}" font-family="sans-serif">${escapeXml(s.content)}</text>`,
-      );
-    }
-  }
-  const displayW = Math.min(1600, vw);
-  return (
-    `<svg xmlns="${SVG_NS}" viewBox="${sx} ${sy} ${vw} ${vh}" width="${displayW}">` +
-    `<rect x="${sx}" y="${sy}" width="${vw}" height="${vh}" fill="#ffffff"/>` +
-    (skeleton ? `<g class="kb-skel">${skeleton}</g>` : "") +
-    `<g class="kb-annotations">${annParts.join("")}</g>` +
-    `</svg>`
-  );
+  // Thin live-runtime wrapper around the pure serialiser (#549): captures
+  // the viewport + walks the live DOM for the skeleton, then defers all
+  // string building to ``serialiseSvgPure`` (testable in vitest).
+  return serialiseSvgPure({
+    shapes,
+    scrollX: window.scrollX,
+    scrollY: window.scrollY,
+    innerWidth: window.innerWidth,
+    innerHeight: window.innerHeight,
+    skeleton: buildSkeletonSvg(),
+  });
 }
 
 async function pushToKenboard() {

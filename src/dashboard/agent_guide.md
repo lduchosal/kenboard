@@ -199,6 +199,14 @@ flow is: `ken show <id> --save-attachement /tmp/p.svg`, open the SVG to
 see what was annotated, then reformulate the title/description with
 context from both the description (boxed text + notes) and the SVG.
 
+`ken polish <id>` (#550) is the shortcut for this flow: it dumps the
+description to `/tmp/kenboard-polish-<id>.md`, the SVG (if any) to
+`/tmp/kenboard-polish-<id>.svg`, and prints a structured prompt with
+the exact `ken update <id> --title … --desc-file …` line to run once
+you've reformulated. The command itself never calls an LLM — keeping
+the CLI dependency-free is on purpose; the reformulation lives in the
+agent host (you).
+
 ## Other practices
 
 - The `ken` binary uses only the stdlib for HTTP. Do **not** add
