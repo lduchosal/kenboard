@@ -652,40 +652,127 @@ function setDrawerStatus(msg, cls = "") {
 
 // ---------- 9. push: serialise SVG + extract MD ----------
 
-function serialiseSvg() {
-  // Bounding box covering every shape, padded.
-  const PAD = 16;
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const s of shapes) {
-    if (s.type === "rect") {
-      minX = Math.min(minX, s.x);
-      minY = Math.min(minY, s.y);
-      maxX = Math.max(maxX, s.x + s.w);
-      maxY = Math.max(maxY, s.y + s.h);
-    } else {
-      minX = Math.min(minX, s.x);
-      minY = Math.min(minY, s.y - TEXT_SIZE);
-      maxX = Math.max(maxX, s.x + 240);
-      maxY = Math.max(maxY, s.y + TEXT_SIZE);
+// Caps on the page-skeleton walk (#564). Pages with > MAX_ELEMENTS visible
+// elements emit only what fits within the budget; the skeleton degrades
+// gracefully to "annotations only" past MAX_SKELETON_BYTES.
+const MAX_ELEMENTS = 2000;
+const MAX_SKELETON_BYTES = 250_000;
+
+function escapeXml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * Walk the live DOM and emit a lightweight SVG skeleton (#564): one
+ * <rect> per visible element (transparent fill, thin grey stroke), <text>
+ * for direct text children at their computed font-size, and a gray
+ * placeholder for <img>/<video>/<canvas>. Coordinates are page-relative
+ * so the result aligns with the paintbrush annotations layer.
+ *
+ * Bounded by MAX_ELEMENTS and MAX_SKELETON_BYTES — returns "" early if
+ * the budget is exceeded.
+ */
+function buildSkeletonSvg() {
+  const sx = window.scrollX;
+  const sy = window.scrollY;
+  const parts = [];
+  let bytes = 0;
+  let count = 0;
+  const all = document.body.getElementsByTagName("*");
+  for (let i = 0; i < all.length; i++) {
+    if (count >= MAX_ELEMENTS || bytes >= MAX_SKELETON_BYTES) break;
+    const el = all[i];
+    if (host?.contains(el) || svgOverlay?.contains(el)) continue;
+    const tag = el.tagName;
+    if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT" || tag === "META" || tag === "LINK" || tag === "HEAD") {
+      continue;
+    }
+    const rect = el.getBoundingClientRect();
+    if (rect.width < 1 || rect.height < 1) continue;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === "hidden" || cs.display === "none") continue;
+    const opacity = parseFloat(cs.opacity);
+    if (Number.isFinite(opacity) && opacity === 0) continue;
+    const x = Math.round(rect.left + sx);
+    const y = Math.round(rect.top + sy);
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+
+    // Image-like placeholder (one element-budget).
+    if (tag === "IMG" || tag === "VIDEO" || tag === "CANVAS" || tag === "PICTURE") {
+      const part = `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#d0d7de" stroke="#57606a" stroke-width="0.5"/>`;
+      parts.push(part);
+      bytes += part.length;
+      const alt = (el.getAttribute("alt") || tag.toLowerCase()).slice(0, 60);
+      const label = `<text x="${x + 4}" y="${y + 14}" font-size="10" fill="#57606a" font-family="sans-serif">${escapeXml(alt)}</text>`;
+      parts.push(label);
+      bytes += label.length;
+      count++;
+      continue;
+    }
+
+    // Direct text children only (avoid duplicating ancestor text).
+    let directText = "";
+    for (const node of el.childNodes) {
+      if (node.nodeType === 3 /* TEXT_NODE */) {
+        const t = node.textContent ? node.textContent.trim() : "";
+        if (t) directText += (directText ? " " : "") + t;
+      }
+    }
+    if (directText) {
+      const fontSize = Math.max(8, Math.min(48, parseFloat(cs.fontSize) || 14));
+      const color = cs.color || "#1f2328";
+      const fam = (cs.fontFamily || "sans-serif").split(",")[0].replace(/['"]/g, "").trim() || "sans-serif";
+      const text = directText.slice(0, 280);
+      const part = `<text x="${x}" y="${y + fontSize}" font-size="${fontSize}" fill="${color}" font-family="${escapeXml(fam)}">${escapeXml(text)}</text>`;
+      parts.push(part);
+      bytes += part.length;
+      count++;
     }
   }
-  if (!isFinite(minX)) return "";
-  const vx = minX - PAD;
-  const vy = minY - PAD;
-  const vw = maxX - minX + 2 * PAD;
-  const vh = maxY - minY + 2 * PAD;
-  const svg = document.createElementNS(SVG_NS, "svg");
-  svg.setAttribute("xmlns", SVG_NS);
-  svg.setAttribute("viewBox", `${vx} ${vy} ${vw} ${vh}`);
-  svg.setAttribute("width", String(Math.min(900, vw)));
-  for (const s of shapes) {
-    if (s.type === "rect") svg.appendChild(svgRect(s.x, s.y, s.w, s.h, false));
-    else svg.appendChild(svgText(s.x, s.y, s.content));
+  if (bytes >= MAX_SKELETON_BYTES) {
+    console.warn("[kenboard:paintbrush] skeleton truncated — exceeded byte budget");
   }
-  return new XMLSerializer().serializeToString(svg);
+  return parts.join("");
+}
+
+function serialiseSvg() {
+  if (shapes.length === 0) return "";
+  // viewBox = full document (so the skeleton + annotations align in page coords).
+  const docW = Math.max(
+    document.documentElement.scrollWidth,
+    document.body.scrollWidth,
+  );
+  const docH = Math.max(
+    document.documentElement.scrollHeight,
+    document.body.scrollHeight,
+  );
+  const skeleton = buildSkeletonSvg();
+  // Annotations layer: stringify our shapes (must escape user-supplied text).
+  const annParts = [];
+  for (const s of shapes) {
+    if (s.type === "rect") {
+      annParts.push(
+        `<rect x="${s.x}" y="${s.y}" width="${s.w}" height="${s.h}" fill="transparent" stroke="${RED}" stroke-width="${RECT_STROKE}"/>`,
+      );
+    } else {
+      annParts.push(
+        `<text x="${s.x}" y="${s.y}" fill="${RED}" font-size="${TEXT_SIZE}" font-family="sans-serif">${escapeXml(s.content)}</text>`,
+      );
+    }
+  }
+  const width = Math.min(1600, docW);
+  return (
+    `<svg xmlns="${SVG_NS}" viewBox="0 0 ${docW} ${docH}" width="${width}">` +
+    `<rect x="0" y="0" width="${docW}" height="${docH}" fill="#ffffff"/>` +
+    (skeleton ? `<g class="kb-skel" opacity="0.85">${skeleton}</g>` : "") +
+    `<g class="kb-annotations">${annParts.join("")}</g>` +
+    `</svg>`
+  );
 }
 
 async function pushToKenboard() {
