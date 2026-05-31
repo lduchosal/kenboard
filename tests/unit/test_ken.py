@@ -1584,6 +1584,8 @@ class TestCliMutations:
         assert "→ doing" in result.output
         # No grooming reminder when moving to non-review status (#376).
         assert "ken wiki groom" not in result.stderr
+        # No résolution reminder either (#605).
+        assert "Résolution" not in result.stderr
 
     def test_move_to_review_prints_groom_reminder(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
@@ -1597,6 +1599,19 @@ class TestCliMutations:
         assert "ken wiki groom 5" in result.stderr
         assert "→ review" in result.stdout
 
+    def test_move_to_review_prints_update_reminder(self, cwd_tmp, runner):
+        """`ken move --to review` reminds the agent to log the implementation trail (#605)."""
+        self._setup(cwd_tmp)
+        ctx, _calls = _patch_responses(
+            [("PATCH", "/api/v1/tasks/5", {"id": 5, "status": "review"})]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["move", "5", "--to", "review"])
+        assert result.exit_code == 0, result.output
+        assert "ken update 5 --desc" in result.stderr
+        assert "Résolution" in result.stderr
+        assert "Keep the original description intact" in result.stderr
+
     def test_update_status_review_prints_groom_reminder(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
         ctx, _calls = _patch_responses(
@@ -1606,6 +1621,18 @@ class TestCliMutations:
             result = runner.invoke(ken.cli, ["update", "9", "--status", "review"])
         assert result.exit_code == 0, result.output
         assert "ken wiki groom 9" in result.stderr
+
+    def test_update_status_review_prints_update_reminder(self, cwd_tmp, runner):
+        """`ken update --status review` also nudges the agent for the résolution trail (#605)."""
+        self._setup(cwd_tmp)
+        ctx, _calls = _patch_responses(
+            [("PATCH", "/api/v1/tasks/9", {"id": 9, "status": "review"})]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["update", "9", "--status", "review"])
+        assert result.exit_code == 0, result.output
+        assert "ken update 9 --desc" in result.stderr
+        assert "Résolution" in result.stderr
 
     def test_done(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
