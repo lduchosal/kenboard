@@ -649,9 +649,7 @@ class TestCliMutations:
             ]
         )
         with ctx:
-            result = runner.invoke(
-                ken.cli, ["polish", "88", "--tmp-dir", str(cwd_tmp)]
-            )
+            result = runner.invoke(ken.cli, ["polish", "88", "--tmp-dir", str(cwd_tmp)])
         assert result.exit_code == 0, result.output
         desc_path = cwd_tmp / "kenboard-polish-88.md"
         svg_path = cwd_tmp / "kenboard-polish-88.svg"
@@ -683,9 +681,7 @@ class TestCliMutations:
             ]
         )
         with ctx:
-            result = runner.invoke(
-                ken.cli, ["polish", "9", "--tmp-dir", str(cwd_tmp)]
-            )
+            result = runner.invoke(ken.cli, ["polish", "9", "--tmp-dir", str(cwd_tmp)])
         assert result.exit_code == 0, result.output
         assert (cwd_tmp / "kenboard-polish-9.md").exists()
         assert not (cwd_tmp / "kenboard-polish-9.svg").exists()
