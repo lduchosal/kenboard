@@ -129,7 +129,7 @@ Copier le fichier d'exemple et adapter les mots de passe :
 cp .env.example .env
 ```
 
-Editer `.env` :
+Quickstart minimal pour démarrer en dev :
 
 ```env
 DB_HOST=localhost
@@ -153,6 +153,124 @@ DB_TEST_NAME=dashboard_test
 
 DEBUG=true
 ```
+
+### Référence complète des variables `.env`
+
+Toutes les variables sont lues par `src/dashboard/config.py` (sauf `LOG_DIR`,
+lue par `src/dashboard/logging.py`). Les variables `KEN_*` sont propres au
+CLI `ken` et lues depuis `src/dashboard/ken.py` ; elles peuvent vivre dans
+`.env`, dans `.ken`, ou dans l'environnement shell.
+
+#### Base de données (obligatoires sauf défauts)
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `DB_HOST` | `localhost` | Hôte MySQL. |
+| `DB_PORT` | `3306` | Port MySQL. |
+| `DB_USER` | `dashboard` | Utilisateur runtime applicatif (CRUD only). |
+| `DB_PASSWORD` | *(vide)* | Mot de passe de `DB_USER`. Obligatoire. |
+| `DB_NAME` | `dashboard` | Base de données applicative. |
+| `DB_MIGRATE_USER` | `dashboard_admin` | Utilisateur DDL (CREATE/ALTER/DROP), utilisé par `kenboard migrate`. |
+| `DB_MIGRATE_PASSWORD` | *(vide)* | Mot de passe de `DB_MIGRATE_USER`. Obligatoire pour les migrations. |
+| `DB_TEST_USER` | `dashboard_test` | Utilisateur runtime tests (CRUD only, séparé). |
+| `DB_TEST_PASSWORD` | *(vide)* | Mot de passe de `DB_TEST_USER`. |
+| `DB_TEST_NAME` | `dashboard_test` | Base de données de test. **Ne doit jamais** être la base prod. |
+| `DB_TEST_MIGRATE_USER` | `dashboard_test_admin` | Utilisateur DDL tests, utilisé par `kenboard migrate-test`. |
+| `DB_TEST_MIGRATE_PASSWORD` | *(vide)* | Mot de passe de `DB_TEST_MIGRATE_USER`. |
+
+#### Mode & logs
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `DEBUG` | `false` | Mode debug Flask. `kenboard serve` exige `DEBUG=true`. En prod (`DEBUG=false`), `KENBOARD_SECRET_KEY` devient **obligatoire**. |
+| `LOG_DIR` | `logs` | Répertoire où `dashboard.log` est écrit (rotated via `WatchedFileHandler`, compatible newsyslog). Défini dans `logging.py`. |
+
+#### Sécurité / session
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `KENBOARD_SECRET_KEY` | *(vide)* | Clé de signature des sessions Flask. **REQUIS en prod** (`DEBUG=false`) — l'app refuse de booter sans. Générer : `python -c "import secrets; print(secrets.token_urlsafe(48))"`. La changer invalide toutes les sessions actives. |
+| `KENBOARD_ADMIN_KEY` | *(vide)* | Bearer token statique pour `/api/v1/*` (cf. `doc/api-keys.md`). Nécessaire pour bootstrap le premier admin via l'API et pour les endpoints admin-only en CLI/CI. Générer : `python -c "import secrets; print('kb_' + secrets.token_urlsafe(32))"`. Vide = bearer-token admin auth désactivé (cookie session uniquement). |
+| `KENBOARD_CORS_ORIGINS` | *(vide)* | Allow-list CORS pour `/api/v1/*`, origines séparées par virgule. Vide = aucun header CORS (same-origin policy, défaut sécurisé). À définir uniquement quand un client externe consomme l'API. |
+| `KENBOARD_HTTPS` | `false` | Mettre à `true` quand kenboard est servi sur HTTPS (directement ou derrière un reverse proxy TLS). Active les cookies `Secure` et l'header HSTS. En dev HTTP local, laisser `false` sinon le navigateur drop le cookie de session. |
+
+#### Auto-reporting des erreurs 500 (#517)
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `KENBOARD_ERROR_PROJECT_ID` | *(vide)* | UUID du projet kenboard sur lequel les exceptions 500 non gérées sont auto-créées en BUG. Vide = feature désactivée (aucun changement de comportement). |
+| `KENBOARD_ERROR_WHO` | `kenboard` | Valeur `who` (assigné) des tâches BUG auto-créées. |
+
+#### OIDC (optionnel, cf. `doc/auth-user.md`)
+
+Les trois variables `OIDC_DISCOVERY_URL`, `OIDC_CLIENT_ID` et
+`OIDC_CLIENT_SECRET` doivent **toutes** être renseignées pour que la page
+`/login` affiche le bouton « Sign in with OIDC » et que les routes
+`/oidc/login` + `/oidc/callback` deviennent actives. Si une seule manque,
+OIDC est silencieusement désactivé (fail-soft, password-only login).
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `OIDC_DISCOVERY_URL` | *(vide)* | URL `.well-known/openid-configuration` de l'IdP (Google, Authentik, Keycloak, ADFS, …). |
+| `OIDC_CLIENT_ID` | *(vide)* | Client ID enregistré côté IdP. |
+| `OIDC_CLIENT_SECRET` | *(vide)* | Client secret correspondant. |
+| `OIDC_ALLOWED_EMAIL_DOMAIN` | *(vide)* | Restreint les logins OIDC aux emails de ce domaine (ex. `example.com`). Vide = tout email accepté (l'IdP contrôle qui s'authentifie). |
+| `OIDC_REQUIRE_EMAIL_VERIFIED` | `true` | Exige le claim `email_verified=true`. Mettre à `false` pour ADFS qui n'émet pas ce claim (#127). |
+| `OIDC_SCOPES` | `openid email profile` | Scopes OIDC demandés. Pour ADFS, utiliser `openid profile allatclaims` (ADFS n'a pas de scope `email`, l'email vient des Issuance Transform Rules). |
+
+#### Registration (#232)
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `REGISTER_ALLOWED_DOMAIN` | *(vide)* | Quand renseigné, active la page `/register` et n'accepte que les emails de ce domaine (ex. `2113.ch`). Vide = registration désactivée. |
+
+#### Email / SMTP (#231)
+
+`SMTP_HOST` non vide active l'envoi d'emails (réinitialisation de mot de
+passe, notifications). Vide = pas d'envoi (les flux qui en dépendent
+sont no-op ou affichent un message).
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `SMTP_HOST` | *(vide)* | Hôte SMTP. Renseigner = active la feature email. |
+| `SMTP_PORT` | `587` | Port SMTP (587 STARTTLS, 465 SMTPS, 25 plain). |
+| `SMTP_USER` | *(vide)* | Login SMTP (souvent l'adresse email). |
+| `SMTP_PASSWORD` | *(vide)* | Mot de passe SMTP. |
+| `SMTP_FROM` | *(vide)* | Adresse `From:` des emails envoyés. |
+| `SMTP_USE_TLS` | `true` | Utiliser STARTTLS. Mettre à `false` pour SMTP en clair (déconseillé hors réseau de confiance). |
+
+#### Performance monitoring (#214)
+
+Auto-file des tâches `PERF` quand une requête dépasse les budgets.
+Désactivable globalement via `PERF_ENABLED=false`.
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `PERF_ENABLED` | `true` | Active l'instrumentation perf et la création auto de tâches. |
+| `PERF_BUDGET_MS` | `500` | Budget total par requête (ms). Au-dessus = tâche créée. |
+| `PERF_MAX_QUERIES` | `20` | Nombre max de requêtes SQL par requête HTTP. |
+| `PERF_MAX_SQL_MS` | `300` | Temps SQL total max par requête (ms). |
+| `PERF_MAX_RESPONSE_KB` | `512` | Taille max de la réponse HTTP (KB). |
+| `PERF_PROJECT_ID` | *(vide)* | UUID du projet kenboard où les tâches PERF sont créées. Vide = feature en observation uniquement (logs), pas de création de tâches. |
+| `PERF_TASK_WHO` | `Claude` | Valeur `who` des tâches PERF auto-créées. |
+| `PERF_COOLDOWN_S` | `3600` | Délai (s) avant de re-créer une tâche pour la même route, pour éviter le spam. |
+
+#### CLI `ken` (lu depuis `.env`, `.ken` ou l'environnement)
+
+Le binaire `ken` lit sa config par ordre de priorité :
+flag CLI > variable d'environnement > fichier `.ken` > défaut. `.ken` est
+créé par `ken init <project-id>` (mode 0600, contient le token API — ne
+**jamais** le commiter).
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `KEN_PROJECT_ID` | — | UUID du projet kenboard ciblé. |
+| `KEN_BASE_URL` | — | URL de l'instance kenboard (ex. `https://kenboard.example.com`). |
+| `KEN_API_TOKEN` | — | Bearer token API (`kb_…`). |
+| `KEN_SYNC_DIR` | `doc/kenboard` | Répertoire de sortie pour `ken wiki sync`. |
+| `KEN_WIKI_DIR` | `wiki` | Répertoire source markdown pour `ken wiki build`. |
+| `KEN_WIKI_HTML_DIR` | `wiki-html` | Répertoire de sortie HTML pour `ken wiki build`. |
+| `KEN_ARCHITECTURE` | `ARCHITECTURE.md` | Fichier déclarant la hiérarchie des sections wiki. |
 
 ## 5. Migrations
 
