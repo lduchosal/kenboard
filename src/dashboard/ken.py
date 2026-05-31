@@ -13,6 +13,7 @@ import os
 import re
 import shutil
 import sys
+import tempfile
 
 # Windows uses cp1252 (or the system locale) for stdout/stderr by default.
 # Characters like → or accented letters in task descriptions cause
@@ -800,19 +801,24 @@ def _wiki_groom_reminder(task_id: int) -> None:
 @click.option(
     "--tmp-dir",
     "tmp_dir",
-    default="/tmp",
+    default=None,
     type=click.Path(file_okay=False, writable=True),
-    help="Directory where the SVG + description are dropped (default: /tmp)",
+    help="Directory for the dropped SVG + description "
+    "(default: system temp dir via tempfile.gettempdir())",
 )
 @click.pass_context
-def polish(ctx: click.Context, task_id: int, tmp_dir: str) -> None:
+def polish(ctx: click.Context, task_id: int, tmp_dir: str | None) -> None:
     """Prepare a paintbrush task for agent reformulation (#550).
 
-    Saves the task's raw description and (when present) its SVG attachement on
-    disk and prints a structured prompt instructing the agent to read both,
-    propose a clean ``MODULE / Titre`` + actionable description, and apply
-    via ``ken update``. The command itself never calls an LLM — keeping ``ken``
-    dependency-free was an explicit design choice (#550 phase 1).
+    Saves the task's raw description and (when present) its SVG attachement on disk and
+    prints a structured prompt instructing the agent to read both, propose a clean
+    ``MODULE / Titre`` + actionable description, and apply via ``ken update``. The
+    command itself never calls an LLM — keeping ``ken`` dependency-free was an explicit
+    design choice (#550 phase 1).
+
+    The default temp directory is resolved at call time via ``tempfile.gettempdir()``
+    (system-specific) rather than a hardcoded ``/tmp`` so Windows hosts get a sensible
+    default and Sonar stops flagging a fixed publicly-writable path.
     """
     cfg: KenConfig = ctx.obj["cfg"]
     project_id = _require_project(cfg)
@@ -824,7 +830,7 @@ def polish(ctx: click.Context, task_id: int, tmp_dir: str) -> None:
             err=True,
         )
         sys.exit(1)
-    tmp = Path(tmp_dir)
+    tmp = Path(tmp_dir) if tmp_dir is not None else Path(tempfile.gettempdir())
     desc_path = tmp / f"kenboard-polish-{task_id}.md"
     svg_path = tmp / f"kenboard-polish-{task_id}.svg"
     desc_path.write_text(task.get("description") or "", encoding="utf-8")
@@ -858,8 +864,7 @@ def polish(ctx: click.Context, task_id: int, tmp_dir: str) -> None:
                 f"       ken update {task_id} --title 'MODULE / ...' "
                 f"--desc-file {desc_path}",
                 "",
-                "Le SVG attachement reste inchangé (trace de la demande "
-                "d'origine).",
+                "Le SVG attachement reste inchangé (trace de la demande " "d'origine).",
             ]
         )
     )
