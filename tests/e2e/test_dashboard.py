@@ -323,6 +323,10 @@ class TestTaskCRUD:
         self._add_task(page, "Original")
 
         self._open_task_edit_modal(page)
+        # Wait until openEditTask()'s fetch populated the title — otherwise
+        # duplicateTask() returns early on `title.trim() === ''` and the
+        # heading never switches to "(copie)" (ken #570).
+        expect(page.locator("#task-modal-title")).not_to_have_value("")
         # Duplicate button visible only in edit mode
         expect(page.locator("#task-modal-duplicate")).to_be_visible()
         page.click("#task-modal-duplicate")
