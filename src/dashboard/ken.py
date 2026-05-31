@@ -785,15 +785,14 @@ def update(  # noqa: PLR0913
 def _review_update_reminder(task_id: int) -> None:
     """Remind the agent to append an implementation trail to the task (#605).
 
-    Printed to stderr so it doesn't corrupt ``--json`` output. The original
-    description must be preserved verbatim and the implementation details appended
-    as a new section — the board is the audit trail when commits don't map 1:1 to
-    tasks.
+    Printed to stderr so it doesn't corrupt ``--json`` output. The original description
+    must be preserved verbatim and the implementation details appended as a new section
+    — the board is the audit trail when commits don't map 1:1 to tasks.
     """
     click.echo(
         f"Reminder: update task #{task_id} with the implementation trail before review:\n"
         f"    ken show {task_id}                          # read the original description\n"
-        f"    ken update {task_id} --desc \"<original>\\n\\n---\\n\\n## Résolution\\n...\"\n"
+        f'    ken update {task_id} --desc "<original>\\n\\n---\\n\\n## Résolution\\n..."\n'
         "Keep the original description intact; append a Résolution section with\n"
         "Modifications (files + one-line summary), Comportements obtenus, Garde-fous.",
         err=True,

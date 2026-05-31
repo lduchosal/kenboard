@@ -1600,7 +1600,9 @@ class TestCliMutations:
         assert "→ review" in result.stdout
 
     def test_move_to_review_prints_update_reminder(self, cwd_tmp, runner):
-        """`ken move --to review` reminds the agent to log the implementation trail (#605)."""
+        """`ken move --to review` reminds the agent to log the implementation trail
+        (#605).
+        """
         self._setup(cwd_tmp)
         ctx, _calls = _patch_responses(
             [("PATCH", "/api/v1/tasks/5", {"id": 5, "status": "review"})]
@@ -1623,7 +1625,9 @@ class TestCliMutations:
         assert "ken wiki groom 9" in result.stderr
 
     def test_update_status_review_prints_update_reminder(self, cwd_tmp, runner):
-        """`ken update --status review` also nudges the agent for the résolution trail (#605)."""
+        """`ken update --status review` also nudges the agent for the résolution trail
+        (#605).
+        """
         self._setup(cwd_tmp)
         ctx, _calls = _patch_responses(
             [("PATCH", "/api/v1/tasks/9", {"id": 9, "status": "review"})]
