@@ -347,6 +347,55 @@ body {
 .wiki-cat-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .wiki-cat-total { font-size: 14px; font-weight: 700; color: var(--text); }
 
+/* Tasks-per-board pie chart on the dashboard (ken #620, replaces #540's
+ * per-category bar chart). Pie left, legend right; the SVG and the legend
+ * stack vertically on narrow screens. */
+.board-pie {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.board-pie-svg {
+  flex: 0 0 auto;
+  display: block;
+}
+.board-pie-svg path { transition: opacity 0.15s ease; }
+.board-pie-svg a:hover path { opacity: 0.78; }
+.board-pie-legend {
+  flex: 1 1 240px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 4px 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.board-pie-legend-item {
+  display: grid;
+  grid-template-columns: 10px 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text);
+}
+.board-pie-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.board-pie-legend-name {
+  color: var(--text);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.board-pie-legend-name:hover { text-decoration: underline; }
+.board-pie-legend-count { font-weight: 700; }
+.board-pie-legend-pct { color: var(--dimmed); font-size: 11px; min-width: 3.2em; text-align: right; }
+
 /* Paintbrush attachement panel on the task modal (#541 Phase 2). The
  * SVG is just the annotations layer (rectangles + texts, transparent),
  * so we render it on a light checkerboard so the red shapes stand out. */

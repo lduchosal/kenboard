@@ -35,29 +35,24 @@ class TestIndexPage:
         html = resp.data.decode()
         assert "KEN" in html
 
-    def test_dashboard_shows_wiki_minichart_per_category(
+    def test_dashboard_shows_tasks_per_board_pie(
         self, client, db, queries, seed_task
     ):
-        """Dashboard shows a per-category mini-chart grid (#540).
+        """Dashboard shows a per-board pie chart (ken #620, replaces #540).
 
-        Replaces the global aggregate (#516) that mixed unrelated boards (#532). Each
-        visible category gets a small card with its own top sections; the detailed view
-        stays scoped to the category page (#533).
+        Each visible category becomes one pie slice sized by total task count, with a
+        matching legend entry. The wiki-section bar chart it replaces is gone (the
+        section-detail view stays scoped to the category page #533/#572).
         """
-        queries.wiki_classify(
-            db,
-            task_id=seed_task["id"],
-            section_path="backend/api",
-            classified_by="test",
-        )
         html = client.get("/").data.decode()
-        # The grid header carries the per-category title; the category name
-        # of the seeded task ('Test Category') and its section_path must
-        # appear in the card.
-        assert "Tâches par section wiki — par catégorie" in html
-        assert "backend/api" in html
-        # seed_category creates one named "Test" — must appear in the card.
+        assert "Tâches par board" in html
+        # The slice + legend reference the category by name; seed_category is "Test".
         assert ">Test<" in html
+        # The SVG carries one path per slice with the category colour.
+        assert 'class="board-pie-svg"' in html
+        assert "<path d=" in html
+        # The legacy bar-chart title must no longer appear on the home.
+        assert "Tâches par section wiki — par catégorie" not in html
 
     def test_shows_doing_tasks(self, client, db, queries):
         """Doing tasks appear in the index overview."""

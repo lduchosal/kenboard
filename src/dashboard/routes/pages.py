@@ -1,5 +1,6 @@
 """Page routes — serve dynamic HTML from database."""
 
+import math
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -260,57 +261,86 @@ def _build_wiki_sections_per_project_chart(
     }
 
 
-def _build_wiki_sections_per_category_chart(
-    rows: list[dict[str, Any]],
+def _build_tasks_per_board_pie(
     categories: list[dict[str, Any]],
+    all_projects: list[dict[str, Any]],
     *,
-    top_n: int = 6,
+    cx: float = 80.0,
+    cy: float = 80.0,
+    radius: float = 70.0,
 ) -> dict[str, Any]:
-    """Build per-category mini-chart data for the dashboard (#540).
+    """Build pie chart data for tasks per board (category) — replaces #540 (ken #620).
 
-    ``rows`` are ``{category_id, section_path, count}`` aggregates from
-    ``wiki_section_counts_grouped`` (already ordered by category, then count desc).
-    ``categories`` is the visible-to-user list — categories without classifications are
-    dropped, the rest follow ``categories`` order (== the user's preferred category
-    order). Each category card shows its top ``top_n`` sections, scaled to its own
-    busiest section so bars stay comparable within a card.
+    Sums ``project["total"]`` (already populated by the caller from
+    ``task_counts_by_project``) across each category, then computes SVG arc paths
+    so the template can render the slices without any JS. Categories with zero
+    tasks are dropped; the remaining slices follow ``categories`` order. Arc
+    sweep starts at 12 o'clock and runs clockwise.
 
     Args:
-        rows: Per-(category, section) classification counts.
         categories: Visible categories in display order.
-        top_n: Maximum number of section rows per mini-card.
+        all_projects: All projects (filtered to the visible scope), each with a
+            ``total`` key holding the project's task count.
+        cx: SVG x coordinate of the pie centre.
+        cy: SVG y coordinate of the pie centre.
+        radius: Pie radius in SVG units.
 
     Returns:
-        A context dict with ``wiki_by_category`` (list of cards, each with
-        ``cat``, ``sections``, ``total``) and ``wiki_by_category_total``.
+        A context dict with ``tasks_per_board_pie`` (list of slices, each with
+        ``cat``, ``count``, ``pct``, ``path_d``) and ``tasks_per_board_total``.
     """
-    by_cat: dict[str, list[tuple[str, int]]] = {}
-    for r in rows:
-        cid = str(r["category_id"])
-        by_cat.setdefault(cid, []).append((str(r["section_path"]), int(r["count"])))
-
-    cards: list[dict[str, Any]] = []
+    counts: list[tuple[dict[str, Any], int]] = []
     grand_total = 0
     for c in categories:
-        cat_rows = by_cat.get(c["id"], [])
-        if not cat_rows:
-            continue
-        max_count = cat_rows[0][1]
-        sections = [
+        cnt = sum(
+            int(p.get("total", 0)) for p in all_projects if p["cat_id"] == c["id"]
+        )
+        if cnt > 0:
+            counts.append((c, cnt))
+            grand_total += cnt
+
+    if grand_total == 0:
+        return {"tasks_per_board_pie": [], "tasks_per_board_total": 0}
+
+    slices: list[dict[str, Any]] = []
+    angle = -math.pi / 2  # 12 o'clock
+    # Single slice would degenerate to a point with the M/L/A/Z form, so draw
+    # it as a full circle via two 180° arcs.
+    if len(counts) == 1:
+        c, cnt = counts[0]
+        path_d = (
+            f"M {cx:.2f} {cy - radius:.2f} "
+            f"A {radius} {radius} 0 1 1 {cx:.2f} {cy + radius:.2f} "
+            f"A {radius} {radius} 0 1 1 {cx:.2f} {cy - radius:.2f} Z"
+        )
+        slices.append({"cat": c, "count": cnt, "pct": 100.0, "path_d": path_d})
+        return {"tasks_per_board_pie": slices, "tasks_per_board_total": grand_total}
+
+    for c, cnt in counts:
+        frac = cnt / grand_total
+        sweep = frac * 2 * math.pi
+        x1 = cx + radius * math.cos(angle)
+        y1 = cy + radius * math.sin(angle)
+        end_angle = angle + sweep
+        x2 = cx + radius * math.cos(end_angle)
+        y2 = cy + radius * math.sin(end_angle)
+        large_arc = 1 if sweep > math.pi else 0
+        path_d = (
+            f"M {cx:.2f} {cy:.2f} "
+            f"L {x1:.4f} {y1:.4f} "
+            f"A {radius} {radius} 0 {large_arc} 1 {x2:.4f} {y2:.4f} Z"
+        )
+        slices.append(
             {
-                "section": name,
+                "cat": c,
                 "count": cnt,
-                "pct": round(100 * cnt / max_count, 1) if max_count else 0,
+                "pct": round(100 * frac, 1),
+                "path_d": path_d,
             }
-            for name, cnt in cat_rows[:top_n]
-        ]
-        total = sum(cnt for _, cnt in cat_rows)
-        grand_total += total
-        cards.append({"cat": c, "sections": sections, "total": total})
-    return {
-        "wiki_by_category": cards,
-        "wiki_by_category_total": grand_total,
-    }
+        )
+        angle = end_angle
+
+    return {"tasks_per_board_pie": slices, "tasks_per_board_total": grand_total}
 
 
 def fmt_date(when_str: str) -> str:
@@ -427,11 +457,6 @@ def index() -> Any:
         today = date.today()
         taskers_since = (today - timedelta(days=TASKERS_WINDOW_DAYS - 1)).isoformat()
         taskers_rows = list(queries.activity_daily_by_user(conn, since=taskers_since))
-
-        # Per-category wiki mini-chart (#540): scoped signal on the home,
-        # one small card per visible category. The detailed per-section
-        # view stays on /cat/<id>.html (#533).
-        wiki_grouped_rows = list(queries.wiki_section_counts_grouped(conn))
     finally:
         conn.close()
 
@@ -463,7 +488,7 @@ def index() -> Any:
     ctx["activity_series"] = activity_series
     ctx["activity_total"] = sum(s["count"] for s in activity_series)
     ctx.update(_build_taskers_daily_chart(taskers_rows, users, today=today))
-    ctx.update(_build_wiki_sections_per_category_chart(wiki_grouped_rows, categories))
+    ctx.update(_build_tasks_per_board_pie(categories, all_projects))
     return render_template("index.html", **ctx)
 
 

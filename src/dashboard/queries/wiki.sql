@@ -38,20 +38,6 @@ JOIN tasks t ON t.id = c.task_id
 ORDER BY c.section_path ASC, c.task_id ASC;
 
 
--- name: wiki_section_counts_grouped
--- Count classified tasks per (category, section) — one row per pair.
--- Powers the dashboard's per-category mini-chart grid (#540). The home
--- page groups these rows by category_id in Python and renders a small
--- card for each visible category. Detailed view stays scoped to the
--- category page (#533).
-SELECT p.cat_id AS category_id, c.section_path, COUNT(*) AS count
-FROM task_wiki_classifications c
-JOIN tasks t ON t.id = c.task_id
-JOIN projects p ON p.id = t.project_id
-GROUP BY p.cat_id, c.section_path
-ORDER BY p.cat_id ASC, count DESC, c.section_path ASC;
-
-
 -- name: wiki_section_counts_by_category_per_project
 -- Count classified tasks per (project, section_path) for a single category,
 -- ordered busiest-first within each project (#572). Powers the per-board

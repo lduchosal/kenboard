@@ -1,0 +1,41 @@
+{#
+  Pie chart of tasks per board / category (ken #620, replaces #540's bar chart).
+
+  Expects:
+  - ``tasks_per_board_pie``: list of {cat, count, pct, path_d} slices (already
+    ordered by category display order, zero-task categories dropped).
+  - ``tasks_per_board_total``: grand total across all slices.
+
+  The SVG is built server-side (paths pre-computed in
+  ``_build_tasks_per_board_pie``) so no JS is required.
+#}
+{% if tasks_per_board_pie %}
+<div class="activity-card">
+  <div class="activity-header">
+    <span class="activity-title">Tâches par board</span>
+    <span class="activity-total">{{ tasks_per_board_total }}</span>
+  </div>
+  <div class="board-pie">
+    <svg viewBox="0 0 160 160" class="board-pie-svg" width="160" height="160"
+         aria-label="Pie chart of tasks per board">
+      {% for s in tasks_per_board_pie %}
+      <a href="{{ prefix }}cat/{{ s.cat.id }}.html">
+        <path d="{{ s.path_d }}" fill="{{ s.cat.color }}" stroke="#ffffff" stroke-width="1">
+          <title>{{ s.cat.name }} — {{ s.count }} ({{ s.pct }}%)</title>
+        </path>
+      </a>
+      {% endfor %}
+    </svg>
+    <ul class="board-pie-legend">
+      {% for s in tasks_per_board_pie %}
+      <li class="board-pie-legend-item">
+        <span class="board-pie-legend-dot" style="background:{{ s.cat.color }}"></span>
+        <a class="board-pie-legend-name" href="{{ prefix }}cat/{{ s.cat.id }}.html">{{ s.cat.name }}</a>
+        <span class="board-pie-legend-count">{{ s.count }}</span>
+        <span class="board-pie-legend-pct">{{ s.pct }}%</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}
