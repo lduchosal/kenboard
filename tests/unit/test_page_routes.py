@@ -35,9 +35,7 @@ class TestIndexPage:
         html = resp.data.decode()
         assert "KEN" in html
 
-    def test_dashboard_shows_tasks_per_board_pie(
-        self, client, db, queries, seed_task
-    ):
+    def test_dashboard_shows_tasks_per_board_pie(self, client, db, queries, seed_task):
         """Dashboard shows a per-board pie chart (ken #620, replaces #540).
 
         Each visible category becomes one pie slice sized by total task count, with a
