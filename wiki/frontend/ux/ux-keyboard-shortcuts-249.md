@@ -75,4 +75,4 @@ Les tests Playwright pour chaque raccourci ne sont pas inclus dans ce premier pa
 - #247 (UX / Edit task / Enter save task) : intégré comme la section "Modal de tâche".
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

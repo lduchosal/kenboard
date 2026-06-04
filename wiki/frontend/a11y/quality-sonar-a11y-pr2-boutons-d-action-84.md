@@ -31,4 +31,4 @@ Risque CSS modéré: il faudra ajouter un reset (background, border, font, paddi
 ~30 issues.
 ---
 
-[← retour à frontend/a11y](index.md) · [voir log](../../log.md)
+[← retour à frontend/a11y](index.md) · [voir log](../../log/2026-05-24.md)

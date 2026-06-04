@@ -89,4 +89,4 @@ Permettre à un user de se connecter via un fournisseur OIDC (Google, Authentik,
 - Validation ADFS : #127 (todo, bloquée par celle-ci)
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

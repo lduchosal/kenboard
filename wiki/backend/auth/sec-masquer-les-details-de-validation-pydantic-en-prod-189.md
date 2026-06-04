@@ -33,4 +33,4 @@ Les erreurs Pydantic 422 retournent actuellement les détails champ par champ (a
 - `pdm run test-quick` : 269 passed
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

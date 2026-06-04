@@ -49,4 +49,4 @@ Performance issue on \`GET /admin/keys\`: 25 SQL queries pour 20 clés API → v
 La route a encore d'autres optims potentiels (charger usr_get_by_id du middleware partage la conn avec la route handler), mais ils ne sont pas couverts ici. Le budget perf 20 est désormais respecté avec marge.
 ---
 
-[← retour à backend/perf](index.md) · [voir log](../../log.md)
+[← retour à backend/perf](index.md) · [voir log](../../log/2026-05-24.md)

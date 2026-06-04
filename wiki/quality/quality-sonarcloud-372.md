@@ -60,4 +60,4 @@ Aucune issue de quelque sévérité que ce soit (BLOCKER / CRITICAL / MAJOR / MI
 Task à fermer (ou \"done\") après review. Pas de commit nécessaire.
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

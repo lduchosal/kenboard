@@ -25,4 +25,4 @@ En mode normal et en mode sélectionné (existant), on souhaite afficher l'ID de
 `test_task_id_visible` dans `TestTaskCRUD` : crée une tâche, vérifie que `.task-id` est visible avec le texte `#<id>` en mode normal puis en mode détail.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

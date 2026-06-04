@@ -23,4 +23,4 @@ section_title: "Authentication & permissions"
 **Remédiation:** identique à #41+ (CSP + textContent au lieu d'innerHTML pour les titres). Idéalement: validateur Pydantic qui rejette `<` / `>` dans `title`.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

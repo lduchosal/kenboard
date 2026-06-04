@@ -32,4 +32,4 @@ Lors du ken move --to review un message à destination de l'agent LLM doit lui r
 - pdm run typecheck → Success: no issues found in 30 source files
 ---
 
-[← retour à cli](index.md) · [voir log](../log.md)
+[← retour à cli](index.md) · [voir log](../log/2026-05-31.md)

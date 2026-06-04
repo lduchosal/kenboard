@@ -66,4 +66,4 @@ MVP livré en 7 phases (toutes en review) :
 - Pages privilégiées (chrome://, about:) : no-op silencieux.
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-30.md)

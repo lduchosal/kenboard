@@ -22,4 +22,4 @@ Nouvelle commande ken self-update qui met a jour kenboard depuis PyPI. Utilise s
 - 269 tests verts.
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

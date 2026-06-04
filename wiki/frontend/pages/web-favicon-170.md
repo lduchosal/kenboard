@@ -23,4 +23,4 @@ Quand on cree un raccourci du kenboard sur son écran d'accueil ios l icon du ke
 - L'icône iOS reprend le logo KEN pixel-art sur fond blanc
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-24.md)

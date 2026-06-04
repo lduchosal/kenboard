@@ -85,4 +85,4 @@ Si l'opérateur ne veut pas l'extra (ou hit le bug `pdm`/`truststore` recursion 
 2. Variable d'env `REQUESTS_CA_BUNDLE=/path/to/ca.pem` (durable)
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

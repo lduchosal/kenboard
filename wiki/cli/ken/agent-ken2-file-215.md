@@ -53,4 +53,4 @@ api_token=kb_...
 - flake8 : clean
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

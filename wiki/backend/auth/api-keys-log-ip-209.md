@@ -52,4 +52,4 @@ Implémenté conjointement avec #210 (même migration, mêmes fichiers).
 - `pdm run check` → 321 passed, tout vert
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

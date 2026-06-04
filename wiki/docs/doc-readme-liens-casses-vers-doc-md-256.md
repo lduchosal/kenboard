@@ -73,4 +73,4 @@ Les docs ont ~3 semaines (April 19 → May 6) et le code a beaucoup bougé entre
 → Créer une tâche dédiée "DOC / refresh des docs restaurées contre l'état courant du code" si souhaité. Hors scope ici car le titre de #256 était la résolution des liens cassés, pas la mise à jour de contenu.
 ---
 
-[← retour à docs](index.md) · [voir log](../log.md)
+[← retour à docs](index.md) · [voir log](../log/2026-05-24.md)

@@ -35,4 +35,4 @@ Remplacer le screenshot PNG base64 embarqué dans la description (popup.js) par 
 - NON testé en navigateur ici : le chemin chrome.scripting.executeScript nécessite un vrai navigateur. À confirmer par un essai réel (recharger l'extension, capturer une page).
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-29.md)

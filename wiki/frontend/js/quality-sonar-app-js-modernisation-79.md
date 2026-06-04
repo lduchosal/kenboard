@@ -26,4 +26,4 @@ Fix:
 - Utiliser ?. au lieu de && pour le chaînage optionnel
 ---
 
-[← retour à frontend/js](index.md) · [voir log](../../log.md)
+[← retour à frontend/js](index.md) · [voir log](../../log/2026-05-24.md)

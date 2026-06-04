@@ -82,4 +82,4 @@ Choix middleware : helper explicite ``log_activity()`` appelé depuis chaque rou
 - Optimistic UI sur task mutations pour que les counters bougent instantanément (au lieu d'attendre le reload)
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-24.md)

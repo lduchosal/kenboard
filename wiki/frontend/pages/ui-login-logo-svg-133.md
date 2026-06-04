@@ -64,4 +64,4 @@ Plusieurs allers-retours sur le layout pendant la PR :
 - Logo SVG → asset existant inchangé, juste copié dans le dossier static
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-24.md)

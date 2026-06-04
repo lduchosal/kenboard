@@ -23,4 +23,4 @@ Exposer un CRUD /api/v1/users et brancher la sélection « who » des tâches de
 Une page permet la gestion des droits.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

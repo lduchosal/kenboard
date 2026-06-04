@@ -25,4 +25,4 @@ Ajout d'une colonne Email dans le tableau /admin/users entre Nom et Couleur. Aff
 - pytest unit : 343 passed
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-24.md)

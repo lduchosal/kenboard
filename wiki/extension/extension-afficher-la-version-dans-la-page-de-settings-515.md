@@ -30,4 +30,4 @@ Dans la page de configuration de l'extension (options.html), afficher la version
 - NON testé en navigateur ici (getManifest() est une API runtime), mais l'appel est trivial et standard.
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-29.md)

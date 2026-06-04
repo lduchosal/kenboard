@@ -44,4 +44,4 @@ python scripts/cleanup_perf_data.py --config .ken3
 - Les scripts sont reutilisables (seed + cleanup)
 ---
 
-[← retour à backend/perf](index.md) · [voir log](../../log.md)
+[← retour à backend/perf](index.md) · [voir log](../../log/2026-05-24.md)

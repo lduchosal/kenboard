@@ -16,4 +16,4 @@ https://sonarcloud.io/project/overview?id=lduchosal_kenboard
 revue des issues, correction
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

@@ -66,4 +66,4 @@ Les deux side-points de la demande originale sont hors scope de cette tâche :
 2. La gestion des chemins accentués est validée par test (couvert ici).
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-27.md)

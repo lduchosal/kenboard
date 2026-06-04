@@ -45,4 +45,4 @@ Actuellement, une erreur 500 est lancée, sans page friendly.
 - mypy / ruff / interrogate / vulture : clean
 ---
 
-[← retour à backend](index.md) · [voir log](../log.md)
+[← retour à backend](index.md) · [voir log](../log/2026-05-24.md)

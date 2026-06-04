@@ -36,4 +36,4 @@ Cause : le SHADOW_CSS template utilisait `z-index: ${Z+1}` = 2147483648 qui dép
 - NON testé en navigateur ici — à valider en cliquant le badge en mode paintbrush.
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-30.md)

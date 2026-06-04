@@ -32,4 +32,4 @@ Score attendu apres fix : ~1.3 (sous le seuil de 4.5). Les tests NUMERIC_HTTP_AD
 - flake8 : clean
 ---
 
-[← retour à backend/email](index.md) · [voir log](../../log.md)
+[← retour à backend/email](index.md) · [voir log](../../log/2026-05-24.md)

@@ -24,4 +24,4 @@ section_title: "Authentication & permissions"
 3. Permettre à un admin de réinitialiser le password d'un autre user via `POST /api/v1/users/<id>/reset-password` (admin-only).
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

@@ -15,4 +15,4 @@ section_title: "Page templates (Jinja2)"
 Les textfields dans la gestion des API Keys n'ont pas de style (padding trop petit). Améliorer de manière simple l'UI
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-24.md)

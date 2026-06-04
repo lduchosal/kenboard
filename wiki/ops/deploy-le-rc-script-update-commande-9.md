@@ -20,4 +20,4 @@ En plus de start / stop / status, le RC script doit avoir une option "update":
 - start service
 ---
 
-[← retour à ops](index.md) · [voir log](../log.md)
+[← retour à ops](index.md) · [voir log](../log/2026-05-24.md)

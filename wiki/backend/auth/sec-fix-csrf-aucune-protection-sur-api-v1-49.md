@@ -38,4 +38,4 @@ Les requêtes par Bearer token ne traversent pas cette branche → elles ne sont
 `pentest/auth_csrf.py` a été converti en test de non-régression (assertions inversées). Le whitelist vulture a aussi été mis à jour pour la fixture `logged_in_user`.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

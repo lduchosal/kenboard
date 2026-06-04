@@ -30,4 +30,4 @@ Fichiers:
 ~11 issues. Risque faible: pas de changement visuel, pas de nouveau tag.
 ---
 
-[← retour à frontend/a11y](index.md) · [voir log](../../log.md)
+[← retour à frontend/a11y](index.md) · [voir log](../../log/2026-05-24.md)

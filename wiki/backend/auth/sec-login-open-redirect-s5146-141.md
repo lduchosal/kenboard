@@ -15,4 +15,4 @@ section_title: "Authentication & permissions"
 Sonar BLOCKER: redirect basé sur next_url user-controlled dans login_post. Vérifier que _is_safe_url couvre le cas.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

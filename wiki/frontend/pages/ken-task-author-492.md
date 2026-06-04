@@ -49,4 +49,4 @@ Le spec initial demandait un graphe EMPILÉ par semaine. Remplacé par un CLASSE
 - Rendu vérifié via test GET / (titre « Classement des taskers » + nom propriétaire ; principal brut absent). Pas de session navigateur live.
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-29.md)

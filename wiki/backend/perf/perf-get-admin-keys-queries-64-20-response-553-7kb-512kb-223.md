@@ -23,4 +23,4 @@ Supprime l'appel a _load_all_data(). La route charge directement : categories, p
 Queries attendues : ~5 + N (cles API)
 ---
 
-[← retour à backend/perf](index.md) · [voir log](../../log.md)
+[← retour à backend/perf](index.md) · [voir log](../../log/2026-05-24.md)

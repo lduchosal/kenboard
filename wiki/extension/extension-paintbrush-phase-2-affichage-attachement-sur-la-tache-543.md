@@ -32,4 +32,4 @@ Phase 2 — affichage attachement sur la tâche
 - NON teste en navigateur ici (a valider apres reload de l extension).
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-30.md)

@@ -37,4 +37,4 @@ Fix forward uniquement : pas de rétro-création de la release 0.1.112. 0.1.113 
 - `sh -n publish.sh` OK ; publish.yml validé en YAML (yaml.safe_load).
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-29.md)

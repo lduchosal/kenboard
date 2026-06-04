@@ -34,4 +34,4 @@ Intégrer 'sh scripts/sign-firefox-extension.sh' dans publish.sh : après le bum
 - NON exécuté de bout en bout ici (nécessiterait un vrai publish + upload AMO). Le glob *-${VERSION}.xpi correspond au nommage web-ext (GUID-addon + version). Logique gated/best-effort relue.
 ---
 
-[← retour à ops](index.md) · [voir log](../log.md)
+[← retour à ops](index.md) · [voir log](../log/2026-05-29.md)

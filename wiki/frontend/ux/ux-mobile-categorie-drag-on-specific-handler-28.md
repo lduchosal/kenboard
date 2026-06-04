@@ -17,4 +17,4 @@ En mode mobile, la navigation scroll dans le kenboard (liste des cateogories est
 En mode mobile, ajouter un handler specific avec le cursor main qui drag pour limiter cet effet
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

@@ -45,4 +45,4 @@ Queries attendues apres fix : ~7 (1 categorie, projets by cat, tasks by project 
 *Tache creee automatiquement par le monitoring de performance (#214).*
 ---
 
-[← retour à backend/perf](index.md) · [voir log](../../log.md)
+[← retour à backend/perf](index.md) · [voir log](../../log/2026-05-24.md)

@@ -15,4 +15,4 @@ section_title: "UX / interactions"
 Le toggle normal/détail existe déjà. Problème : en mode normal, la carte affiche actuellement titre + description. Attendu : en mode normal, la carte n'affiche QUE le titre (pas la description, pas la date, pas le responsable). Le mode détail garde son rendu actuel (titre + description + date + responsable).
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

@@ -31,4 +31,4 @@ Dans le header, on veut le numéro de version.
 - Sera dans la prochaine release (probablement 0.1.16 avec #6/#7 + #22)
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-24.md)

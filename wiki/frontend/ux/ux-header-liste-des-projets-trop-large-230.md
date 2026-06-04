@@ -34,4 +34,4 @@ Quand il y a beaucoup de categories, le header en mode Desktop est overcrowded e
 - pytest unit : 343 passed
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

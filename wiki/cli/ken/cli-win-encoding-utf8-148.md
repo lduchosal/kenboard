@@ -36,4 +36,4 @@ L'utilisateur Windows n'a plus besoin de `PYTHONUTF8=1` : c'est plug-and-play ap
 - Aucun changement sur les plateformes non-Windows (`# pragma: no cover` sur le bloc win32)
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

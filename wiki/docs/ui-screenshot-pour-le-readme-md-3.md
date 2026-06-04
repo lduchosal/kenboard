@@ -15,4 +15,4 @@ section_title: "Documentation"
 Automatiser quelques captures d'écrans avec playwright et les mettre dans le README.md
 ---
 
-[← retour à docs](index.md) · [voir log](../log.md)
+[← retour à docs](index.md) · [voir log](../log/2026-05-24.md)

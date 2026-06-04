@@ -40,4 +40,4 @@ Les emails envoyes depuis le systeme doivent etre au format TXT et HTML.
 - flake8 : clean
 ---
 
-[← retour à backend/email](index.md) · [voir log](../../log.md)
+[← retour à backend/email](index.md) · [voir log](../../log/2026-05-24.md)

@@ -27,4 +27,4 @@ Jobs:
   * build (3.12) failed (2 annotations)
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

@@ -45,4 +45,4 @@ Mettre en place un système d'auto-monitoring des performances côté serveur da
 - interrogate : 100%
 ---
 
-[← retour à backend/perf](index.md) · [voir log](../../log.md)
+[← retour à backend/perf](index.md) · [voir log](../../log/2026-05-24.md)

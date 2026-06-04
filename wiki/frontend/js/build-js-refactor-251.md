@@ -101,4 +101,4 @@ Stack JS retenue (CLAUDE.md mis à jour) :
 - Migrer les `onclick=\"\"` inline vers `addEventListener` quand le coût d'inertie devient négatif (permettrait de retirer les exports vers `globalThis` dans main.js).
 ---
 
-[← retour à frontend/js](index.md) · [voir log](../../log.md)
+[← retour à frontend/js](index.md) · [voir log](../../log/2026-05-24.md)

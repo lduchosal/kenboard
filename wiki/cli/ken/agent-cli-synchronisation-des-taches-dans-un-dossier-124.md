@@ -48,4 +48,4 @@ le dossier doc/kenboard est configuré dans le fichier de config .ken (ajouté a
 - Pas d'impact sur les tests existants (les tests `TestRequest` qui construisent `KenConfig` manuellement continuent de fonctionner grâce au défaut `sync_dir=doc/kenboard`).
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

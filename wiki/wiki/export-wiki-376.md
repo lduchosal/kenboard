@@ -45,4 +45,4 @@ https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f
 Sous-tâche créée séparément sur le board pour chaque chunk afin de garder l'audit trail propre. Ce ticket reste l'umbrella et passera en review une fois A→E shipped.
 ---
 
-[← retour à wiki](index.md) · [voir log](../log.md)
+[← retour à wiki](index.md) · [voir log](../log/2026-05-24.md)

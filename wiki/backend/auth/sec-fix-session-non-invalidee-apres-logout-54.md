@@ -53,4 +53,4 @@ Approche "per-user nonce embarqué dans l'identifiant Flask-Login".
 Cette approche n'invalide pas les sessions individuelles d'un même user — `/logout` déconnecte le user de TOUS ses appareils. C'est volontaire et plus sûr (un attaquant qui a volé un cookie ne peut pas s'isoler de la victime). Pour une déconnexion par-device, il faudrait stocker un nonce par session côté DB (table `user_sessions`).
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

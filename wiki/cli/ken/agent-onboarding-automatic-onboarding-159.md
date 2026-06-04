@@ -60,4 +60,4 @@ Aucun `< > " ' & \n` ne peut passer → pas de XSS/injection (cf. sonar S5131 co
 - Le token onboarding a le scope `write` (pas `admin`) : l'agent peut lire/écrire des tâches mais pas gérer les users/keys/categories
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

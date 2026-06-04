@@ -34,4 +34,4 @@ Cause : document.activeElement renvoie le **host Shadow DOM** (un <div>) quand l
 - NON testé en navigateur ici. À valider en tapant un mot avec T/R dans le composer paintbrush.
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-30.md)

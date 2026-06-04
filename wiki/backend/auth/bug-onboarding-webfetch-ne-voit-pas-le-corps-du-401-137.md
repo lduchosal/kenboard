@@ -49,4 +49,4 @@ Le bouton "Copy onboard link" est actuellement en `opacity: 0` et n'apparaît qu
 - Le flow browser sur `/cat/<id>.html` n'est pas affecté
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

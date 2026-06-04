@@ -30,4 +30,4 @@ La page /aide ne documente que le popup (Ctrl+Shift+K / Cmd+Shift+K) et parle en
 - tests/unit/test_page_routes.py::TestAidePage : 2 passed (rendu 200 + sections présentes inchangées).
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-30.md)

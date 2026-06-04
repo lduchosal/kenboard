@@ -21,4 +21,4 @@ section_title: "Code quality & CI"
 - python:S7632 (×2) ken.py:364, 397 — Fix issue suppression comment syntax. Probablement des "noqa"/"type: ignore" mal formés à corriger.
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

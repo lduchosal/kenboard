@@ -50,4 +50,4 @@ Extrait 2 fonctions du after_request hook :
 - interrogate : 100%
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

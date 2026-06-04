@@ -45,4 +45,4 @@ Aucune modification de code, de Markdown ou de configuration : seul l'asset manq
 Le README référence également `doc/ken-cli.md`, `doc/api.md`, `doc/openapi.yaml`, `doc/oidc-adfs.md` qui n'existent pas non plus. Ces liens cassés ne sont pas couverts par le scope de la tâche (intitulée "Screenshot missing") — à traiter dans une tâche séparée si souhaité.
 ---
 
-[← retour à docs](index.md) · [voir log](../log.md)
+[← retour à docs](index.md) · [voir log](../log/2026-05-24.md)

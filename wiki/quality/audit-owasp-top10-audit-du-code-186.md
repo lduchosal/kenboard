@@ -44,4 +44,4 @@ Audit de sécurité style OWASP TOP10
 Posture de sécurité solide. Les vulnérabilités historiques (XSS, CSRF bypass, open redirect) corrigées lors des audits précédents (tâches 34, 36, 40-56). Gaps restants sur le logging des événements d'authentification — important pour la détection d'intrusion mais pas une vulnérabilité exploitable.
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

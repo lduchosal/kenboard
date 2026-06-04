@@ -68,4 +68,4 @@ Pivot du JS-injection vers une **extension navigateur** :
 package sideload sans cloner le repo.
 ---
 
-[← retour à frontend/js](index.md) · [voir log](../../log.md)
+[← retour à frontend/js](index.md) · [voir log](../../log/2026-05-27.md)

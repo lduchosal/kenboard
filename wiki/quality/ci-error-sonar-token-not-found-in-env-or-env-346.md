@@ -60,4 +60,4 @@ Tout repo qui réutilise ce `publish.yml` (fork de kenboard, `jeff`, autres sibl
 Sans le mapping (point 2), le secret est invisible à `publish.sh` même s'il existe dans les settings.
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

@@ -43,4 +43,4 @@ revue des issues, correction
 - `pdm run check` complet vert
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

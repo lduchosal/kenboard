@@ -15,4 +15,4 @@ section_title: "UX / interactions"
 Dans l’édition ou la création d'une tâche, l' utilisateur par défaut du projet doit être pré-selectionné
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

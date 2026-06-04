@@ -57,4 +57,4 @@ Ces commits n'ont pas été détectés parce que `pdm run test-ci` exclut e2e.
    pour ne pas reproduire le trou.
 ---
 
-[← retour à frontend/js](index.md) · [voir log](../../log.md)
+[← retour à frontend/js](index.md) · [voir log](../../log/2026-05-24.md)

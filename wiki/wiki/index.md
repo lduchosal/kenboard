@@ -4,6 +4,11 @@ LLM-wiki pattern (Karpathy) — classification, sync, build, lint.
 
 Section: `wiki`
 
+## En cours (2)
+
+- [wiki / Slugify garde les lettres sous-jacentes des accents (é → e)](wiki-slugify-garde-les-lettres-sous-jacentes-des-accents-e-e-740.md) — _review_
+- [wiki / Liens HTML cassés en navigation file:// (Home off-by-one)](wiki-liens-html-casses-en-navigation-file-home-off-by-one-741.md) — _review_
+
 ## Archivé (4)
 
 - [Export / wiki](export-wiki-376.md)

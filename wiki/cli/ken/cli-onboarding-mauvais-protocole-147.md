@@ -38,4 +38,4 @@ Les 3 callers qui dérivaient `base_url` manuellement (`onboard_route`, `_unauth
 - Aucun changement de comportement quand `KENBOARD_HTTPS=false` (dev local en HTTP)
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

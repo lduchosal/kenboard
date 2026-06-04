@@ -43,4 +43,4 @@ Au lieu d'une seule barre par personne (total sur 90 j), afficher un graphe en b
 - Rendu vérifié via test GET / (titre + nom propriétaire ; principal brut absent). Pas de session navigateur live.
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-29.md)

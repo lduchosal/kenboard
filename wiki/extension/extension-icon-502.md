@@ -32,4 +32,4 @@ Utiliser l'icon du kenboard pour l'icon de l'extension
 - Régénération : `for s in 16 32 48 128; do rsvg-convert -w $s -h $s src/dashboard/static/logo.svg -o extension/icons/icon-$s.png; done`
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-29.md)

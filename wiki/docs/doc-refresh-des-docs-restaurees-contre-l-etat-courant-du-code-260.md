@@ -80,4 +80,4 @@ Patches ciblés :
 - Cron de purge des `password_reset_tokens` / `email_verification_tokens` expirés (mentionné en TODO dans `auth-user.md` section self-register).
 ---
 
-[← retour à docs](index.md) · [voir log](../log.md)
+[← retour à docs](index.md) · [voir log](../log/2026-05-24.md)

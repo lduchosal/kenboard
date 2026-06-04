@@ -20,4 +20,4 @@ revue des issues, correction
 Doublon de #134 (même scope). Voir le résolution block de #134 pour le détail des 7 issues + 1 hotspot corrigés.
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

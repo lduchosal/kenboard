@@ -65,4 +65,4 @@ Action attendue (agent / LLM) :
 Mais phase 1 (manuelle) suffit pour démarrer.
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-31.md)

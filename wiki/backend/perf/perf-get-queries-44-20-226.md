@@ -23,4 +23,4 @@ Supprime l'appel a _load_all_data(). L'index charge : categories, projets, users
 Queries attendues : 3 + 2 (counts + doing) + C (burndown categories)
 ---
 
-[← retour à backend/perf](index.md) · [voir log](../../log.md)
+[← retour à backend/perf](index.md) · [voir log](../../log/2026-05-24.md)

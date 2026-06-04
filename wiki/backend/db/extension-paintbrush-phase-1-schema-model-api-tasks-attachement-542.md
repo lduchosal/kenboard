@@ -47,4 +47,4 @@ Phase 1 (Epic #541) — schéma + modèle + API pour tasks.attachement.
 Phase 2 (#543) : rendre attachement sur le modal détail de la tâche (sanitize via DOMPurify déjà chargé).
 ---
 
-[← retour à backend/db](index.md) · [voir log](../../log.md)
+[← retour à backend/db](index.md) · [voir log](../../log/2026-05-30.md)

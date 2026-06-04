@@ -69,4 +69,4 @@ Refonte du format d'export wiki (#376 followup) — voir décisions Q1–Q4 dans
 - 4 nouveaux tests + 81 tests `ken.py` au total.
 ---
 
-[← retour à wiki](index.md) · [voir log](../log.md)
+[← retour à wiki](index.md) · [voir log](../log/2026-05-24.md)

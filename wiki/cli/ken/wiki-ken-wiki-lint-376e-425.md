@@ -43,4 +43,4 @@ Exit code : 0 si aucun ERROR (et aucun WARN en mode `--strict`), 1 sinon.
 Q5 (enrichissement log/orphans) — repoussé.
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

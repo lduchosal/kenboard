@@ -59,4 +59,4 @@ L'effet réel (zip + GitHub release) se verra au prochain `sh publish.sh
 l'auto-test).
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-29.md)

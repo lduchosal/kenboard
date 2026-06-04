@@ -15,4 +15,4 @@ section_title: "Page templates (Jinja2)"
 Ajouter KEN / Catégorie / Projet
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-24.md)

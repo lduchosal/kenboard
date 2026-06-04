@@ -35,4 +35,4 @@ Execute la qualité, résoud les problèmes et publie le package sur pypi.
 - Tests #18 : 3 nouveaux tests e2e (régression #11, rendu MD, garde-fou refresh)
 ---
 
-[← retour à ops](index.md) · [voir log](../log.md)
+[← retour à ops](index.md) · [voir log](../log/2026-05-24.md)

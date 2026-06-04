@@ -56,4 +56,4 @@ Le README actuel ne mentionne pas le workflow wiki agent-driven (#376a–f). Ajo
 - README rendu vérifié visuellement (markdown valide).
 ---
 
-[← retour à docs](index.md) · [voir log](../log.md)
+[← retour à docs](index.md) · [voir log](../log/2026-05-25.md)

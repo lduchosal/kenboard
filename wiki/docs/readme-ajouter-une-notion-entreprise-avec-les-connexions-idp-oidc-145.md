@@ -15,4 +15,4 @@ section_title: "Documentation"
 Le kenboard est compatible avec une authentification OIDC, il est self hosted. Un support commercial peut-être mis à disposition. Ce sont des notions "Entreprises" que l'on peut mettre en avant dans le README
 ---
 
-[← retour à docs](index.md) · [voir log](../log.md)
+[← retour à docs](index.md) · [voir log](../log/2026-05-24.md)

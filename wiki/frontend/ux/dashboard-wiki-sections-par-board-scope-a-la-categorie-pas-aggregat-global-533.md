@@ -39,4 +39,4 @@ Source : observation faite via l'annotation #532 sur la home.
 - Suite complète unit+integration verte.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-30.md)

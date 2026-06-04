@@ -39,4 +39,4 @@ L'extension paintbrush peuple tasks.attachement avec un SVG (#541). La CLI 'ken'
 - ken add/show/update --help affichent bien les nouvelles options.
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-30.md)

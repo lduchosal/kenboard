@@ -49,4 +49,4 @@ Tous les liens dans les descriptions d'une tâche doivent être ouverts dans un 
 - Bundle : ~23 KB / ~6 KB gzip
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

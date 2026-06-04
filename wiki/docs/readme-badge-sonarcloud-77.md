@@ -30,4 +30,4 @@ Ajout d'une seconde ligne de badges dédiée à SonarCloud, juste après les bad
 Coverage est volontairement laissé à codecov (#76) pour ne pas dupliquer.
 ---
 
-[← retour à docs](index.md) · [voir log](../log.md)
+[← retour à docs](index.md) · [voir log](../log/2026-05-24.md)

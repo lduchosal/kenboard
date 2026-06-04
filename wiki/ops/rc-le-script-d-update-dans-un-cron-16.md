@@ -17,4 +17,4 @@ le service kenboard update va tourner toutes les minutes dans un cron. Il convie
 Je te rapelle hosting:; FreeBSD, script sh
 ---
 
-[← retour à ops](index.md) · [voir log](../log.md)
+[← retour à ops](index.md) · [voir log](../log/2026-05-24.md)

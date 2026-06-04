@@ -28,4 +28,4 @@ Script Python avec ThreadPoolExecutor (4 workers) envoyant DELETE /api/v1/catego
 - Les categories existantes (Project test, Performance, etc.) preservees
 ---
 
-[← retour à backend/perf](index.md) · [voir log](../../log.md)
+[← retour à backend/perf](index.md) · [voir log](../../log/2026-05-24.md)

@@ -53,4 +53,4 @@ Remplacé par une grille de mini-cards (un barchart par projet/board de la caté
 - `pdm run interrogate` → 100% (seuil 95%).
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-30.md)

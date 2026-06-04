@@ -1044,7 +1044,7 @@ class TestCliMutations:
         assert (wiki / "backend" / "index.md").is_file()
         assert (wiki / "backend" / "api" / "index.md").is_file()
         assert (wiki / "frontend" / "index.md").is_file()
-        assert (wiki / "log.md").is_file()
+        assert (wiki / "log" / "index.md").is_file()
         # Task assigned to its section
         backend_api = (wiki / "backend" / "api" / "index.md").read_text(
             encoding="utf-8"
@@ -1054,7 +1054,11 @@ class TestCliMutations:
         backend_root = (wiki / "backend" / "index.md").read_text(encoding="utf-8")
         assert "no tasks classified yet" in backend_root
 
-    def test_wiki_sync_log_is_desc_by_classified_at(self, cwd_tmp, runner):
+    def test_wiki_sync_journal_emits_one_page_per_day_newest_first(
+        self, cwd_tmp, runner
+    ):
+        """``log/`` holds one page per classification date, index lists them
+        newest first (#742)."""
         self._setup(cwd_tmp)
         self._write_architecture(
             cwd_tmp,
@@ -1088,9 +1092,20 @@ class TestCliMutations:
         with ctx:
             result = runner.invoke(ken.cli, ["wiki", "sync"])
         assert result.exit_code == 0, result.output
-        log = (cwd_tmp / "wiki" / "log.md").read_text(encoding="utf-8")
-        # Newest first → "newer" appears before "older"
-        assert log.index("newer") < log.index("older")
+        wiki = cwd_tmp / "wiki"
+        # One MD per date, ISO-named so directory listings sort correctly.
+        assert (wiki / "log" / "2026-01-01.md").is_file()
+        assert (wiki / "log" / "2026-06-01.md").is_file()
+        # Index lists the days newest first.
+        index = (wiki / "log" / "index.md").read_text(encoding="utf-8")
+        assert index.index("2026-06-01") < index.index("2026-01-01")
+        # Each day page contains its task.
+        jan = (wiki / "log" / "2026-01-01.md").read_text(encoding="utf-8")
+        assert "older" in jan and "#1" in jan
+        jun = (wiki / "log" / "2026-06-01.md").read_text(encoding="utf-8")
+        assert "newer" in jun and "#2" in jun
+        # Flat log.md is gone — replaced by log/index.md.
+        assert not (wiki / "log.md").exists()
 
     def test_wiki_sync_json_mode_does_not_write(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
@@ -1155,8 +1170,14 @@ class TestCliMutations:
             "# Backend\n\nServer-side.\n\n## Tasks (1)\n\n- **#1** T1 — _todo_ — Q\n",
             encoding="utf-8",
         )
-        (wiki / "log.md").write_text(
-            "# Classification log\n\n- 2026-05-24 — task #1 → `backend`\n",
+        (wiki / "log").mkdir()
+        (wiki / "log" / "index.md").write_text(
+            "# Journal d'exploitation\n\n- [2026-05-24](2026-05-24.md) — 1 task\n",
+            encoding="utf-8",
+        )
+        (wiki / "log" / "2026-05-24.md").write_text(
+            "# 2026-05-24\n\n1 task(s) classée(s) ce jour.\n\n"
+            "- [#1 T1](../backend/t1-1.md) — `backend` — _todo_ — par Q\n",
             encoding="utf-8",
         )
         return wiki
@@ -1173,13 +1194,24 @@ class TestCliMutations:
         out = cwd_tmp / "wiki-html"
         assert (out / "index.html").is_file()
         assert (out / "backend" / "index.html").is_file()
-        assert (out / "log.html").is_file()
+        assert (out / "log" / "index.html").is_file()
+        assert (out / "log" / "2026-05-24.html").is_file()
         body = (out / "backend" / "index.html").read_text(encoding="utf-8")
         assert "<h1>Backend</h1>" in body
         # Sidebar nav is present on every page
         assert 'class="sidebar"' in body
         # Inline CSS — page is self-contained
         assert "<style>" in body
+        # #743 — every built page carries the build footer.
+        assert 'class="wiki-footer"' in body
+        assert "kenboard" in body and "Généré le" in body
+        # Footer is rendered on every page kind: root index, log index too.
+        assert 'class="wiki-footer"' in (out / "index.html").read_text(
+            encoding="utf-8"
+        )
+        assert 'class="wiki-footer"' in (out / "log" / "index.html").read_text(
+            encoding="utf-8"
+        )
 
     def test_wiki_build_rewrites_md_links_to_html(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
@@ -1889,6 +1921,154 @@ class TestSidebarNav:
     def test_no_home_when_current_section_none(self):
         html = ken._format_sidebar_nav(self._sections(), "log.md", None)
         assert "Home</a>" not in html
+
+    def test_journal_section_appended_when_daily_dates_present(self):
+        html = ken._format_sidebar_nav(
+            self._sections(),
+            "index.md",
+            "",
+            daily_dates=["2026-06-04", "2026-06-01"],
+        )
+        # Journal index link at depth 0.
+        assert '<a href="log/index.html">Journal</a>' in html
+        # Daily entries, newest first.
+        first = html.index("2026-06-04")
+        second = html.index("2026-06-01")
+        assert first < second
+        assert '<a href="log/2026-06-04.html">2026-06-04</a>' in html
+
+    def test_journal_section_omitted_when_no_daily_dates(self):
+        html = ken._format_sidebar_nav(
+            self._sections(),
+            "index.md",
+            "",
+            daily_dates=[],
+        )
+        assert "Journal" not in html
+
+    def test_journal_links_climb_to_root_from_nested_page(self):
+        html = ken._format_sidebar_nav(
+            self._sections(),
+            "backend/api/foo-1.md",
+            "backend/api",
+            daily_dates=["2026-06-04"],
+        )
+        assert '<a href="../../log/index.html">Journal</a>' in html
+        assert '<a href="../../log/2026-06-04.html">2026-06-04</a>' in html
+
+    def test_journal_highlights_current_day(self):
+        html = ken._format_sidebar_nav(
+            self._sections(),
+            "log/2026-06-04.md",
+            "log/2026-06-04",
+            daily_dates=["2026-06-04", "2026-06-01"],
+        )
+        # Day link is current, but the Journal index is not.
+        assert (
+            '<a href="../log/2026-06-04.html" class="current">2026-06-04</a>'
+            in html
+        )
+        assert '<a href="../log/index.html">Journal</a>' in html
+
+    def test_journal_index_highlighted_on_log_index(self):
+        html = ken._format_sidebar_nav(
+            self._sections(),
+            "log/index.md",
+            "log",
+            daily_dates=["2026-06-04"],
+        )
+        assert (
+            '<a href="../log/index.html" class="current">Journal</a>' in html
+        )
+
+
+class TestLogHelpers:
+    """Pure helpers for the journal d'exploitation (#742)."""
+
+    def test_classified_date_extracts_iso_prefix(self):
+        assert (
+            ken._classified_date({"classified_at": "2026-06-04T12:34:56"})
+            == "2026-06-04"
+        )
+
+    def test_classified_date_falls_back_to_unknown(self):
+        assert ken._classified_date({}) == "unknown"
+        assert ken._classified_date({"classified_at": ""}) == "unknown"
+        assert ken._classified_date({"classified_at": "bogus"}) == "unknown"
+
+    def test_format_log_index_lists_dates_newest_first(self):
+        out = ken._format_log_index_md(
+            {
+                "2026-01-01": [{"task_id": 1}],
+                "2026-06-04": [{"task_id": 2}, {"task_id": 3}],
+                "2026-03-15": [{"task_id": 4}],
+            }
+        )
+        # Reverse-alphabetical order of dates.
+        assert out.index("2026-06-04") < out.index("2026-03-15") < out.index(
+            "2026-01-01"
+        )
+        # Counts per day appear.
+        assert "2 task(s)" in out
+        assert "1 task(s)" in out
+
+    def test_format_log_index_empty_shows_placeholder(self):
+        out = ken._format_log_index_md({})
+        assert "Aucune classification" in out
+
+    def test_format_log_day_renders_each_task_with_link(self):
+        out = ken._format_log_day_md(
+            "2026-06-04",
+            [
+                {
+                    "task_id": 740,
+                    "title": "slugify accents",
+                    "section_path": "wiki",
+                    "classified_by": "Claude",
+                    "status": "review",
+                },
+                {
+                    "task_id": 741,
+                    "title": "sidebar home",
+                    "section_path": "wiki",
+                    "classified_by": "Claude",
+                    "status": "review",
+                },
+            ],
+        )
+        assert out.startswith("# 2026-06-04")
+        assert "2 task(s)" in out
+        # Sorted by id ascending → 740 before 741.
+        assert out.index("#740") < out.index("#741")
+        # Each link goes ../<section>/<slug>-<id>.md (build rewrites to .html).
+        assert "../wiki/slugify-accents-740.md" in out
+        assert "../wiki/sidebar-home-741.md" in out
+        assert "`wiki`" in out and "par Claude" in out
+
+
+class TestBuildFooter:
+    """Wiki HTML pages show the build version + generation timestamp (#743)."""
+
+    def test_format_footer_includes_version_and_date(self):
+        from datetime import datetime, timezone
+
+        out = ken._format_footer(
+            "0.1.131", datetime(2026, 6, 4, 14, 32, 10, tzinfo=timezone.utc)
+        )
+        assert "kenboard 0.1.131" in out
+        assert "2026-06-04 14:32:10 UTC" in out
+        assert 'class="wiki-footer"' in out
+
+    def test_wrap_html_appends_footer_inside_main(self):
+        out = ken._wrap_html("title", "<p>body</p>", "<nav/>", "<footer/>")
+        # Footer sits inside <main>, after the body, so it lands at the
+        # bottom of the content column rather than below the sidebar grid.
+        assert "<main><p>body</p><footer/></main>" in out
+
+    def test_wrap_html_footer_optional(self):
+        # Backwards-compat: callers that don't pass footer get no marker.
+        out = ken._wrap_html("title", "<p>body</p>", "<nav/>")
+        assert "<main><p>body</p></main>" in out
 
 
 class TestCliSync:

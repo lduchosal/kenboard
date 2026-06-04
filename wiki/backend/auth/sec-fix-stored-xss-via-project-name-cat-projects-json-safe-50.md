@@ -31,4 +31,4 @@ Le filtre `| safe` désactive l'auto-escape Jinja2. Le JS lit ensuite cette stru
 3. Sanitization côté Pydantic: refuser les caractères `<` et `>` dans `ProjectCreate.name` (ou les encoder).
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

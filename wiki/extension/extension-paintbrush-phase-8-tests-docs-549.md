@@ -41,4 +41,4 @@ Phase 8 cleanup + tests + docs du paintbrush (Epic #541). Consolidait ce qui res
 - /aide rendu côté serveur (TestAidePage) : 2/2.
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-31.md)

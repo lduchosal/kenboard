@@ -39,4 +39,4 @@ Test end-to-end pour l'inscription par email.
 - Extraction du lien par regex sur le corps de l'email capture
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

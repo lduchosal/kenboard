@@ -24,4 +24,4 @@ section_title: "Authentication & permissions"
 - En prod, utiliser gunicorn/uwsgi (déjà recommandé).
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

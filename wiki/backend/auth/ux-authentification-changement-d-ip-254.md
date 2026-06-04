@@ -45,4 +45,4 @@ Le check IP est principalement un coût UX sans gain de sécurité réel par rap
 - **Autosave du modal de tâche dans localStorage** pendant la frappe : couvre les autres scénarios de perte de session (logout, expiry cookie, change password). Ticket séparé si besoin.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

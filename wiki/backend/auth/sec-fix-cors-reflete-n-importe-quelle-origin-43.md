@@ -21,4 +21,4 @@ section_title: "Authentication & permissions"
 **Remédiation:** `CORS(app, origins=["http://localhost:5000", "https://kanban.exemple.com"], supports_credentials=True)`. La liste doit venir d'une variable d'env (`KENBOARD_CORS_ORIGINS`).
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

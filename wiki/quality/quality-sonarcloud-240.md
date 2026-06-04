@@ -35,4 +35,4 @@ https://sonarcloud.io/project/overview?id=lduchosal_kenboard
 - pytest unit : 368 passed
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

@@ -35,4 +35,4 @@ Dans la fenêtre de configuration, mettre un champ URL où l'on peut coller le "
 - Aucun changement serveur : réutilise l'endpoint /onboard et l'API existante.
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-29.md)

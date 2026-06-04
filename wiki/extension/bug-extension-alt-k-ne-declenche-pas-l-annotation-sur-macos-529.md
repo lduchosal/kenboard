@@ -30,4 +30,4 @@ Sur macOS, Option+K injecte le caractère mort '˚' donc e.key === 'k' était to
 - Le fix est inclus dans la prochaine release (0.1.118).
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-30.md)

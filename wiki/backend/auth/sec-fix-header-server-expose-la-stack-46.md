@@ -21,4 +21,4 @@ section_title: "Authentication & permissions"
 **Remédiation:** en prod, kenboard ne devrait pas servir directement via Werkzeug (c'est le serveur de dev de Flask). Documenter dans INSTALL.md le déploiement derrière gunicorn/uwsgi + reverse proxy nginx, et nettoyer le header `Server` au niveau du proxy. À court terme: `@app.after_request` qui supprime/écrase `response.headers['Server']`.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

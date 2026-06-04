@@ -53,4 +53,4 @@ Sanity check inclus que `openEditTask` reflète bien le status original AVANT le
 - Note : `tasks.js` reste exclu de la coverage Sonar (per `sonar-project.properties`, DOM-mutator → couvert par Playwright), mais le test Vitest est explicitement présent pour ce contrat précis.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

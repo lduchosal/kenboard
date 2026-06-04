@@ -20,4 +20,4 @@ Améliorer le README pour donner une meilleur impression au premier regard:
 - dans la partie Usage pour les bots, il convient de parler du processus complet de onboarding
 ---
 
-[← retour à docs](index.md) · [voir log](../log.md)
+[← retour à docs](index.md) · [voir log](../log/2026-05-24.md)

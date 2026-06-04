@@ -17,4 +17,4 @@ Les formulaires d'édition devrait prendre au moins la moitié de la surface de 
 Plus l'écran est petit (breakpoint) plus le formulaire peut prendre de place.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

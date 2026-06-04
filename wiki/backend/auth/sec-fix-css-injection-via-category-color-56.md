@@ -23,4 +23,4 @@ section_title: "Authentication & permissions"
 2. La CSP (#41) avec `style-src 'self'` (sans 'unsafe-inline') empêcherait l'attaque mais casserait l'app actuelle.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

@@ -21,4 +21,4 @@ Le task-fullscreen est toujours apparent en bas de la page
 Le dialog natif HTML est visible par defaut. Ajout display:none sur .fullscreen-modal et display:flex sur .fullscreen-modal[open]. 269 tests verts.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

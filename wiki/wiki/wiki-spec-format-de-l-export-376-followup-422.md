@@ -57,4 +57,4 @@ tâche séparée si un consommateur du wiki demande explicitement la
 version filtrée.
 ---
 
-[← retour à wiki](index.md) · [voir log](../log.md)
+[← retour à wiki](index.md) · [voir log](../log/2026-05-24.md)

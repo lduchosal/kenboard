@@ -34,4 +34,4 @@ L'URL AMO fournie est la console développeur (privée). L'add-on est *unlisted*
 - NON vérifié visuellement en navigateur ici : rendu confirmé via le client de test Flask (200, deux sections présentes, pas d'erreur Jinja). À jeter un œil sur /aide une fois déployé.
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-29.md)

@@ -52,4 +52,4 @@ La commande `kenboard build` était **déjà cassée** : son implémentation app
 - `README.md` ne mentionne pas `kenboard build` (vérifié) — pas de changement nécessaire.
 ---
 
-[← retour à cli/kenboard](index.md) · [voir log](../../log.md)
+[← retour à cli/kenboard](index.md) · [voir log](../../log/2026-05-24.md)

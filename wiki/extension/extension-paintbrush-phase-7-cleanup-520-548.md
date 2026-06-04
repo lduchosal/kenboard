@@ -23,4 +23,4 @@ Le code quote-mode est déjà supprimé (la réécriture complète d'annotate.sr
 Reste à faire : `npm uninstall dom-anchor-text-{quote,position}` + /aide section 5 + README extension. Ces 3 items sont consolidés dans **#549** qui regroupe désormais tout le cleanup + tests.
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-31.md)

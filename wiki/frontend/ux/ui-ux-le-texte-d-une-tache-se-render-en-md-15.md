@@ -37,4 +37,4 @@ Marked v12 ne sanitize plus (option `sanitize` retirée). Pour un outil interne 
 - 23 e2e tests OK (le `to_have_text("Nouvelle description")` reste valide car Playwright normalise le whitespace, et `<p>Nouvelle description</p>` a le bon textContent)
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

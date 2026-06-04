@@ -15,4 +15,4 @@ section_title: "Page templates (Jinja2)"
 Le bouton Ajouter une tâche ne prend plus toute la largeur de la colonne A FAIRE.Corriger
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-24.md)

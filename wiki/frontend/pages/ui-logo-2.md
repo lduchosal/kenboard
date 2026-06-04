@@ -15,4 +15,4 @@ section_title: "Page templates (Jinja2)"
 Trouver un joli logo de KEN style ascii art ou pyxel art pour le README.md
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-24.md)

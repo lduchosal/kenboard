@@ -21,4 +21,4 @@ Le kenboard est un peu lent quand on consulte une catégorie avec 100+ tâches (
 Cette tâche ne doit pas être réalisée manuellement. Le système d'auto-monitoring (#214) doit détecter ce problème automatiquement et créer une tâche avec les métriques techniques précises permettant d'agir efficacement. Cette tâche sert de référence pour valider que le système de monitoring fonctionne : si #214 est bien implémenté, une tâche équivalente à celle-ci sera créée automatiquement par le système.
 ---
 
-[← retour à backend/perf](index.md) · [voir log](../../log.md)
+[← retour à backend/perf](index.md) · [voir log](../../log/2026-05-24.md)

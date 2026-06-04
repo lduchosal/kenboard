@@ -31,4 +31,4 @@ Aussi : le **fichier `marked.min.js` rendait 500** parce qu'il manquait sa route
 `test_edit_modal_status_reflects_dragged_position` dans `test_dashboard.py::TestTaskCRUD` — crée une tâche, simule le drag (déplacement DOM + PATCH api) sans reload, ouvre le modal, vérifie que le dropdown affiche `doing`, sauve sans rien toucher, vérifie que la tâche reste en doing. Sans le fix : assertion fail.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

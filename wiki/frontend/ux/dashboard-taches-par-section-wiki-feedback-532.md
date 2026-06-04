@@ -21,4 +21,4 @@ section_title: "UX / interactions"
 [citer](https://www.kenboard.2113.ch/#:~:text=T%C3%A2ches%20par%20section%20wiki)
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-30.md)

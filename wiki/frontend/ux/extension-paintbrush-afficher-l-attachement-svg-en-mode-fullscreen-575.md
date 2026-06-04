@@ -28,4 +28,4 @@ Le modal d'édition affiche bien le SVG attachement (#541 phase 2) mais le modal
 - pdm run js-lint (Biome) : clean.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-30.md)

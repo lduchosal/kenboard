@@ -21,4 +21,4 @@ Aucun header `Content-Security-Policy` n'est servi. Combiné à l'absence de `X-
 **Remédiation:** ajouter un `@app.after_request` dans `dashboard/app.py` qui pose une CSP stricte: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'`. Vérifier que app.js / sortable.min.js / marked.min.js continuent de charger.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

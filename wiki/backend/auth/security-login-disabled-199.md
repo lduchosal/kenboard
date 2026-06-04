@@ -66,4 +66,4 @@ Est-il possible comme en .NET ou en C d'avoir une compilation conditionnelle et 
 - `pdm run check` (isort + black + docformatter + mypy + flake8 + interrogate + refurb + lint + vulture + test-quick) → tout vert
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

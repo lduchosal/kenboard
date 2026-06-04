@@ -15,4 +15,4 @@ section_title: "Accessibility"
 SonarCloud issue AZ1roTRHwhcIbu0T-uaj (MAJOR/CODE_SMELL). File: src/dashboard/templates/index.html:28. Rule Web:S6848 — Avoid non-native interactive elements; if not possible add appropriate role and support for tabbing/mouse/keyboard/touch. Tag: accessibility.
 ---
 
-[← retour à frontend/a11y](index.md) · [voir log](../../log.md)
+[← retour à frontend/a11y](index.md) · [voir log](../../log/2026-05-24.md)

@@ -16,4 +16,4 @@ Le code coverage n'a pas l'air de fonctionner
 https://app.codecov.io/gh/lduchosal/kenboard
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

@@ -34,4 +34,4 @@ Le sous titre qui apparait dans la description github est Kanban et Dashboard. I
 - Vérification via `gh repo view --json description`
 ---
 
-[← retour à docs](index.md) · [voir log](../log.md)
+[← retour à docs](index.md) · [voir log](../log/2026-05-24.md)

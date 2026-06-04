@@ -53,4 +53,4 @@ KENBOARD_ERROR_WHO=kenboard   # optionnel, défaut "kenboard"
 puis redémarrer le service. Avant le redémarrage : zéro changement de comportement.
 ---
 
-[← retour à backend/perf](index.md) · [voir log](../../log.md)
+[← retour à backend/perf](index.md) · [voir log](../../log/2026-05-29.md)

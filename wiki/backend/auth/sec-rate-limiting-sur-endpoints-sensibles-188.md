@@ -40,4 +40,4 @@ Actuellement seul /login est protégé (5/min, 20/h).
 - `pdm run test-quick` : 269 passed
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

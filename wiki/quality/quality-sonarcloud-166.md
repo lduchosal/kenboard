@@ -21,4 +21,4 @@ https://sonarcloud.io/project/overview?id=lduchosal_kenboard - revue des issues,
 5 issues corrigées. Retiré user-scalable=no (S7926). Remplacé div role=dialog par dialog natif HTML (S6819, S6847). Ajouté contenu initial au h2 vide (S6850). JS utilise showModal()/close(). CSS utilise ::backdrop. Scroll bloqué nativement par dialog. 269 tests verts.
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

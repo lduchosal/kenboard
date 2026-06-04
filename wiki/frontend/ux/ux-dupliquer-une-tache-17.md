@@ -25,4 +25,4 @@ La tâche existante est copiée dans un nouvelle tâche :
 Le formulaire d'édition reste ouvert, l'utilisateur peut modifier la nouvelle tâche selon le formulaire standard.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

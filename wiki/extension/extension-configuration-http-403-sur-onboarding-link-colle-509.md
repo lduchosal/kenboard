@@ -38,4 +38,4 @@ Le token onboard a déjà le bon scope (write). Le souci est uniquement que /api
 - Note : le GET de test promeut le token onboarding → onboarded (auth.py:359) ; sans effet fonctionnel, le token reste valide.
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-29.md)

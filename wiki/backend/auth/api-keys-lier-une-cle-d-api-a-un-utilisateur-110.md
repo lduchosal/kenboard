@@ -15,4 +15,4 @@ section_title: "Authentication & permissions"
 Lier une clé d'Api à un utilisateur, ca permet de tracer qui fait quoi.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

@@ -36,4 +36,4 @@ On ne stocke PAS de binaire (PNG base64) dans la base. La piste « élargir la c
 - Aucune migration à appliquer en prod (revert) — fix purement applicatif (validation).
 ---
 
-[← retour à backend/db](index.md) · [voir log](../../log.md)
+[← retour à backend/db](index.md) · [voir log](../../log/2026-05-29.md)

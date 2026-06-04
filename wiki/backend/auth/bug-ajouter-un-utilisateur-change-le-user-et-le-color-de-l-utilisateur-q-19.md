@@ -47,4 +47,4 @@ Dans `tests/e2e/test_dashboard.py::TestAdminUsers` :
 - Prêt pour publish 0.1.14
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

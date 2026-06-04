@@ -61,4 +61,4 @@ Chaque variable a : nom, défaut, description (1-3 phrases). Les références #i
 - KEN_SYNC_DIR défaut corrigé en "doc/kenboard" (lu depuis DEFAULT_SYNC_DIR dans ken.py:54, pas "wiki").
 ---
 
-[← retour à docs](index.md) · [voir log](../log.md)
+[← retour à docs](index.md) · [voir log](../log/2026-05-31.md)

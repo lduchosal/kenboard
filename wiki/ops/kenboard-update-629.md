@@ -74,4 +74,4 @@ ssh ans2 'cd ansible && ab kenboard.yml'                     # broad deploy
 ```
 ---
 
-[← retour à ops](index.md) · [voir log](../log.md)
+[← retour à ops](index.md) · [voir log](../log/2026-06-02.md)

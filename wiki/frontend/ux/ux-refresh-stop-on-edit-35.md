@@ -15,4 +15,4 @@ section_title: "UX / interactions"
 Arrêter le refresh automatique quand on est en train de réer ou d'éditer une tâche
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

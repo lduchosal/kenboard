@@ -45,4 +45,4 @@ $ git ls-files | grep -iE "\.DS_Store|Thumbs\.db|\.idea|\.vscode|__pycache__"
 - Aucun fichier de test impacté — pure cleanup.
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

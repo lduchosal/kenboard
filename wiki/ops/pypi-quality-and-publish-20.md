@@ -32,4 +32,4 @@ Déjà au vert avant lancement (fait pendant le fix #19) : ruff, mypy, black, is
 - 3 nouveaux tests e2e dont un dédié Firefox (`test_firefox_create_user_no_autofill_leak`) qui valide le fix bidirectionnellement.
 ---
 
-[← retour à ops](index.md) · [voir log](../log.md)
+[← retour à ops](index.md) · [voir log](../log/2026-05-24.md)

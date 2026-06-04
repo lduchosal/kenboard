@@ -49,4 +49,4 @@ Scan de référence : 2026-04-08T18:48:22 (rev 691cc69). 3 issues ouvertes trait
 Le `.kanban-task` contient en mode détail un `<button class="btn-edit">Editer</button>` (ligne 28). HTML5 spec interdit tout descendant interactif dans un `<button>`, et l'algorithme de parsing des navigateurs ferme implicitement le `<button>` externe quand il rencontre un `<button>` interne — ce qui sortirait le bouton Editer de la carte et casserait le layout et la propagation du clic. Le pattern `role="button"` + `tabindex="0"` + `onkeydown" Enter/Space" est l'accessibilité correcte pour cette composition. D'où l'exclusion Sonar ciblée plutôt qu'un fix structurel risqué.
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

@@ -49,4 +49,4 @@ Permettre a un nouvel utilisateur de creer son compte depuis la page de login av
 - interrogate : 100%
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

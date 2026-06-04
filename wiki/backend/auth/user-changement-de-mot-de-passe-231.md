@@ -50,4 +50,4 @@ Un utilisateur doit pouvoir changer son mot de passe via une procedure standard.
 - interrogate : 100%
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

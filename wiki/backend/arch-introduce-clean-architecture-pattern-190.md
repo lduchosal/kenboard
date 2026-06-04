@@ -27,4 +27,4 @@ Tâche fermée sans modification. L'architecture actuelle (Flask blueprints + ai
 Introduire un pattern supplémentaire (service layer, repository pattern) ajouterait de l'abstraction sans résoudre un problème concret. À réévaluer si la complexité métier augmente.
 ---
 
-[← retour à backend](index.md) · [voir log](../log.md)
+[← retour à backend](index.md) · [voir log](../log/2026-05-24.md)

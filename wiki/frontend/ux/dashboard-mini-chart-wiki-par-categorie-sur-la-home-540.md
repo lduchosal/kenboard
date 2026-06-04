@@ -38,4 +38,4 @@ Suite de #533 : après déplacement vers /cat/<id>.html, la home a perdu tout si
 - mypy clean.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-30.md)

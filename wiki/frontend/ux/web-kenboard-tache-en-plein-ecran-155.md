@@ -41,4 +41,4 @@ Ajouter un bouton <-> pour voir la tâche en plein écran dans une popup modale
 - La description est sanitizée via `DOMPurify.sanitize()` avant injection dans le DOM (même pipeline que le rendu markdown existant dans les cartes)
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

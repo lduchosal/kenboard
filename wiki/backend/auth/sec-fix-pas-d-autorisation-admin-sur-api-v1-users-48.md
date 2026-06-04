@@ -44,4 +44,4 @@ Cette protection vient APRÈS le check CSRF (#49), de sorte qu'une requête sans
 Les pentests `auth_priv_esc.py` et `auth_admin_only.py` ont été convertis en tests de non-régression. Ils passent maintenant un header `Origin` same-origin pour ne pas être bloqués par le check CSRF en amont, ce qui permet d'aller jusqu'au check admin et de vérifier que c'est lui qui rejette.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

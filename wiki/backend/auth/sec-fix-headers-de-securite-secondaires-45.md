@@ -28,4 +28,4 @@ Headers manquants (en plus de CSP/X-Frame-Options déjà couverts par #41 et #42
 **Remédiation:** poser tous ces headers dans le même `@app.after_request` que la CSP (#41). HSTS doit être activé seulement quand l'app sait qu'elle tourne derrière HTTPS.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

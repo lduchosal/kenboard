@@ -23,4 +23,4 @@ Python installe via python.org sur macOS n a pas de CA bundle. ken echouait avec
 - 269 tests verts.
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

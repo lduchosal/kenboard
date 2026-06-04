@@ -15,4 +15,4 @@ section_title: "Ops & deployment"
 investigate: a 00:00 lors du newsyslog rotate, le server kenboard a crash
 ---
 
-[← retour à ops](index.md) · [voir log](../log.md)
+[← retour à ops](index.md) · [voir log](../log/2026-05-24.md)

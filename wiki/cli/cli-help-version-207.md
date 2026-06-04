@@ -32,4 +32,4 @@ Afficher la version dans le kenboard help
 - `pdm run test-quick` → 321 passed
 ---
 
-[← retour à cli](index.md) · [voir log](../log.md)
+[← retour à cli](index.md) · [voir log](../log/2026-05-24.md)

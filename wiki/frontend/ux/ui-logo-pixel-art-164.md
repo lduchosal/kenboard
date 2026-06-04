@@ -44,4 +44,4 @@ Les fichiers intermédiaires des itérations (logo-robot2-*.png, logo-step*.png,
 - Le script `pixelart.py` reste disponible pour de futures tentatives de logo
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

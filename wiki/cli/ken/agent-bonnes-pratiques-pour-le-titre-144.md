@@ -16,4 +16,4 @@ Le titre d'une tâche doit contenir une référence MODULE / Titre
 Ajouter des informations dans le fichier des bonnes pratiques pour standardiser les titres
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

@@ -50,4 +50,4 @@ Quand on est dans le détail d'une fiche, l'impression doit proposer d'imprimer 
 - Vérifié visuellement via DevTools "Emulate CSS print media".
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-25.md)

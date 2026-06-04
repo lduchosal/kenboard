@@ -77,4 +77,4 @@ Pour valider sur web2 après deploy :
   autres consommateurs non-migrés.
 ---
 
-[← retour à ops](index.md) · [voir log](../log.md)
+[← retour à ops](index.md) · [voir log](../log/2026-05-28.md)

@@ -100,4 +100,4 @@ ADFS n'est pas un IdP OIDC "comme les autres" — ses écarts par rapport à Goo
 - Tâche d'implémentation : #126 (todo) — bloquante
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

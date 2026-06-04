@@ -15,4 +15,4 @@ section_title: "Documentation"
 Ajouter le ken --help et les bonnes pratiques à la page d'onboarding
 ---
 
-[← retour à docs](index.md) · [voir log](../log.md)
+[← retour à docs](index.md) · [voir log](../log/2026-05-24.md)

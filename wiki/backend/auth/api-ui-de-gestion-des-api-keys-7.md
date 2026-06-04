@@ -44,4 +44,4 @@ Décision Q : « on gère l'auth des users plus tard ». La page reste **ouverte
 Voir #6 pour le récap global. Prêt pour publish 0.1.16.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

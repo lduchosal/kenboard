@@ -26,4 +26,4 @@ section_title: "Authentication & permissions"
 3. La CSP (#41) limitera l'impact en bloquant l'exécution des handlers inline.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

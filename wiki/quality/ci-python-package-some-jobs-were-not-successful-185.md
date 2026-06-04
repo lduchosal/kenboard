@@ -45,4 +45,4 @@ Analyse et dis moi ce que tu en penses
 - `pdm run lint` + `typecheck` + `flake8` + `interrogate` : all passed
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

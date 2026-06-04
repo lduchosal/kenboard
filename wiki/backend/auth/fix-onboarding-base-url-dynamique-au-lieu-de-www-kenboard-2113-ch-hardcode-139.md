@@ -26,4 +26,4 @@ Mettre aussi à jour les variantes 401 (`onboarding_text` et `onboarding_json`) 
 - Aucun hardcode de `www.kenboard.2113.ch` ne subsiste dans onboarding.py
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

@@ -15,4 +15,4 @@ section_title: "Authentication & permissions"
 SonarCloud issue AZ1s9FtEAo3DRkjyQ1Qm (MAJOR/BUG). File: src/dashboard/auth_user.py:285. Rule python:S6863 — Specify an explicit HTTP status code for this Flask error handler. Tags: best-practice, flask.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

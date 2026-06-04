@@ -15,4 +15,4 @@ section_title: "UX / interactions"
 Afficher dans une carte sur le Kenboard la liste de toutes les tâches avec le  status "EN COURS". Garder le style des tâches. Un clique sur la tâche amène dans la catégorie correspondante.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

@@ -98,4 +98,4 @@ Pas de sync (chunk C), pas de build (D), pas de lint (E).
 - Aucun changement de schéma DB (livré en chunk A #412).
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

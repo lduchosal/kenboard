@@ -75,4 +75,4 @@ Pas de build HTML (D), pas de lint (E).
 - 9 nouveaux tests passent en isolation et dans la suite complète.
 ---
 
-[← retour à wiki](index.md) · [voir log](../log.md)
+[← retour à wiki](index.md) · [voir log](../log/2026-05-24.md)

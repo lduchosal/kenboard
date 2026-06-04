@@ -17,4 +17,4 @@ Superseded by #251 — 'js validate' is covered by Biome lint + tsc --noEmit in 
 Original: J'ai vu la commande node -c src/dashboard/static/app.js 2>&1 && echo "JS OK". J'aimerai bien l'intégrer dans le processus de build pour s'asssurer que tous les JS sont valides. pdm validate js, sh publish.sh. Analyser quel est le meilleur outil pour le JS.
 ---
 
-[← retour à frontend/js](index.md) · [voir log](../../log.md)
+[← retour à frontend/js](index.md) · [voir log](../../log/2026-05-24.md)

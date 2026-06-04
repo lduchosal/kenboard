@@ -41,4 +41,4 @@ Ajouter des tests unitaires pour chaque page route (pages.py) avant de supprimer
 - Fixture autouse _ensure_login_disabled pour isoler des tests auth qui togglent LOGIN_DISABLED
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

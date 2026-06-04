@@ -36,4 +36,4 @@ Test end-to-end pour le mot de passe oublie.
 - aiosmtpd comme dev dependency
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

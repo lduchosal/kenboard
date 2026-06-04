@@ -43,4 +43,4 @@ extension/content/annotate.src.js :
 - NON testé en navigateur — à valider en faisant un push depuis n'importe quelle page web : la tâche créée doit avoir un attachement où la page est reconnaissable.
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-30.md)

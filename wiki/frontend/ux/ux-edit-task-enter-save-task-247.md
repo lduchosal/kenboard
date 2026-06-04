@@ -17,4 +17,4 @@ Superseded by #249 — integrated as the 'Modal création / édition' section th
 Original: Quand on crée une tâche, entrer sauve la tâche et ferme la fenêtre et ouvre la tâche dans la liste et place la tache dans le viewport du browser (#anchor)
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

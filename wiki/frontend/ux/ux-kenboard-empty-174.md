@@ -49,4 +49,4 @@ Bloc .es (empty state) dans style.css : max-width 860px, grille responsive auto-
 - Aucune API modifiee, aucune migration
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

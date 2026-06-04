@@ -21,4 +21,4 @@ Header `X-Frame-Options` absent → page embeddable dans une iframe → clickjac
 **Remédiation:** `X-Frame-Options: DENY` (ou `frame-ancestors 'none'` dans la CSP, déjà couvert par #41).
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

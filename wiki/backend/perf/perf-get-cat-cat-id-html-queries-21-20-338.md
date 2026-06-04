@@ -51,4 +51,4 @@ Performance issue on `GET /cat/<cat_id>.html` : 21 queries > 20 budget. Trace mo
 Même pattern que #257 (admin/keys, key_scopes_get N+1). Si d'autres traces perf remontent ce schéma sur d'autres routes (index?), même recette : batch query + group in Python.
 ---
 
-[← retour à backend/perf](index.md) · [voir log](../../log.md)
+[← retour à backend/perf](index.md) · [voir log](../../log/2026-05-24.md)

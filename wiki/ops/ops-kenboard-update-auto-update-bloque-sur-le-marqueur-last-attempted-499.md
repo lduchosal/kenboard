@@ -50,4 +50,4 @@ Extensions C/Rust depuis pkg + venv system-site-packages + install online sans p
 4. Déblocage immédiat web2 si besoin : rm /var/tmp/kenboard-update/last-attempted-version puis upgrade manuel online.
 ---
 
-[← retour à ops](index.md) · [voir log](../log.md)
+[← retour à ops](index.md) · [voir log](../log/2026-05-28.md)

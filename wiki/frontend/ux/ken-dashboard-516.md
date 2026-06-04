@@ -39,4 +39,4 @@ Nouveau graph dans le dashboard, statistiques en fonction de la classification d
 - NON vérifié visuellement en navigateur ici : rendu confirmé via client de test (partial + section présents). À regarder sur / une fois déployé.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-29.md)

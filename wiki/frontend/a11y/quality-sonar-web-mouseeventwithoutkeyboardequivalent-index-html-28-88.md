@@ -15,4 +15,4 @@ section_title: "Accessibility"
 SonarCloud issue AZ1roTRHwhcIbu0T-uak (MINOR/BUG). File: src/dashboard/templates/index.html:28. Rule Web:MouseEventWithoutKeyboardEquivalentCheck — Add an onKeyPress|onKeyDown|onKeyUp attribute to this div tag. Tag: accessibility.
 ---
 
-[← retour à frontend/a11y](index.md) · [voir log](../../log.md)
+[← retour à frontend/a11y](index.md) · [voir log](../../log/2026-05-24.md)

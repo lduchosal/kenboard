@@ -102,4 +102,4 @@ Ce flaky a fait avorter au moins 3 publishs cette semaine (forgot_password order
 - Validation finale (10x `pdm run test-e2e` sous pression du publish complet) à confirmer côté reviewer — c'est précisément la condition de stress qui déclenchait le flaky, irreproductible en isolation par construction.
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-31.md)

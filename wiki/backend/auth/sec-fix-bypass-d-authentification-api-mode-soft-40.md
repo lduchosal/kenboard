@@ -31,4 +31,4 @@ section_title: "Authentication & permissions"
 **Remédiation:** retirer le mode soft (la branche `if not enforced: return None` dans `auth.py`), ou au moins faire que le défaut soit `KENBOARD_AUTH_ENFORCED=true`. Documenter dans .env.example. Mettre à jour les tests qui dépendent du mode ouvert.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

@@ -15,4 +15,4 @@ section_title: "Page templates (Jinja2)"
 Quand on est dans une catégorie, le lien "Ajouter une projet" se trouve tout en base de la page. C'est pas ergonomique, quand on commence a avoir pas mal de projets dans une caétogire, le bouton n'est pas évident à trouver. Ajouter un lien "Ajouter un projet" dans le header quand on est dans la page des kenboard
 ---
 
-[← retour à frontend/pages](index.md) · [voir log](../../log.md)
+[← retour à frontend/pages](index.md) · [voir log](../../log/2026-05-24.md)

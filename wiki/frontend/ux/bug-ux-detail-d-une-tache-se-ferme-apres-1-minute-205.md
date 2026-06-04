@@ -36,4 +36,4 @@ Ce problème a déjà été résolu pour l'édition d'une tâche. Peux-tu apport
 - `pdm run test-e2e` → 53 passed
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

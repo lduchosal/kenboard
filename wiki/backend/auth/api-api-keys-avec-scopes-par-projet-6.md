@@ -60,4 +60,4 @@ Décisions retenues :
 Note : nécessite ajout dans le vault ansible de `KENBOARD_ADMIN_KEY` (générer avec `python -c 'import secrets; print("kb_" + secrets.token_urlsafe(32))'`) avant de pouvoir bootstrapper la première api_key. Tant que `KENBOARD_AUTH_ENFORCED=false`, aucune cassure côté web UI.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

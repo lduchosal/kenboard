@@ -28,4 +28,4 @@ Décision produit : le flux actuel (supprimer via le drawer + redessiner) est ju
 À ré-ouvrir si un cas d'usage concret demande de l'édition fine plus tard.
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-30.md)

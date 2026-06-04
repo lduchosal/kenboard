@@ -15,4 +15,4 @@ section_title: "Code quality & CI"
 Sonar CRITICAL: littéral login.html dupliqué 3x dans auth_user.py. Vérifier que _LOGIN_TEMPLATE est utilisé partout.
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

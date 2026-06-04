@@ -37,4 +37,4 @@ Double-cliquer sur une carte de tâche ouvre directement la modale d'édition (s
 - Tests unitaires (hors test_api_keys lié au WIP de la tâche #110) : 182 passed.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

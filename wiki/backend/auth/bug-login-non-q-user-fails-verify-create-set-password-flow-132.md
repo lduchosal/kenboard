@@ -64,4 +64,4 @@ Le bug n'a rien à voir avec :
 - Ajouter un endpoint `PATCH` qui accepterait `password` : volontairement pas fait, le séparer reste la bonne décision sécurité (cf. modèle `UserUpdate`).
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

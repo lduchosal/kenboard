@@ -76,4 +76,4 @@ Avant modification, un agent d'exploration a identifié 7 éléments UI présent
 - Les fonctions JS globales (`editCat`, `editProject`, `saveCat`, `saveProject`) restent disponibles pour `admin_board.html`
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

@@ -32,4 +32,4 @@ In the agent onboarding page, tell the agent it needs python 11+ and a venv
 - `pdm run test-quick` — 269 passed
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

@@ -16,4 +16,4 @@ Des tests unitaire couvrent-ils la nouvelle fonctionnalité ?
 Des tests e2e playwright couvrent-ils la nouvelle fonctionnalité ?
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

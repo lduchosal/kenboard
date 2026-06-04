@@ -15,4 +15,4 @@ section_title: "JS modules"
 SonarCloud issue AZ1tEBrH0wJ00wD3HczK (MINOR/CODE_SMELL). File: src/dashboard/static/app.js:534. Rule javascript:S7755 — Prefer .at(…) over [….length - index]. Tags: es2022, performance, readability.
 ---
 
-[← retour à frontend/js](index.md) · [voir log](../../log.md)
+[← retour à frontend/js](index.md) · [voir log](../../log/2026-05-24.md)

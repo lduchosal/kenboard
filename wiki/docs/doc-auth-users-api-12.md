@@ -16,4 +16,4 @@ Documenter les nouvelles API /admin/users.
 De manière générale, existe t'il un standard pour la documentation des API ?
 ---
 
-[← retour à docs](index.md) · [voir log](../log.md)
+[← retour à docs](index.md) · [voir log](../log/2026-05-24.md)

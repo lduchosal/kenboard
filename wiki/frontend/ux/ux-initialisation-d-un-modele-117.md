@@ -62,4 +62,4 @@ Un agent IA qui fetch `https://www.kenboard.2113.ch/cat/<id>.html` sans credenti
 - **Pas de Content Negotiation totale** : on aurait pu router selon `Accept: application/json` vs `text/plain`, mais l'écrasante majorité des agents envoient `*/*` et le runbook texte est aussi lisible par un parser JSON SDK qu'un humain. KISS.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

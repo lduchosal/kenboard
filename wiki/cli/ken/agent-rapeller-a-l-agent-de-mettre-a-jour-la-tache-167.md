@@ -26,4 +26,4 @@ Inversé les étapes 4 et 5 dans `CLAUDE.md` et `agent_guide.md` :
 Avant : l'agent faisait le move d'abord et oubliait parfois de mettre à jour la description.
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

@@ -26,4 +26,4 @@ section_title: "REST API"
 - `pdm run check` → 208 passed, vert
 ---
 
-[← retour à backend/api](index.md) · [voir log](../../log.md)
+[← retour à backend/api](index.md) · [voir log](../../log/2026-05-24.md)

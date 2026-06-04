@@ -42,4 +42,4 @@ Sur Windows, `os.stat().st_mode` retourne toujours `0o666` et `os.chmod(0o600)` 
 - Aucun changement de comportement sur Linux/macOS/FreeBSD (le check POSIX 0o600 reste actif)
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

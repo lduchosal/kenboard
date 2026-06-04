@@ -76,4 +76,4 @@ Tentative de reproduction par un test unitaire admin → **non reproductible**. 
 - Une note dans `INSTALL.md` sur les exigences WAF (whitelist des méthodes/URI REST) serait utile pour les futures installations — à arbitrer dans une tâche dédiée si Q en voit l'utilité.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

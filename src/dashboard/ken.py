@@ -32,6 +32,7 @@ if sys.platform == "win32":  # pragma: no cover
                 io.TextIOWrapper(_stream.buffer, encoding="utf-8", errors="replace"),
             )
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from importlib import resources
 from pathlib import Path
 from typing import Any
@@ -1416,9 +1417,13 @@ def _format_task_detail_md(
         body_lines.extend([desc.rstrip(), ""])
     else:
         body_lines.extend(["*(no description)*", ""])
+    # #742 — point "voir log" at the task's specific day instead of a flat
+    # log.md, so readers land on the daily journal page that contains it.
+    log_day = _classified_date(task)
+    up_to_root = "../" * (section_path.count("/") + 1)
     nav = (
         f"---\n\n[← retour à {section_path}](index.md) · "
-        "[voir log](" + "../" * (section_path.count("/") + 1) + "log.md)\n"
+        f"[voir log]({up_to_root}log/{log_day}.md)\n"
     )
     return "\n".join(fm_lines + body_lines) + nav
 
@@ -1447,21 +1452,59 @@ def _format_root_index_md(
     return "\n".join(lines) + "\n"
 
 
-def _format_log_md(rows: list[dict[str, Any]]) -> str:
-    """Render ``log.md`` — chronological classification audit, newest first."""
-    lines = ["# Classification log", "", "Most recent first.", ""]
-    sorted_rows = sorted(
-        rows,
-        key=lambda r: r.get("classified_at") or "",
-        reverse=True,
-    )
-    for r in sorted_rows:
-        when = r.get("classified_at") or "?"
-        by = r.get("classified_by") or "?"
-        title = r.get("title") or ""
+def _classified_date(row: dict[str, Any]) -> str:
+    """Extract the ISO date (``YYYY-MM-DD``) prefix from a classification row (#742).
+
+    Falls back to ``"unknown"`` if ``classified_at`` is missing or malformed
+    so a corrupt row doesn't lose its tasks — they end up in a single
+    catch-all daily page operators can investigate.
+    """
+    raw = str(row.get("classified_at") or "")
+    return raw[:10] if len(raw) >= 10 else "unknown"
+
+
+def _format_log_index_md(by_date: dict[str, list[dict[str, Any]]]) -> str:
+    """Render ``log/index.md`` — list of daily pages, newest first (#742).
+
+    ISO date filenames mean reverse-alphabetical = reverse-chronological,
+    so a directory listing is already sorted correctly. The index just
+    materialises the same order for human readers.
+    """
+    lines = [
+        "# Journal d'exploitation",
+        "",
+        "Une page par jour, du plus récent au plus ancien. "
+        "Chaque page liste les tâches classées ce jour-là.",
+        "",
+    ]
+    if not by_date:
+        lines.append("_Aucune classification enregistrée pour l'instant._")
+        return "\n".join(lines) + "\n"
+    for date in sorted(by_date.keys(), reverse=True):
+        count = len(by_date[date])
+        lines.append(f"- [{date}]({date}.md) — {count} task(s)")
+    return "\n".join(lines) + "\n"
+
+
+def _format_log_day_md(date: str, tasks: list[dict[str, Any]]) -> str:
+    """Render ``log/<date>.md`` — one day's classifications (#742).
+
+    Tasks are sorted by id for stable output. Each line links to the task's
+    detail page (``../<section>/<slug>-<id>.md``); ``_rewrite_md_links_to_html``
+    converts the ``.md`` suffix at build time.
+    """
+    lines = [f"# {date}", "", f"{len(tasks)} task(s) classée(s) ce jour.", ""]
+    for t in sorted(tasks, key=lambda r: int(r["task_id"])):
+        title = t.get("title") or ""
+        section = t.get("section_path") or "?"
+        who = t.get("classified_by") or "?"
+        status = t.get("status") or ""
+        task_file = _task_filename({"task_id": t["task_id"], "title": title})
+        # log/<date>.md → ../<section>/<task>.md to reach the detail page.
+        link = f"../{section}/{task_file}"
         lines.append(
-            f"- {when} — task #{r['task_id']} ({title}) → "
-            f"`{r['section_path']}` (by {by})",
+            f"- [#{t['task_id']} {title}]({link}) — `{section}` — "
+            f"_{status}_ — par {who}",
         )
     return "\n".join(lines) + "\n"
 
@@ -1516,7 +1559,19 @@ def _build_sync_plan(
                         "content": _format_task_detail_md(task, path, node.title),
                     },
                 )
-    files.append({"path": "log.md", "content": _format_log_md(rows)})
+    # Journal d'exploitation (#742) — one MD per day, plus an index. Replaces
+    # the flat ``log.md`` so the sidebar can list days and detail pages can
+    # link to the specific day rather than a giant single page.
+    by_date: dict[str, list[dict[str, Any]]] = {}
+    for r in rows:
+        by_date.setdefault(_classified_date(r), []).append(r)
+    files.append(
+        {"path": "log/index.md", "content": _format_log_index_md(by_date)},
+    )
+    for date, day_tasks in by_date.items():
+        files.append(
+            {"path": f"log/{date}.md", "content": _format_log_day_md(date, day_tasks)},
+        )
     if orphans:
         files.append({"path": "orphans.md", "content": _format_orphans_md(orphans)})
     return {
@@ -1647,6 +1702,9 @@ main a{color:#0969da}
 .wiki-nav{margin-top:20px;padding-top:12px;border-top:1px solid #d0d7de;
   font-size:13px;color:#57606a}
 .wiki-nav a{color:#0969da}
+/* Build footer (#743) — version of ``ken`` + generation timestamp. */
+.wiki-footer{margin-top:40px;padding-top:12px;border-top:1px solid #d0d7de;
+  font-size:11px;color:#57606a;text-align:right}
 """
 
 # Stable per-name avatar colour — picked from a small palette so the
@@ -1717,18 +1775,24 @@ def _format_sidebar_nav(
     sections: list,
     current_file: str,
     current_section: str | None,
+    daily_dates: list[str] | None = None,
 ) -> str:
     """Render the per-page sidebar nav, marking the current page with ``class=current``.
 
     ``current_file`` is the rendered page's path relative to the wiki root
-    (e.g. ``"index.md"``, ``"log.md"``, ``"docs/index.md"``,
+    (e.g. ``"index.md"``, ``"docs/index.md"``, ``"log/2026-06-04.md"``,
     ``"backend/api/foo.md"``). Its ``count("/")`` gives the on-disk depth
     used to prefix every href with the right number of ``../`` so links work
     when the wiki is browsed via ``file://`` (#741).
 
     ``current_section`` is matched against the section path to highlight the
-    active entry (pass ``""`` for the root index, ``"<section>"`` for
-    section/task pages, ``None`` to suppress the Home link).
+    active entry: ``""`` for the root index, ``"<section>"`` for
+    section/task pages, ``"log"`` for the journal index, ``"log/<date>"``
+    for a daily page, ``None`` to suppress the Home link.
+
+    ``daily_dates`` (#742) is the list of dates with a daily log page,
+    newest first. When non-empty, a "Journal" group is appended after the
+    architecture tree, with one sub-entry per date.
     """
     up = "../" * current_file.count("/")
     lines = ['<nav class="sidebar"><h1>kenboard wiki</h1><ul>']
@@ -1743,19 +1807,57 @@ def _format_sidebar_nav(
             lines.append(
                 f'<li style="{indent_style}"><a href="{href}"{cls}>{node.title}</a></li>',
             )
+    if daily_dates:
+        log_cls = ' class="current"' if current_section == "log" else ""
+        lines.append(
+            f'<li style="padding-left:0px">'
+            f'<a href="{up}log/index.html"{log_cls}>Journal</a></li>',
+        )
+        for date in daily_dates:
+            day_cls = (
+                ' class="current"' if current_section == f"log/{date}" else ""
+            )
+            lines.append(
+                f'<li style="padding-left:12px">'
+                f'<a href="{up}log/{date}.html"{day_cls}>{date}</a></li>',
+            )
     lines.append("</ul></nav>")
     return "".join(lines)
 
 
-def _wrap_html(title: str, body_html: str, sidebar_html: str) -> str:
-    """Wrap a rendered body with the standard layout (head + sidebar + main)."""
+def _format_footer(version: str, generated_at: datetime) -> str:
+    """Render the build footer shown at the bottom of every wiki page (#743).
+
+    The footer carries the version of ``ken`` (= kenboard) and the build
+    timestamp so a reader can tell at a glance how fresh the rendered HTML
+    is and which release produced it. UTC is used to stay portable across
+    machines that publish the wiki.
+    """
+    stamp = generated_at.strftime("%Y-%m-%d %H:%M:%S UTC")
+    return (
+        f'<footer class="wiki-footer">'
+        f"Généré le {stamp} par kenboard {version}"
+        f"</footer>"
+    )
+
+
+def _wrap_html(
+    title: str, body_html: str, sidebar_html: str, footer_html: str = ""
+) -> str:
+    """Wrap a rendered body with the standard layout (head + sidebar + main).
+
+    ``footer_html`` is appended inside ``<main>`` after the body so it sits
+    at the bottom of the content column on every page (#743). Optional for
+    callers that don't care (defaults to empty), but ``_build_html_plan``
+    always passes a non-empty value.
+    """
     return (
         '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
         f"<title>{title} — kenboard wiki</title>"
         f"<style>{_WIKI_HTML_CSS}</style>"
         '</head><body><div class="layout">'
         f"{sidebar_html}"
-        f"<main>{body_html}</main>"
+        f"<main>{body_html}{footer_html}</main>"
         "</div></body></html>"
     )
 
@@ -1779,26 +1881,42 @@ def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
     Markdown layout.
     """
     files: list[dict[str, str]] = []
+    # #742 — discover daily log pages so the sidebar can list them as a
+    # "Journal" group. Newest first (reverse-alpha = reverse-chrono for ISO).
+    log_dir = in_dir / "log"
+    daily_dates = (
+        sorted(
+            (p.stem for p in log_dir.glob("*.md") if p.stem != "index"),
+            reverse=True,
+        )
+        if log_dir.is_dir()
+        else []
+    )
+    # #743 — build footer computed once and embedded on every page.
+    footer_html = _format_footer(_version(), datetime.now(timezone.utc))
     for md_path in sorted(in_dir.rglob("*.md")):
         rel = md_path.relative_to(in_dir)
         md_text = md_path.read_text(encoding="utf-8")
         meta, body_md = _split_frontmatter(md_text)
-        # Sidebar "current" key: section directory if this is an index page
-        # or a per-task detail page; else the bare filename.
+        # Sidebar "current" key: section directory for index/detail pages,
+        # ``log/<date>`` for a daily journal page so the sidebar entry lights
+        # up (#742), else the bare filename for any other free-standing MD.
         if rel.name == "index.md" or meta:
             section_key = str(rel.parent)
+        elif str(rel.parent) == "log":
+            section_key = str(rel.with_suffix(""))
         else:
             section_key = str(rel)
         if section_key == ".":
             section_key = ""
-        sidebar = _format_sidebar_nav(sections, str(rel), section_key)
+        sidebar = _format_sidebar_nav(sections, str(rel), section_key, daily_dates)
         if meta and "id" in meta:
             page_title = f"#{meta.get('id')} — {meta.get('title') or 'task'}"
             body_html = _render_task_detail(meta, body_md)
         else:
             page_title = _extract_title(md_text)
             body_html = _rewrite_md_links_to_html(_render_markdown(md_text))
-        html = _wrap_html(page_title, body_html, sidebar)
+        html = _wrap_html(page_title, body_html, sidebar, footer_html)
         files.append({"path": str(rel.with_suffix(".html")), "content": html})
     return files
 
@@ -1827,7 +1945,9 @@ def _render_task_detail(meta: dict[str, Any], body_md: str) -> str:
     ]
     desc_md = _strip_detail_chrome(body_md)
     desc_html = _rewrite_md_links_to_html(_render_markdown(desc_md))
-    log_href = "../" * (section.count("/") + 1) + "log.html"
+    # #742 — link to the day-of-classification page in the journal.
+    log_day = classified_at[:10] if len(classified_at) >= 10 else "unknown"
+    log_href = "../" * (section.count("/") + 1) + f"log/{log_day}.html"
     section_label = section or "section"
     status_cls = f"status-{status}" if status else ""
     return (

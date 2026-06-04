@@ -49,4 +49,4 @@ Or `ken list` produit un tableau aligné et `ken show` un format clé-valeur, to
 - `pdm run test-quick` → 269 passed
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

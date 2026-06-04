@@ -17,4 +17,4 @@ https://github.com/lduchosal/kenboard/actions/runs/26208006252/job/77112003324
 Le sonarcloud quality gate est trop lent et ne permet pas de publish depuis l'action GH. désactiver au --ci
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

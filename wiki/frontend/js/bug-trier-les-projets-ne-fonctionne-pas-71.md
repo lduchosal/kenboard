@@ -38,4 +38,4 @@ Le frontend (`app.js` `saveCat` et `saveProject`) envoyait `projectOrder` (camel
 - `pdm run check` → vert
 ---
 
-[← retour à frontend/js](index.md) · [voir log](../../log.md)
+[← retour à frontend/js](index.md) · [voir log](../../log/2026-05-24.md)

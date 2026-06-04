@@ -46,4 +46,4 @@ extension/content/annotate.src.js :
 - NON testé navigateur — à valider sur une page colorée (ex. github.com) en regardant la fidélité du modal de tâche.
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-30.md)

@@ -32,4 +32,4 @@ Phase 3 — scaffold paintbrush + activation Alt+P
 - NON teste en navigateur ici (a valider apres reload de l extension).
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-30.md)

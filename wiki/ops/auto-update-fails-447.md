@@ -67,4 +67,4 @@ Hotfix appliqué via `ansible web2 -m copy -a "src=... dest=/usr/local/kenboard/
   ou redéployer la rév SVN précédente.
 ---
 
-[← retour à ops](index.md) · [voir log](../log.md)
+[← retour à ops](index.md) · [voir log](../log/2026-05-25.md)

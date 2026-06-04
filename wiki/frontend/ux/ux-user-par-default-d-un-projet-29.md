@@ -15,4 +15,4 @@ section_title: "UX / interactions"
 Dans l’édition d'un projet, je veux pouvoir définir un utilisateur par défaut.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

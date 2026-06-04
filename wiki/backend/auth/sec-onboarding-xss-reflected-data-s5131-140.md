@@ -15,4 +15,4 @@ section_title: "Authentication & permissions"
 Sonar BLOCKER: la route /onboard reflète cat_id et project_id non sanitizés dans la réponse text/plain. Sanitizer les inputs avant interpolation.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

@@ -31,4 +31,4 @@ Dans `tests/e2e/test_dashboard.py::TestTaskCRUD` :
 - Tous les checks qualité passent : ruff, mypy, black, isort, flake8, vulture, refurb, interrogate (100%)
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

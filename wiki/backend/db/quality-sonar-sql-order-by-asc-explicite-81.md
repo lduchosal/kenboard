@@ -23,4 +23,4 @@ Fichiers:
 - src/dashboard/queries/tasks.sql:7
 ---
 
-[← retour à backend/db](index.md) · [voir log](../../log.md)
+[← retour à backend/db](index.md) · [voir log](../../log/2026-05-24.md)

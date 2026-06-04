@@ -39,4 +39,4 @@ Tous les textes publics doivent être en anglais pour toucher la plus large audi
 - Relecture manuelle du fichier pour cohérence du ton
 ---
 
-[← retour à docs](index.md) · [voir log](../log.md)
+[← retour à docs](index.md) · [voir log](../log/2026-05-24.md)

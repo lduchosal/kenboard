@@ -59,4 +59,4 @@ Ancien "burndown" remplacé par un **vrai burndown avec historique** basé sur d
 - `pdm run test-e2e` → 53 passed
 ---
 
-[← retour à backend/api](index.md) · [voir log](../../log.md)
+[← retour à backend/api](index.md) · [voir log](../../log/2026-05-24.md)

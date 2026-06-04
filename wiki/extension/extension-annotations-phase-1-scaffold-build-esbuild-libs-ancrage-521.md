@@ -39,4 +39,4 @@ Phase 1 — scaffold build : package.json deps (dom-anchor-text-quote, dom-ancho
 Phase 2 (#522) déclare `content_scripts` dans manifest.json et remplace le stub par le scaffold Shadow DOM.
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-30.md)

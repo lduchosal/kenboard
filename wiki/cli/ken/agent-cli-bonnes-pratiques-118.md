@@ -56,4 +56,4 @@ ces bonnes pratiques sont référencées dans un fichier MD qui est distribué a
 - **`importlib.resources` plutôt que chemin absolu** : ça marche pareil en dev (editable install) et en wheel installé ; c'est l'API stdlib moderne (3.9+) ; pas de hard-code de `__file__ + '../agent_guide.md'`.
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

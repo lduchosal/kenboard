@@ -166,4 +166,4 @@ Coût estimé : ~150 lignes de code Flask + ~100 lignes de tests + 1 dépendance
 - https://github.com/zamzterz/Flask-pyoidc (v3.14.3, 2023-10-30)
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

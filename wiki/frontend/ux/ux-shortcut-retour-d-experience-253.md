@@ -69,4 +69,4 @@ Les `cmd+b/u/a/q` proposés sont réservés par le navigateur (cmd+a = select-al
 - `pdm run test-e2e` : 52 passed / 0 failed
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

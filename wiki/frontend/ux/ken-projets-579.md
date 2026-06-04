@@ -37,4 +37,4 @@ S'applique au chart #540 (dashboard mini-charts) ET au #572 (per-project sur cat
 - TestCategoryPage + TestIndexPage : 8+5 = 13/13 passed.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-30.md)

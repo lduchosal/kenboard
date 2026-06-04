@@ -30,4 +30,4 @@ tests/unit/test_logout_invalidates.py: 9 warnings
 ✓ Unit Tests completed successfully
 ---
 
-[← retour à quality](index.md) · [voir log](../log.md)
+[← retour à quality](index.md) · [voir log](../log/2026-05-24.md)

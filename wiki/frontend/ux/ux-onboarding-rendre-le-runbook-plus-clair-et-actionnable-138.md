@@ -52,4 +52,4 @@ Ensuite :
 - Un humain qui fait `curl` sur l'URL comprend aussi.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

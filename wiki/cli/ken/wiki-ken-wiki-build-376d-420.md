@@ -63,4 +63,4 @@ Pas de lint (chunk E).
   arbre HTML cohérent et navigable.
 ---
 
-[← retour à cli/ken](index.md) · [voir log](../../log.md)
+[← retour à cli/ken](index.md) · [voir log](../../log/2026-05-24.md)

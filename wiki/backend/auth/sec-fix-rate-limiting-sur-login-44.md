@@ -21,4 +21,4 @@ Aucun rate limit sur `POST /login`. 20 tentatives avec mauvais mot de passe pass
 **Remédiation:** ajouter `flask-limiter` avec une limite par IP sur `/login` (ex: 5 / minute, 20 / heure). Stocker l'état dans Redis ou en mémoire selon le déploiement. Logger les bursts via structlog (`auth.brute_force_attempt`).
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

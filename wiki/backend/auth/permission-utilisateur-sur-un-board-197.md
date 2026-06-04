@@ -72,4 +72,4 @@ Spec (voir historique de cette tâche) implémentée et testée intégralement.
 - `pdm run check` (isort + black + docformatter + mypy + flake8 + interrogate 100% + refurb + lint + vulture + test-quick) → tout vert
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

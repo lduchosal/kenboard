@@ -27,4 +27,4 @@ Quand on ouvre une tâche, rafraichir le contenu de la tâche avec un call API
 - Le nouvel endpoint hérite de l'auth middleware existant (cookie session ou bearer token)
 ---
 
-[← retour à frontend/js](index.md) · [voir log](../../log.md)
+[← retour à frontend/js](index.md) · [voir log](../../log/2026-05-24.md)

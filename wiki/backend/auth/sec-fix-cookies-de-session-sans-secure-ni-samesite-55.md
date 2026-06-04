@@ -33,4 +33,4 @@ app.config["REMEMBER_COOKIE_SECURE"] = True  # déjà partiel
 `SESSION_COOKIE_SECURE` doit être conditionné à un flag `KENBOARD_HTTPS=true` pour que le dev en HTTP continue de marcher.
 ---
 
-[← retour à backend/auth](index.md) · [voir log](../../log.md)
+[← retour à backend/auth](index.md) · [voir log](../../log/2026-05-24.md)

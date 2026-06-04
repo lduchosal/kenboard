@@ -87,4 +87,4 @@ Plus aucune mention de gunicorn dans l'usage quotidien — c'est un détail d'im
 - **Service rc.d FreeBSD** : pas dans le scope kenboard, c'est de l'ops système
 ---
 
-[← retour à cli/kenboard](index.md) · [voir log](../../log.md)
+[← retour à cli/kenboard](index.md) · [voir log](../../log/2026-05-24.md)

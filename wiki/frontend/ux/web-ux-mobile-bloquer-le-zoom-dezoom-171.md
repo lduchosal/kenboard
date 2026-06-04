@@ -22,4 +22,4 @@ Bloquer le pinch-to-zoom sur mobile
 - Empêche le zoom/dezoom accidentel sur mobile qui casse le layout du kanban
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

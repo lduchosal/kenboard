@@ -39,4 +39,4 @@ Même pattern que le `.cat-drag-handle` existant sur les cartes catégorie :
 - Mobile : le handle ☰ apparaît en haut-gauche, seul élément draggable → scroll vertical fonctionne
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

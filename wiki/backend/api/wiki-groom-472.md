@@ -75,4 +75,4 @@ est retiré : ce n'était pas la bonne réponse à la cause racine.
 - 3 nouveaux tests dans `test_ken.py`.
 ---
 
-[← retour à backend/api](index.md) · [voir log](../../log.md)
+[← retour à backend/api](index.md) · [voir log](../../log/2026-05-27.md)

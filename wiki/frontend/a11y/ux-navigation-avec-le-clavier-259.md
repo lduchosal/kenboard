@@ -50,4 +50,4 @@ Pour un kanban à 4 colonnes (todo / doing / review / done) avec des cartes dans
 - Bundle : 23.35 KB / 6.66 KB gzip
 ---
 
-[← retour à frontend/a11y](index.md) · [voir log](../../log.md)
+[← retour à frontend/a11y](index.md) · [voir log](../../log/2026-05-24.md)

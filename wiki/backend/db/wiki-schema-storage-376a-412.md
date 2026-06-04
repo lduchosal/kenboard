@@ -49,4 +49,4 @@ Sous-tâche A de #376 (LLM Wiki pattern Karpathy, https://gist.github.com/karpat
 - Migration respecte CLAUDE.md (PREPARE/EXECUTE pattern, FK auto-index, -- rollback no-op)
 ---
 
-[← retour à backend/db](index.md) · [voir log](../../log.md)
+[← retour à backend/db](index.md) · [voir log](../../log/2026-05-24.md)

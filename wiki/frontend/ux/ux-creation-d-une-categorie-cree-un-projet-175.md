@@ -21,4 +21,4 @@ Quand on cree une nouvelle categorie dans le kenboard, un premier projet Project
 Dans POST /api/v1/categories (routes/categories.py), apres le cat_create, ajout automatique d un proj_create avec name=Project category name, acronym=4 premieres lettres uppercase, status=active, position=0. Le board est immediatement utilisable apres creation d une categorie. 269 tests verts.
 ---
 
-[← retour à frontend/ux](index.md) · [voir log](../../log.md)
+[← retour à frontend/ux](index.md) · [voir log](../../log/2026-05-24.md)

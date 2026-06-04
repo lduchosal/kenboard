@@ -42,4 +42,4 @@ Enregistrer l'extension Firefox de manière à ce quelle soit persistante dans l
 - node/npx vérifiés présents (v22).
 ---
 
-[← retour à extension](index.md) · [voir log](../log.md)
+[← retour à extension](index.md) · [voir log](../log/2026-05-29.md)
