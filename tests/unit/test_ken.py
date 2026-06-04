@@ -7,6 +7,7 @@ writes stay isolated.
 
 import json
 import os
+import re
 import sys
 from unittest.mock import patch
 
@@ -1755,6 +1756,139 @@ class TestSyncHelpers:
             sync_dir=str(absolute),
         )
         assert ken._resolve_sync_dir(cfg) == absolute
+
+
+class TestSlugify:
+    """``_slugify`` builds the filename portion of wiki task detail pages."""
+
+    def test_basic_lowercase_and_dashes(self):
+        assert ken._slugify("Hello World") == "hello-world"
+
+    def test_collapses_runs_of_non_alphanumerics(self):
+        assert ken._slugify("foo / bar // baz") == "foo-bar-baz"
+
+    def test_strips_leading_and_trailing_dashes(self):
+        assert ken._slugify("  hello  ") == "hello"
+
+    def test_empty_falls_back_to_untitled(self):
+        assert ken._slugify("") == "untitled"
+        assert ken._slugify("   ") == "untitled"
+        assert ken._slugify("///") == "untitled"
+
+    def test_strips_diacritics_keeps_base_letter(self):
+        # The whole point of #740 — accents must not collapse to dashes.
+        assert ken._slugify("oublié") == "oublie"
+        assert ken._slugify("authentifié") == "authentifie"
+        assert ken._slugify("cassés") == "casses"
+        assert ken._slugify("hôtel") == "hotel"
+        assert ken._slugify("ça va") == "ca-va"
+        assert ken._slugify("über") == "uber"
+        assert ken._slugify("naïve") == "naive"
+
+    def test_strips_diacritics_in_mixed_strings(self):
+        assert (
+            ken._slugify("DOC / README / liens cassés vers doc/*.md")
+            == "doc-readme-liens-casses-vers-doc-md"
+        )
+        assert (
+            ken._slugify("test e2e mot de passe oublié")
+            == "test-e2e-mot-de-passe-oublie"
+        )
+
+    def test_task_filename_uses_diacritic_aware_slug(self):
+        assert (
+            ken._task_filename({"task_id": 237, "title": "mot de passe oublié"})
+            == "mot-de-passe-oublie-237.md"
+        )
+
+
+class TestSidebarNav:
+    """``_format_sidebar_nav`` builds file://-safe relative hrefs (#741)."""
+
+    @staticmethod
+    def _sections():
+        from dashboard.wiki import Section
+
+        return [
+            Section(
+                id="backend",
+                title="Backend",
+                sub=[Section(id="api", title="REST API")],
+            ),
+            Section(id="docs", title="Documentation"),
+        ]
+
+    @staticmethod
+    def _home_href(html: str) -> str:
+        m = re.search(r'<a href="([^"]+)"[^>]*>Home</a>', html)
+        assert m, f"no Home link found in {html!r}"
+        return m.group(1)
+
+    @staticmethod
+    def _section_href(html: str, section_title: str) -> str:
+        m = re.search(
+            rf'<a href="([^"]+)"[^>]*>{section_title}</a>',
+            html,
+        )
+        assert m, f"no {section_title} link found in {html!r}"
+        return m.group(1)
+
+    def test_root_index_emits_bare_hrefs(self):
+        html = ken._format_sidebar_nav(self._sections(), "index.md", "")
+        assert self._home_href(html) == "index.html"
+        assert self._section_href(html, "Backend") == "backend/index.html"
+        assert self._section_href(html, "REST API") == "backend/api/index.html"
+        assert 'class="current"' in html  # Home is current
+
+    def test_root_level_file_uses_zero_up_dirs(self):
+        # log.md sits at root, so links shouldn't climb any directory.
+        html = ken._format_sidebar_nav(self._sections(), "log.md", None)
+        # No Home link when current_section is None.
+        assert "Home</a>" not in html
+        assert self._section_href(html, "Backend") == "backend/index.html"
+
+    def test_section_index_climbs_one_level(self):
+        html = ken._format_sidebar_nav(self._sections(), "docs/index.md", "docs")
+        # #741 — Home was "index.html" (resolves to docs/index.html), now ../.
+        assert self._home_href(html) == "../index.html"
+        assert self._section_href(html, "Backend") == "../backend/index.html"
+        assert self._section_href(html, "Documentation") == "../docs/index.html"
+        assert 'href="../docs/index.html" class="current"' in html
+
+    def test_task_page_in_section_climbs_one_level(self):
+        html = ken._format_sidebar_nav(
+            self._sections(),
+            "docs/foo-1.md",
+            "docs",
+        )
+        # Task page sits in docs/, same depth as docs/index.html.
+        assert self._home_href(html) == "../index.html"
+        assert self._section_href(html, "Documentation") == "../docs/index.html"
+
+    def test_nested_section_climbs_two_levels(self):
+        # #741 — Home was "../index.html" (resolves to backend/index.html),
+        # now correctly "../../index.html".
+        html = ken._format_sidebar_nav(
+            self._sections(),
+            "backend/api/index.md",
+            "backend/api",
+        )
+        assert self._home_href(html) == "../../index.html"
+        assert self._section_href(html, "Backend") == "../../backend/index.html"
+        assert self._section_href(html, "REST API") == "../../backend/api/index.html"
+
+    def test_task_page_in_nested_section_climbs_two_levels(self):
+        html = ken._format_sidebar_nav(
+            self._sections(),
+            "backend/api/foo-1.md",
+            "backend/api",
+        )
+        assert self._home_href(html) == "../../index.html"
+        assert self._section_href(html, "REST API") == "../../backend/api/index.html"
+
+    def test_no_home_when_current_section_none(self):
+        html = ken._format_sidebar_nav(self._sections(), "log.md", None)
+        assert "Home</a>" not in html
 
 
 class TestCliSync:

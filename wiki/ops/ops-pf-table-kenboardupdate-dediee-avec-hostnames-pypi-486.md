@@ -1,7 +1,7 @@
 ---
 id: 486
 title: "OPS / pf / table kenboardupdate dediee avec hostnames PyPI"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-05-28T09:57:14

@@ -1,7 +1,7 @@
 ---
 id: 504
 title: "EXTENSION / Onboarding"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-05-29T08:13:06

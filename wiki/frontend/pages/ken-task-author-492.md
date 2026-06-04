@@ -1,7 +1,7 @@
 ---
 id: 492
 title: "KEN / Task / Author"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-05-29T07:48:07

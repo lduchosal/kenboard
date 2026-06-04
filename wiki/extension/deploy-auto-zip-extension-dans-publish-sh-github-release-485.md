@@ -1,7 +1,7 @@
 ---
 id: 485
 title: "DEPLOY / Auto-zip extension dans publish.sh + GitHub Release"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-05-29T08:13:07

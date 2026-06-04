@@ -1,7 +1,7 @@
 ---
 id: 499
 title: "OPS / kenboard update / auto-update bloqué sur le marqueur last-attempted"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-05-28T17:56:50

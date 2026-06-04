@@ -1,7 +1,7 @@
 ---
 id: 507
 title: "DASHBOARD / Taskers : une barre par personne et par jour (7 derniers jours)"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-05-29T08:36:01

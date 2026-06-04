@@ -14,6 +14,7 @@ import re
 import shutil
 import sys
 import tempfile
+import unicodedata
 
 # Windows uses cp1252 (or the system locale) for stdout/stderr by default.
 # Characters like → or accented letters in task descriptions cause
@@ -1304,8 +1305,16 @@ def _slugify(text: str) -> str:
     Used to build the filename portion of a task detail page:
     ``<section>/<slug>-<id>.md`` (#376f). The id suffix breaks ties when two
     tasks share the same title.
+
+    Diacritics are stripped but the underlying letter is kept (``é → e``,
+    ``ô → o``, ``ç → c``) so titles like *mot de passe oublié* yield
+    readable slugs (``mot-de-passe-oublie``) instead of dropping the
+    accented letter entirely (``mot-de-passe-oubli``). NFD decomposes
+    accented chars into base + combining marks; we filter the marks.
     """
-    slug = _SLUG_NONWORD_RE.sub("-", text.lower()).strip("-")
+    decomposed = unicodedata.normalize("NFD", text)
+    stripped = "".join(c for c in decomposed if not unicodedata.combining(c))
+    slug = _SLUG_NONWORD_RE.sub("-", stripped.lower()).strip("-")
     return slug or "untitled"
 
 
@@ -1704,39 +1713,39 @@ def _rewrite_md_links_to_html(html: str) -> str:
     return re.sub(r'href="([^"]+)\.md"', r'href="\1.html"', html)
 
 
-def _format_sidebar_nav(sections: list, current_path: str | None) -> str:
+def _format_sidebar_nav(
+    sections: list,
+    current_file: str,
+    current_section: str | None,
+) -> str:
     """Render the per-page sidebar nav, marking the current page with
     ``class=current``.
+
+    ``current_file`` is the rendered page's path relative to the wiki root
+    (e.g. ``"index.md"``, ``"log.md"``, ``"docs/index.md"``,
+    ``"backend/api/foo.md"``). Its ``count("/")`` gives the on-disk depth
+    used to prefix every href with the right number of ``../`` so links work
+    when the wiki is browsed via ``file://`` (#741).
+
+    ``current_section`` is matched against the section path to highlight the
+    active entry (pass ``""`` for the root index, ``"<section>"`` for
+    section/task pages, ``None`` to suppress the Home link).
     """
+    up = "../" * current_file.count("/")
     lines = ['<nav class="sidebar"><h1>kenboard wiki</h1><ul>']
-    root_cls = ' class="current"' if current_path == "" else ""
-    root_href = (
-        "../" * current_path.count("/") + "index.html" if current_path else "index.html"
-    )
-    if current_path is not None:
-        lines.append(f'<li><a href="{root_href}"{root_cls}>Home</a></li>')
+    if current_section is not None:
+        root_cls = ' class="current"' if current_section == "" else ""
+        lines.append(f'<li><a href="{up}index.html"{root_cls}>Home</a></li>')
     for section in sections:
         for path, node in section.flatten():
-            depth = path.count("/")
-            indent_style = f"padding-left:{depth * 12}px"
-            href = _relative_href(current_path, f"{path}/index.html")
-            cls = ' class="current"' if path == current_path else ""
+            indent_style = f"padding-left:{path.count('/') * 12}px"
+            href = f"{up}{path}/index.html"
+            cls = ' class="current"' if path == current_section else ""
             lines.append(
                 f'<li style="{indent_style}"><a href="{href}"{cls}>{node.title}</a></li>',
             )
     lines.append("</ul></nav>")
     return "".join(lines)
-
-
-def _relative_href(from_path: str | None, to_path: str) -> str:
-    """Compute the relative href from one wiki page to another (both relative to wiki
-    root).
-    """
-    if from_path is None or from_path == "":
-        return to_path
-    # Strip the trailing index.html from from_path to get the directory depth
-    depth = from_path.count("/") + 1  # +1 because we're inside a subdir
-    return "../" * depth + to_path
 
 
 def _wrap_html(title: str, body_html: str, sidebar_html: str) -> str:
@@ -1783,7 +1792,7 @@ def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
             section_key = str(rel)
         if section_key == ".":
             section_key = ""
-        sidebar = _format_sidebar_nav(sections, section_key)
+        sidebar = _format_sidebar_nav(sections, str(rel), section_key)
         if meta and "id" in meta:
             page_title = f"#{meta.get('id')} — {meta.get('title') or 'task'}"
             body_html = _render_task_detail(meta, body_md)

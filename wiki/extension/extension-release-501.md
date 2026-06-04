@@ -1,7 +1,7 @@
 ---
 id: 501
 title: "EXTENSION / Release"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-05-29T08:50:08

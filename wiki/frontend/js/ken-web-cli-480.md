@@ -1,7 +1,7 @@
 ---
 id: 480
 title: "KEN / WEB CLI"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-05-27T18:02:21

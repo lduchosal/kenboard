@@ -4,7 +4,7 @@ Request perf budget, structlog setup, monitoring hooks.
 
 Section: `backend/perf`
 
-## Archivé (13)
+## Archivé (14)
 
 - [PERF / CATEGORY / SLOW](perf-category-slow-213.md)
 - [PERF / CATEGORY / SLOW REPORT](perf-category-slow-report-214.md)
@@ -19,3 +19,4 @@ Section: `backend/perf`
 - [PERF / GET /cat/<cat_id>.html / budget 3677.2ms > 500ms](perf-get-cat-cat-id-html-budget-3677-2ms-500ms-269.md)
 - [PERF / GET /cat/<cat_id>.html / queries 21 > 20](perf-get-cat-cat-id-html-queries-21-20-272.md)
 - [PERF / GET /cat/<cat_id>.html / queries 21 > 20](perf-get-cat-cat-id-html-queries-21-20-338.md)
+- [KENBOARD / Log / autocreate task](kenboard-log-autocreate-task-517.md)

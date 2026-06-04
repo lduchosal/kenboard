@@ -1,7 +1,7 @@
 ---
 id: 503
 title: "EXTENSION / Firefox / Persistante"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-05-29T08:13:06
