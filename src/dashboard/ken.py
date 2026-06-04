@@ -1718,8 +1718,7 @@ def _format_sidebar_nav(
     current_file: str,
     current_section: str | None,
 ) -> str:
-    """Render the per-page sidebar nav, marking the current page with
-    ``class=current``.
+    """Render the per-page sidebar nav, marking the current page with ``class=current``.
 
     ``current_file`` is the rendered page's path relative to the wiki root
     (e.g. ``"index.md"``, ``"log.md"``, ``"docs/index.md"``,
