@@ -1455,9 +1455,9 @@ def _format_root_index_md(
 def _classified_date(row: dict[str, Any]) -> str:
     """Extract the ISO date (``YYYY-MM-DD``) prefix from a classification row (#742).
 
-    Falls back to ``"unknown"`` if ``classified_at`` is missing or malformed
-    so a corrupt row doesn't lose its tasks — they end up in a single
-    catch-all daily page operators can investigate.
+    Falls back to ``"unknown"`` if ``classified_at`` is missing or malformed so a
+    corrupt row doesn't lose its tasks — they end up in a single catch-all daily page
+    operators can investigate.
     """
     raw = str(row.get("classified_at") or "")
     return raw[:10] if len(raw) >= 10 else "unknown"
@@ -1489,9 +1489,9 @@ def _format_log_index_md(by_date: dict[str, list[dict[str, Any]]]) -> str:
 def _format_log_day_md(date: str, tasks: list[dict[str, Any]]) -> str:
     """Render ``log/<date>.md`` — one day's classifications (#742).
 
-    Tasks are sorted by id for stable output. Each line links to the task's
-    detail page (``../<section>/<slug>-<id>.md``); ``_rewrite_md_links_to_html``
-    converts the ``.md`` suffix at build time.
+    Tasks are sorted by id for stable output. Each line links to the task's detail page
+    (``../<section>/<slug>-<id>.md``); ``_rewrite_md_links_to_html`` converts the
+    ``.md`` suffix at build time.
     """
     lines = [f"# {date}", "", f"{len(tasks)} task(s) classée(s) ce jour.", ""]
     for t in sorted(tasks, key=lambda r: int(r["task_id"])):
@@ -1814,9 +1814,7 @@ def _format_sidebar_nav(
             f'<a href="{up}log/index.html"{log_cls}>Journal</a></li>',
         )
         for date in daily_dates:
-            day_cls = (
-                ' class="current"' if current_section == f"log/{date}" else ""
-            )
+            day_cls = ' class="current"' if current_section == f"log/{date}" else ""
             lines.append(
                 f'<li style="padding-left:12px">'
                 f'<a href="{up}log/{date}.html"{day_cls}>{date}</a></li>',
@@ -1828,10 +1826,9 @@ def _format_sidebar_nav(
 def _format_footer(version: str, generated_at: datetime) -> str:
     """Render the build footer shown at the bottom of every wiki page (#743).
 
-    The footer carries the version of ``ken`` (= kenboard) and the build
-    timestamp so a reader can tell at a glance how fresh the rendered HTML
-    is and which release produced it. UTC is used to stay portable across
-    machines that publish the wiki.
+    The footer carries the version of ``ken`` (= kenboard) and the build timestamp so a
+    reader can tell at a glance how fresh the rendered HTML is and which release
+    produced it. UTC is used to stay portable across machines that publish the wiki.
     """
     stamp = generated_at.strftime("%Y-%m-%d %H:%M:%S UTC")
     return (
@@ -1846,10 +1843,9 @@ def _wrap_html(
 ) -> str:
     """Wrap a rendered body with the standard layout (head + sidebar + main).
 
-    ``footer_html`` is appended inside ``<main>`` after the body so it sits
-    at the bottom of the content column on every page (#743). Optional for
-    callers that don't care (defaults to empty), but ``_build_html_plan``
-    always passes a non-empty value.
+    ``footer_html`` is appended inside ``<main>`` after the body so it sits at the
+    bottom of the content column on every page (#743). Optional for callers that don't
+    care (defaults to empty), but ``_build_html_plan`` always passes a non-empty value.
     """
     return (
         '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'

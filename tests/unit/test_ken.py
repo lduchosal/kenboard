@@ -1057,8 +1057,9 @@ class TestCliMutations:
     def test_wiki_sync_journal_emits_one_page_per_day_newest_first(
         self, cwd_tmp, runner
     ):
-        """``log/`` holds one page per classification date, index lists them
-        newest first (#742)."""
+        """``log/`` holds one page per classification date, index lists them newest
+        first (#742).
+        """
         self._setup(cwd_tmp)
         self._write_architecture(
             cwd_tmp,
@@ -1206,9 +1207,7 @@ class TestCliMutations:
         assert 'class="wiki-footer"' in body
         assert "kenboard" in body and "Généré le" in body
         # Footer is rendered on every page kind: root index, log index too.
-        assert 'class="wiki-footer"' in (out / "index.html").read_text(
-            encoding="utf-8"
-        )
+        assert 'class="wiki-footer"' in (out / "index.html").read_text(encoding="utf-8")
         assert 'class="wiki-footer"' in (out / "log" / "index.html").read_text(
             encoding="utf-8"
         )
@@ -1964,10 +1963,7 @@ class TestSidebarNav:
             daily_dates=["2026-06-04", "2026-06-01"],
         )
         # Day link is current, but the Journal index is not.
-        assert (
-            '<a href="../log/2026-06-04.html" class="current">2026-06-04</a>'
-            in html
-        )
+        assert '<a href="../log/2026-06-04.html" class="current">2026-06-04</a>' in html
         assert '<a href="../log/index.html">Journal</a>' in html
 
     def test_journal_index_highlighted_on_log_index(self):
@@ -1977,9 +1973,7 @@ class TestSidebarNav:
             "log",
             daily_dates=["2026-06-04"],
         )
-        assert (
-            '<a href="../log/index.html" class="current">Journal</a>' in html
-        )
+        assert '<a href="../log/index.html" class="current">Journal</a>' in html
 
 
 class TestLogHelpers:
@@ -2005,8 +1999,8 @@ class TestLogHelpers:
             }
         )
         # Reverse-alphabetical order of dates.
-        assert out.index("2026-06-04") < out.index("2026-03-15") < out.index(
-            "2026-01-01"
+        assert (
+            out.index("2026-06-04") < out.index("2026-03-15") < out.index("2026-01-01")
         )
         # Counts per day appear.
         assert "2 task(s)" in out
