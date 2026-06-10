@@ -57,13 +57,17 @@ def _format_section_md(node: Any, path: str, tasks: list[dict[str, Any]]) -> str
 
     if active:
         lines.extend((f"## En cours ({len(active)})", ""))
-        for t in sorted(active, key=_active_key):
-            lines.append(_format_section_row(t, archived=False))
+        lines.extend(
+            _format_section_row(t, archived=False)
+            for t in sorted(active, key=_active_key)
+        )
         lines.append("")
     if archived:
         lines.extend((f"## Archivé ({len(archived)})", ""))
-        for t in sorted(archived, key=lambda x: int(x["task_id"])):
-            lines.append(_format_section_row(t, archived=True))
+        lines.extend(
+            _format_section_row(t, archived=True)
+            for t in sorted(archived, key=lambda x: int(x["task_id"]))
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -250,13 +254,13 @@ def _build_sync_plan(
             # Per-task detail pages (#376f, Option B): one MD per task with
             # YAML frontmatter so wiki build can lift the metadata into the
             # ``.fullscreen-card`` HTML layout.
-            for task in section_tasks:
-                files.append(
-                    {
-                        "path": f"{path}/{_task_filename(task)}",
-                        "content": _format_task_detail_md(task, path, node.title),
-                    },
-                )
+            files.extend(
+                {
+                    "path": f"{path}/{_task_filename(task)}",
+                    "content": _format_task_detail_md(task, path, node.title),
+                }
+                for task in section_tasks
+            )
     # Journal d'exploitation (#742) — one MD per day, plus an index. Replaces
     # the flat ``log.md`` so the sidebar can list days and detail pages can
     # link to the specific day rather than a giant single page.

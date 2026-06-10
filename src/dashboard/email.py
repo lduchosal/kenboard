@@ -24,7 +24,7 @@ _app: Flask | None = None
 
 def init_email(app: Flask) -> None:
     """Store a reference to the Flask app for template rendering."""
-    global _app  # noqa: PLW0603
+    global _app
     _app = app
     if Config.SMTP_ENABLED:
         log.info("email_enabled", host=Config.SMTP_HOST, port=Config.SMTP_PORT)

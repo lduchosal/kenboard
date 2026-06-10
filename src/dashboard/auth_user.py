@@ -88,9 +88,7 @@ login_manager.login_view = LOGIN_VIEW_ENDPOINT
 login_manager.session_protection = "strong"
 # Flask-Login reads ``_session_identifier_generator`` (private name); the
 # public ``session_identifier_generator`` attribute is silently ignored.
-login_manager._session_identifier_generator = (
-    _ua_only_session_identifier  # noqa: SLF001
-)
+login_manager._session_identifier_generator = _ua_only_session_identifier
 
 bp = Blueprint("auth_user", __name__)
 
@@ -840,7 +838,7 @@ def verify_email(token: str) -> Any:
         # Create user
         user_id = str(uuid.uuid4())
         name = email
-        color = random.choice(_AVATAR_COLORS)  # noqa: S311
+        color = random.choice(_AVATAR_COLORS)
         queries.usr_create(
             conn,
             id=user_id,

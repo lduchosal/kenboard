@@ -184,17 +184,23 @@ version-major = "pdm bump -v major"
 # Verrous métriques (#788, principe ratchet de doc/code-quality.md) : chaque
 # famille de règles tombée à zéro est activée ici pour verrouiller l'acquis,
 # en plus des règles ruff par défaut (E4, E7, E9, F). Prochaines activations
-# quand leur compteur atteint zéro : C901 (#789), PLR0911/0912/0913/0915,
-# PLR1702 (imbrication — dès sa sortie de preview ruff).
+# quand leur compteur atteint zéro : PLR0911/0912/0913/0915, PLR1702
+# (imbrication — dès sa sortie de preview ruff).
 extend-select = [
+    "C901",    # complexité cyclomatique ≤ 10 (acquis ken #789)
     "DTZ",     # datetimes naïfs interdits (acquis ken #785)
     "PLR0402", # imports alias propres (acquis ken #784)
     "UP017",   # datetime.UTC plutôt que timezone.utc
 ]
 
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
 [tool.ruff.lint.per-file-ignores]
-# Datetimes naïfs tolérés dans les tests (fixtures et comparaisons locales).
-"tests/**" = ["DTZ"]
+# Tests : datetimes naïfs tolérés (fixtures et comparaisons locales) et
+# complexité non bloquante (helpers de schéma séquentiels dans conftest).
+# Le gate métrique (#788) ne mesure que src/.
+"tests/**" = ["DTZ", "C901"]
 
 # -- Black --------------------------------------------------------------------
 

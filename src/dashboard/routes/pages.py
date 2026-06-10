@@ -470,11 +470,11 @@ def index() -> Any:
         cat = cat_by_id.get(p["cat_id"])
         if not cat:
             continue
-        for t in p.get("tasks", []):
-            if t.get("status") == "doing":
-                doing_tasks.append(
-                    {"task": t, "cat_id": cat["id"], "project_id": p["id"]}
-                )
+        doing_tasks.extend(
+            {"task": t, "cat_id": cat["id"], "project_id": p["id"]}
+            for t in p.get("tasks", [])
+            if t.get("status") == "doing"
+        )
     ctx["doing_tasks"] = doing_tasks
 
     # Build a contiguous 30-day series (today minus 29 → today) so the

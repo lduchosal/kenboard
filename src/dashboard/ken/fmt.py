@@ -25,10 +25,10 @@ def _format_columns(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) 
     headers = [h for h, _ in columns]
     keys = [k for _, k in columns]
     cells: list[list[str]] = [headers]
-    for row in rows:
-        cells.append(
-            [str(row.get(k)) if row.get(k) not in (None, "") else "--" for k in keys]
-        )
+    cells.extend(
+        [str(row.get(k)) if row.get(k) not in (None, "") else "--" for k in keys]
+        for row in rows
+    )
     widths = [max(len(line[i]) for line in cells) for i in range(len(headers))]
     return "\n".join(
         "  ".join(cell.ljust(widths[i]) for i, cell in enumerate(line))

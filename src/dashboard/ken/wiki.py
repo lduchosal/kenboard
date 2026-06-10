@@ -146,87 +146,48 @@ def _classified_by(cfg: KenConfig) -> str:
     return os.environ.get("USER") or "agent"
 
 
-@wiki.command(name="groom", help="Classify tasks into wiki sections (agent-driven).")
-@click.argument("task_id", type=int, required=False)
-@click.argument("section", required=False)
-@click.option(
-    "--architecture",
-    default=None,
-    help=(
-        "Path to the architecture file. Resolves to: flag > KEN_ARCHITECTURE "
-        "env > `architecture=` in .ken > ./ARCHITECTURE.md (#473)."
-    ),
-)
-@click.option("--show", is_flag=True, help="Show current classification for TASK_ID.")
-@click.option("--clear", is_flag=True, help="Drop the classification for TASK_ID.")
-@click.option("--json", "json_mode", is_flag=True, help="Output as JSON.")
-@click.pass_context
-def groom(  # noqa: PLR0913
-    ctx: click.Context,
-    task_id: int | None,
-    section: str | None,
-    architecture: str | None,
-    show: bool,
-    clear: bool,
-    json_mode: bool,
+def _show_classification(cfg: KenConfig, task_id: int, json_mode: bool) -> None:
+    """Print the current classification of ``task_id`` (friendly on 404)."""
+    try:
+        row = _request(cfg, "GET", f"/api/v1/wiki/classify/{task_id}")
+    except SystemExit:
+        # _request exits on HTTPError; the 404 ("Unclassified")
+        # case is informational, not fatal. Re-emit a friendly
+        # line then exit 0 instead of propagating.
+        click.echo(f"Task #{task_id} is unclassified.")
+        return
+    _output(row, json_mode, columns=None)
+
+
+def _classify_task(
+    cfg: KenConfig, task_id: int, section: str, architecture: str, json_mode: bool
 ) -> None:
-    """See ``ken wiki groom --help`` for the LLM Wiki pattern.
+    """Validate ``section`` against the architecture and classify ``task_id``.
 
     Raises:
-        UsageError: when the flag combination is invalid (e.g. ``--show`` and
-            ``--clear`` together), when an op requiring ``TASK_ID`` is invoked
-            without one, or when the section path isn't declared in the
-            project's ARCHITECTURE.md.
+        UsageError: when the architecture declares no sections or the section
+            path isn't one of them.
     """
-    cfg: KenConfig = ctx.obj["cfg"]
-    architecture = architecture or cfg.architecture
-    if show and clear:
-        raise click.UsageError("--show and --clear are mutually exclusive.")
-    if (show or clear) and task_id is None:
-        raise click.UsageError("--show / --clear require TASK_ID.")
-    if section is not None and task_id is None:
-        raise click.UsageError("SECTION requires TASK_ID.")
+    # Validate against the architecture before sending.
+    _sections, valid = _load_sections(architecture)
+    if not valid:
+        raise click.UsageError(_architecture_help(architecture))
+    if section not in valid:
+        joined = "\n  ".join(valid)
+        raise click.UsageError(
+            f"Unknown section '{section}'. Declared paths:\n  {joined}",
+        )
+    body = {
+        "task_id": task_id,
+        "section_path": section,
+        "classified_by": _classified_by(cfg),
+    }
+    row = _request(cfg, "POST", "/api/v1/wiki/classify", body=body)
+    _output(row, json_mode, columns=None)
 
-    # ---- per-task ops ----
-    if task_id is not None:
-        if clear:
-            _request(cfg, "DELETE", f"/api/v1/wiki/classify/{task_id}")
-            click.echo(f"Cleared classification for task #{task_id}.")
-            return
-        if show:
-            try:
-                row = _request(cfg, "GET", f"/api/v1/wiki/classify/{task_id}")
-            except SystemExit:
-                # _request exits on HTTPError; the 404 ("Unclassified")
-                # case is informational, not fatal. Re-emit a friendly
-                # line then exit 0 instead of propagating.
-                click.echo(f"Task #{task_id} is unclassified.")
-                return
-            _output(row, json_mode, columns=None)
-            return
-        if section is None:
-            raise click.UsageError(
-                "Pass SECTION to classify, or --show / --clear.",
-            )
-        # Validate against the architecture before sending.
-        _sections, valid = _load_sections(architecture)
-        if not valid:
-            raise click.UsageError(_architecture_help(architecture))
-        if section not in valid:
-            joined = "\n  ".join(valid)
-            raise click.UsageError(
-                f"Unknown section '{section}'. Declared paths:\n  {joined}",
-            )
-        body = {
-            "task_id": task_id,
-            "section_path": section,
-            "classified_by": _classified_by(cfg),
-        }
-        row = _request(cfg, "POST", "/api/v1/wiki/classify", body=body)
-        _output(row, json_mode, columns=None)
-        return
 
-    # ---- no-args: list unclassified + sections ----
+def _groom_overview(cfg: KenConfig, architecture: str, json_mode: bool) -> None:
+    """List unclassified tasks + declared sections (the no-args groom view)."""
     # When a project is configured, send it server-side so a per-project
     # api_key passes the auth scope check (admin keys see across projects).
     endpoint = "/api/v1/wiki/unclassified"
@@ -287,6 +248,62 @@ def groom(  # noqa: PLR0913
             click.echo(f"  {p:30s}  {title}")
     click.echo("")
     click.echo("See `ken wiki groom --help` for the concept (LLM Wiki pattern).")
+
+
+@wiki.command(name="groom", help="Classify tasks into wiki sections (agent-driven).")
+@click.argument("task_id", type=int, required=False)
+@click.argument("section", required=False)
+@click.option(
+    "--architecture",
+    default=None,
+    help=(
+        "Path to the architecture file. Resolves to: flag > KEN_ARCHITECTURE "
+        "env > `architecture=` in .ken > ./ARCHITECTURE.md (#473)."
+    ),
+)
+@click.option("--show", is_flag=True, help="Show current classification for TASK_ID.")
+@click.option("--clear", is_flag=True, help="Drop the classification for TASK_ID.")
+@click.option("--json", "json_mode", is_flag=True, help="Output as JSON.")
+@click.pass_context
+def groom(  # noqa: PLR0913
+    ctx: click.Context,
+    task_id: int | None,
+    section: str | None,
+    architecture: str | None,
+    show: bool,
+    clear: bool,
+    json_mode: bool,
+) -> None:
+    """See ``ken wiki groom --help`` for the LLM Wiki pattern.
+
+    Raises:
+        UsageError: when the flag combination is invalid (e.g. ``--show`` and
+            ``--clear`` together), when an op requiring ``TASK_ID`` is invoked
+            without one, or when the section path isn't declared in the
+            project's ARCHITECTURE.md.
+    """
+    cfg: KenConfig = ctx.obj["cfg"]
+    architecture = architecture or cfg.architecture
+    if show and clear:
+        raise click.UsageError("--show and --clear are mutually exclusive.")
+    if (show or clear) and task_id is None:
+        raise click.UsageError("--show / --clear require TASK_ID.")
+    if section is not None and task_id is None:
+        raise click.UsageError("SECTION requires TASK_ID.")
+
+    if task_id is None:
+        _groom_overview(cfg, architecture, json_mode)
+    elif clear:
+        _request(cfg, "DELETE", f"/api/v1/wiki/classify/{task_id}")
+        click.echo(f"Cleared classification for task #{task_id}.")
+    elif show:
+        _show_classification(cfg, task_id, json_mode)
+    elif section is None:
+        raise click.UsageError(
+            "Pass SECTION to classify, or --show / --clear.",
+        )
+    else:
+        _classify_task(cfg, task_id, section, architecture, json_mode)
 
 
 def _section_title_for(sections: list, path: str) -> str:

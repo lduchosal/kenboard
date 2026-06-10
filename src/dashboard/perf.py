@@ -139,8 +139,7 @@ def _build_description(summary: dict[str, Any], violations: list[str]) -> str:
         "## Violations",
         "",
     ]
-    for v in violations:
-        lines.append(f"- {v}")
+    lines.extend(f"- {v}" for v in violations)
     lines.extend(
         [
             "",
@@ -263,6 +262,36 @@ def _log_and_evaluate(summary: dict[str, Any]) -> None:
         _create_perf_task(summary, violations)
 
 
+def _perf_before() -> None:
+    """Initialize perf collector for this request."""
+    if _should_skip():
+        return
+    g.perf = PerfCollector()
+
+
+def _perf_before_template(_sender: Any, **kwargs: Any) -> None:
+    """Record template render start."""
+    if has_request_context() and hasattr(g, "perf"):
+        g.perf.start_template()
+
+
+def _perf_after_template(_sender: Any, template: Any, **kwargs: Any) -> None:
+    """Record template render end."""
+    if has_request_context() and hasattr(g, "perf"):
+        g.perf.end_template(template.name or "unknown")
+
+
+def _perf_after(response: Any) -> Any:
+    """Evaluate performance budget and create a task if exceeded."""
+    if not hasattr(g, "perf"):
+        return response
+    summary = _build_request_summary(response)
+    if summary is None:
+        return response
+    _log_and_evaluate(summary)
+    return response
+
+
 def init_perf(app: Flask) -> None:
     """Initialize performance monitoring on the Flask app."""
     if not Config.PERF_ENABLED:
@@ -271,35 +300,12 @@ def init_perf(app: Flask) -> None:
 
     from flask import before_render_template, template_rendered
 
-    @app.before_request
-    def perf_before() -> None:
-        """Initialize perf collector for this request."""
-        if _should_skip():
-            return
-        g.perf = PerfCollector()
-
-    @before_render_template.connect_via(app)
-    def perf_before_template(_sender: Any, **kwargs: Any) -> None:
-        """Record template render start."""
-        if has_request_context() and hasattr(g, "perf"):
-            g.perf.start_template()
-
-    @template_rendered.connect_via(app)
-    def perf_after_template(_sender: Any, template: Any, **kwargs: Any) -> None:
-        """Record template render end."""
-        if has_request_context() and hasattr(g, "perf"):
-            g.perf.end_template(template.name or "unknown")
-
-    @app.after_request
-    def perf_after(response: Any) -> Any:
-        """Evaluate performance budget and create a task if exceeded."""
-        if not hasattr(g, "perf"):
-            return response
-        summary = _build_request_summary(response)
-        if summary is None:
-            return response
-        _log_and_evaluate(summary)
-        return response
+    # Module-level handlers (vs closures) keep blinker's weak references
+    # alive and bring init_perf under the C901 threshold (#789).
+    app.before_request(_perf_before)
+    before_render_template.connect_via(app)(_perf_before_template)
+    template_rendered.connect_via(app)(_perf_after_template)
+    app.after_request(_perf_after)
 
     log.info(
         "perf_enabled",

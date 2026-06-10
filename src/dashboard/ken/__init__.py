@@ -35,12 +35,12 @@ if sys.platform == "win32":  # pragma: no cover
 
 # Importing the command modules registers them on the ``cli`` group —
 # order matters: ``wiki`` defines the subgroup the wiki_* modules attach to.
-from dashboard.ken import sync as _sync_module  # noqa: E402,F401
-from dashboard.ken import tasks as _tasks_module  # noqa: E402,F401
-from dashboard.ken import wiki as _wiki_module  # noqa: E402,F401
-from dashboard.ken import wiki_build as _wiki_build_module  # noqa: E402,F401
-from dashboard.ken import wiki_lint as _wiki_lint_module  # noqa: E402,F401
-from dashboard.ken import wiki_sync as _wiki_sync_module  # noqa: E402,F401
+from dashboard.ken import sync as _sync_module  # noqa: F401
+from dashboard.ken import tasks as _tasks_module  # noqa: F401
+from dashboard.ken import wiki as _wiki_module  # noqa: F401
+from dashboard.ken import wiki_build as _wiki_build_module  # noqa: F401
+from dashboard.ken import wiki_lint as _wiki_lint_module  # noqa: F401
+from dashboard.ken import wiki_sync as _wiki_sync_module  # noqa: F401
 from dashboard.ken.cli import cli
 
 # Re-exports kept for back-compat: tests and external callers historically

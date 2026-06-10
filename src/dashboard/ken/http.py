@@ -56,7 +56,7 @@ def _request(
         headers["Authorization"] = f"Bearer {cfg.api_token}"
     req = urllib_request.Request(url, data=data, headers=headers, method=method)
     try:
-        with urllib_request.urlopen(req, context=_SSL_CTX) as resp:  # noqa: S310
+        with urllib_request.urlopen(req, context=_SSL_CTX) as resp:
             raw = resp.read()
             if not raw:
                 return None
