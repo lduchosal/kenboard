@@ -214,7 +214,10 @@ print_step "Pushing Code for Sonarcloud Analysis"
 run_command "git push" "Pushing commits for analysis"
 
 print_step "Sonarcloud Quality Gate"
-if python scripts/sonar_gate.py --timeout 300 --interval 15; then
+# 900s : la CI GitHub met ~4-5 min à produire l'analyse du commit poussé —
+# un timeout court (300s) perdait la course et avortait des publishes sains
+# (releases 0.1.134/0.1.135). On attend l'analyse, pas un délai arbitraire.
+if python scripts/sonar_gate.py --timeout 900 --interval 20; then
     echo "${GREEN}${BOLD}✓ Sonarcloud quality gate passed${NC}"
 else
     echo "${RED}${BOLD}✗ Sonarcloud quality gate FAILED — aborting publish${NC}"
