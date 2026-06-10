@@ -39,9 +39,9 @@ VENV_BIN = Path(sys.executable).parent
 # on variable names, audited 2026-06) are deliberately excluded. DTZ, PERF,
 # puis EM/TRY/FBT/ARG/BLE/SLF/G/PTH/PLC0415/PLR2004/RUF002/RUF012 left in
 # 2026-06 when each family reached zero and moved to the ruff gate
-# (ratchet principle, ken #785/#788/#789/#798). Remaining: PLR (0913 — args
-# ≤ 5), ANN401 (paliers 4-5) and RUF (RUF100 contextuel).
-DEBT_SELECT = "PLR,ANN401,RUF"
+# (ratchet principle, ken #785/#788/#789/#798), RUF au palier 3.
+# Remaining: PLR (0913 — args ≤ 5) and ANN401 (paliers 4-5).
+DEBT_SELECT = "PLR,ANN401"
 
 LONG_FUNC_LINES = 50
 BIG_FILE_LINES = 500
@@ -53,20 +53,20 @@ BIG_FILE_LINES = 500
 # un snapshot puis on resserre au palier suivant — un gate vert n'est
 # jamais un état stable. On ne détend JAMAIS un seuil sans décision
 # humaine explicite.
-GATE_PALIER = 2  # paliers 1..5, cf doc/code-quality.md
+GATE_PALIER = 3  # paliers 1..5, cf doc/code-quality.md
 GATE_MAX = {
-    "max_file_lines": 700,
-    "max_func_lines": 100,
+    "max_file_lines": 500,
+    "max_func_lines": 80,
     "c901_over_10": 0,
-    "ruff_debt": 150,
+    "ruff_debt": 60,
     "mypy_errors": 0,
     "vulture": 0,
     "refurb": 0,
 }
 GATE_MIN = {
     "docstring_cov": 95.0,
-    "test_cov": 85.0,
-    "min_file_cov": 40.0,
+    "test_cov": 88.0,
+    "min_file_cov": 60.0,
 }
 # Best-ever ratchet: counts may never exceed their lowest recorded value,
 # coverage may not drop more than RATCHET_COV_SLACK below its highest.

@@ -214,7 +214,7 @@ class TestVerifyEmail:
         register_client.get(f"/verify-email/{token}")
 
         cats = list(queries.cat_get_all(db))
-        users_cat = [c for c in cats if c["name"] == "Users"][0]
+        users_cat = next(c for c in cats if c["name"] == "Users")
         projects = list(queries.proj_get_by_cat(db, cat_id=users_cat["id"]))
         project_names = [p["name"] for p in projects]
         assert "carol@test.com" in project_names
@@ -228,7 +228,7 @@ class TestVerifyEmail:
 
         user = queries.usr_get_by_email(db, email="dave@test.com")
         cats = list(queries.cat_get_all(db))
-        users_cat = [c for c in cats if c["name"] == "Users"][0]
+        users_cat = next(c for c in cats if c["name"] == "Users")
         scope = queries.usr_scopes_get_for_category(
             db, user_id=user["id"], category_id=users_cat["id"]
         )

@@ -184,9 +184,11 @@ version-major = "pdm bump -v major"
 # Verrous métriques (#788, principe ratchet de doc/code-quality.md) : chaque
 # famille de règles tombée à zéro est activée ici pour verrouiller l'acquis,
 # en plus des règles ruff par défaut (E4, E7, E9, F). Prochaines activations
-# quand leur compteur atteint zéro : PLR0913 (args ≤ 5, ×2 restants),
-# PLR1702 (imbrication — dès sa sortie de preview ruff).
+# quand leur compteur atteint zéro : PLR0913 (args ≤ 5, ×3 restants — avec
+# lui RUF100, cf ignore ci-dessous), PLR1702 (imbrication — dès sa sortie
+# de preview ruff).
 extend-select = [
+    "RUF",     # règles ruff natives (palier 3) — RUF100 différé, cf ignore
     "ARG",     # arguments inutilisés (acquis palier 2, ken #798)
     "BLE",     # blind except interdits sauf noqa argumenté (palier 2)
     "C901",    # complexité cyclomatique ≤ 10 (acquis ken #789)
@@ -205,9 +207,11 @@ extend-select = [
     "SLF",     # accès privés interdits sauf noqa argumenté (palier 2)
     "TRY",     # hygiène des raise/try (acquis palier 2)
     "UP017",   # datetime.UTC plutôt que timezone.utc
-    "RUF002",  # caractères unicode ambigus en docstring (palier 2)
-    "RUF012",  # ClassVar sur les défauts mutables de classe (palier 2)
 ]
+# RUF100 (noqa inutilisés) attendra l'activation de PLR0913 : tant que la
+# règle n'est pas sélectionnée, RUF100 considère les `# noqa: PLR0913`
+# légitimes des commandes click comme morts et `lint --fix` les supprime.
+ignore = ["RUF100"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10

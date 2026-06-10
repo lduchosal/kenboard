@@ -31,7 +31,7 @@ class TestMinLength:
         """
         # 8-char symbol-heavy string that passes the length gate but is
         # too short to reach score 3.
-        with pytest.raises(ValueError, match="weak|strength"):
+        with pytest.raises(ValueError, match=r"weak|strength"):
             validate_password_strength("X7k!mQ9$")
 
 
@@ -52,7 +52,7 @@ class TestZxcvbn:
         ],
     )
     def test_common_weak_passwords_rejected(self, weak):
-        with pytest.raises(ValueError, match="weak|strength"):
+        with pytest.raises(ValueError, match=r"weak|strength"):
             validate_password_strength(weak)
 
     def test_error_message_includes_score(self):

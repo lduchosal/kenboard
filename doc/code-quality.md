@@ -45,11 +45,13 @@ et l'historique long terme côté cloud.
 | `min_file_cov` | pire couverture par fichier (#788 — attrape un module neuf sans tests) | — | 30.36 % (email.py) | ↑, ≥ 25 (gate) |
 
 Le jeu `ruff_debt` (constante `DEBT_SELECT` du script) :
-`PLR, ANN401, RUF` — soit le stock `ANN401` (paliers 4-5), `PLR0913`
-(args ≤ 5) et `RUF100` contextuel. Sortis en 2026-06, tombés à zéro et
-verrouillés dans le gate ruff (ratchet) : `DTZ`, `PERF`, puis au palier 2
-(ken #798) `EM`, `TRY`, `FBT`, `ARG`, `BLE`, `SLF`, `G`, `PTH`, `PLR2004`,
-`PLC0415` (CLIs exemptés — lazy imports délibérés), `RUF002`, `RUF012`.
+`PLR, ANN401` — soit le stock `ANN401` (paliers 4-5) et `PLR0913`
+(args ≤ 5, ×3). Sortis en 2026-06, tombés à zéro et verrouillés dans le
+gate ruff (ratchet) : `DTZ`, `PERF`, au palier 2 (ken #798) `EM`, `TRY`,
+`FBT`, `ARG`, `BLE`, `SLF`, `G`, `PTH`, `PLR2004`, `PLC0415` (CLIs
+exemptés — lazy imports délibérés), puis au palier 3 la famille `RUF`
+complète (`RUF100` différé jusqu'à l'activation de `PLR0913`, cf
+commentaire pyproject).
 Exclus volontairement : les règles purement stylistiques en conflit avec black
 (`COM812`, `D4xx`, `ISC001`) et les règles `S*` (bandit) dont les hits actuels
 sont des faux positifs sur des noms de variables (`secret_key`, `token_line`)
@@ -87,8 +89,8 @@ courant est `GATE_PALIER` dans `scripts/quality_metrics.py`.
 | Palier | `max_file` | `max_func` | `c901` | `ruff_debt` | `test_cov` | `min_file_cov` | Chantier principal |
 |---|---:|---:|---:|---:|---:|---:|---|
 | 1 — ✓ fait 2026-06-10 | ≤ 900 | ≤ 130 | = 0 | ≤ 240 | ≥ 75 | ≥ 25 | ken #789 : C901 = 0, dette 238 — `C901`/`PERF`/`PLR0911/0912/0915` verrouillés dans ruff |
-| **2 — actif** | ≤ 700 | ≤ 100 | = 0 | ≤ 150 | ≥ 85 | ≥ 40 | ken #798 : découpe `auth_user.py` (888) et `routes/pages.py` (701) ; fonctions > 100 (1) ; hygiène EM/TRY/PTH/G/FBT ; tests `email.py` (min_file_cov ≥ 40) |
-| 3 | ≤ 500 | ≤ 80 | = 0 | ≤ 60 | ≥ 88 | ≥ 60 | découpe `routes/pages.py` (702) ; fonctions > 80 (5) ; tri PLC0415 (noqa argumentés ou remontés) ; tests `cli.py` |
+| 2 — ✓ fait 2026-06-10 | ≤ 700 | ≤ 100 | = 0 | ≤ 150 | ≥ 85 | ≥ 40 | ken #798 : auth_user/pages découpés, dette 114, email.py 100 % — 12 familles ruff verrouillées |
+| **3 — actif** | ≤ 500 | ≤ 80 | = 0 | ≤ 60 | ≥ 88 | ≥ 60 | ken #803 : `auth_user.py` (556) ; fonctions > 80 (3) ; PLR0913 ×3 + ~51 ANN401 ; tests `cli.py` (min_file_cov ≥ 60) |
 | 4 | ≤ 400 | ≤ 60 | = 0 | ≤ 20 | ≥ 90 | ≥ 70 | fonctions > 60 (~14) ; gros du stock ANN401 |
 | 5 — cible | ≤ 300 | ≤ 50 | = 0 | = 0 | ≥ 90 | ≥ 75 | dernières fonctions > 50 ; ANN401 = 0 |
 
