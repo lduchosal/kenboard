@@ -1,7 +1,7 @@
 ---
 id: 740
 title: "wiki / Slugify garde les lettres sous-jacentes des accents (é → e)"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-06-04T16:17:59

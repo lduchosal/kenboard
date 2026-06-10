@@ -4,8 +4,11 @@ Tests (unit/integration/e2e), lint, typecheck, coverage, Sonarcloud.
 
 Section: `quality`
 
-## En cours (1)
+## En cours (4)
 
+- [QUALITY / Code cleanup : analyse du repo python et plan de nettoyage](quality-code-cleanup-analyse-du-repo-python-et-plan-de-nettoyage-783.md) — _review_
+- [QUALITY / Quick wins ruff auto-fixables (PLR0402, UP017, RUF100)](quality-quick-wins-ruff-auto-fixables-plr0402-up017-ruf100-784.md) — _review_
+- [QUALITY / Datetimes naïfs : corriger ou justifier les 6 sites DTZ](quality-datetimes-naifs-corriger-ou-justifier-les-6-sites-dtz-785.md) — _review_
 - [CI / SonarCloud / Quality Gate](ci-sonarcloud-quality-gate-411.md) — _todo_
 
 ## Archivé (29)

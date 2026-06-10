@@ -4,6 +4,11 @@ list/show/add/update/move/done + wiki subcommands.
 
 Section: `cli/ken`
 
+## En cours (2)
+
+- [CLI / Split .ken (secrets) + ken.ini (config versionnée)](cli-split-ken-secrets-ken-ini-config-versionnee-778.md) — _review_
+- [CLI / Découper ken.py (2266 lignes) en package dashboard/ken/](cli-decouper-ken-py-2266-lignes-en-package-dashboard-ken-786.md) — _review_
+
 ## Archivé (22)
 
 - [CLI / CLI ken pour Claude](cli-cli-ken-pour-claude-5.md)

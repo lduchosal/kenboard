@@ -4,11 +4,7 @@ Ansible role, FreeBSD rc.d, update workflow, packaging, PyPI publish.
 
 Section: `ops`
 
-## En cours (1)
-
-- [KENBOARD / update](kenboard-update-629.md) — _review_
-
-## Archivé (9)
+## Archivé (10)
 
 - [DEPLOY / le RC script update  commande](deploy-le-rc-script-update-commande-9.md)
 - [PYPI / Quality and publish](pypi-quality-and-publish-10.md)
@@ -19,3 +15,4 @@ Section: `ops`
 - [OPS / pf / table kenboardupdate dediee avec hostnames PyPI](ops-pf-table-kenboardupdate-dediee-avec-hostnames-pypi-486.md)
 - [OPS / kenboard update / auto-update bloqué sur le marqueur last-attempted](ops-kenboard-update-auto-update-bloque-sur-le-marqueur-last-attempted-499.md)
 - [DEPLOY / signer l'extension Firefox dans publish.sh + attacher le .xpi à la release](deploy-signer-l-extension-firefox-dans-publish-sh-attacher-le-xpi-a-la-release-518.md)
+- [KENBOARD / update](kenboard-update-629.md)

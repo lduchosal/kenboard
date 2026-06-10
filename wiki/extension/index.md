@@ -4,7 +4,7 @@ Tout ce qui touche à l'extension navigateur (Chrome/Edge/Brave/Firefox) qui cap
 
 Section: `extension`
 
-## Archivé (29)
+## Archivé (30)
 
 - [DEPLOY / Auto-zip extension dans publish.sh + GitHub Release](deploy-auto-zip-extension-dans-publish-sh-github-release-485.md)
 - [EXTENSION / Release](extension-release-501.md)
@@ -23,6 +23,7 @@ Section: `extension`
 - [EXTENSION / annotations - phase 6 drawer + push markdown vers kenboard](extension-annotations-phase-6-drawer-push-markdown-vers-kenboard-526.md)
 - [EXTENSION / annotations - phase 7 tests + docs](extension-annotations-phase-7-tests-docs-527.md)
 - [BUG / EXTENSION / Alt+K ne déclenche pas l'annotation sur macOS](bug-extension-alt-k-ne-declenche-pas-l-annotation-sur-macos-529.md)
+- [EXTENSION / paintbrush overlay — epic (remplace #520)](extension-paintbrush-overlay-epic-remplace-520-541.md)
 - [EXTENSION / paintbrush - phase 2 affichage attachement sur la tâche](extension-paintbrush-phase-2-affichage-attachement-sur-la-tache-543.md)
 - [EXTENSION / paintbrush - phase 3 scaffold overlay SVG + activation Alt+P](extension-paintbrush-phase-3-scaffold-overlay-svg-activation-alt-p-544.md)
 - [EXTENSION / paintbrush - phase 4 outil rectangle](extension-paintbrush-phase-4-outil-rectangle-545.md)
