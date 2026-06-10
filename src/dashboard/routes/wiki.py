@@ -13,7 +13,7 @@ from typing import Any
 from flask import Blueprint, g, jsonify, request
 from flask_login import current_user
 
-import dashboard.db as db
+from dashboard import db
 from dashboard.auth_user import current_user_can_project
 
 bp = Blueprint("wiki", __name__, url_prefix="/api/v1/wiki")

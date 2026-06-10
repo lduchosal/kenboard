@@ -5,7 +5,7 @@ projet depuis un shell, sans passer par WebFetch ou un client HTTP
 ad-hoc. Pensee pour Claude Code et tout agent qui scripte le board
 mais utilisable par un humain.
 
-Module Python : `src/dashboard/ken.py` (Click). Entry point :
+Module Python : `src/dashboard/ken/` (package Click, #786). Entry point :
 `ken = "dashboard.ken:cli"` dans `pyproject.toml`. Aucune dependance
 runtime ajoutee — l'HTTP est fait avec `urllib.request` de la stdlib.
 
@@ -79,43 +79,56 @@ Synced 14 task(s) to /repo/doc/kenboard
 
 ## Architecture
 
-### Fichier `.ken` du cwd
+### Deux fichiers : `ken.ini` (versionne) + `.ken` (secrets, gitignore) — #778
 
-Self-contained, format `key=value`, une cle par ligne :
+Depuis #778, la config est splittee en deux :
+
+- **`ken.ini`** — versionne, partage par l'equipe. Format `configparser`,
+  section `[ken]`. Contient `project_id`, `base_url`, `description`,
+  `sync_dir`, `architecture`, `wiki_dir`, `wiki_html_dir`. Pas de
+  `.gitignore` — c'est le but.
+- **`.ken`** — gitignore, local. Format legacy `key=value`. Contient
+  `api_token` (le seul vrai secret) et permet aussi de surcharger
+  localement n'importe quelle cle de `ken.ini` (utile pour pointer un
+  `base_url` perso ou un autre `project_id`).
+
+Exemple `ken.ini` (committable) :
+
+```ini
+[ken]
+project_id = 76a70206-0e6a-4485-a426-d7eb5ab53aac
+base_url = https://kenboard.example.com
+description = Kenboard
+sync_dir = doc/kenboard
+```
+
+Exemple `.ken` (gitignore) :
 
 ```
-project_id=76a70206-0e6a-4485-a426-d7eb5ab53aac
-base_url=https://kenboard.example.com
 api_token=kb_<43_chars>
-sync_dir=doc/kenboard
-description=Kenboard
 ```
 
-Recherche : `ken` remonte le cwd vers `/` jusqu'a trouver un `.ken`,
-comme `git`. Permet de lancer `ken` depuis n'importe quel
-sous-repertoire d'un projet sans devoir `cd` a la racine.
+Recherche : `ken` remonte le cwd vers `/` jusqu'a trouver chacun des
+deux fichiers (independamment), comme `git`. Permet de lancer `ken`
+depuis n'importe quel sous-repertoire d'un projet.
 
-#### Securite — `.ken` contient un secret
+Compat legacy : un `.ken` qui contient encore tout (project_id, base_url,
+api_token, ...) continue a fonctionner — le parser legacy lit toutes
+les cles, et l'absence de `ken.ini` n'est pas une erreur.
 
-Le `.ken` contient le bearer token de l'API. On accepte le risque de
-tout regrouper la-dedans pour la simplicite (zero fichier annexe,
-zero variable d'env a exporter, copie de dossier = transfert complet
-du contexte). En contrepartie, le CLI prend plusieurs garde-fous :
+#### Securite — `.ken` contient le secret
+
+Le `.ken` isole le bearer token de l'API du reste de la config. Les
+garde-fous restent identiques :
 
 1. `ken init` cree `.ken` en **mode `0600`** (lecture/ecriture
    user-only).
 2. `ken init` ajoute `.ken` a `.gitignore` du repo courant si il n'y
-   est pas deja (et cree le `.gitignore` au besoin). Si pas dans un
-   repo git, emet un warning.
-3. A chaque execution, `ken` verifie le mode du fichier ; si `0600`
-   n'est pas respecte (groupe ou autres ont des bits), affiche un
-   warning sur stderr (mais continue, pour ne pas bloquer).
-4. Le `.ken` ne doit jamais etre committe ni partage.
-
-Convention differente du standard `gh` / `kubectl` / `aws` qui
-separent credentials et contexte projet — choix conscient pour la
-simplicite du workflow Claude Code, a revisiter si on deploie `ken`
-au-dela d'un user unique sur sa propre machine.
+   est pas deja (et cree le `.gitignore` au besoin). `ken.ini` n'est
+   **jamais** ajoute a `.gitignore` — c'est l'inverse du but.
+3. A chaque execution, `ken` verifie le mode du `.ken` ; si `0600`
+   n'est pas respecte, affiche un warning sur stderr (mais continue).
+4. Le `.ken` ne doit jamais etre committe.
 
 #### `ken init`
 
@@ -123,14 +136,17 @@ au-dela d'un user unique sur sa propre machine.
 ken init [UUID] [--base-url URL] [--token TOKEN] [--force]
 ```
 
-- Si `UUID` est fourni → ecrit `.ken` avec ce project_id (verifie
+- Si `UUID` est fourni → ecrit `ken.ini` avec ce project_id (verifie
   qu'il existe via `GET /api/v1/projects` et affiche le name).
 - Si omis → liste les projects, propose un choix interactif.
 - `--base-url` et `--token` permettent de seeder ces cles a la
   creation.
-- Refuse de reecrire un `.ken` existant sans `--force`.
-- Cree le fichier avec `chmod 0600`.
-- Ajoute `.ken` a `.gitignore` du repo si necessaire.
+- `ken.ini` recoit `project_id`, `base_url`, `description`.
+- `.ken` est cree **uniquement si un `api_token` est resolu** (via
+  `--token` ou `KEN_API_TOKEN`) ; sinon `ken` affiche une note et
+  saute l'etape — on pourra relancer plus tard avec `--force`.
+- Refuse de reecrire un `ken.ini` ou `.ken` existant sans `--force`.
+- `ken.ini` n'est jamais ajoute a `.gitignore` ; `.ken` l'est.
 
 #### Onboarding automatise (Copy onboard link)
 
@@ -148,15 +164,20 @@ Lecture par ordre de priorite (le premier qui resout l'emporte) :
 1. Flags de ligne de commande (`--project`, `--base-url`, `--token`,
    `--config`)
 2. Variables d'environnement (`KEN_*`)
-3. Fichier `.ken` du cwd
-4. Defauts hardcodes
+3. Fichier `.ken` du cwd (secrets + overrides locaux)
+4. Fichier `ken.ini` du cwd (defaut partage versionne)
+5. Defauts hardcodes
 
-| Cle `.ken` / env | Defaut | Role |
+`--config FILE` peut pointer soit sur un `.ini` (parser configparser,
+section `[ken]`), soit sur un fichier `.ken` legacy. L'extension
+decide. Quand `--config` est utilise, **un seul** fichier est lu.
+
+| Cle | Defaut | Role |
 |---|---|---|
 | `base_url` / `KEN_BASE_URL` | `http://localhost:9090` | URL de l'API kenboard. |
 | `project_id` / `KEN_PROJECT_ID` | (aucun) | UUID du projet cible. |
-| `api_token` / `KEN_API_TOKEN` | (aucun) | Bearer token. Envoye en header `Authorization: Bearer <token>` sur chaque requete. |
-| `sync_dir` / `KEN_SYNC_DIR` | `doc/kenboard` | Dossier cible de `ken sync`. Chemin relatif resolu par rapport au dossier qui contient `.ken`. |
+| `api_token` / `KEN_API_TOKEN` | (aucun) | Bearer token. Envoye en header `Authorization: Bearer <token>` sur chaque requete. A garder dans `.ken`. |
+| `sync_dir` / `KEN_SYNC_DIR` | `doc/kenboard` | Dossier cible de `ken sync`. Chemin relatif resolu par rapport au dossier qui contient `ken.ini` (ou `.ken` legacy). |
 
 Si apres cette resolution `project_id` est toujours absent et qu'aucun
 `--project` n'est passe, `ken` echoue avec :

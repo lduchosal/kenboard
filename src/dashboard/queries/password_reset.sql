@@ -1,7 +1,8 @@
 -- name: prt_create!
--- Create a password reset token.
+-- Create a password reset token. Expiry is computed DB-side so the write
+-- clock and the NOW() comparison clock are the same (#785).
 INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at)
-VALUES (:id, :user_id, :token_hash, :expires_at);
+VALUES (:id, :user_id, :token_hash, NOW() + INTERVAL :minutes MINUTE);
 
 -- name: prt_get_by_hash^
 -- Look up a valid (not used, not expired) token by its SHA256 hash.

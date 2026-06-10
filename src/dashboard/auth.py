@@ -37,7 +37,7 @@ from urllib.parse import urlparse
 from flask import Flask, g, jsonify, request
 from flask_login import current_user
 
-import dashboard.db as db
+from dashboard import db
 from dashboard.config import Config
 from dashboard.logging import get_logger
 from dashboard.onboarding import cat_id_from_path, onboarding_json

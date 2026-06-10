@@ -220,7 +220,7 @@ class TestRequest:
             api_token=None,
             ken_file=None,
         )
-        with patch("dashboard.ken.urllib_request.urlopen", impl):
+        with patch("dashboard.ken.http.urllib_request.urlopen", impl):
             data = ken._request(cfg, "GET", "/api/v1/projects")
         assert data == [{"id": "p1"}]
         assert calls[0][0] == "GET"
@@ -235,7 +235,7 @@ class TestRequest:
             api_token="secret123",
             ken_file=None,
         )
-        with patch("dashboard.ken.urllib_request.urlopen", impl):
+        with patch("dashboard.ken.http.urllib_request.urlopen", impl):
             ken._request(cfg, "GET", "/api/v1/projects")
         assert calls[0][3].get("Authorization") == "Bearer secret123"
 
@@ -244,7 +244,7 @@ class TestRequest:
         cfg = ken.KenConfig(
             project_id="p", base_url="http://x:9090", api_token=None, ken_file=None
         )
-        with patch("dashboard.ken.urllib_request.urlopen", impl):
+        with patch("dashboard.ken.http.urllib_request.urlopen", impl):
             ken._request(cfg, "POST", "/api/v1/tasks", body={"title": "T"})
         assert calls[0][2] == {"title": "T"}
 
@@ -255,14 +255,13 @@ class TestRequest:
 def _patch_responses(responses):
     """Context manager that patches urlopen with the queued responses."""
     impl, calls = _fake_urlopen(responses)
-    return patch("dashboard.ken.urllib_request.urlopen", impl), calls
+    return patch("dashboard.ken.http.urllib_request.urlopen", impl), calls
 
 
 class TestCliInit:
-    """`ken init` writes .ken with mode 0600 and updates .gitignore."""
+    """`ken init` writes ken.ini (versioned) and .ken (secrets, gitignored)."""
 
-    def test_init_with_uuid(self, cwd_tmp, runner):
-        # Make this look like a git repo so .gitignore handling kicks in
+    def test_init_with_uuid_writes_ini_only_when_no_token(self, cwd_tmp, runner):
         (cwd_tmp / ".git").mkdir()
         ctx, _ = _patch_responses(
             [
@@ -276,16 +275,37 @@ class TestCliInit:
         with ctx:
             result = runner.invoke(ken.cli, ["init", "uuid-1"])
         assert result.exit_code == 0, result.output
+        # ken.ini holds the shared config — versioned, no .gitignore entry.
+        ini_file = cwd_tmp / "ken.ini"
+        assert ini_file.exists()
+        content = ini_file.read_text(encoding="utf-8")
+        assert "[ken]" in content
+        assert "project_id = uuid-1" in content
+        assert "base_url = " in content
+        # No api_token → no .ken, no gitignore entry.
+        assert not (cwd_tmp / ".ken").exists()
+        assert not (cwd_tmp / ".gitignore").exists()
+
+    def test_init_with_token_writes_ken_with_mode_0600(
+        self, cwd_tmp, runner, monkeypatch
+    ):
+        (cwd_tmp / ".git").mkdir()
+        monkeypatch.setenv("KEN_API_TOKEN", "tok-secret")
+        ctx, _ = _patch_responses(
+            [("GET", "/api/v1/projects", [{"id": "uuid-1", "name": "MyProj"}])]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["init", "uuid-1"])
+        assert result.exit_code == 0, result.output
         ken_file = cwd_tmp / ".ken"
         assert ken_file.exists()
         content = ken_file.read_text(encoding="utf-8")
-        assert "project_id=uuid-1" in content
-        assert "base_url=" in content
-        # Mode 0600 (Unix only — Windows doesn't enforce POSIX permissions)
+        assert "api_token=tok-secret" in content
+        # Config keys do NOT leak into .ken — they live in ken.ini.
+        assert "project_id" not in content
+        assert "base_url" not in content
         if sys.platform != "win32":
-            mode = ken_file.stat().st_mode & 0o777
-            assert mode == 0o600
-        # .gitignore created with .ken
+            assert (ken_file.stat().st_mode & 0o777) == 0o600
         gi = (cwd_tmp / ".gitignore").read_text(encoding="utf-8")
         assert ".ken" in gi.splitlines()
 
@@ -298,27 +318,31 @@ class TestCliInit:
         assert result.exit_code != 0
         assert "not found" in result.output
 
-    def test_init_refuses_overwrite(self, cwd_tmp, runner):
-        (cwd_tmp / ".ken").write_text("project_id=existing\n")
-        os.chmod(cwd_tmp / ".ken", 0o600)
+    def test_init_refuses_overwrite_of_ini(self, cwd_tmp, runner):
+        (cwd_tmp / "ken.ini").write_text("[ken]\nproject_id = existing\n")
         result = runner.invoke(ken.cli, ["init", "uuid-1"])
         assert result.exit_code != 0
         assert "already exists" in result.output
 
-    def test_init_force_overwrites(self, cwd_tmp, runner):
-        (cwd_tmp / ".ken").write_text("project_id=old\n")
+    def test_init_force_overwrites_both(self, cwd_tmp, runner, monkeypatch):
+        (cwd_tmp / "ken.ini").write_text("[ken]\nproject_id = old\n")
+        (cwd_tmp / ".ken").write_text("api_token=old\n")
         os.chmod(cwd_tmp / ".ken", 0o600)
+        monkeypatch.setenv("KEN_API_TOKEN", "new-tok")
         ctx, _ = _patch_responses(
             [("GET", "/api/v1/projects", [{"id": "uuid-1", "name": "New"}])]
         )
         with ctx:
             result = runner.invoke(ken.cli, ["init", "uuid-1", "--force"])
         assert result.exit_code == 0, result.output
-        assert "project_id=uuid-1" in (cwd_tmp / ".ken").read_text(encoding="utf-8")
+        ini_content = (cwd_tmp / "ken.ini").read_text(encoding="utf-8")
+        assert "project_id = uuid-1" in ini_content
+        assert "api_token=new-tok" in (cwd_tmp / ".ken").read_text(encoding="utf-8")
 
-    def test_init_appends_to_existing_gitignore(self, cwd_tmp, runner):
+    def test_init_appends_to_existing_gitignore(self, cwd_tmp, runner, monkeypatch):
         (cwd_tmp / ".git").mkdir()
         (cwd_tmp / ".gitignore").write_text("__pycache__/\n*.log\n")
+        monkeypatch.setenv("KEN_API_TOKEN", "tok")
         ctx, _ = _patch_responses(
             [("GET", "/api/v1/projects", [{"id": "uuid-1", "name": "X"}])]
         )
@@ -329,8 +353,11 @@ class TestCliInit:
         assert "__pycache__/" in gi_lines
         assert "*.log" in gi_lines
         assert ".ken" in gi_lines
+        # ken.ini stays versioned — never added to .gitignore.
+        assert "ken.ini" not in gi_lines
 
-    def test_init_skips_gitignore_outside_git_repo(self, cwd_tmp, runner):
+    def test_init_skips_gitignore_outside_git_repo(self, cwd_tmp, runner, monkeypatch):
+        monkeypatch.setenv("KEN_API_TOKEN", "tok")
         ctx, _ = _patch_responses(
             [("GET", "/api/v1/projects", [{"id": "uuid-1", "name": "X"}])]
         )
@@ -339,6 +366,96 @@ class TestCliInit:
         assert result.exit_code == 0, result.output
         assert "not in a git repository" in result.output
         assert not (cwd_tmp / ".gitignore").exists()
+
+
+class TestLoadConfigInI:
+    """ken.ini support (#778) — shared, versioned config file."""
+
+    def test_ini_file_provides_defaults(self, cwd_tmp):
+        (cwd_tmp / "ken.ini").write_text(
+            "[ken]\nproject_id = from-ini\nbase_url = http://shared:9090\n",
+        )
+        cfg = ken._load_config()
+        assert cfg.project_id == "from-ini"
+        assert cfg.base_url == "http://shared:9090"
+        assert cfg.ini_file == cwd_tmp / "ken.ini"
+        assert cfg.ken_file is None
+
+    def test_ken_overrides_ini(self, cwd_tmp):
+        (cwd_tmp / "ken.ini").write_text(
+            "[ken]\nproject_id = shared\nbase_url = http://shared:9090\n"
+        )
+        (cwd_tmp / ".ken").write_text("base_url=http://local:9090\napi_token=secret\n")
+        os.chmod(cwd_tmp / ".ken", 0o600)
+        cfg = ken._load_config()
+        # ken.ini provides project_id; .ken overrides base_url and adds the token.
+        assert cfg.project_id == "shared"
+        assert cfg.base_url == "http://local:9090"
+        assert cfg.api_token == "secret"
+
+    def test_env_overrides_ini(self, cwd_tmp, monkeypatch):
+        (cwd_tmp / "ken.ini").write_text("[ken]\nproject_id = from-ini\n")
+        monkeypatch.setenv("KEN_PROJECT_ID", "from-env")
+        cfg = ken._load_config()
+        assert cfg.project_id == "from-env"
+
+    def test_ini_walks_up(self, cwd_tmp):
+        (cwd_tmp / "ken.ini").write_text("[ken]\nproject_id = root\n")
+        sub = cwd_tmp / "a" / "b"
+        sub.mkdir(parents=True)
+        os.chdir(sub)
+        cfg = ken._load_config()
+        assert cfg.project_id == "root"
+
+    def test_ini_without_ken_section_is_inert(self, cwd_tmp):
+        (cwd_tmp / "ken.ini").write_text("[other]\nproject_id = ignored\n")
+        cfg = ken._load_config()
+        assert cfg.project_id is None
+        # Path still tracked so `_persist_sync_dir` can target it.
+        assert cfg.ini_file == cwd_tmp / "ken.ini"
+
+    def test_config_flag_with_ini_extension(self, cwd_tmp):
+        custom = cwd_tmp / "custom.ini"
+        custom.write_text("[ken]\nproject_id = custom\n")
+        cfg = ken._load_config(config_override=str(custom))
+        assert cfg.project_id == "custom"
+        assert cfg.ini_file == custom
+        assert cfg.ken_file is None
+
+
+class TestPersistSyncDir:
+    """_persist_sync_dir prefers ken.ini, falls back to .ken legacy."""
+
+    def test_writes_to_ini_when_available(self, cwd_tmp):
+        ini = cwd_tmp / "ken.ini"
+        ini.write_text("[ken]\nproject_id = p\n")
+        cfg = ken._load_config()
+        cfg.sync_dir = "doc/wiki"
+        ken._persist_sync_dir(cfg)
+        parser = __import__("configparser").ConfigParser()
+        parser.read(ini, encoding="utf-8")
+        assert parser.get("ken", "sync_dir") == "doc/wiki"
+        # .ken untouched (doesn't even exist).
+        assert not (cwd_tmp / ".ken").exists()
+
+    def test_falls_back_to_ken_when_no_ini(self, cwd_tmp):
+        ken_path = cwd_tmp / ".ken"
+        ken_path.write_text("project_id=p\n")
+        os.chmod(ken_path, 0o600)
+        cfg = ken._load_config()
+        cfg.sync_dir = "doc/wiki"
+        ken._persist_sync_dir(cfg)
+        assert "sync_dir=doc/wiki" in ken_path.read_text(encoding="utf-8")
+
+    def test_no_duplicate_when_already_set(self, cwd_tmp):
+        ini = cwd_tmp / "ken.ini"
+        ini.write_text("[ken]\nproject_id = p\nsync_dir = already/set\n")
+        cfg = ken._load_config()
+        cfg.sync_dir = "something/else"
+        ken._persist_sync_dir(cfg)
+        content = ini.read_text(encoding="utf-8")
+        assert "sync_dir = already/set" in content
+        assert "something/else" not in content
 
 
 class TestCliList:
@@ -594,16 +711,16 @@ class TestCliMutations:
         # Just over the MEDIUMTEXT cap. We monkeypatch the cap to keep
         # the test fast — writing 16 MB to disk would be wasteful.
         path.write_text("x" * 1000, encoding="utf-8")
-        import dashboard.ken as ken_mod
+        import dashboard.ken.tasks as tasks_mod
 
-        original = ken_mod._ATTACHEMENT_MAX_BYTES
-        ken_mod._ATTACHEMENT_MAX_BYTES = 100
+        original = tasks_mod._ATTACHEMENT_MAX_BYTES
+        tasks_mod._ATTACHEMENT_MAX_BYTES = 100
         try:
             result = runner.invoke(
                 ken.cli, ["add", "T", "--attachement-file", str(path)]
             )
         finally:
-            ken_mod._ATTACHEMENT_MAX_BYTES = original
+            tasks_mod._ATTACHEMENT_MAX_BYTES = original
         assert result.exit_code != 0
         assert "too large" in result.output.lower()
 
@@ -833,7 +950,7 @@ class TestCliMutations:
                 fp=__import__("io").BytesIO(b'{"error":"Unclassified"}'),
             )
 
-        with _patch("dashboard.ken.urllib_request.urlopen", _raise_404):
+        with _patch("dashboard.ken.http.urllib_request.urlopen", _raise_404):
             result = runner.invoke(ken.cli, ["wiki", "groom", "42", "--show"])
         assert result.exit_code == 0
         assert "unclassified" in result.output.lower()

@@ -96,17 +96,15 @@ class TestResetPassword:
         """Create a valid reset token and return the raw token string."""
         import secrets
         import uuid
-        from datetime import datetime, timedelta
 
         token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(token.encode()).hexdigest()
-        expires = datetime.now() + timedelta(minutes=30)
         queries.prt_create(
             db,
             id=str(uuid.uuid4()),
             user_id=user_id,
             token_hash=token_hash,
-            expires_at=expires,
+            minutes=30,
         )
         return token
 

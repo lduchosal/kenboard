@@ -142,6 +142,10 @@ interrogate = "interrogate src/"
 vulture = "vulture src/ tests/ vulture_whitelist.py"
 refurb = "refurb src/"
 
+# Quality metrics snapshot (#783) — see doc/code-quality.md
+metrics = "python scripts/quality_metrics.py"
+metrics-record = "python scripts/quality_metrics.py --record"
+
 # JS toolchain (#251) — Vite bundler, Vitest unit tests, Biome lint+format,
 # tsc --noEmit for opt-in JSDoc type-check.
 js-install = { shell = "npm ci" }

@@ -60,7 +60,9 @@ class _DueDateMixin:
         if "." in s and len(s) <= 5:
             parts = s.split(".")
             day, month = int(parts[0]), int(parts[1])
-            return date(date.today().year, month, day)
+            # Local date wanted: "dd.mm" input means the user's current
+            # calendar year, not UTC's (#785).
+            return date(date.today().year, month, day)  # noqa: DTZ011
         return date.fromisoformat(s)
 
 

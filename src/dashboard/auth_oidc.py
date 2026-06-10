@@ -30,7 +30,7 @@ from flask import (
 )
 from flask_login import login_user
 
-import dashboard.db as db
+from dashboard import db
 from dashboard.auth_user import CurrentUser
 from dashboard.config import Config
 from dashboard.logging import get_logger

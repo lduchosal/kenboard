@@ -7,8 +7,7 @@ from typing import Any
 from flask import Blueprint, abort, render_template
 from flask_login import current_user, login_required
 
-import dashboard.db as db
-from dashboard import __version__
+from dashboard import __version__, db
 from dashboard.auth_user import (
     _is_login_disabled,
     admin_required,
@@ -454,7 +453,9 @@ def index() -> Any:
 
         # Per-day taskers chart (#507): grouped bars, one per person per day
         # over the last week, token activity folded into the owning user.
-        today = date.today()
+        # Local date wanted: the chart window follows the viewer's calendar
+        # day, consistent with the DATE() bucketing in the query (#785).
+        today = date.today()  # noqa: DTZ011
         taskers_since = (today - timedelta(days=TASKERS_WINDOW_DAYS - 1)).isoformat()
         taskers_rows = list(queries.activity_daily_by_user(conn, since=taskers_since))
     finally:
@@ -556,7 +557,9 @@ def admin_keys() -> Any:
     ctx["api_keys"] = api_keys
     ctx["projects"] = all_projects
     ctx["key_users"] = users
-    ctx["now"] = datetime.now()
+    # Naive local now wanted: the template compares it to expires_at, a naive
+    # local DATETIME entered via the admin form and stored as-is (#785).
+    ctx["now"] = datetime.now()  # noqa: DTZ005
     return render_template("admin_keys.html", **ctx)
 
 

@@ -238,7 +238,9 @@ def backfill(days: int) -> None:
     queries = db_module.load_queries()
     try:
         projects = list(queries.proj_get_all(conn))
-        today = date.today()
+        # Local date wanted: burndown snapshots are keyed on the operator's
+        # calendar day, matching the DATE() grouping done DB-side (#785).
+        today = date.today()  # noqa: DTZ011
         start = today - timedelta(days=days)
         total = 0
         for proj in projects:

@@ -128,7 +128,7 @@ class TestParseArchitecture:
     def test_title_falls_back_to_id_when_missing(self, tmp_path):
         p = tmp_path / "ARCHITECTURE.md"
         p.write_text(
-            "---\n" "wiki:\n" "  sections:\n" "    - id: ops\n" "---\n",
+            "---\n"  "wiki:\n"  "  sections:\n"  "    - id: ops\n"  "---\n",
             encoding="utf-8",
         )
         sections = parse_architecture(p)

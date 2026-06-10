@@ -96,7 +96,7 @@ src/dashboard/
   app.py                 # Flask factory, registration des blueprints
   config.py              # Config (env vars, .env via python-dotenv)
   cli.py                 # CLI `kenboard` (serve, prod, migrate, snapshot, ...)
-  ken.py                 # CLI `ken` (workflow tasks pour Claude Code)
+  ken/                   # CLI `ken` en package (workflow tasks pour Claude Code, #786)
   agent_guide.md         # Doc embarquee servie par `ken help`
   db.py                  # Connexion PyMySQL + chargement aiosql
   auth.py                # Middleware bearer token + CSRF + admin-only prefixes

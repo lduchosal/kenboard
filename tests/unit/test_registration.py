@@ -162,19 +162,17 @@ class TestVerifyEmail:
         """Create a verification token and return the raw token string."""
         import secrets
         import uuid
-        from datetime import datetime, timedelta
 
         token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         pw_hash = PasswordHasher().hash(password)
-        expires = datetime.now() + timedelta(hours=24)
         queries.evt_create(
             db,
             id=str(uuid.uuid4()),
             email=email,
             password_hash=pw_hash,
             token_hash=token_hash,
-            expires_at=expires,
+            hours=24,
         )
         return token
 

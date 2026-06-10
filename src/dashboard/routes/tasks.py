@@ -4,7 +4,7 @@ from typing import Any
 
 from flask import Blueprint, jsonify, request
 
-import dashboard.db as db
+from dashboard import db
 from dashboard.activity import (
     ACTION_CREATE,
     ACTION_DELETE,

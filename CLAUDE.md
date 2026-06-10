@@ -40,7 +40,7 @@ See `doc/architecture.md` for the full picture. Hard rules from that doc:
 src/dashboard/
   app.py          # Flask factory
   cli.py          # `kenboard` admin CLI (click)
-  ken.py          # `ken` task CLI (click, talks to REST API via stdlib)
+  ken/            # `ken` task CLI package (click, talks to REST API via stdlib)
   config.py       # Env / .env config
   db.py           # PyMySQL connection + aiosql loader
   auth.py         # API key middleware
@@ -122,8 +122,12 @@ pdm run check              # composite: isort, format, docformatter, typecheck,
 ## `ken` CLI workflow
 
 Project metadata is in `KENBOARD.md` (gitignored). Bootstrap once per repo
-with `ken init <project-id>`, which writes `.ken` (mode 0600) and adds it to
-`.gitignore`. Then:
+with `ken init <project-id>`, which writes `ken.ini` (versioned, shared
+config — `project_id`, `base_url`, `description`) and, if a token is
+resolved from `--token`/`KEN_API_TOKEN`, also writes `.ken` (mode 0600,
+gitignored, holds `api_token` only). Resolution chain: flag > env >
+`.ken` > `ken.ini` > default. See `doc/ken-cli.md` for the split (#778).
+Then:
 
 ```sh
 ken list --who Claude --status doing   # always use native filters

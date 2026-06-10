@@ -14,7 +14,7 @@ from typing import Any
 
 from flask import Blueprint, g, jsonify, request
 
-import dashboard.db as db
+from dashboard import db
 from dashboard.auth import _hash_key
 from dashboard.auth_user import limiter
 from dashboard.logging import get_logger

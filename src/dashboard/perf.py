@@ -12,7 +12,7 @@ from typing import Any
 
 from flask import Flask, g, has_request_context, request
 
-import dashboard.db as db
+from dashboard import db
 from dashboard.config import Config
 from dashboard.logging import get_logger
 

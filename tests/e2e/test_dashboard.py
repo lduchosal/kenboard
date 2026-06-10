@@ -557,7 +557,8 @@ class TestTaskCRUD:
                         project_id: projectId,
                     }),
                 });
-            }""",
+            }"""
+                ,
             {"taskId": task_id, "projectId": project_id},
         )
         page.reload()
@@ -704,7 +705,8 @@ class TestAdminUsers:
                     name: r.querySelector('.u-name').value,
                     color: r.querySelector('.u-color').value,
                     is_admin: r.querySelector('.u-admin').checked,
-                }))""",
+                }))"""
+                      ,
             ),
             key=lambda r: r["name"],
         )
@@ -725,7 +727,8 @@ class TestAdminUsers:
                 name: r.querySelector('.u-name').value,
                 color: r.querySelector('.u-color').value,
                 is_admin: r.querySelector('.u-admin').checked,
-            }))""",
+            }))"""
+                  ,
         )
         snap_after_by_id = {r["id"]: r for r in snap_after}
         for orig in snap_before:
@@ -793,7 +796,8 @@ class TestAdminUsers:
                         id: r.dataset.userId,
                         name: r.querySelector('.u-name').value,
                         color: r.querySelector('.u-color').value,
-                    }))""",
+                    }))"""
+                          ,
                 )
                 assert len(snap_before) == 2
 
@@ -812,7 +816,8 @@ class TestAdminUsers:
                         id: r.dataset.userId,
                         name: r.querySelector('.u-name').value,
                         color: r.querySelector('.u-color').value,
-                    }))""",
+                    }))"""
+                          ,
                 )
             finally:
                 ctx.close()

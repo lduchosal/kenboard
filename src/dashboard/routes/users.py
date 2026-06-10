@@ -8,7 +8,7 @@ from argon2.exceptions import VerifyMismatchError
 from flask import Blueprint, g, jsonify, request
 from flask_login import current_user
 
-import dashboard.db as db
+from dashboard import db
 from dashboard.auth_user import _is_login_disabled, api_admin_required, limiter
 from dashboard.logging import get_logger
 from dashboard.models.user import (

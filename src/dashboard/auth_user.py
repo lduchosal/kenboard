@@ -18,7 +18,7 @@ from __future__ import annotations
 import hashlib
 import secrets
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any
 
 from argon2 import PasswordHasher
@@ -44,7 +44,7 @@ from flask_login import (
     logout_user,
 )
 
-import dashboard.db as db
+from dashboard import db
 from dashboard.config import Config
 from dashboard.logging import get_logger
 from dashboard.onboarding import (
@@ -595,13 +595,12 @@ def forgot_password_post() -> Any:
         if user:
             token = secrets.token_urlsafe(32)
             token_hash = hashlib.sha256(token.encode()).hexdigest()
-            expires = datetime.now() + timedelta(minutes=_RESET_TOKEN_MINUTES)
             queries.prt_create(
                 conn,
                 id=str(uuid.uuid4()),
                 user_id=user["id"],
                 token_hash=token_hash,
-                expires_at=expires,
+                minutes=_RESET_TOKEN_MINUTES,
             )
             reset_url = request.host_url.rstrip("/") + f"/reset-password/{token}"
             send_email(
@@ -779,14 +778,13 @@ def register_post() -> Any:
         token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         pw_hash = _hasher.hash(password)
-        expires = datetime.now() + timedelta(hours=_VERIFY_TOKEN_HOURS)
         queries.evt_create(
             conn,
             id=str(uuid.uuid4()),
             email=email,
             password_hash=pw_hash,
             token_hash=token_hash,
-            expires_at=expires,
+            hours=_VERIFY_TOKEN_HOURS,
         )
     finally:
         conn.close()

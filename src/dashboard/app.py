@@ -4,7 +4,7 @@ import os
 import secrets
 import time
 import traceback
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from flask import Flask, jsonify, make_response, render_template, request
@@ -170,7 +170,7 @@ def _autocreate_error_task(
     if request.path.startswith("/api/v1/tasks"):
         return
     try:
-        import dashboard.db as db
+        from dashboard import db
 
         title = f"BUG / 500 {error_class} @ {route}"[:250]
         conn = db.get_connection()
@@ -185,7 +185,7 @@ def _autocreate_error_task(
                     type(original), original, original.__traceback__
                 )
             )
-            now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            now = datetime.now(UTC).isoformat(timespec="seconds")
             description = (
                 "## Erreur 500 auto-détectée (#517)\n\n"
                 f"- **error_id:** {error_id}\n"
