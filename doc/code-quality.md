@@ -45,7 +45,9 @@ et l'historique long terme côté cloud.
 | `min_file_cov` | pire couverture par fichier (#788 — attrape un module neuf sans tests) | — | 30.36 % (email.py) | ↑, ≥ 25 (gate) |
 
 Le jeu `ruff_debt` (constante `DEBT_SELECT` du script) :
-`PLC0415, PLR, DTZ, EM, TRY, PERF, PTH, FBT, ARG, BLE, SLF, G, ANN401, RUF`.
+`PLC0415, PLR, EM, TRY, PTH, FBT, ARG, BLE, SLF, G, ANN401, RUF`
+(`DTZ` puis `PERF` sortis en 2026-06, tombés à zéro et verrouillés dans le
+gate ruff).
 Exclus volontairement : les règles purement stylistiques en conflit avec black
 (`COM812`, `D4xx`, `ISC001`) et les règles `S*` (bandit) dont les hits actuels
 sont des faux positifs sur des noms de variables (`secret_key`, `token_line`)
@@ -82,8 +84,8 @@ courant est `GATE_PALIER` dans `scripts/quality_metrics.py`.
 
 | Palier | `max_file` | `max_func` | `c901` | `ruff_debt` | `test_cov` | `min_file_cov` | Chantier principal |
 |---|---:|---:|---:|---:|---:|---:|---|
-| **1 — actif** | ≤ 900 | ≤ 130 | = 0 | ≤ 240 | ≥ 75 | ≥ 25 | ken #789 : complexité C901 + RUF100 obsolètes |
-| 2 | ≤ 700 | ≤ 100 | = 0 | ≤ 150 | ≥ 85 | ≥ 40 | découpe `auth_user.py` (891) ; fonctions > 100 (2) ; hygiène EM/TRY/PERF/PTH/G ; tests `email.py` |
+| 1 — ✓ fait 2026-06-10 | ≤ 900 | ≤ 130 | = 0 | ≤ 240 | ≥ 75 | ≥ 25 | ken #789 : C901 = 0, dette 238 — `C901`/`PERF`/`PLR0911/0912/0915` verrouillés dans ruff |
+| **2 — actif** | ≤ 700 | ≤ 100 | = 0 | ≤ 150 | ≥ 85 | ≥ 40 | ken #798 : découpe `auth_user.py` (888) et `routes/pages.py` (701) ; fonctions > 100 (1) ; hygiène EM/TRY/PTH/G/FBT ; tests `email.py` (min_file_cov ≥ 40) |
 | 3 | ≤ 500 | ≤ 80 | = 0 | ≤ 60 | ≥ 88 | ≥ 60 | découpe `routes/pages.py` (702) ; fonctions > 80 (5) ; tri PLC0415 (noqa argumentés ou remontés) ; tests `cli.py` |
 | 4 | ≤ 400 | ≤ 60 | = 0 | ≤ 20 | ≥ 90 | ≥ 70 | fonctions > 60 (~14) ; gros du stock ANN401 |
 | 5 — cible | ≤ 300 | ≤ 50 | = 0 | = 0 | ≥ 90 | ≥ 75 | dernières fonctions > 50 ; ANN401 = 0 |

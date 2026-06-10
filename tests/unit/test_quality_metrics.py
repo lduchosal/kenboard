@@ -36,7 +36,7 @@ def _metrics(**overrides: object) -> dict[str, object]:
         "refurb": 0,
         "docstring_cov": 100.0,
         "test_cov": 89.54,
-        "min_file_cov": 30.0,
+        "min_file_cov": 45.0,
         "files_over_500": 0,
         "funcs_over_50": 20,
         "c901_over_10": 0,

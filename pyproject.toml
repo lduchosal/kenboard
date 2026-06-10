@@ -184,12 +184,16 @@ version-major = "pdm bump -v major"
 # Verrous métriques (#788, principe ratchet de doc/code-quality.md) : chaque
 # famille de règles tombée à zéro est activée ici pour verrouiller l'acquis,
 # en plus des règles ruff par défaut (E4, E7, E9, F). Prochaines activations
-# quand leur compteur atteint zéro : PLR0911/0912/0913/0915, PLR1702
-# (imbrication — dès sa sortie de preview ruff).
+# quand leur compteur atteint zéro : PLR0913 (args ≤ 5, ×2 restants),
+# PLR1702 (imbrication — dès sa sortie de preview ruff).
 extend-select = [
     "C901",    # complexité cyclomatique ≤ 10 (acquis ken #789)
     "DTZ",     # datetimes naïfs interdits (acquis ken #785)
+    "PERF",    # perflint — comprehensions, incremental list build (palier 1)
     "PLR0402", # imports alias propres (acquis ken #784)
+    "PLR0911", # returns ≤ 6 (acquis palier 1)
+    "PLR0912", # branches ≤ 12 (acquis palier 1)
+    "PLR0915", # statements ≤ 50 (acquis palier 1)
     "UP017",   # datetime.UTC plutôt que timezone.utc
 ]
 

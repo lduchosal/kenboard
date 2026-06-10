@@ -36,10 +36,10 @@ VENV_BIN = Path(sys.executable).parent
 
 # Lint debt: curated rules NOT yet enforced by the ruff gate. Style-only
 # rules that fight black (COM, D4xx, ISC) and the S-rules (false positives
-# on variable names, audited 2026-06) are deliberately excluded. DTZ left
-# in 2026-06 when the family reached zero and moved to the ruff gate
-# (ratchet principle, ken #785/#788).
-DEBT_SELECT = "PLC0415,PLR,EM,TRY,PERF,PTH,FBT,ARG,BLE,SLF,G,ANN401,RUF"
+# on variable names, audited 2026-06) are deliberately excluded. DTZ then
+# PERF left in 2026-06 when each family reached zero and moved to the
+# ruff gate (ratchet principle, ken #785/#788/#789).
+DEBT_SELECT = "PLC0415,PLR,EM,TRY,PTH,FBT,ARG,BLE,SLF,G,ANN401,RUF"
 
 LONG_FUNC_LINES = 50
 BIG_FILE_LINES = 500
@@ -51,20 +51,20 @@ BIG_FILE_LINES = 500
 # un snapshot puis on resserre au palier suivant — un gate vert n'est
 # jamais un état stable. On ne détend JAMAIS un seuil sans décision
 # humaine explicite.
-GATE_PALIER = 1  # paliers 1..5, cf doc/code-quality.md
+GATE_PALIER = 2  # paliers 1..5, cf doc/code-quality.md
 GATE_MAX = {
-    "max_file_lines": 900,
-    "max_func_lines": 130,
+    "max_file_lines": 700,
+    "max_func_lines": 100,
     "c901_over_10": 0,
-    "ruff_debt": 240,
+    "ruff_debt": 150,
     "mypy_errors": 0,
     "vulture": 0,
     "refurb": 0,
 }
 GATE_MIN = {
     "docstring_cov": 95.0,
-    "test_cov": 75.0,
-    "min_file_cov": 25.0,
+    "test_cov": 85.0,
+    "min_file_cov": 40.0,
 }
 # Best-ever ratchet: counts may never exceed their lowest recorded value,
 # coverage may not drop more than RATCHET_COV_SLACK below its highest.
