@@ -94,7 +94,7 @@ def _ast_stats() -> dict[str, int]:
     big_files = 0
     func_lengths: list[int] = []
     for path in files:
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         lines = text.count("\n") + (0 if text.endswith("\n") else 1)
         loc += lines
         max_file = max(max_file, lines)
@@ -168,7 +168,7 @@ def _offending_files(limit: int) -> list[str]:
     """List src files longer than limit lines, biggest first."""
     rows = []
     for path in sorted(SRC.rglob("*.py")):
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         lines = text.count("\n") + (0 if text.endswith("\n") else 1)
         if lines > limit:
             rows.append((lines, str(path.relative_to(REPO))))
@@ -179,7 +179,7 @@ def _offending_functions(limit: int) -> list[str]:
     """List src functions longer than limit lines, longest first."""
     rows = []
     for path in sorted(SRC.rglob("*.py")):
-        for node in ast.walk(ast.parse(path.read_text())):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 length = (node.end_lineno or node.lineno) - node.lineno + 1
                 if length > limit:
@@ -276,7 +276,7 @@ def _history_best(path: Path = HISTORY) -> dict[str, float]:
     best: dict[str, float] = {}
     if not path.exists():
         return best
-    with path.open(newline="") as handle:
+    with path.open(newline="", encoding="utf-8") as handle:
         for row in csv.DictReader(handle):
             for key in RATCHET_DOWN + RATCHET_UP:
                 raw = (row.get(key) or "").strip()
@@ -335,7 +335,7 @@ def evaluate_gate(
 
 def _version() -> str:
     """Read the package version from src/dashboard/__init__.py."""
-    text = (SRC / "__init__.py").read_text()
+    text = (SRC / "__init__.py").read_text(encoding="utf-8")
     match = re.search(r'__version__ = "([^"]+)"', text)
     return match.group(1) if match else "?"
 
@@ -368,12 +368,12 @@ def record(metrics: dict[str, object]) -> None:
     fieldnames = list(metrics)
     rows: list[dict[str, str]] = []
     if HISTORY.exists():
-        with HISTORY.open(newline="") as handle:
+        with HISTORY.open(newline="", encoding="utf-8") as handle:
             reader = csv.DictReader(handle)
             existing = list(reader.fieldnames or [])
             rows = list(reader)
         fieldnames = existing + [key for key in fieldnames if key not in existing]
-    with HISTORY.open("w", newline="") as handle:
+    with HISTORY.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames, restval="")
         writer.writeheader()
         writer.writerows(rows)
