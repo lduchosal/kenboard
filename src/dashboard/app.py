@@ -114,7 +114,10 @@ def _register_blueprints(app: Flask) -> None:
     # Import-for-side-effect : attache les pages admin au blueprint pages
     # (#806). Local — admin_pages importe pages, top-level serait circulaire
     # via dashboard.routes.
-    from dashboard.routes import admin_pages  # noqa: F401,PLC0415
+    from dashboard.routes import (  # noqa: F401,PLC0415
+        admin_pages,
+        category_page,
+    )
 
     app.register_blueprint(onboard_bp)
     app.register_blueprint(pages_bp)
@@ -168,6 +171,32 @@ def _register_static_routes(app: Flask) -> None:
 # -- Factory ------------------------------------------------------------------
 
 
+def _make_flask_app() -> Flask:
+    """Build the bare Flask instance: folders, security headers, Jinja filters.
+
+    CSRF strategy (cf. sonar python:S4502): kenboard does not use Flask-WTF CSRFProtect.
+    Cookie-authenticated unsafe requests are protected by an Origin/Referer same-host
+    check in the API auth middleware (see ``auth._enforce_cookie_session`` /
+    ``auth._origin_matches_host``). Bearer-token requests do not need CSRF protection
+    because the token is never sent automatically by the browser. Covered by
+    ``test_csrf.py``.
+    """
+    app = Flask(  # NOSONAR — CSRF via Origin/Referer check in auth.py, not Flask-WTF
+        __name__,
+        template_folder=str(Path(__file__).parent / "templates"),
+        static_folder=str(Path(__file__).parent / "static"),
+        static_url_path="/static",
+    )
+    _configure_security(app)
+
+    def jsesc(s: str) -> str:
+        """Escape a string for use inside JS single-quoted strings."""
+        return s.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n")
+
+    app.jinja_env.filters["jsesc"] = jsesc
+    return app
+
+
 def create_app() -> Flask:
     """Create and configure the Flask application.
 
@@ -178,29 +207,7 @@ def create_app() -> Flask:
     debug = os.getenv("DEBUG", "false").lower() == "true"
     setup_logging(debug=debug)
 
-    # CSRF strategy (cf. sonar python:S4502): kenboard does not use
-    # Flask-WTF CSRFProtect. Cookie-authenticated unsafe requests are
-    # protected by an Origin/Referer same-host check in the API auth
-    # middleware (see ``dashboard.auth._enforce_cookie_session`` and
-    # ``dashboard.auth._origin_matches_host``). Bearer-token requests
-    # do not need CSRF protection because the token is never sent
-    # automatically by the browser. Both flows are covered by
-    # ``tests/unit/test_csrf.py``.
-    app = Flask(  # NOSONAR — CSRF via Origin/Referer check in auth.py, not Flask-WTF
-        __name__,
-        template_folder=str(Path(__file__).parent / "templates"),
-        static_folder=str(Path(__file__).parent / "static"),
-        static_url_path="/static",
-    )
-
-    _configure_security(app)
-
-    # Custom Jinja2 filter for JS string escaping in onclick attributes
-    def jsesc(s: str) -> str:
-        """Escape a string for use inside JS single-quoted strings."""
-        return s.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n")
-
-    app.jinja_env.filters["jsesc"] = jsesc
+    app = _make_flask_app()
 
     # Initialization order matters: login manager → OIDC → email → perf → auth
     init_login_manager(app)

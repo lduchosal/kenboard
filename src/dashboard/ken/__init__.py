@@ -37,9 +37,11 @@ if sys.platform == "win32":  # pragma: no cover
 # order matters: ``wiki`` defines the subgroup the wiki_* modules attach to.
 from dashboard.ken import polish as _polish_module  # noqa: F401
 from dashboard.ken import sync as _sync_module  # noqa: F401
+from dashboard.ken import task_edit as _task_edit_module  # noqa: F401
 from dashboard.ken import tasks as _tasks_module  # noqa: F401
 from dashboard.ken import wiki as _wiki_module  # noqa: F401
 from dashboard.ken import wiki_build as _wiki_build_module  # noqa: F401
+from dashboard.ken import wiki_groom as _wiki_groom_module  # noqa: F401
 from dashboard.ken import wiki_lint as _wiki_lint_module  # noqa: F401
 from dashboard.ken import wiki_sync as _wiki_sync_module  # noqa: F401
 from dashboard.ken.cli import cli

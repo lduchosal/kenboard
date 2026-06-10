@@ -81,7 +81,7 @@ class TestSnapshotCLI:
         """Run the CLI and verify a snapshot was written."""
         from click.testing import CliRunner
 
-        from dashboard.cli import snapshot
+        from dashboard.cli_burndown import snapshot
 
         # Seed a task so the counts are non-zero
         queries.task_create(
@@ -109,7 +109,7 @@ class TestSnapshotCLI:
         """Running twice is safe."""
         from click.testing import CliRunner
 
-        from dashboard.cli import snapshot
+        from dashboard.cli_burndown import snapshot
 
         runner = CliRunner()
         runner.invoke(snapshot, catch_exceptions=False)
@@ -174,3 +174,67 @@ class TestBurndownSVGTemplate:
         with app.test_request_context():
             html = render_template_string(tpl, snapshots=snapshots, color="#ff0000")
         assert "<svg" not in html
+
+
+class TestBackfillHelpers:
+    """Pure helpers of the burndown backfill (ken #808)."""
+
+    def test_to_date_strips_datetime(self):
+        from datetime import date, datetime
+
+        from dashboard.cli_burndown import _to_date
+
+        assert _to_date(datetime(2026, 6, 10, 12, 30)) == date(2026, 6, 10)
+        assert _to_date(date(2026, 6, 10)) == date(2026, 6, 10)
+
+    def test_count_task_status_at(self):
+        from datetime import date
+
+        from dashboard.cli_burndown import _count_task_status_at
+
+        task = {
+            "created_at": date(2026, 6, 1),
+            "updated_at": date(2026, 6, 5),
+            "status": "done",
+        }
+        # Before creation: no contribution.
+        assert _count_task_status_at(task, date(2026, 5, 31)) == (0, 0)
+        # Created but not yet done at that date: counts as todo.
+        assert _count_task_status_at(task, date(2026, 6, 2)) == (1, 0)
+        # Done from its updated_at on.
+        assert _count_task_status_at(task, date(2026, 6, 5)) == (0, 1)
+
+
+class TestBackfillCLI:
+    """``kenboard backfill`` rebuilds snapshots from task timestamps."""
+
+    def test_backfill_writes_history(self, app, db, queries, seed_project):
+        from click.testing import CliRunner
+
+        from dashboard.cli_burndown import backfill
+
+        queries.task_create(
+            db,
+            project_id="test-proj",
+            title="T1",
+            description="",
+            status="done",
+            who="",
+            due_date=None,
+            attachement=None,
+            position=0,
+        )
+        result = CliRunner().invoke(backfill, ["--days", "3"], catch_exceptions=False)
+        assert result.exit_code == 0
+        rows = list(
+            queries.burndown_get_by_project(db, project_id="test-proj", days=10)
+        )
+        assert len(rows) >= 1
+
+    def test_backfill_skips_empty_projects(self, app, db, queries, seed_project):
+        from click.testing import CliRunner
+
+        from dashboard.cli_burndown import backfill
+
+        result = CliRunner().invoke(backfill, ["--days", "2"], catch_exceptions=False)
+        assert result.exit_code == 0

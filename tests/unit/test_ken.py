@@ -712,7 +712,7 @@ class TestCliMutations:
         # Just over the MEDIUMTEXT cap. We monkeypatch the cap to keep
         # the test fast — writing 16 MB to disk would be wasteful.
         path.write_text("x" * 1000, encoding="utf-8")
-        import dashboard.ken.tasks as tasks_mod
+        import dashboard.ken.task_edit as tasks_mod
 
         original = tasks_mod._ATTACHEMENT_MAX_BYTES
         tasks_mod._ATTACHEMENT_MAX_BYTES = 100

@@ -153,6 +153,33 @@ def _pick_value(
     return file_data.get(key) or ini_data.get(key) or None
 
 
+def _resolved_fields(
+    file_data: dict[str, str], ini_data: dict[str, str]
+) -> dict[str, str | None]:
+    """Resolve every configurable key along env > .ken > ken.ini.
+
+    #473: ``architecture`` is the default path of the ``ken wiki *`` subcommands (UTF-8
+    preserved end-to-end). #479: ``wiki_dir`` / ``wiki_html_dir`` are the per-project
+    output dirs of the pipeline.
+    """
+    keys = (
+        ("project_id", "KEN_PROJECT_ID"),
+        ("base_url", "KEN_BASE_URL"),
+        ("api_token", "KEN_API_TOKEN"),
+        ("sync_dir", "KEN_SYNC_DIR"),
+        ("architecture", "KEN_ARCHITECTURE"),
+        ("wiki_dir", "KEN_WIKI_DIR"),
+        ("wiki_html_dir", "KEN_WIKI_HTML_DIR"),
+    )
+    fields: dict[str, str | None] = {
+        key: _pick_value(key, env, file_data, ini_data) for key, env in keys
+    }
+    fields["description"] = (
+        file_data.get("description") or ini_data.get("description") or None
+    )
+    return fields
+
+
 def _load_config(
     project_override: str | None = None,
     base_url_override: str | None = None,
@@ -182,36 +209,21 @@ def _load_config(
         _check_ken_permissions(ken_path)
         file_data = _parse_ken_file(ken_path)
 
-    def _pick(key: str, env: str | None = None) -> str | None:
-        """Resolve ``key`` for this invocation's file data (cf.
-
-        _pick_value).
-        """
-        return _pick_value(key, env, file_data, ini_data)
-
-    project_id = project_override or _pick("project_id", "KEN_PROJECT_ID")
-    base_url = (
-        base_url_override or _pick("base_url", "KEN_BASE_URL") or DEFAULT_BASE_URL
-    ).rstrip("/")
-    api_token = token_override or _pick("api_token", "KEN_API_TOKEN")
-    sync_dir = _pick("sync_dir", "KEN_SYNC_DIR") or DEFAULT_SYNC_DIR
-    # #473: default path of the ``ken wiki *`` subcommands (UTF-8 preserved
-    # end-to-end). #479: per-project default output dirs for the pipeline.
-    architecture = _pick("architecture", "KEN_ARCHITECTURE") or DEFAULT_ARCHITECTURE
-    wiki_dir = _pick("wiki_dir", "KEN_WIKI_DIR") or DEFAULT_WIKI_DIR
-    wiki_html_dir = _pick("wiki_html_dir", "KEN_WIKI_HTML_DIR") or DEFAULT_WIKI_HTML_DIR
-    description = file_data.get("description") or ini_data.get("description") or ""
+    fields = _resolved_fields(file_data, ini_data)
+    project_id = project_override or fields["project_id"]
+    base_url = (base_url_override or fields["base_url"] or DEFAULT_BASE_URL).rstrip("/")
+    api_token = token_override or fields["api_token"]
     return KenConfig(
         project_id=project_id,
         base_url=base_url,
         api_token=api_token,
         ken_file=ken_path if ken_path is not None and ken_path.is_file() else None,
         ini_file=ini_path if ini_path is not None and ini_path.is_file() else None,
-        sync_dir=sync_dir,
-        architecture=architecture,
-        wiki_dir=wiki_dir,
-        wiki_html_dir=wiki_html_dir,
-        description=description,
+        sync_dir=fields["sync_dir"] or DEFAULT_SYNC_DIR,
+        architecture=fields["architecture"] or DEFAULT_ARCHITECTURE,
+        wiki_dir=fields["wiki_dir"] or DEFAULT_WIKI_DIR,
+        wiki_html_dir=fields["wiki_html_dir"] or DEFAULT_WIKI_HTML_DIR,
+        description=fields["description"] or "",
     )
 
 

@@ -174,6 +174,48 @@ def _apply_field_updates(
     )
 
 
+def _log_update_activity(  # noqa: PLR0913 — avant/après + classification, par design
+    conn: Connection,
+    queries: Queries,
+    task_id: int,
+    existing: dict[str, Any],
+    row: dict[str, Any],
+    *,
+    save: bool,
+) -> None:
+    """Classify the PATCH as ``move`` vs ``save`` for the activity log.
+
+    Status or project changed → ``move`` (a pure-position drag inside the same column
+    also lands here — engagement-wise that's still movement worth counting). Other field
+    changed → ``save``.
+    """
+    old_status = existing["status"]
+    new_status = row["status"]
+    new_project = row["project_id"]
+    old_project = existing["project_id"]
+    if new_status != old_status or new_project != old_project:
+        log_activity(
+            conn,
+            queries,
+            project_id=new_project,
+            action=ACTION_MOVE,
+            target_id=task_id,
+            details={
+                "from_status": old_status,
+                "to_status": new_status,
+                "from_project": old_project if new_project != old_project else None,
+            },
+        )
+    elif save:
+        log_activity(
+            conn,
+            queries,
+            project_id=new_project,
+            action=ACTION_SAVE,
+            target_id=task_id,
+        )
+
+
 @bp.route("/<int:task_id>", methods=["PATCH"])
 def update_task(task_id: int) -> ResponseReturnValue:
     """Update a task (write scope on its project's category required)."""
@@ -199,35 +241,9 @@ def update_task(task_id: int) -> ResponseReturnValue:
             _apply_field_updates(queries, conn, task_id, data, existing)
 
         row = queries.task_get_by_id(conn, id=task_id)
-        # Classify the PATCH as ``move`` (status changed) vs ``save`` (other
-        # field changed) for the activity log. A pure-position drag inside
-        # the same column also lands here as ``move`` — engagement-wise
-        # that's still movement worth counting.
-        old_status = existing["status"]
-        new_status = row["status"]
-        new_project = row["project_id"]
-        old_project = existing["project_id"]
-        if new_status != old_status or new_project != old_project:
-            log_activity(
-                conn,
-                queries,
-                project_id=new_project,
-                action=ACTION_MOVE,
-                target_id=task_id,
-                details={
-                    "from_status": old_status,
-                    "to_status": new_status,
-                    "from_project": old_project if new_project != old_project else None,
-                },
-            )
-        elif _has_field_updates(data):
-            log_activity(
-                conn,
-                queries,
-                project_id=new_project,
-                action=ACTION_SAVE,
-                target_id=task_id,
-            )
+        _log_update_activity(
+            conn, queries, task_id, existing, row, save=_has_field_updates(data)
+        )
         return jsonify(Task(**row).model_dump(mode="json"))
     finally:
         conn.close()

@@ -7,7 +7,6 @@ task view (#376f, #741, #742, #743).
 
 from __future__ import annotations
 
-import re
 import shutil
 from datetime import UTC, datetime
 from pathlib import Path
@@ -18,34 +17,18 @@ import click
 from dashboard.ken.config import KenConfig, _version
 from dashboard.ken.wiki import _architecture_help, _load_sections, wiki
 from dashboard.ken.wiki_css import _WIKI_HTML_CSS
+from dashboard.ken.wiki_detail import (
+    _render_markdown,
+    _render_task_detail,
+    _rewrite_md_links_to_html,
+)
+
 
 # Stable per-name avatar colour — picked from a small palette so the
 # detail page renders the same swatch as the board card. Mirrors
 # ``buildAvatar`` in ``static/js/tasks.js`` at a high level (palette
 # differs in length but the deterministic hash keeps it consistent
 # per identity).
-# Length of an ISO ``YYYY-MM-DD`` date prefix.
-_ISO_DATE_LEN = 10
-
-_AVATAR_PALETTE = (
-    "#0969da",
-    "#bf3989",
-    "#1a7f37",
-    "#9a6700",
-    "#cf222e",
-    "#8250df",
-    "#0a3069",
-    "#bc4c00",
-)
-
-
-def _avatar_color(name: str) -> str:
-    """Deterministically map a name to one of ``_AVATAR_PALETTE``."""
-    if not name:
-        return _AVATAR_PALETTE[0]
-    return _AVATAR_PALETTE[sum(ord(c) for c in name) % len(_AVATAR_PALETTE)]
-
-
 def _split_frontmatter(md_text: str) -> tuple[dict[str, Any], str]:
     r"""Strip a leading ``---\n…\n---`` block; return ``(meta, body)``.
 
@@ -72,18 +55,6 @@ def _split_frontmatter(md_text: str) -> tuple[dict[str, Any], str]:
         return {}, md_text
     body = "\n".join(lines[end + 1 :]).lstrip("\n")
     return data, body
-
-
-def _render_markdown(md_text: str) -> str:
-    """Convert a markdown string to safe HTML via the ``markdown`` library."""
-    import markdown as md_lib
-
-    return str(md_lib.markdown(md_text, extensions=["fenced_code", "tables"]))
-
-
-def _rewrite_md_links_to_html(html: str) -> str:
-    """Rewrite ``href="…/index.md"`` (and ``foo.md``) to ``.html`` in rendered HTML."""
-    return re.sub(r'href="([^"]+)\.md"', r'href="\1.html"', html)
 
 
 def _format_sidebar_nav(
@@ -230,80 +201,6 @@ def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
         html = _wrap_html(page_title, body_html, sidebar, footer_html)
         files.append({"path": str(rel.with_suffix(".html")), "content": html})
     return files
-
-
-def _render_task_detail(meta: dict[str, Any], body_md: str) -> str:
-    """Render a per-task detail page as ``.fullscreen-card`` HTML (#376f).
-
-    ``meta`` comes from the page's YAML frontmatter (set by ``_format_task_detail_md``).
-    ``body_md`` is the description body — the H1 / footer-nav written by sync are
-    stripped server-side here since the fullscreen template renders its own header.
-    """
-    status = str(meta.get("status") or "")
-    who = str(meta.get("who") or "")
-    due = str(meta.get("due_date") or "")
-    classified_at = str(meta.get("classified_at") or "")
-    classified_by = str(meta.get("classified_by") or "")
-    section = str(meta.get("section") or "")
-    avatar_initial = (who[:1] or "?").upper()
-    avatar_color = _avatar_color(who)
-    meta_parts = [
-        f'<div class="task-avatar" style="background:{avatar_color}">{avatar_initial}</div>',
-        f'<span class="fs-who">{who}</span>' if who else "",
-        f"<span>Due {due}</span>" if due else "",
-        f"<span>Classified {classified_at[:10]}</span>" if classified_at else "",
-        f"<span>by {classified_by}</span>" if classified_by else "",
-    ]
-    desc_md = _strip_detail_chrome(body_md)
-    desc_html = _rewrite_md_links_to_html(_render_markdown(desc_md))
-    # #742 — link to the day-of-classification page in the journal.
-    log_day = (
-        classified_at[:_ISO_DATE_LEN]
-        if len(classified_at) >= _ISO_DATE_LEN
-        else "unknown"
-    )
-    log_href = "../" * (section.count("/") + 1) + f"log/{log_day}.html"
-    section_label = section or "section"
-    status_cls = f"status-{status}" if status else ""
-    return (
-        '<div class="fullscreen-card">'
-        '<div class="fullscreen-header">'
-        f'<span class="fullscreen-id">#{meta.get("id")}</span>'
-        f'<span class="fullscreen-status {status_cls}">{status}</span>'
-        "</div>"
-        f'<h2 class="fullscreen-title">{meta.get("title") or ""}</h2>'
-        '<div class="fullscreen-meta">' + "".join(p for p in meta_parts if p) + "</div>"
-        f'<div class="fullscreen-desc">{desc_html}</div>'
-        '<div class="wiki-nav">'
-        f'<a href="index.html">← retour à {section_label}</a> · '
-        f'<a href="{log_href}">voir log</a>'
-        "</div>"
-        "</div>"
-    )
-
-
-def _strip_detail_chrome(body_md: str) -> str:
-    """Drop the ``# #ID — title`` header and footer nav from a detail body.
-
-    The HTML layout supplies its own header (``fullscreen-title``) and footer (``wiki-
-    nav``) so we don't want them duplicated when rendering the body.
-    """
-    lines = body_md.splitlines()
-    if lines and lines[0].startswith("# #"):
-        lines = lines[1:]
-        while lines and not lines[0].strip():
-            lines = lines[1:]
-    # Drop the trailing footer nav (an ``---`` separator + a one-line
-    # ``[← retour …](…) · [voir log](…)``). It's the last non-empty block.
-    while lines and not lines[-1].strip():
-        lines.pop()
-    if lines and lines[-1].startswith("[← retour"):
-        lines.pop()
-        while lines and not lines[-1].strip():
-            lines.pop()
-        if lines and lines[-1].strip() == "---":
-            lines.pop()
-    return "\n".join(lines)
 
 
 def _write_html_plan(out: str, files: list[dict[str, str]]) -> None:

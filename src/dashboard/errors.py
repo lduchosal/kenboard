@@ -171,6 +171,24 @@ def _register_validation_handler(app: Flask, *, debug: bool) -> None:
         return make_response(jsonify(body), 422)
 
 
+def _fatal_response(error_id: str, error_class: str) -> ResponseReturnValue:
+    """500 body: JSON for API/XHR callers, friendly HTML page for browsers."""
+    if _wants_json(request):
+        return make_response(
+            jsonify({"error": "Internal server error", "error_id": error_id}),
+            500,
+        )
+    return make_response(
+        render_template(
+            "error_fatal.html",
+            status_code=500,
+            error_class=error_class,
+            error_id=error_id,
+        ),
+        500,
+    )
+
+
 def _register_fatal_handler(app: Flask) -> None:
     """Register the friendly fatal-error handler for unhandled 500s (#268).
 
@@ -208,20 +226,7 @@ def _register_fatal_handler(app: Flask) -> None:
         # #517: best-effort — file this 500 as a task on the configured board.
         route = str(request.url_rule) if request.url_rule else request.path
         _autocreate_error_task(error_id, error_class, original, route)
-        if _wants_json(request):
-            return make_response(
-                jsonify({"error": "Internal server error", "error_id": error_id}),
-                500,
-            )
-        return make_response(
-            render_template(
-                "error_fatal.html",
-                status_code=500,
-                error_class=error_class,
-                error_id=error_id,
-            ),
-            500,
-        )
+        return _fatal_response(error_id, error_class)
 
 
 def register_error_handlers(app: Flask, *, debug: bool) -> None:

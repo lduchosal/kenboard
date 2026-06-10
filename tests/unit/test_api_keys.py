@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from dashboard.auth import _hash_key, _scope_satisfies
+from dashboard.auth_api_key import _hash_key, _scope_satisfies
 from dashboard.config import Config
 
 
@@ -374,7 +374,7 @@ def make_api_key(db, queries):
     import secrets
     import uuid
 
-    from dashboard.auth import _hash_key
+    from dashboard.auth_api_key import _hash_key
 
     def _make(
         scopes: list[dict[str, str]] | None = None,

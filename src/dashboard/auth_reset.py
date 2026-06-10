@@ -16,13 +16,8 @@ from flask.typing import ResponseReturnValue
 
 from dashboard import db
 from dashboard import email as email_mod
-from dashboard.auth_user import (
-    _LOGIN_TEMPLATE,
-    _hasher,
-    _rotate_session_nonce,
-    bp,
-    limiter,
-)
+from dashboard.auth_session import _rotate_session_nonce
+from dashboard.auth_user import _LOGIN_TEMPLATE, _hasher, bp, limiter
 from dashboard.logging import get_logger
 from dashboard.password_strength import validate_password_strength
 

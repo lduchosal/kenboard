@@ -17,14 +17,13 @@ from flask_limiter.util import get_remote_address
 from flask_login import current_user, login_user, logout_user
 
 from dashboard import db
+from dashboard.auth_session import CurrentUser, _rotate_session_nonce
 from dashboard.auth_user import (
     _LOGIN_TEMPLATE,
     LOGIN_RATE_LIMITS,
     LOGIN_VIEW_ENDPOINT,
     REMEMBER_DAYS,
-    CurrentUser,
     _hasher,
-    _rotate_session_nonce,
     bp,
     limiter,
 )

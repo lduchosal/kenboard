@@ -186,6 +186,7 @@ version-major = "pdm bump -v major"
 # prévue : PLR1702 (imbrication ≤ 5 — dès sa sortie de preview ruff).
 extend-select = [
     "RUF",     # règles ruff natives, RUF100 inclus depuis le palier 4
+    "ANN401",  # plus de Any nu — noqa argumentés seulement (acquis palier 5, ken #808)
     "ARG",     # arguments inutilisés (acquis palier 2, ken #798)
     "BLE",     # blind except interdits sauf noqa argumenté (palier 2)
     "C901",    # complexité cyclomatique ≤ 10 (acquis ken #789)
@@ -211,11 +212,12 @@ max-complexity = 10
 # complexité non bloquante (helpers de schéma séquentiels dans conftest) et
 # familles "hygiène src" non imposées au code de test (mêmes exemptions que
 # mypy strict / interrogate). Le gate métrique (#788) ne mesure que src/.
-"tests/**" = ["DTZ", "C901", "ARG", "BLE", "EM", "FBT", "G", "PLC0415", "PLR", "PTH", "SLF", "TRY"]
+"tests/**" = ["ANN401", "DTZ", "C901", "ARG", "BLE", "EM", "FBT", "G", "PLC0415", "PLR", "PTH", "SLF", "TRY"]
 # CLIs : lazy imports délibérés — chaque commande importe ses dépendances au
 # moment de l'exécution pour garder le démarrage instantané (`ken` est
 # stdlib-only au boot) et ne charger flask/yoyo/markdown/yaml qu'au besoin.
 "src/dashboard/cli.py" = ["PLC0415"]
+"src/dashboard/cli_burndown.py" = ["PLC0415"]
 "src/dashboard/ken/**" = ["PLC0415"]
 
 # -- Black --------------------------------------------------------------------

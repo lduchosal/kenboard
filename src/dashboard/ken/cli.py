@@ -68,6 +68,34 @@ def _choose_project(
     return project_uuid, match["name"]
 
 
+def _write_config_files(
+    cfg: KenConfig, cwd: Path, project_uuid: str, chosen_name: str
+) -> None:
+    """Write ``ken.ini`` (shared) and, when a token is resolved, ``.ken`` (0600)."""
+    ini_parser = configparser.ConfigParser()
+    ini_parser[KEN_INI_SECTION] = {
+        "project_id": project_uuid,
+        "base_url": cfg.base_url,
+        "description": chosen_name,
+    }
+    with (cwd / KEN_INI_FILE).open("w", encoding="utf-8") as fh:
+        ini_parser.write(fh)
+    click.echo(f"Wrote {KEN_INI_FILE} (project: {chosen_name})")
+
+    if cfg.api_token:
+        ken_target = cwd / KEN_FILE
+        ken_target.write_text(f"api_token={cfg.api_token}\n", encoding="utf-8")
+        ken_target.chmod(0o600)
+        click.echo(f"Wrote {KEN_FILE} (api_token)")
+        _add_to_gitignore(cwd)
+    else:
+        click.echo(
+            f"Note: no api_token resolved — skipped {KEN_FILE}. "
+            f"Set KEN_API_TOKEN or pass --token, then re-run `ken init --force`.",
+            err=True,
+        )
+
+
 @cli.command()
 @click.argument("project_uuid", required=False)
 @click.option("--force", is_flag=True, help="Overwrite an existing ken.ini and/or .ken")
@@ -110,28 +138,7 @@ def init(ctx: click.Context, project_uuid: str | None, *, force: bool) -> None:
         sys.exit(1)
 
     project_uuid, chosen_name = _choose_project(cfg, projects_data, project_uuid)
-
-    ini_parser = configparser.ConfigParser()
-    ini_parser[KEN_INI_SECTION] = {
-        "project_id": project_uuid,
-        "base_url": cfg.base_url,
-        "description": chosen_name,
-    }
-    with ini_target.open("w", encoding="utf-8") as fh:
-        ini_parser.write(fh)
-    click.echo(f"Wrote {KEN_INI_FILE} (project: {chosen_name})")
-
-    if cfg.api_token:
-        ken_target.write_text(f"api_token={cfg.api_token}\n", encoding="utf-8")
-        ken_target.chmod(0o600)
-        click.echo(f"Wrote {KEN_FILE} (api_token)")
-        _add_to_gitignore(cwd)
-    else:
-        click.echo(
-            f"Note: no api_token resolved — skipped {KEN_FILE}. "
-            f"Set KEN_API_TOKEN or pass --token, then re-run `ken init --force`.",
-            err=True,
-        )
+    _write_config_files(cfg, cwd, project_uuid, chosen_name)
 
 
 @cli.command(name="self-update")

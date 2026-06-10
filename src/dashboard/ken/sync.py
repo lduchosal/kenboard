@@ -13,6 +13,39 @@ from dashboard.ken.fmt import _SYNC_FILENAME_RE, _format_sync_markdown, _sync_fi
 from dashboard.ken.http import _request, _require_project
 
 
+def _apply_sync(
+    target: Path, desired: dict[int, tuple[str, str]]
+) -> tuple[list[str], list[str]]:
+    """Write the desired files under ``target``; drop stale/renamed ones.
+
+    Returns ``(written, deleted)`` filename lists.
+    """
+    existing: dict[int, Path] = {}
+    for entry in target.iterdir():
+        if not entry.is_file():
+            continue
+        match = _SYNC_FILENAME_RE.match(entry.name)
+        if match:
+            existing[int(match.group(1))] = entry
+
+    written: list[str] = []
+    deleted: list[str] = []
+    for task_id, (filename, content) in desired.items():
+        new_path = target / filename
+        old = existing.get(task_id)
+        if old is not None and old != new_path:
+            old.unlink()
+            deleted.append(old.name)
+        new_path.write_text(content, encoding="utf-8")
+        written.append(filename)
+
+    for task_id, path in existing.items():
+        if task_id not in desired:
+            path.unlink()
+            deleted.append(path.name)
+    return written, deleted
+
+
 @cli.command()
 @click.option("--json", "json_mode", is_flag=True, help="Output as JSON")
 @click.pass_context
@@ -37,29 +70,7 @@ def sync(ctx: click.Context, *, json_mode: bool) -> None:
         int(t["id"]): (_sync_filename(t), _format_sync_markdown(t)) for t in tasks
     }
 
-    existing: dict[int, Path] = {}
-    for entry in target.iterdir():
-        if not entry.is_file():
-            continue
-        match = _SYNC_FILENAME_RE.match(entry.name)
-        if match:
-            existing[int(match.group(1))] = entry
-
-    written: list[str] = []
-    deleted: list[str] = []
-    for task_id, (filename, content) in desired.items():
-        new_path = target / filename
-        old = existing.get(task_id)
-        if old is not None and old != new_path:
-            old.unlink()
-            deleted.append(old.name)
-        new_path.write_text(content, encoding="utf-8")
-        written.append(filename)
-
-    for task_id, path in existing.items():
-        if task_id not in desired:
-            path.unlink()
-            deleted.append(path.name)
+    written, deleted = _apply_sync(target, desired)
 
     if json_mode:
         click.echo(

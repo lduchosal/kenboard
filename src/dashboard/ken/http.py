@@ -47,7 +47,7 @@ def _request(
     path: str,
     *,
     body: dict[str, Any] | None = None,
-) -> Any:
+) -> Any:  # noqa: ANN401 — JSON parsé, forme libre
     """Send a JSON request, return parsed response or None on empty body."""
     url = cfg.base_url + path
     data = json_lib.dumps(body).encode("utf-8") if body is not None else None

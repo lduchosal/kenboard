@@ -91,35 +91,16 @@ def _validate_registration(
     return None
 
 
-@bp.route("/register", methods=["POST"])
-@limiter.limit(_REGISTER_RATE_LIMITS)
-def register_post() -> ResponseReturnValue:
-    """Validate input, send verification email, and store pending registration."""
-    domain = Config.REGISTER_ALLOWED_DOMAIN
-    if not domain:
-        abort(404)
+def _create_verification_token(email: str, password: str) -> bool:
+    """Store the pending registration and send the verification email.
 
-    email = (request.form.get("email") or "").strip().lower()
-    password = request.form.get("password") or ""
-    password_confirm = request.form.get("password_confirm") or ""
-
-    def _err(msg: str) -> ResponseReturnValue:
-        """Render the register form with an error message."""
-        return render_template(
-            _REGISTER_TEMPLATE, domain=domain, error=msg, message=None
-        )
-
-    error = _validate_registration(domain, email, password, password_confirm)
-    if error:
-        return _err(error)
-
+    Returns ``False`` (nothing sent) when the email is already taken.
+    """
     conn = db.get_connection()
     queries = db.load_queries()
     try:
-        existing = queries.usr_get_by_email(conn, email=email)
-        if existing:
-            return _err("Un compte existe déjà avec cet email.")
-
+        if queries.usr_get_by_email(conn, email=email):
+            return False
         token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         pw_hash = _hasher.hash(password)
@@ -144,6 +125,33 @@ def register_post() -> ResponseReturnValue:
         verify_url=verify_url,
     )
     log.info("auth.registration_requested", email=email)
+    return True
+
+
+@bp.route("/register", methods=["POST"])
+@limiter.limit(_REGISTER_RATE_LIMITS)
+def register_post() -> ResponseReturnValue:
+    """Validate input, send verification email, and store pending registration."""
+    domain = Config.REGISTER_ALLOWED_DOMAIN
+    if not domain:
+        abort(404)
+
+    email = (request.form.get("email") or "").strip().lower()
+    password = request.form.get("password") or ""
+    password_confirm = request.form.get("password_confirm") or ""
+
+    def _err(msg: str) -> ResponseReturnValue:
+        """Render the register form with an error message."""
+        return render_template(
+            _REGISTER_TEMPLATE, domain=domain, error=msg, message=None
+        )
+
+    error = _validate_registration(domain, email, password, password_confirm)
+    if error:
+        return _err(error)
+
+    if not _create_verification_token(email, password):
+        return _err("Un compte existe déjà avec cet email.")
 
     return render_template(
         _REGISTER_TEMPLATE,

@@ -237,6 +237,22 @@ _RUNBOOK_GUIDE = (
 )
 
 
+def _token_section(token: str) -> tuple[str, str]:
+    """``(ligne api_token, étape 3)`` du runbook — selon qu'un token est fourni."""
+    if token:
+        return (
+            f"api_token={_sanitize_token(token)}\n",
+            "3. Le token API est déjà inclus ci-dessus. Vous pouvez\n"
+            "   commencer à travailler immédiatement.\n",
+        )
+    return (
+        "api_token=<API key — voir étape 3>\n",
+        "3. Demander à l'utilisateur de générer une API key sur\n"
+        "   /admin/keys (avec au moins le scope 'read' sur ce projet)\n"
+        "   et de la coller dans la ligne api_token= du fichier .ken\n",
+    )
+
+
 def onboarding_text_full(
     cat_id: str, project_id: str, base_url: str, token: str = ""
 ) -> str:
@@ -246,19 +262,7 @@ def onboarding_text_full(
     works on any self-hosted instance. When ``token`` is provided (#159), the ``.ken``
     file is complete and the agent can start immediately.
     """
-    if token:
-        token_line = f"api_token={_sanitize_token(token)}\n"
-        step3 = (
-            "3. Le token API est déjà inclus ci-dessus. Vous pouvez\n"
-            "   commencer à travailler immédiatement.\n"
-        )
-    else:
-        token_line = "api_token=<API key — voir étape 3>\n"
-        step3 = (
-            "3. Demander à l'utilisateur de générer une API key sur\n"
-            "   /admin/keys (avec au moins le scope 'read' sur ce projet)\n"
-            "   et de la coller dans la ligne api_token= du fichier .ken\n"
-        )
+    token_line, step3 = _token_section(token)
     return (
         "# KENBOARD\n"
         "\n"

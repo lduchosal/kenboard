@@ -33,7 +33,8 @@ from flask.typing import ResponseReturnValue
 from flask_login import login_user
 
 from dashboard import db
-from dashboard.auth_user import REMEMBER_DAYS, CurrentUser
+from dashboard.auth_session import CurrentUser
+from dashboard.auth_user import REMEMBER_DAYS
 from dashboard.config import Config
 from dashboard.logging import get_logger
 
@@ -92,6 +93,27 @@ def oidc_callback() -> ResponseReturnValue:
     email = userinfo.get("email") or ""
     name = userinfo.get("name") or email.split("@")[0] if email else ""
 
+    denied = _reject_oidc_email(userinfo, email)
+    if denied is not None:
+        return denied
+
+    row = _get_or_create_oidc_user(email, name)
+
+    user = CurrentUser(row)
+    login_user(user, remember=True, duration=timedelta(days=REMEMBER_DAYS))
+    log.info("auth_oidc.login_success", user_id=user.id, email=email)
+
+    next_url = session.pop("oidc_next", "") or url_for("pages.index")
+    return redirect(next_url)
+
+
+def _reject_oidc_email(
+    userinfo: dict[str, Any], email: str
+) -> ResponseReturnValue | None:
+    """Validate the IdP email: present, verified, allowed domain.
+
+    Returns the rejection response or ``None`` when the email is acceptable.
+    """
     if not email:
         log.warning("auth_oidc.no_email", userinfo=userinfo)
         return render_template(
@@ -99,7 +121,6 @@ def oidc_callback() -> ResponseReturnValue:
             error="Le fournisseur OIDC n'a pas retourné d'adresse email.",
             next_url="",
         )
-
     if Config.OIDC_REQUIRE_EMAIL_VERIFIED and not userinfo.get("email_verified"):
         log.warning("auth_oidc.email_not_verified", email=email)
         return render_template(
@@ -107,7 +128,6 @@ def oidc_callback() -> ResponseReturnValue:
             error="L'adresse email n'est pas vérifiée côté fournisseur.",
             next_url="",
         )
-
     if Config.OIDC_ALLOWED_EMAIL_DOMAIN:
         domain = email.rsplit("@", 1)[-1].lower()
         if domain != Config.OIDC_ALLOWED_EMAIL_DOMAIN.lower():
@@ -124,15 +144,7 @@ def oidc_callback() -> ResponseReturnValue:
                 ),
                 403,
             )
-
-    row = _get_or_create_oidc_user(email, name)
-
-    user = CurrentUser(row)
-    login_user(user, remember=True, duration=timedelta(days=REMEMBER_DAYS))
-    log.info("auth_oidc.login_success", user_id=user.id, email=email)
-
-    next_url = session.pop("oidc_next", "") or url_for("pages.index")
-    return redirect(next_url)
+    return None
 
 
 def _get_or_create_oidc_user(email: str, name: str) -> dict[str, Any]:

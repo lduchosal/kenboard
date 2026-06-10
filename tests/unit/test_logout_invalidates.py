@@ -13,7 +13,7 @@ from __future__ import annotations
 import pytest
 from argon2 import PasswordHasher
 
-from dashboard.auth_user import _rotate_session_nonce
+from dashboard.auth_session import _rotate_session_nonce
 
 
 @pytest.fixture()

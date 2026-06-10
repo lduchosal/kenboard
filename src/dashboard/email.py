@@ -32,7 +32,30 @@ def init_email(app: Flask) -> None:
         log.info("email_disabled")
 
 
-def send_email(to: str, subject: str, template: str, **ctx: Any) -> bool:
+def _build_message(to: str, subject: str, html: str, text: str | None) -> MIMEMultipart:
+    """Assemble the multipart message — text/plain first (RFC 2046 preference)."""
+    # Extract domain from SMTP_FROM for the Message-ID
+    from_domain = (
+        Config.SMTP_FROM.rsplit("@", 1)[-1] if "@" in Config.SMTP_FROM else "kenboard"
+    )
+    msg = MIMEMultipart("alternative")
+    msg["From"] = Config.SMTP_FROM
+    msg["To"] = to
+    msg["Subject"] = subject
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid(idstring=uuid.uuid4().hex[:8], domain=from_domain)
+    if text:
+        msg.attach(MIMEText(text, "plain", "utf-8"))
+    msg.attach(MIMEText(html, "html", "utf-8"))
+    return msg
+
+
+def send_email(
+    to: str,
+    subject: str,
+    template: str,
+    **ctx: Any,  # noqa: ANN401 — contexte jinja libre
+) -> bool:
     """Send a multipart email (text + HTML) rendered from Jinja2 templates.
 
     The ``template`` parameter should be the HTML template path (e.g.
@@ -59,20 +82,7 @@ def send_email(to: str, subject: str, template: str, **ctx: Any) -> bool:
         log.exception("email_render_error", template=template)
         return False
 
-    # Extract domain from SMTP_FROM for the Message-ID
-    from_domain = (
-        Config.SMTP_FROM.rsplit("@", 1)[-1] if "@" in Config.SMTP_FROM else "kenboard"
-    )
-    msg = MIMEMultipart("alternative")
-    msg["From"] = Config.SMTP_FROM
-    msg["To"] = to
-    msg["Subject"] = subject
-    msg["Date"] = formatdate(localtime=True)
-    msg["Message-ID"] = make_msgid(idstring=uuid.uuid4().hex[:8], domain=from_domain)
-    # text/plain first, then text/html — RFC 2046: last part is preferred
-    if text:
-        msg.attach(MIMEText(text, "plain", "utf-8"))
-    msg.attach(MIMEText(html, "html", "utf-8"))
+    msg = _build_message(to, subject, html, text)
 
     try:
         with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as srv:

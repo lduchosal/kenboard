@@ -73,6 +73,19 @@ def _bucket_activity_by_person(
     return per_day, totals_by_person
 
 
+def _bar_grid(
+    w: float, h: float, day_count: int, person_count: int
+) -> tuple[float, float, float, float, float, float]:
+    """Grid geometry: ``(band, group_w, slot_w, bar_w, plot_h, pad_bottom)``."""
+    pad_top, pad_bottom = 8.0, 4.0
+    plot_h = h - pad_top - pad_bottom
+    band = w / day_count
+    group_w = band * 0.82
+    slot_w = group_w / person_count
+    bar_w = slot_w * 0.85
+    return band, group_w, slot_w, bar_w, plot_h, pad_bottom
+
+
 def _layout_taskers_bars(  # noqa: PLR0913 — géométrie : données + dimensions explicites
     per_day: dict[str, dict[str, int]],
     day_keys: list[str],
@@ -96,12 +109,9 @@ def _layout_taskers_bars(  # noqa: PLR0913 — géométrie : données + dimensio
         The list of bar dicts (``x``/``y``/``w``/``h``/``color``/…).
     """
     default_color = "var(--dimmed)"
-    pad_top, pad_bottom = 8.0, 4.0
-    plot_h = h - pad_top - pad_bottom
-    band = w / len(day_keys)
-    group_w = band * 0.82
-    slot_w = group_w / len(persons)
-    bar_w = slot_w * 0.85
+    band, group_w, slot_w, bar_w, plot_h, pad_bottom = _bar_grid(
+        w, h, len(day_keys), len(persons)
+    )
     max_count = max(max(d.values()) for d in per_day.values() if d)
 
     bars: list[dict[str, Any]] = []
@@ -175,17 +185,9 @@ def _build_taskers_daily_chart(
     active person is laid out side by side — a per-day comparison of who did
     the most. The SVG rects are precomputed here; day labels and the person
     legend live in HTML since the SVG is stretched with
-    ``preserveAspectRatio=none`` and text would distort.
-
-    Args:
-        rows: Per-(day, principal) activity counts.
-        users: All users (provides id→name and name→color maps).
-        today: Anchor date for the trailing window (injected for testing).
-        days: Number of days to render, ending today.
-
-    Returns:
-        A context dict with ``taskers_bars``, ``taskers_axis``,
-        ``taskers_legend``, ``taskers_total`` and the SVG viewBox dimensions.
+    ``preserveAspectRatio=none`` and text would distort. ``today`` anchors the
+    trailing window (injected for testing). Returns the template context
+    (``taskers_bars``/``axis``/``legend``/``total`` + viewBox dimensions).
     """
     w, h = 760.0, 150.0
     users_by_id = {u["id"]: u["name"] for u in users}
@@ -206,14 +208,36 @@ def _build_taskers_daily_chart(
     axis, legend = _taskers_axis_legend(
         day_seq, persons, totals_by_person, color_by_name
     )
+    ctx = _empty_taskers_ctx(w, h)
+    ctx.update(
+        taskers_bars=bars,
+        taskers_axis=axis,
+        taskers_legend=legend,
+        taskers_total=sum(totals_by_person.values()),
+        taskers_window_days=days,
+    )
+    return ctx
+
+
+def _project_card(
+    project: dict[str, Any], proj_rows: list[tuple[str, int]], top_n: int
+) -> dict[str, Any] | None:
+    """One mini-card (top sections + total) — ``None`` if nothing classified."""
+    if not proj_rows:
+        return None
+    max_count = proj_rows[0][1]
+    sections = [
+        {
+            "section": name,
+            "count": cnt,
+            "pct": round(100 * cnt / max_count, 1) if max_count else 0,
+        }
+        for name, cnt in proj_rows[:top_n]
+    ]
     return {
-        "taskers_bars": bars,
-        "taskers_axis": axis,
-        "taskers_legend": legend,
-        "taskers_total": sum(totals_by_person.values()),
-        "taskers_window_days": days,
-        "taskers_vb_w": w,
-        "taskers_vb_h": h,
+        "project": project,
+        "sections": sections,
+        "total": sum(cnt for _, cnt in proj_rows),
     }
 
 
@@ -249,25 +273,12 @@ def _build_wiki_sections_per_project_chart(
         pid = str(r["project_id"])
         by_proj.setdefault(pid, []).append((str(r["section_path"]), int(r["count"])))
 
-    cards: list[dict[str, Any]] = []
-    grand_total = 0
-    for p in projects:
-        proj_rows = by_proj.get(p["id"], [])
-        if not proj_rows:
-            continue
-        max_count = proj_rows[0][1]
-        sections = [
-            {
-                "section": name,
-                "count": cnt,
-                "pct": round(100 * cnt / max_count, 1) if max_count else 0,
-            }
-            for name, cnt in proj_rows[:top_n]
-        ]
-        total = sum(cnt for _, cnt in proj_rows)
-        grand_total += total
-        cards.append({"project": p, "sections": sections, "total": total})
+    cards = [
+        card
+        for p in projects
+        if (card := _project_card(p, by_proj.get(p["id"], []), top_n)) is not None
+    ]
     return {
         "wiki_by_project": cards,
-        "wiki_by_project_total": grand_total,
+        "wiki_by_project_total": sum(c["total"] for c in cards),
     }

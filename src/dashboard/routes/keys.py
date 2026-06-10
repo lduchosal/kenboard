@@ -17,7 +17,7 @@ from flask.typing import ResponseReturnValue
 from pymysql import Connection
 
 from dashboard import db
-from dashboard.auth import _hash_key
+from dashboard.auth_api_key import _hash_key
 from dashboard.auth_user import limiter
 from dashboard.db import Queries
 from dashboard.logging import get_logger
@@ -117,6 +117,36 @@ def create_key() -> ResponseReturnValue:
         conn.close()
 
 
+def _rotate_onboarding_key(conn: Connection, queries: Queries, project_id: str) -> str:
+    """Revoke the project's active onboarding token and create a fresh one.
+
+    Returns the new plain-text key (it cannot be recovered from the hash, so replacement
+    is the only way to return a usable link).
+    """
+    existing = queries.key_get_onboarding_for_project(conn, project_id=project_id)
+    if existing:
+        queries.key_revoke(conn, id=existing["id"])
+
+    plain = _generate_key()
+    key_id = str(uuid.uuid4())
+    queries.key_create(
+        conn,
+        id=key_id,
+        user_id=None,
+        key_type="onboarding",
+        key_hash=_hash_key(plain),
+        label=f"onboarding:{project_id[:8]}",
+        expires_at=None,
+    )
+    queries.key_scopes_add(
+        conn,
+        api_key_id=key_id,
+        project_id=project_id,
+        scope="write",
+    )
+    return plain
+
+
 @bp.route("/onboard", methods=["POST"])
 def create_onboard_token() -> ResponseReturnValue:
     """Create (or replace) an onboarding token for a project (#159).
@@ -138,30 +168,7 @@ def create_onboard_token() -> ResponseReturnValue:
     conn = db.get_connection()
     queries = db.load_queries()
     try:
-        # Revoke any existing onboarding token for this project
-        existing = queries.key_get_onboarding_for_project(conn, project_id=project_id)
-        if existing:
-            queries.key_revoke(conn, id=existing["id"])
-
-        # Create a new onboarding token
-        plain = _generate_key()
-        key_hash = _hash_key(plain)
-        key_id = str(uuid.uuid4())
-        queries.key_create(
-            conn,
-            id=key_id,
-            user_id=None,
-            key_type="onboarding",
-            key_hash=key_hash,
-            label=f"onboarding:{project_id[:8]}",
-            expires_at=None,
-        )
-        queries.key_scopes_add(
-            conn,
-            api_key_id=key_id,
-            project_id=project_id,
-            scope="write",
-        )
+        plain = _rotate_onboarding_key(conn, queries, project_id)
         return (
             jsonify(
                 {
