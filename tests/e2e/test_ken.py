@@ -77,21 +77,27 @@ class TestKenE2E:
         assert any(p["id"] == project_id for p in data)
 
     def test_init_writes_ken_file(
-        self, runner, live_server, clean_db, project_id, cwd_tmp
+        self, runner, live_server, clean_db, project_id, cwd_tmp, monkeypatch
     ):
         # Pretend we're in a git repo so .gitignore handling fires
         (cwd_tmp / ".git").mkdir()
+        # #778: ken.ini holds the shared config; .ken (api_token only) is
+        # written only when a token is resolved.
+        monkeypatch.setenv("KEN_API_TOKEN", "tok-e2e")
         result = _ken(runner, live_server, "init", project_id)
         assert result.exit_code == 0, result.output
+        ini_content = (cwd_tmp / "ken.ini").read_text()
+        assert f"project_id = {project_id}" in ini_content
+        assert f"base_url = {live_server}" in ini_content
         ken_file = cwd_tmp / ".ken"
         assert ken_file.exists()
-        content = ken_file.read_text()
-        assert f"project_id={project_id}" in content
-        assert f"base_url={live_server}" in content
+        assert "api_token=tok-e2e" in ken_file.read_text()
         # 0600
         assert (ken_file.stat().st_mode & 0o777) == 0o600
-        # gitignore updated
-        assert ".ken" in (cwd_tmp / ".gitignore").read_text().splitlines()
+        # gitignore updated with .ken only — ken.ini stays versioned
+        gi_lines = (cwd_tmp / ".gitignore").read_text().splitlines()
+        assert ".ken" in gi_lines
+        assert "ken.ini" not in gi_lines
 
     def test_full_lifecycle(self, runner, live_server, clean_db, project_id, cwd_tmp):
         """Add → list → update → move → done → show on a real DB."""

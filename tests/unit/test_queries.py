@@ -1,5 +1,6 @@
 """Test aiosql queries load correctly and execute against the DB."""
 
+
 class TestQueriesLoad:
     """Test that all expected queries are loaded."""
 
