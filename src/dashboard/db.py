@@ -14,14 +14,14 @@ from dashboard.config import Config
 QUERIES_DIR = Path(__file__).parent / "queries"
 
 
-class _InstrumentedQueries:
+class Queries:
     """Proxy around aiosql queries that records timing in flask.g (#214).
 
     When called inside a Flask request with ``g.perf`` set, each query call is timed and
     recorded.  Outside Flask (CLI, tests) the proxy is a transparent passthrough.
     """
 
-    def __init__(self, queries: Any) -> None:
+    def __init__(self, queries: aiosql.queries.Queries) -> None:
         """Wrap the raw aiosql queries object."""
         object.__setattr__(self, "_queries", queries)
 
@@ -68,11 +68,11 @@ def get_connection() -> pymysql.Connection:
     )
 
 
-def load_queries() -> Any:
+def load_queries() -> Queries:
     """Load SQL queries from the queries directory.
 
     Returns an instrumented proxy that records query timing in
     ``flask.g.perf`` when running inside a Flask request (#214).
     """
     raw = aiosql.from_path(str(QUERIES_DIR), "pymysql", mandatory_parameters=False)
-    return _InstrumentedQueries(raw)
+    return Queries(raw)

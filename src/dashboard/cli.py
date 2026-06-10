@@ -1,10 +1,12 @@
 """CLI entry point."""
 
 import sys
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
 import click
+from pymysql import Connection
 
 # Force UTF-8 on Windows so kenboard CLI output (migration logs, error
 # messages) does not crash on non-ASCII characters (#148).
@@ -230,7 +232,7 @@ def backfill(days: int) -> None:
 
     Idempotent: existing snapshots are overwritten via upsert.
     """
-    from datetime import date, timedelta
+    from datetime import timedelta
 
     import dashboard.db as db_module
 
@@ -253,12 +255,12 @@ def backfill(days: int) -> None:
         conn.close()
 
 
-def _to_date(val: Any) -> Any:
+def _to_date(val: datetime | date) -> date:
     """Convert a datetime to a date, or return as-is if already a date."""
-    return val.date() if hasattr(val, "date") else val
+    return val.date() if isinstance(val, datetime) else val
 
 
-def _count_task_status_at(task: dict[str, Any], day: Any) -> tuple[int, int]:
+def _count_task_status_at(task: dict[str, Any], day: date) -> tuple[int, int]:
     """Return (todo, done) contribution of a single task for a given day."""
     t_created = _to_date(task["created_at"])
     if t_created > day:
@@ -270,7 +272,7 @@ def _count_task_status_at(task: dict[str, Any], day: Any) -> tuple[int, int]:
 
 
 def _backfill_project(
-    conn: Any, proj_id: str, tasks: list[dict[str, Any]], start: Any, days: int
+    conn: Connection, proj_id: str, tasks: list[dict[str, Any]], start: date, days: int
 ) -> int:
     """Backfill snapshots for a single project, return count of rows upserted."""
     from datetime import timedelta

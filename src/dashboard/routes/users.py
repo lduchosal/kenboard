@@ -8,9 +8,11 @@ from argon2.exceptions import VerifyMismatchError
 from flask import Blueprint, g, jsonify, request
 from flask.typing import ResponseReturnValue
 from flask_login import current_user
+from pymysql import Connection
 
 from dashboard import db
 from dashboard.auth_user import _is_login_disabled, api_admin_required, limiter
+from dashboard.db import Queries
 from dashboard.logging import get_logger
 from dashboard.models.user import (
     PasswordChange,
@@ -35,7 +37,9 @@ def _hash_password(password: str) -> str:
     return _hasher.hash(password)
 
 
-def _row_with_scopes(conn: Any, queries: Any, row: dict[str, Any]) -> dict[str, Any]:
+def _row_with_scopes(
+    conn: Connection, queries: Queries, row: dict[str, Any]
+) -> dict[str, Any]:
     """Attach ``scopes`` (list of category_id/scope dicts) to a user row."""
     scopes = list(queries.usr_scopes_get(conn, user_id=row["id"]))
     return row | {"scopes": scopes}

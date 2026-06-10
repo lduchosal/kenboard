@@ -10,11 +10,8 @@ import json
 import pytest
 from argon2 import PasswordHasher
 
-from dashboard.auth_user import (
-    _is_safe_url,
-    _ua_only_session_identifier,
-    _verify_credentials,
-)
+from dashboard.auth_login import _is_safe_url, _verify_credentials
+from dashboard.auth_user import _ua_only_session_identifier
 
 SAME_ORIGIN = {"Origin": "http://localhost"}
 

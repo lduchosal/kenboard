@@ -4,6 +4,7 @@ from typing import Any
 
 from flask import Blueprint, jsonify, request
 from flask.typing import ResponseReturnValue
+from pymysql import Connection
 
 from dashboard import db
 from dashboard.activity import (
@@ -14,6 +15,7 @@ from dashboard.activity import (
     log_activity,
 )
 from dashboard.auth_scopes import current_user_can_project
+from dashboard.db import Queries
 from dashboard.models.task import Task, TaskCreate, TaskUpdate
 
 bp = Blueprint("tasks", __name__, url_prefix="/api/v1/tasks")
@@ -95,8 +97,8 @@ def create_task() -> ResponseReturnValue:
 
 
 def _apply_position_change(
-    queries: Any,
-    conn: Any,
+    queries: Queries,
+    conn: Connection,
     task_id: int,
     data: TaskUpdate,
     existing: dict[str, Any],
@@ -145,8 +147,8 @@ def _has_field_updates(data: TaskUpdate) -> bool:
 
 
 def _apply_field_updates(
-    queries: Any,
-    conn: Any,
+    queries: Queries,
+    conn: Connection,
     task_id: int,
     data: TaskUpdate,
     existing: dict[str, Any],

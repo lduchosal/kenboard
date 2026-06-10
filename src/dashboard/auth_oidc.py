@@ -18,7 +18,7 @@ from __future__ import annotations
 import secrets
 import uuid
 from datetime import timedelta
-from typing import cast
+from typing import Any, cast
 
 from authlib.integrations.flask_client import OAuth
 from flask import (
@@ -125,6 +125,18 @@ def oidc_callback() -> ResponseReturnValue:
                 403,
             )
 
+    row = _get_or_create_oidc_user(email, name)
+
+    user = CurrentUser(row)
+    login_user(user, remember=True, duration=timedelta(days=REMEMBER_DAYS))
+    log.info("auth_oidc.login_success", user_id=user.id, email=email)
+
+    next_url = session.pop("oidc_next", "") or url_for("pages.index")
+    return redirect(next_url)
+
+
+def _get_or_create_oidc_user(email: str, name: str) -> dict[str, Any]:
+    """Look up the user by email, lazy-create on first login, rotate the nonce."""
     conn = db.get_connection()
     queries = db.load_queries()
     try:
@@ -145,15 +157,10 @@ def oidc_callback() -> ResponseReturnValue:
         nonce = secrets.token_hex(16)
         queries.usr_rotate_session_nonce(conn, id=row["id"], nonce=nonce)
         row["session_nonce"] = nonce
+        # le proxy aiosql renvoie Any — la ligne users est un dict-cursor row
+        return cast("dict[str, Any]", row)
     finally:
         conn.close()
-
-    user = CurrentUser(row)
-    login_user(user, remember=True, duration=timedelta(days=REMEMBER_DAYS))
-    log.info("auth_oidc.login_success", user_id=user.id, email=email)
-
-    next_url = session.pop("oidc_next", "") or url_for("pages.index")
-    return redirect(next_url)
 
 
 def _random_color() -> str:

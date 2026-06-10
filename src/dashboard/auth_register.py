@@ -10,16 +10,17 @@ from __future__ import annotations
 import hashlib
 import secrets
 import uuid
-from typing import Any
 
 from flask import abort, render_template, request
 from flask.typing import ResponseReturnValue
+from pymysql import Connection
 
 from dashboard import db
 from dashboard import email as email_mod
 from dashboard.auth_reset import _INVALID_LINK_MSG
 from dashboard.auth_user import _LOGIN_TEMPLATE, _hasher, bp, limiter
 from dashboard.config import Config
+from dashboard.db import Queries
 from dashboard.logging import get_logger
 from dashboard.password_strength import validate_password_strength
 
@@ -44,8 +45,8 @@ _AVATAR_COLORS = [
 
 
 def _get_or_create_users_category(
-    queries: Any,
-    conn: Any,
+    queries: Queries,
+    conn: Connection,
 ) -> str:
     """Return the id of the 'Users' category, creating it if needed."""
     cats = list(queries.cat_get_all(conn))
@@ -73,6 +74,23 @@ def register() -> ResponseReturnValue:
     return render_template(_REGISTER_TEMPLATE, domain=domain, error=None, message=None)
 
 
+def _validate_registration(
+    domain: str, email: str, password: str, password_confirm: str
+) -> str | None:
+    """Validate the registration form; return the error message or ``None``."""
+    if not email:
+        return "Email requis."
+    if not email.endswith(f"@{domain}"):
+        return f"Seules les adresses @{domain} sont acceptées."
+    if password != password_confirm:
+        return "Les mots de passe ne correspondent pas."
+    try:
+        validate_password_strength(password)
+    except ValueError as e:
+        return str(e)
+    return None
+
+
 @bp.route("/register", methods=["POST"])
 @limiter.limit(_REGISTER_RATE_LIMITS)
 def register_post() -> ResponseReturnValue:
@@ -91,16 +109,9 @@ def register_post() -> ResponseReturnValue:
             _REGISTER_TEMPLATE, domain=domain, error=msg, message=None
         )
 
-    if not email:
-        return _err("Email requis.")
-    if not email.endswith(f"@{domain}"):
-        return _err(f"Seules les adresses @{domain} sont acceptées.")
-    if password != password_confirm:
-        return _err("Les mots de passe ne correspondent pas.")
-    try:
-        validate_password_strength(password)
-    except ValueError as e:
-        return _err(str(e))
+    error = _validate_registration(domain, email, password, password_confirm)
+    if error:
+        return _err(error)
 
     conn = db.get_connection()
     queries = db.load_queries()
@@ -142,7 +153,9 @@ def register_post() -> ResponseReturnValue:
     )
 
 
-def _provision_user(queries: Any, conn: Any, email: str, pw_hash: str) -> str:
+def _provision_user(
+    queries: Queries, conn: Connection, email: str, pw_hash: str
+) -> str:
     """Create the user, their 'Users' category, personal project and scope.
 
     Returns the new project id.

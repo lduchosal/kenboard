@@ -119,6 +119,40 @@ def _check_ken_permissions(path: Path) -> None:
         )
 
 
+def _locate_config_files(
+    config_override: str | None,
+) -> tuple[Path | None, Path | None]:
+    """Return ``(ken_path, ini_path)`` — explicit ``--config`` or upward search.
+
+    When ``--config`` is passed it points to a single file, parsed according to its
+    extension (``.ini`` → ini format, otherwise legacy ``.ken``).
+    """
+    if config_override:
+        override = Path(config_override).resolve()
+        if not override.is_file():
+            click.echo(f"Error: config file not found: {config_override}", err=True)
+            sys.exit(1)
+        if override.suffix == ".ini":
+            return None, override
+        return override, None
+    return (
+        _find_file_upwards(Path.cwd(), KEN_FILE),
+        _find_file_upwards(Path.cwd(), KEN_INI_FILE),
+    )
+
+
+def _pick_value(
+    key: str,
+    env: str | None,
+    file_data: dict[str, str],
+    ini_data: dict[str, str],
+) -> str | None:
+    """Resolve ``key`` along env > .ken > ken.ini (defaults handled by caller)."""
+    if env and (val := os.environ.get(env)):
+        return val
+    return file_data.get(key) or ini_data.get(key) or None
+
+
 def _load_config(
     project_override: str | None = None,
     base_url_override: str | None = None,
@@ -137,20 +171,7 @@ def _load_config(
     ``--config`` is passed explicitly, it points to a single file and is parsed
     according to its extension (``.ini`` → ini format, otherwise legacy).
     """
-    ken_path: Path | None
-    ini_path: Path | None
-    if config_override:
-        override = Path(config_override).resolve()
-        if not override.is_file():
-            click.echo(f"Error: config file not found: {config_override}", err=True)
-            sys.exit(1)
-        if override.suffix == ".ini":
-            ini_path, ken_path = override, None
-        else:
-            ken_path, ini_path = override, None
-    else:
-        ken_path = _find_file_upwards(Path.cwd(), KEN_FILE)
-        ini_path = _find_file_upwards(Path.cwd(), KEN_INI_FILE)
+    ken_path, ini_path = _locate_config_files(config_override)
 
     ini_data: dict[str, str] = {}
     if ini_path is not None and ini_path.is_file():
@@ -162,10 +183,11 @@ def _load_config(
         file_data = _parse_ken_file(ken_path)
 
     def _pick(key: str, env: str | None = None) -> str | None:
-        """Resolve ``key`` along env > .ken > ken.ini (defaults handled by caller)."""
-        if env and (val := os.environ.get(env)):
-            return val
-        return file_data.get(key) or ini_data.get(key) or None
+        """Resolve ``key`` for this invocation's file data (cf.
+
+        _pick_value).
+        """
+        return _pick_value(key, env, file_data, ini_data)
 
     project_id = project_override or _pick("project_id", "KEN_PROJECT_ID")
     base_url = (
@@ -173,11 +195,9 @@ def _load_config(
     ).rstrip("/")
     api_token = token_override or _pick("api_token", "KEN_API_TOKEN")
     sync_dir = _pick("sync_dir", "KEN_SYNC_DIR") or DEFAULT_SYNC_DIR
-    # #473: ``architecture=`` supplies the default path used by all four
-    # ``ken wiki *`` subcommands. UTF-8 is preserved end-to-end so accented
-    # paths (e.g. ``Doc/Spécifications/Architecture.md``) round-trip.
+    # #473: default path of the ``ken wiki *`` subcommands (UTF-8 preserved
+    # end-to-end). #479: per-project default output dirs for the pipeline.
     architecture = _pick("architecture", "KEN_ARCHITECTURE") or DEFAULT_ARCHITECTURE
-    # #479: per-project default output dirs for the wiki pipeline.
     wiki_dir = _pick("wiki_dir", "KEN_WIKI_DIR") or DEFAULT_WIKI_DIR
     wiki_html_dir = _pick("wiki_html_dir", "KEN_WIKI_HTML_DIR") or DEFAULT_WIKI_HTML_DIR
     description = file_data.get("description") or ini_data.get("description") or ""

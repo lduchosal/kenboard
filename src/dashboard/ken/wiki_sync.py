@@ -9,12 +9,15 @@ from __future__ import annotations
 import json as json_lib
 import shutil
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
 
 from dashboard.ken.config import KenConfig
 from dashboard.ken.http import _request
+
+if TYPE_CHECKING:
+    from dashboard.wiki import Section
 from dashboard.ken.wiki import (
     _architecture_help,
     _load_sections,
@@ -29,7 +32,7 @@ _ARCHIVED_STATUSES = frozenset({"done"})
 _ACTIVE_STATUS_ORDER = ("doing", "review", "todo")
 
 
-def _format_section_md(node: Any, path: str, tasks: list[dict[str, Any]]) -> str:
+def _format_section_md(node: Section, path: str, tasks: list[dict[str, Any]]) -> str:
     """Render one section's ``index.md`` — split into "En cours" / "Archivé" (#376f).
 
     Each row links to ``<slug>-<id>.md`` (the per-task detail page). ``who`` is omitted

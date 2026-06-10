@@ -43,6 +43,31 @@ def cli(
     ctx.obj["cfg"] = _load_config(project, base_url, token, config_file)
 
 
+def _choose_project(
+    cfg: KenConfig,
+    projects_data: list[dict[str, str]],
+    project_uuid: str | None,
+) -> tuple[str, str]:
+    """Resolve the target project: interactive prompt or explicit UUID lookup."""
+    if project_uuid is None:
+        click.echo("Available projects:")
+        for i, p in enumerate(projects_data, 1):
+            click.echo(f"  {i}. {p['name']} ({p.get('acronym', '')}) — {p['id']}")
+        choice = click.prompt(
+            "Select a project (number)",
+            type=click.IntRange(1, len(projects_data)),
+        )
+        return projects_data[choice - 1]["id"], projects_data[choice - 1]["name"]
+    match = next((p for p in projects_data if p["id"] == project_uuid), None)
+    if match is None:
+        click.echo(
+            f"Error: project {project_uuid} not found on {cfg.base_url}.",
+            err=True,
+        )
+        sys.exit(1)
+    return project_uuid, match["name"]
+
+
 @cli.command()
 @click.argument("project_uuid", required=False)
 @click.option("--force", is_flag=True, help="Overwrite an existing ken.ini and/or .ken")
@@ -84,25 +109,7 @@ def init(ctx: click.Context, project_uuid: str | None, *, force: bool) -> None:
         )
         sys.exit(1)
 
-    if project_uuid is None:
-        click.echo("Available projects:")
-        for i, p in enumerate(projects_data, 1):
-            click.echo(f"  {i}. {p['name']} ({p.get('acronym', '')}) — {p['id']}")
-        choice = click.prompt(
-            "Select a project (number)",
-            type=click.IntRange(1, len(projects_data)),
-        )
-        project_uuid = projects_data[choice - 1]["id"]
-        chosen_name = projects_data[choice - 1]["name"]
-    else:
-        match = next((p for p in projects_data if p["id"] == project_uuid), None)
-        if match is None:
-            click.echo(
-                f"Error: project {project_uuid} not found on {cfg.base_url}.",
-                err=True,
-            )
-            sys.exit(1)
-        chosen_name = match["name"]
+    project_uuid, chosen_name = _choose_project(cfg, projects_data, project_uuid)
 
     ini_parser = configparser.ConfigParser()
     ini_parser[KEN_INI_SECTION] = {

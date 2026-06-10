@@ -17,6 +17,9 @@ from typing import Any
 
 from flask import g
 from flask_login import current_user
+from pymysql import Connection
+
+from dashboard.db import Queries
 
 ACTION_CREATE = "create"
 ACTION_SAVE = "save"
@@ -46,8 +49,8 @@ def _principal_name() -> str:
 
 
 def log_activity(  # noqa: PLR0913 — un kwarg par colonne d'activité, par design
-    conn: Any,
-    queries: Any,
+    conn: Connection,
+    queries: Queries,
     *,
     project_id: str,
     action: str,

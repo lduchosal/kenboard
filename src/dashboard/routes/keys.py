@@ -14,10 +14,12 @@ from typing import Any
 
 from flask import Blueprint, g, jsonify, request
 from flask.typing import ResponseReturnValue
+from pymysql import Connection
 
 from dashboard import db
 from dashboard.auth import _hash_key
 from dashboard.auth_user import limiter
+from dashboard.db import Queries
 from dashboard.logging import get_logger
 from dashboard.models.api_key import (
     ApiKey,
@@ -38,7 +40,9 @@ def _generate_key() -> str:
     return KEY_PREFIX + secrets.token_urlsafe(32)
 
 
-def _row_with_scopes(conn: Any, queries: Any, row: dict[str, Any]) -> dict[str, Any]:
+def _row_with_scopes(
+    conn: Connection, queries: Queries, row: dict[str, Any]
+) -> dict[str, Any]:
     """Attach the project scopes list to an api_key row dict."""
     scopes = list(queries.key_scopes_get(conn, api_key_id=row["id"]))
     out = row.copy()

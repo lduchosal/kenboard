@@ -1,21 +1,23 @@
 """Page routes — serve dynamic HTML from database."""
 
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from typing import Any
 
 from flask import Blueprint, abort, render_template
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
+from pymysql import Connection
 
 from dashboard import __version__, db
 from dashboard.auth_scopes import current_user_can
-from dashboard.auth_user import _is_login_disabled, admin_required
+from dashboard.auth_user import _is_login_disabled
+from dashboard.db import Queries
 from dashboard.routes.charts import (
     TASKERS_WINDOW_DAYS,
     _build_taskers_daily_chart,
-    _build_tasks_per_board_pie,
     _build_wiki_sections_per_project_chart,
 )
+from dashboard.routes.charts_pie import _build_tasks_per_board_pie
 
 bp = Blueprint("pages", __name__)
 
@@ -130,6 +132,41 @@ def _build_context(  # noqa: PLR0913 — contexte template : un kwarg par datase
     }
 
 
+def _attach_index_project_data(
+    conn: Connection, queries: Queries, all_projects: list[dict[str, Any]]
+) -> None:
+    """Attach per-project counts and doing tasks (#226) — two batched queries."""
+    counts_rows = list(queries.task_counts_by_project(conn))
+    counts = {r["project_id"]: r for r in counts_rows}
+    doing_rows = list(queries.task_get_all_doing(conn))
+    doing_by_project: dict[str, list[dict[str, Any]]] = {}
+    for t in doing_rows:
+        doing_by_project.setdefault(t["project_id"], []).append(t)
+    for p in all_projects:
+        c = counts.get(p["id"], {})
+        p["total"] = c.get("total", 0)
+        p["done"] = c.get("done", 0)
+        p["tasks"] = doing_by_project.get(p["id"], [])
+
+
+def _doing_tasks_ctx(
+    categories: list[dict[str, Any]], all_projects: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Flatten the per-project doing tasks for the dashboard list."""
+    cat_by_id = {c["id"]: c for c in categories}
+    doing_tasks: list[dict[str, Any]] = []
+    for p in all_projects:
+        cat = cat_by_id.get(p["cat_id"])
+        if not cat:
+            continue
+        doing_tasks.extend(
+            {"task": t, "cat_id": cat["id"], "project_id": p["id"]}
+            for t in p.get("tasks", [])
+            if t.get("status") == "doing"
+        )
+    return doing_tasks
+
+
 @bp.route("/", methods=["GET"])
 @login_required
 def index() -> ResponseReturnValue:
@@ -142,21 +179,7 @@ def index() -> ResponseReturnValue:
         users = list(queries.usr_get_all(conn))
         visible = _visible_category_ids()
         categories, all_projects = _filter_by_scope(categories, all_projects, visible)
-
-        # Per-project counts in one query instead of loading all tasks
-        counts_rows = list(queries.task_counts_by_project(conn))
-        counts = {r["project_id"]: r for r in counts_rows}
-        # Doing tasks only
-        doing_rows = list(queries.task_get_all_doing(conn))
-        doing_by_project: dict[str, list[dict[str, Any]]] = {}
-        for t in doing_rows:
-            doing_by_project.setdefault(t["project_id"], []).append(t)
-
-        for p in all_projects:
-            c = counts.get(p["id"], {})
-            p["total"] = c.get("total", 0)
-            p["done"] = c.get("done", 0)
-            p["tasks"] = doing_by_project.get(p["id"], [])
+        _attach_index_project_data(conn, queries, all_projects)
 
         cat_snapshots: dict[str, list[dict[str, Any]]] = {}
         for c in categories:
@@ -182,19 +205,7 @@ def index() -> ResponseReturnValue:
 
     ctx = _build_context(categories, all_projects, users, cat_snapshots, prefix="/")
     ctx["title"] = "KEN"
-
-    cat_by_id = {c["id"]: c for c in categories}
-    doing_tasks: list[dict[str, Any]] = []
-    for p in all_projects:
-        cat = cat_by_id.get(p["cat_id"])
-        if not cat:
-            continue
-        doing_tasks.extend(
-            {"task": t, "cat_id": cat["id"], "project_id": p["id"]}
-            for t in p.get("tasks", [])
-            if t.get("status") == "doing"
-        )
-    ctx["doing_tasks"] = doing_tasks
+    ctx["doing_tasks"] = _doing_tasks_ctx(categories, all_projects)
 
     # Build a contiguous 30-day series (today minus 29 → today) so the
     # template can render a uniform line graph regardless of which days
@@ -210,100 +221,6 @@ def index() -> ResponseReturnValue:
     ctx.update(_build_taskers_daily_chart(taskers_rows, users, today=today))
     ctx.update(_build_tasks_per_board_pie(categories, all_projects))
     return render_template("index.html", **ctx)
-
-
-@bp.route("/admin/users", methods=["GET"])
-@login_required
-def admin_users() -> ResponseReturnValue:
-    """Serve the user management admin page (#225).
-
-    No tasks or burndown needed — only categories, users, and scopes.
-    """
-    admin_required()
-    conn = db.get_connection()
-    queries = db.load_queries()
-    try:
-        categories = list(queries.cat_get_all(conn))
-        all_projects = list(queries.proj_get_all(conn))
-        users = list(queries.usr_get_all(conn))
-        for u in users:
-            u["scopes"] = [
-                {"category_id": s["category_id"], "scope": s["scope"]}
-                for s in queries.usr_scopes_get(conn, user_id=u["id"])
-            ]
-    finally:
-        conn.close()
-
-    ctx = _build_context(categories, all_projects, users, prefix="/")
-    ctx["title"] = "KEN / Utilisateurs"
-    ctx["all_categories"] = categories
-    return render_template("admin_users.html", **ctx)
-
-
-@bp.route("/admin/keys", methods=["GET"])
-@login_required
-def admin_keys() -> ResponseReturnValue:
-    """Serve the API keys management admin page (#223).
-
-    No tasks or burndown needed — only categories, projects, users, and API keys with
-    their scopes.
-    """
-    admin_required()
-    conn = db.get_connection()
-    queries = db.load_queries()
-    try:
-        categories = list(queries.cat_get_all(conn))
-        all_projects = list(queries.proj_get_all(conn))
-        users = list(queries.usr_get_all(conn))
-        api_keys = list(queries.key_get_all(conn))
-        # Batch the scopes lookup into a single round-trip (#257). Previously
-        # each key triggered its own ``key_scopes_get`` call — for 20 keys
-        # that's 20 queries on top of the 5 used by this route, tripping
-        # the perf budget at 25 > 20. Now: one query, group in Python.
-        scopes_rows = list(queries.key_scopes_get_all(conn))
-        scopes_by_key: dict[str, list[dict[str, str]]] = {}
-        for s in scopes_rows:
-            scopes_by_key.setdefault(s["api_key_id"], []).append(
-                {"project_id": s["project_id"], "scope": s["scope"]}
-            )
-        for k in api_keys:
-            k["scopes"] = scopes_by_key.get(k["id"], [])
-    finally:
-        conn.close()
-
-    ctx = _build_context(categories, all_projects, users, prefix="/")
-    ctx["title"] = "KEN / Cles API"
-    ctx["api_keys"] = api_keys
-    ctx["projects"] = all_projects
-    ctx["key_users"] = users
-    # Naive local now wanted: the template compares it to expires_at, a naive
-    # local DATETIME entered via the admin form and stored as-is (#785).
-    ctx["now"] = datetime.now()  # noqa: DTZ005
-    return render_template("admin_keys.html", **ctx)
-
-
-@bp.route("/admin/board", methods=["GET"])
-@login_required
-def admin_board() -> ResponseReturnValue:
-    """Serve the category/project management admin page (#224).
-
-    No tasks or burndown needed — only categories and projects.
-    """
-    admin_required()
-    conn = db.get_connection()
-    queries = db.load_queries()
-    try:
-        categories = list(queries.cat_get_all(conn))
-        all_projects = list(queries.proj_get_all(conn))
-        users = list(queries.usr_get_all(conn))
-    finally:
-        conn.close()
-
-    ctx = _build_context(categories, all_projects, users, prefix="/")
-    ctx["title"] = "KEN / Board"
-    ctx["all_categories"] = categories
-    ctx["all_projects"] = all_projects
-    return render_template("admin_board.html", **ctx)
 
 
 @bp.route("/aide", methods=["GET"])
@@ -327,7 +244,7 @@ def aide() -> ResponseReturnValue:
 
 
 def _attach_category_project_data(
-    conn: Any, queries: Any, cat_id: str, cat_projects: list[dict[str, Any]]
+    conn: Connection, queries: Queries, cat_id: str, cat_projects: list[dict[str, Any]]
 ) -> None:
     """Attach tasks, done/total counts and burndown snapshots to each project.
 

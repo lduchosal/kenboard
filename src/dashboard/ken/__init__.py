@@ -35,6 +35,7 @@ if sys.platform == "win32":  # pragma: no cover
 
 # Importing the command modules registers them on the ``cli`` group —
 # order matters: ``wiki`` defines the subgroup the wiki_* modules attach to.
+from dashboard.ken import polish as _polish_module  # noqa: F401
 from dashboard.ken import sync as _sync_module  # noqa: F401
 from dashboard.ken import tasks as _tasks_module  # noqa: F401
 from dashboard.ken import wiki as _wiki_module  # noqa: F401

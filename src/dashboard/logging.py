@@ -7,7 +7,7 @@ import signal
 import sys
 from contextlib import suppress
 from pathlib import Path
-from typing import Any
+from typing import cast
 
 import structlog
 
@@ -81,6 +81,8 @@ def setup_logging(*, debug: bool = False) -> None:
     console_handler.setFormatter(formatter)
 
 
-def get_logger(name: str) -> Any:
+def get_logger(name: str) -> structlog.stdlib.BoundLogger:
     """Get a named logger."""
-    return structlog.get_logger(name)
+    # structlog.get_logger est typé Any (proxy paresseux) — le wrapper
+    # existe précisément pour fixer le type côté appelants.
+    return cast("structlog.stdlib.BoundLogger", structlog.get_logger(name))

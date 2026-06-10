@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json as json_lib
 import sys
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib import error as urllib_error
 from urllib import request as urllib_request
 
@@ -15,8 +15,11 @@ import click
 
 from dashboard.ken.config import KenConfig, _version
 
+if TYPE_CHECKING:
+    import ssl
 
-def _ssl_context() -> Any:
+
+def _ssl_context() -> ssl.SSLContext | None:
     """Build an SSL context using certifi's CA bundle.
 
     Python installed via python.org on macOS ships without a CA bundle (the user must

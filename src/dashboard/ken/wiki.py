@@ -190,33 +190,13 @@ def _classify_task(
     _output(row, json_mode=json_mode, columns=None)
 
 
-def _groom_overview(cfg: KenConfig, architecture: str, *, json_mode: bool) -> None:
-    """List unclassified tasks + declared sections (the no-args groom view)."""
-    # When a project is configured, send it server-side so a per-project
-    # api_key passes the auth scope check (admin keys see across projects).
-    endpoint = "/api/v1/wiki/unclassified"
-    if cfg.project_id:
-        endpoint = f"{endpoint}?project={cfg.project_id}"
-    unclassified = _request(cfg, "GET", endpoint) or []
-    sections, paths = _load_sections(architecture)
-
-    if json_mode:
-        click.echo(
-            json_lib.dumps(
-                {
-                    "unclassified": unclassified,
-                    "sections": [
-                        {"path": p, "title": _section_title_for(sections, p)}
-                        for p in paths
-                    ],
-                    "architecture": architecture,
-                },
-                indent=2,
-                default=str,
-            ),
-        )
-        return
-
+def _print_groom_overview(
+    unclassified: list[dict[str, Any]],
+    sections: list,
+    paths: list[str],
+    architecture: str,
+) -> None:
+    """Print the human-readable groom overview (instructions + tables)."""
     click.echo("WIKI GROOMING")
     click.echo("")
     click.echo(
@@ -252,6 +232,36 @@ def _groom_overview(cfg: KenConfig, architecture: str, *, json_mode: bool) -> No
             click.echo(f"  {p:30s}  {title}")
     click.echo("")
     click.echo("See `ken wiki groom --help` for the concept (LLM Wiki pattern).")
+
+
+def _groom_overview(cfg: KenConfig, architecture: str, *, json_mode: bool) -> None:
+    """List unclassified tasks + declared sections (the no-args groom view)."""
+    # When a project is configured, send it server-side so a per-project
+    # api_key passes the auth scope check (admin keys see across projects).
+    endpoint = "/api/v1/wiki/unclassified"
+    if cfg.project_id:
+        endpoint = f"{endpoint}?project={cfg.project_id}"
+    unclassified = _request(cfg, "GET", endpoint) or []
+    sections, paths = _load_sections(architecture)
+
+    if json_mode:
+        click.echo(
+            json_lib.dumps(
+                {
+                    "unclassified": unclassified,
+                    "sections": [
+                        {"path": p, "title": _section_title_for(sections, p)}
+                        for p in paths
+                    ],
+                    "architecture": architecture,
+                },
+                indent=2,
+                default=str,
+            ),
+        )
+        return
+
+    _print_groom_overview(unclassified, sections, paths, architecture)
 
 
 @wiki.command(name="groom", help="Classify tasks into wiki sections (agent-driven).")
