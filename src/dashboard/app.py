@@ -5,17 +5,22 @@ import secrets
 import time
 import traceback
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from flask import Flask, jsonify, make_response, render_template, request
 from flask_cors import CORS
+from pydantic import ValidationError
+from werkzeug.middleware.proxy_fix import ProxyFix
 
+from dashboard import db
 from dashboard.auth import init_auth
 from dashboard.auth_oidc import init_oidc
 from dashboard.auth_user import init_login_manager
 from dashboard.config import Config
 from dashboard.email import init_email
 from dashboard.logging import get_logger, setup_logging
+from dashboard.onboarding import onboard_bp
 from dashboard.perf import init_perf
 from dashboard.routes import (
     categories_bp,
@@ -40,8 +45,6 @@ API_PATH_PREFIX = "/api/"
 
 def _configure_security(app: Flask) -> None:
     """Set up reverse-proxy trust, CORS, and hardening response headers."""
-    from werkzeug.middleware.proxy_fix import ProxyFix
-
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)  # type: ignore[assignment]
 
     if Config.KENBOARD_CORS_ORIGINS:
@@ -83,7 +86,7 @@ def _register_request_logging(app: Flask) -> None:
     @app.before_request
     def log_request() -> None:
         """Log incoming request."""
-        request._start_time = time.time()  # type: ignore[attr-defined]
+        request._start_time = time.time()  # type: ignore[attr-defined] # noqa: SLF001 — stash volontaire sur request
         if request.path.startswith(API_PATH_PREFIX):
             log.debug(
                 "request",
@@ -170,8 +173,6 @@ def _autocreate_error_task(
     if request.path.startswith("/api/v1/tasks"):
         return
     try:
-        from dashboard import db
-
         title = f"BUG / 500 {error_class} @ {route}"[:250]
         conn = db.get_connection()
         queries = db.load_queries()
@@ -216,13 +217,12 @@ def _autocreate_error_task(
             log.info("autocreate_error_task", error_id=error_id, project_id=project_id)
         finally:
             conn.close()
-    except Exception:
+    except Exception:  # noqa: BLE001 — ne pas re-crasher le handler 500
         log.warning("autocreate_error_task_failed", error_id=error_id, exc_info=True)
 
 
-def _register_error_handlers(app: Flask, debug: bool) -> None:
+def _register_error_handlers(app: Flask, *, debug: bool) -> None:
     """Register Pydantic validation and generic error handlers."""
-    from pydantic import ValidationError
 
     @app.errorhandler(ValidationError)
     def handle_validation_error(e: ValidationError) -> Any:
@@ -307,8 +307,6 @@ def _wants_json(req: Any) -> bool:
 
 def _register_blueprints(app: Flask) -> None:
     """Register all Flask blueprints."""
-    from dashboard.onboarding import onboard_bp
-
     app.register_blueprint(onboard_bp)
     app.register_blueprint(pages_bp)
     app.register_blueprint(categories_bp)
@@ -381,8 +379,8 @@ def create_app() -> Flask:
     # ``tests/unit/test_csrf.py``.
     app = Flask(  # NOSONAR — CSRF via Origin/Referer check in auth.py, not Flask-WTF
         __name__,
-        template_folder=os.path.join(os.path.dirname(__file__), "templates"),
-        static_folder=os.path.join(os.path.dirname(__file__), "static"),
+        template_folder=str(Path(__file__).parent / "templates"),
+        static_folder=str(Path(__file__).parent / "static"),
         static_url_path="/static",
     )
 
@@ -403,17 +401,18 @@ def create_app() -> Flask:
     init_auth(app)
 
     _register_request_logging(app)
-    _register_error_handlers(app, debug)
+    _register_error_handlers(app, debug=debug)
     _register_blueprints(app)
     _register_static_routes(app)
 
     # #199 defense-in-depth
     if app.config.get("LOGIN_DISABLED") and not debug and not app.config.get("TESTING"):
-        raise RuntimeError(
+        msg = (
             "LOGIN_DISABLED=True is set but DEBUG=False. This would bypass "
             "authentication in production. Refusing to start. Remove "
             "LOGIN_DISABLED from your config or set DEBUG=True (dev/test only)."
         )
+        raise RuntimeError(msg)
 
     log.info("app_started", debug=debug)
     return app

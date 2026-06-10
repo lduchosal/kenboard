@@ -36,10 +36,12 @@ VENV_BIN = Path(sys.executable).parent
 
 # Lint debt: curated rules NOT yet enforced by the ruff gate. Style-only
 # rules that fight black (COM, D4xx, ISC) and the S-rules (false positives
-# on variable names, audited 2026-06) are deliberately excluded. DTZ then
-# PERF left in 2026-06 when each family reached zero and moved to the
-# ruff gate (ratchet principle, ken #785/#788/#789).
-DEBT_SELECT = "PLC0415,PLR,EM,TRY,PTH,FBT,ARG,BLE,SLF,G,ANN401,RUF"
+# on variable names, audited 2026-06) are deliberately excluded. DTZ, PERF,
+# puis EM/TRY/FBT/ARG/BLE/SLF/G/PTH/PLC0415/PLR2004/RUF002/RUF012 left in
+# 2026-06 when each family reached zero and moved to the ruff gate
+# (ratchet principle, ken #785/#788/#789/#798). Remaining: PLR (0913 — args
+# ≤ 5), ANN401 (paliers 4-5) and RUF (RUF100 contextuel).
+DEBT_SELECT = "PLR,ANN401,RUF"
 
 LONG_FUNC_LINES = 50
 BIG_FILE_LINES = 500

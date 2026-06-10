@@ -14,12 +14,15 @@ NO_ANGLE_BRACKETS = r"^[^<>]*$"
 # a pymysql DataError 1406 → HTTP 500 (#511). We count encoded bytes (not
 # characters) because that is exactly what the column limit measures.
 DESCRIPTION_MAX_BYTES = 65_535
+# "dd.mm" short-form due date: at most 5 chars (e.g. "31.12").
+_SHORT_DATE_MAX_LEN = 5
 
 
 def _within_text_column(value: str) -> str:
     """Reject a description that would overflow the TEXT column (#511)."""
     if len(value.encode("utf-8")) > DESCRIPTION_MAX_BYTES:
-        raise ValueError(f"description exceeds {DESCRIPTION_MAX_BYTES} bytes")
+        msg = f"description exceeds {DESCRIPTION_MAX_BYTES} bytes"
+        raise ValueError(msg)
     return value
 
 
@@ -36,7 +39,8 @@ ATTACHEMENT_MAX_BYTES = 16_777_215
 def _within_mediumtext_column(value: str) -> str:
     """Reject an attachement that would overflow the MEDIUMTEXT column (#541)."""
     if len(value.encode("utf-8")) > ATTACHEMENT_MAX_BYTES:
-        raise ValueError(f"attachement exceeds {ATTACHEMENT_MAX_BYTES} bytes")
+        msg = f"attachement exceeds {ATTACHEMENT_MAX_BYTES} bytes"
+        raise ValueError(msg)
     return value
 
 
@@ -57,7 +61,7 @@ class _DueDateMixin:
         s = str(self.due_date).strip()
         if not s:
             return None
-        if "." in s and len(s) <= 5:
+        if "." in s and len(s) <= _SHORT_DATE_MAX_LEN:
             parts = s.split(".")
             day, month = int(parts[0]), int(parts[1])
             # Local date wanted: "dd.mm" input means the user's current

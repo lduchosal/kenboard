@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import secrets
 import uuid
+from datetime import timedelta
 from typing import Any
 
 from authlib.integrations.flask_client import OAuth
@@ -31,7 +32,7 @@ from flask import (
 from flask_login import login_user
 
 from dashboard import db
-from dashboard.auth_user import CurrentUser
+from dashboard.auth_user import REMEMBER_DAYS, CurrentUser
 from dashboard.config import Config
 from dashboard.logging import get_logger
 
@@ -146,10 +147,6 @@ def oidc_callback() -> Any:
         conn.close()
 
     user = CurrentUser(row)
-    from datetime import timedelta
-
-    from dashboard.auth_user import REMEMBER_DAYS
-
     login_user(user, remember=True, duration=timedelta(days=REMEMBER_DAYS))
     log.info("auth_oidc.login_success", user_id=user.id, email=email)
 

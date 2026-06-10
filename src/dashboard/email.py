@@ -56,7 +56,7 @@ def send_email(to: str, subject: str, template: str, **ctx: Any) -> bool:
             with suppress(Exception):
                 text = render_template(txt_template, **ctx)
     except Exception:
-        log.error("email_render_error", template=template, exc_info=True)
+        log.exception("email_render_error", template=template)
         return False
 
     # Extract domain from SMTP_FROM for the Message-ID
@@ -81,8 +81,9 @@ def send_email(to: str, subject: str, template: str, **ctx: Any) -> bool:
             if Config.SMTP_USER:
                 srv.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
             srv.sendmail(Config.SMTP_FROM, to, msg.as_string())
+    except Exception:
+        log.exception("email_send_error", to=to, subject=subject)
+        return False
+    else:
         log.info("email_sent", to=to, subject=subject)
         return True
-    except Exception:
-        log.error("email_send_error", to=to, subject=subject, exc_info=True)
-        return False

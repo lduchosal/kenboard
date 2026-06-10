@@ -30,7 +30,7 @@ def _ignore_sighup() -> None:
         signal.signal(signal.SIGHUP, signal.SIG_IGN)
 
 
-def setup_logging(debug: bool = False) -> None:
+def setup_logging(*, debug: bool = False) -> None:
     """Configure structlog to output to both console and file."""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     _ignore_sighup()

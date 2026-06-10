@@ -47,7 +47,7 @@ def cli(
 @click.argument("project_uuid", required=False)
 @click.option("--force", is_flag=True, help="Overwrite an existing ken.ini and/or .ken")
 @click.pass_context
-def init(ctx: click.Context, project_uuid: str | None, force: bool) -> None:
+def init(ctx: click.Context, project_uuid: str | None, *, force: bool) -> None:
     """Initialize ``ken.ini`` (and ``.ken`` if a token is set) in the cwd.
 
     ``ken.ini`` is the versioned, shared config — it holds ``project_id``, ``base_url``

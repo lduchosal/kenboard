@@ -18,8 +18,10 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from flask import Blueprint, make_response
+from flask import Blueprint, make_response, request
 from flask.wrappers import Request
+
+from dashboard.config import Config
 
 # UUID-ish pattern is loose on purpose: we only use the captured value as a
 # placeholder in the rendered command, never as a DB key, so a tighter regex
@@ -41,10 +43,6 @@ def derive_base_url() -> str:
     and OIDC redirect_uri are always correct behind a TLS-terminating reverse proxy
     (#147).
     """
-    from flask import request
-
-    from dashboard.config import Config
-
     url = request.host_url.rstrip("/")
     if Config.KENBOARD_HTTPS and url.startswith("http://"):
         url = "https://" + url[7:]
@@ -191,11 +189,9 @@ def onboard_route(cat_id: str, project_id: str) -> Any:
     When ``?token=`` is present (#159), the runbook includes the token in the ``.ken``
     file so the agent can start immediately without asking the user for an API key.
     """
-    from flask import request as flask_request
-
     safe_cat = _sanitize_id(cat_id)
     safe_project = _sanitize_id(project_id)
-    token = flask_request.args.get("token", "")
+    token = request.args.get("token", "")
     body = onboarding_text_full(safe_cat, safe_project, derive_base_url(), token)
     response = make_response(body, 200)
     response.headers["Content-Type"] = "text/plain; charset=utf-8"

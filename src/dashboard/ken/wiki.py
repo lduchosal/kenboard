@@ -146,7 +146,7 @@ def _classified_by(cfg: KenConfig) -> str:
     return os.environ.get("USER") or "agent"
 
 
-def _show_classification(cfg: KenConfig, task_id: int, json_mode: bool) -> None:
+def _show_classification(cfg: KenConfig, task_id: int, *, json_mode: bool) -> None:
     """Print the current classification of ``task_id`` (friendly on 404)."""
     try:
         row = _request(cfg, "GET", f"/api/v1/wiki/classify/{task_id}")
@@ -156,11 +156,16 @@ def _show_classification(cfg: KenConfig, task_id: int, json_mode: bool) -> None:
         # line then exit 0 instead of propagating.
         click.echo(f"Task #{task_id} is unclassified.")
         return
-    _output(row, json_mode, columns=None)
+    _output(row, json_mode=json_mode, columns=None)
 
 
 def _classify_task(
-    cfg: KenConfig, task_id: int, section: str, architecture: str, json_mode: bool
+    cfg: KenConfig,
+    task_id: int,
+    section: str,
+    architecture: str,
+    *,
+    json_mode: bool,
 ) -> None:
     """Validate ``section`` against the architecture and classify ``task_id``.
 
@@ -174,19 +179,18 @@ def _classify_task(
         raise click.UsageError(_architecture_help(architecture))
     if section not in valid:
         joined = "\n  ".join(valid)
-        raise click.UsageError(
-            f"Unknown section '{section}'. Declared paths:\n  {joined}",
-        )
+        msg = f"Unknown section '{section}'. Declared paths:\n  {joined}"
+        raise click.UsageError(msg)
     body = {
         "task_id": task_id,
         "section_path": section,
         "classified_by": _classified_by(cfg),
     }
     row = _request(cfg, "POST", "/api/v1/wiki/classify", body=body)
-    _output(row, json_mode, columns=None)
+    _output(row, json_mode=json_mode, columns=None)
 
 
-def _groom_overview(cfg: KenConfig, architecture: str, json_mode: bool) -> None:
+def _groom_overview(cfg: KenConfig, architecture: str, *, json_mode: bool) -> None:
     """List unclassified tasks + declared sections (the no-args groom view)."""
     # When a project is configured, send it server-side so a per-project
     # api_key passes the auth scope check (admin keys see across projects).
@@ -270,6 +274,7 @@ def groom(  # noqa: PLR0913
     task_id: int | None,
     section: str | None,
     architecture: str | None,
+    *,
     show: bool,
     clear: bool,
     json_mode: bool,
@@ -285,25 +290,27 @@ def groom(  # noqa: PLR0913
     cfg: KenConfig = ctx.obj["cfg"]
     architecture = architecture or cfg.architecture
     if show and clear:
-        raise click.UsageError("--show and --clear are mutually exclusive.")
+        msg = "--show and --clear are mutually exclusive."
+        raise click.UsageError(msg)
     if (show or clear) and task_id is None:
-        raise click.UsageError("--show / --clear require TASK_ID.")
+        msg = "--show / --clear require TASK_ID."
+        raise click.UsageError(msg)
     if section is not None and task_id is None:
-        raise click.UsageError("SECTION requires TASK_ID.")
+        msg = "SECTION requires TASK_ID."
+        raise click.UsageError(msg)
 
     if task_id is None:
-        _groom_overview(cfg, architecture, json_mode)
+        _groom_overview(cfg, architecture, json_mode=json_mode)
     elif clear:
         _request(cfg, "DELETE", f"/api/v1/wiki/classify/{task_id}")
         click.echo(f"Cleared classification for task #{task_id}.")
     elif show:
-        _show_classification(cfg, task_id, json_mode)
+        _show_classification(cfg, task_id, json_mode=json_mode)
     elif section is None:
-        raise click.UsageError(
-            "Pass SECTION to classify, or --show / --clear.",
-        )
+        msg = "Pass SECTION to classify, or --show / --clear."
+        raise click.UsageError(msg)
     else:
-        _classify_task(cfg, task_id, section, architecture, json_mode)
+        _classify_task(cfg, task_id, section, architecture, json_mode=json_mode)
 
 
 def _section_title_for(sections: list, path: str) -> str:

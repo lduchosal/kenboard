@@ -16,7 +16,7 @@ from dashboard.ken.http import _request, _require_project
 @cli.command()
 @click.option("--json", "json_mode", is_flag=True, help="Output as JSON")
 @click.pass_context
-def sync(ctx: click.Context, json_mode: bool) -> None:
+def sync(ctx: click.Context, *, json_mode: bool) -> None:
     """Mirror the project's tasks into ``sync_dir`` as one markdown file each.
 
     For every task in the configured project, writes

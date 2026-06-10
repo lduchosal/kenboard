@@ -10,7 +10,14 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-from flask import Flask, g, has_request_context, request
+from flask import (
+    Flask,
+    before_render_template,
+    g,
+    has_request_context,
+    request,
+    template_rendered,
+)
 
 from dashboard import db
 from dashboard.config import Config
@@ -202,7 +209,7 @@ def _create_perf_task(summary: dict[str, Any], violations: list[str]) -> None:
         )
         log.info("perf_task_created", title=title, route=route_key)
     except Exception:
-        log.error("perf_task_error", route=route_key, exc_info=True)
+        log.exception("perf_task_error", route=route_key)
         with _cooldowns_lock:
             _cooldowns.pop(route_key, None)
     finally:
@@ -269,13 +276,13 @@ def _perf_before() -> None:
     g.perf = PerfCollector()
 
 
-def _perf_before_template(_sender: Any, **kwargs: Any) -> None:
+def _perf_before_template(_sender: Any, **_kwargs: Any) -> None:
     """Record template render start."""
     if has_request_context() and hasattr(g, "perf"):
         g.perf.start_template()
 
 
-def _perf_after_template(_sender: Any, template: Any, **kwargs: Any) -> None:
+def _perf_after_template(_sender: Any, template: Any, **_kwargs: Any) -> None:
     """Record template render end."""
     if has_request_context() and hasattr(g, "perf"):
         g.perf.end_template(template.name or "unknown")
@@ -297,8 +304,6 @@ def init_perf(app: Flask) -> None:
     if not Config.PERF_ENABLED:
         log.info("perf_disabled")
         return
-
-    from flask import before_render_template, template_rendered
 
     # Module-level handlers (vs closures) keep blinker's weak references
     # alive and bring init_perf under the C901 threshold (#789).

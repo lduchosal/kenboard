@@ -1,6 +1,7 @@
 """Application configuration."""
 
 import os
+from typing import ClassVar
 
 from dotenv import load_dotenv
 
@@ -44,7 +45,7 @@ class Config:
     # browsers fall back to same-origin policy (the secure default — the
     # built-in templates are served by Flask itself, so cross-origin is
     # only needed when an external client talks to the API).
-    KENBOARD_CORS_ORIGINS: list[str] = [
+    KENBOARD_CORS_ORIGINS: ClassVar[list[str]] = [
         s.strip()
         for s in os.getenv("KENBOARD_CORS_ORIGINS", "").split(",")
         if s.strip()

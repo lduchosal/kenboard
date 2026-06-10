@@ -1,5 +1,6 @@
 """Project API routes."""
 
+import uuid
 from typing import Any
 
 from flask import Blueprint, g, jsonify, request
@@ -65,8 +66,6 @@ def create_project() -> Any:
     queries = db.load_queries()
     try:
         max_pos = queries.proj_max_position_in_cat(conn, cat_id=data.cat)
-        import uuid
-
         proj_id = str(uuid.uuid4())
         queries.proj_create(
             conn,

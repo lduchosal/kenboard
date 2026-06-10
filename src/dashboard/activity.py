@@ -11,6 +11,7 @@ leave a phantom log row pointing at a non-existent target.
 from __future__ import annotations
 
 import json
+import logging
 from contextlib import suppress
 from typing import Any
 
@@ -73,6 +74,4 @@ def log_activity(
     except Exception as e:  # noqa: BLE001
         # Don't let observability break the write path. Log so a failure
         # doesn't simply vanish during debugging.
-        import logging
-
         logging.getLogger(__name__).warning("log_activity failed: %s", e)

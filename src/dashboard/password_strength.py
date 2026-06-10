@@ -45,7 +45,8 @@ def validate_password_strength(password: str) -> None:
             to fix it.
     """
     if len(password) < MIN_LENGTH:
-        raise ValueError(f"Password must be at least {MIN_LENGTH} characters long")
+        msg = f"Password must be at least {MIN_LENGTH} characters long"
+        raise ValueError(msg)
 
     result = zxcvbn(password)
     score = result.get("score", 0)
@@ -59,6 +60,5 @@ def validate_password_strength(password: str) -> None:
         if suggestions:
             hint_parts.append(" ".join(suggestions))
         hint = f" {' '.join(hint_parts)}" if hint_parts else ""
-        raise ValueError(
-            f"Password is too weak (strength {score}/4, need {MIN_SCORE}/4).{hint}"
-        )
+        msg = f"Password is too weak (strength {score}/4, need {MIN_SCORE}/4).{hint}"
+        raise ValueError(msg)

@@ -74,6 +74,9 @@ main a{color:#0969da}
 # ``buildAvatar`` in ``static/js/tasks.js`` at a high level (palette
 # differs in length but the deterministic hash keeps it consistent
 # per identity).
+# Length of an ISO ``YYYY-MM-DD`` date prefix.
+_ISO_DATE_LEN = 10
+
 _AVATAR_PALETTE = (
     "#0969da",
     "#bf3989",
@@ -304,7 +307,11 @@ def _render_task_detail(meta: dict[str, Any], body_md: str) -> str:
     desc_md = _strip_detail_chrome(body_md)
     desc_html = _rewrite_md_links_to_html(_render_markdown(desc_md))
     # #742 — link to the day-of-classification page in the journal.
-    log_day = classified_at[:10] if len(classified_at) >= 10 else "unknown"
+    log_day = (
+        classified_at[:_ISO_DATE_LEN]
+        if len(classified_at) >= _ISO_DATE_LEN
+        else "unknown"
+    )
     log_href = "../" * (section.count("/") + 1) + f"log/{log_day}.html"
     section_label = section or "section"
     status_cls = f"status-{status}" if status else ""
@@ -406,10 +413,11 @@ def wiki_build(
     out = out or cfg.wiki_html_dir
     src = Path(in_dir)
     if not src.is_dir():
-        raise click.UsageError(
+        msg = (
             f"Input directory '{in_dir}' does not exist. "
-            "Run `ken wiki sync` first to generate the MD tree.",
+            "Run `ken wiki sync` first to generate the MD tree."
         )
+        raise click.UsageError(msg)
     sections, paths = _load_sections(architecture)
     if not paths:
         raise click.UsageError(_architecture_help(architecture))

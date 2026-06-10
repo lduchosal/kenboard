@@ -187,24 +187,42 @@ version-major = "pdm bump -v major"
 # quand leur compteur atteint zéro : PLR0913 (args ≤ 5, ×2 restants),
 # PLR1702 (imbrication — dès sa sortie de preview ruff).
 extend-select = [
+    "ARG",     # arguments inutilisés (acquis palier 2, ken #798)
+    "BLE",     # blind except interdits sauf noqa argumenté (palier 2)
     "C901",    # complexité cyclomatique ≤ 10 (acquis ken #789)
     "DTZ",     # datetimes naïfs interdits (acquis ken #785)
+    "EM",      # messages d'exception via variable (acquis palier 2)
+    "FBT",     # booléens keyword-only dans les signatures (palier 2)
+    "G",       # logging — log.exception plutôt que exc_info=True (palier 2)
     "PERF",    # perflint — comprehensions, incremental list build (palier 1)
+    "PLC0415", # imports en tête de module (palier 2 — CLIs exemptés ci-dessous)
     "PLR0402", # imports alias propres (acquis ken #784)
     "PLR0911", # returns ≤ 6 (acquis palier 1)
     "PLR0912", # branches ≤ 12 (acquis palier 1)
     "PLR0915", # statements ≤ 50 (acquis palier 1)
+    "PLR2004", # magic values nommées (acquis palier 2)
+    "PTH",     # pathlib plutôt qu'os.path (acquis palier 2)
+    "SLF",     # accès privés interdits sauf noqa argumenté (palier 2)
+    "TRY",     # hygiène des raise/try (acquis palier 2)
     "UP017",   # datetime.UTC plutôt que timezone.utc
+    "RUF002",  # caractères unicode ambigus en docstring (palier 2)
+    "RUF012",  # ClassVar sur les défauts mutables de classe (palier 2)
 ]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
 
 [tool.ruff.lint.per-file-ignores]
-# Tests : datetimes naïfs tolérés (fixtures et comparaisons locales) et
-# complexité non bloquante (helpers de schéma séquentiels dans conftest).
-# Le gate métrique (#788) ne mesure que src/.
-"tests/**" = ["DTZ", "C901"]
+# Tests : datetimes naïfs tolérés (fixtures et comparaisons locales),
+# complexité non bloquante (helpers de schéma séquentiels dans conftest) et
+# familles "hygiène src" non imposées au code de test (mêmes exemptions que
+# mypy strict / interrogate). Le gate métrique (#788) ne mesure que src/.
+"tests/**" = ["DTZ", "C901", "ARG", "BLE", "EM", "FBT", "G", "PLC0415", "PLR2004", "PTH", "SLF", "TRY"]
+# CLIs : lazy imports délibérés — chaque commande importe ses dépendances au
+# moment de l'exécution pour garder le démarrage instantané (`ken` est
+# stdlib-only au boot) et ne charger flask/yoyo/markdown/yaml qu'au besoin.
+"src/dashboard/cli.py" = ["PLC0415"]
+"src/dashboard/ken/**" = ["PLC0415"]
 
 # -- Black --------------------------------------------------------------------
 

@@ -35,7 +35,10 @@ class _InstrumentedQueries:
         def timed(*args: Any, **kwargs: Any) -> Any:
             """Execute the query and record timing if perf is active."""
             try:
-                from flask import g, has_request_context
+                from flask import (  # noqa: PLC0415 — db doit rester importable sans flask
+                    g,
+                    has_request_context,
+                )
             except ImportError:
                 return attr(*args, **kwargs)
 

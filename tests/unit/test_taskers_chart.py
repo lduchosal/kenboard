@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from dashboard.routes.pages import (
+from dashboard.routes.charts import (
     _build_taskers_daily_chart,
     _resolve_activity_author,
 )

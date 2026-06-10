@@ -118,6 +118,7 @@ def _print_lint_report(report: dict[str, Any]) -> None:
 def wiki_lint(
     ctx: click.Context,
     architecture: str | None,
+    *,
     strict: bool,
     json_mode: bool,
 ) -> None:

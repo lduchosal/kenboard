@@ -1,5 +1,6 @@
 """Category API routes."""
 
+import uuid
 from typing import Any
 
 from flask import Blueprint, g, jsonify, request
@@ -61,8 +62,6 @@ def create_category() -> Any:
     conn = db.get_connection()
     queries = db.load_queries()
     try:
-        import uuid
-
         max_pos = queries.cat_max_position(conn)
         cat_id = str(uuid.uuid4())
         queries.cat_create(

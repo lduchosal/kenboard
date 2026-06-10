@@ -20,10 +20,10 @@ def _version() -> str:
     """Return the kenboard package version for the User-Agent header."""
     try:
         from dashboard import __version__
-
-        return __version__
     except ImportError:
         return "unknown"
+    else:
+        return __version__
 
 
 DEFAULT_BASE_URL = "http://localhost:9090"

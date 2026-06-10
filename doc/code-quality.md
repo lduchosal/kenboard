@@ -45,9 +45,11 @@ et l'historique long terme côté cloud.
 | `min_file_cov` | pire couverture par fichier (#788 — attrape un module neuf sans tests) | — | 30.36 % (email.py) | ↑, ≥ 25 (gate) |
 
 Le jeu `ruff_debt` (constante `DEBT_SELECT` du script) :
-`PLC0415, PLR, EM, TRY, PTH, FBT, ARG, BLE, SLF, G, ANN401, RUF`
-(`DTZ` puis `PERF` sortis en 2026-06, tombés à zéro et verrouillés dans le
-gate ruff).
+`PLR, ANN401, RUF` — soit le stock `ANN401` (paliers 4-5), `PLR0913`
+(args ≤ 5) et `RUF100` contextuel. Sortis en 2026-06, tombés à zéro et
+verrouillés dans le gate ruff (ratchet) : `DTZ`, `PERF`, puis au palier 2
+(ken #798) `EM`, `TRY`, `FBT`, `ARG`, `BLE`, `SLF`, `G`, `PTH`, `PLR2004`,
+`PLC0415` (CLIs exemptés — lazy imports délibérés), `RUF002`, `RUF012`.
 Exclus volontairement : les règles purement stylistiques en conflit avec black
 (`COM812`, `D4xx`, `ISC001`) et les règles `S*` (bandit) dont les hits actuels
 sont des faux positifs sur des noms de variables (`secret_key`, `token_line`)

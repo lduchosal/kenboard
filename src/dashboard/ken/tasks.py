@@ -23,13 +23,13 @@ from dashboard.ken.http import _request, _require_project
 @cli.command()
 @click.option("--json", "json_mode", is_flag=True, help="Output as JSON")
 @click.pass_context
-def projects(ctx: click.Context, json_mode: bool) -> None:
+def projects(ctx: click.Context, *, json_mode: bool) -> None:
     """List all projects on the kenboard."""
     cfg: KenConfig = ctx.obj["cfg"]
     data = _request(cfg, "GET", "/api/v1/projects")
     _output(
         data,
-        json_mode,
+        json_mode=json_mode,
         columns=[("ID", "id"), ("ACRONYM", "acronym"), ("NAME", "name")],
     )
 
@@ -40,7 +40,7 @@ def projects(ctx: click.Context, json_mode: bool) -> None:
 @click.option("--json", "json_mode", is_flag=True, help="Output as JSON")
 @click.pass_context
 def list_tasks(
-    ctx: click.Context, status: str | None, who: str | None, json_mode: bool
+    ctx: click.Context, status: str | None, who: str | None, *, json_mode: bool
 ) -> None:
     """List tasks of the current project."""
     cfg: KenConfig = ctx.obj["cfg"]
@@ -50,7 +50,7 @@ def list_tasks(
         tasks = [t for t in tasks if t.get("status") == status]
     if who:
         tasks = [t for t in tasks if t.get("who") == who]
-    _output(tasks, json_mode, columns=TASK_COLUMNS)
+    _output(tasks, json_mode=json_mode, columns=TASK_COLUMNS)
 
 
 @cli.command()
@@ -67,6 +67,7 @@ def list_tasks(
 def show(
     ctx: click.Context,
     task_id: int,
+    *,
     json_mode: bool,
     save_attachement: str | None,
 ) -> None:
@@ -141,13 +142,15 @@ def _read_attachement_file(path: str | None) -> str | None:
     try:
         content = Path(path).read_text(encoding="utf-8")
     except OSError as e:
-        raise click.UsageError(f"Cannot read --attachement-file: {e}") from e
+        msg = f"Cannot read --attachement-file: {e}"
+        raise click.UsageError(msg) from e
     n = len(content.encode("utf-8"))
     if n > _ATTACHEMENT_MAX_BYTES:
-        raise click.UsageError(
+        msg = (
             f"--attachement-file is too large ({n} bytes); "
             f"the tasks.attachement column caps at {_ATTACHEMENT_MAX_BYTES} bytes."
         )
+        raise click.UsageError(msg)
     return content
 
 
@@ -167,14 +170,16 @@ def _resolve_desc(desc: str | None, desc_file: str | None = None) -> str | None:
     """
     if desc_file:
         if desc:
-            raise click.UsageError(
+            msg = (
                 "Pass --desc OR --desc-file, not both. "
-                "See `ken help` for the multi-line description idioms.",
+                "See `ken help` for the multi-line description idioms."
             )
+            raise click.UsageError(msg)
         try:
             return Path(desc_file).read_text(encoding="utf-8")
         except OSError as e:
-            raise click.UsageError(f"Cannot read --desc-file: {e}") from e
+            msg = f"Cannot read --desc-file: {e}"
+            raise click.UsageError(msg) from e
     if desc == "-":
         return sys.stdin.read()
     return desc
@@ -215,6 +220,7 @@ def add(  # noqa: PLR0913
     status: str,
     when: str | None,
     attachement_file: str | None,
+    *,
     json_mode: bool,
 ) -> None:
     r"""Add a new task to the current project.
@@ -238,7 +244,7 @@ def add(  # noqa: PLR0913
     if attachement is not None:
         body["attachement"] = attachement
     task = _request(cfg, "POST", "/api/v1/tasks", body=body)
-    _output(task, json_mode, columns=TASK_COLUMNS)
+    _output(task, json_mode=json_mode, columns=TASK_COLUMNS)
 
 
 @cli.command()
@@ -277,6 +283,7 @@ def update(  # noqa: PLR0913
     status: str | None,
     when: str | None,
     attachement_file: str | None,
+    *,
     json_mode: bool,
 ) -> None:
     r"""Update an existing task (only the fields you pass).
@@ -310,7 +317,7 @@ def update(  # noqa: PLR0913
         )
         sys.exit(1)
     task = _request(cfg, "PATCH", f"/api/v1/tasks/{task_id}", body=body)
-    _output(task, json_mode, columns=TASK_COLUMNS)
+    _output(task, json_mode=json_mode, columns=TASK_COLUMNS)
     if status == "review":
         _review_update_reminder(task_id)
         _wiki_groom_reminder(task_id)

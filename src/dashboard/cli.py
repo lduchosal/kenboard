@@ -25,7 +25,7 @@ def cli() -> None:
 @click.option("--host", default="127.0.0.1", help="Host to bind to.")
 @click.option("--port", default=5000, help="Port to bind to.")
 @click.option("--debug", is_flag=True, help="Enable debug mode.")
-def serve(host: str, port: int, debug: bool) -> None:
+def serve(host: str, port: int, *, debug: bool) -> None:
     """Start the Flask development server (local dev only).
 
     Refuses to run without ``--debug`` to make it impossible to accidentally serve
@@ -303,7 +303,7 @@ def _backfill_project(
     is_flag=True,
     help="Skip interactive confirmation (for scripted use).",
 )
-def grant_legacy_read(yes: bool) -> None:
+def grant_legacy_read(*, yes: bool) -> None:
     """Grant ``read`` on every existing category to every non-admin user (#197).
 
     Opt-in recovery path for deployments migrating from a pre-permissions

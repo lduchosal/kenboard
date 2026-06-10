@@ -22,6 +22,9 @@ from dashboard.ken.wiki import (
     wiki,
 )
 
+# Length of an ISO ``YYYY-MM-DD`` date prefix.
+_ISO_DATE_LEN = 10
+
 _ARCHIVED_STATUSES = frozenset({"done"})
 _ACTIVE_STATUS_ORDER = ("doing", "review", "todo")
 
@@ -162,7 +165,7 @@ def _classified_date(row: dict[str, Any]) -> str:
     operators can investigate.
     """
     raw = str(row.get("classified_at") or "")
-    return raw[:10] if len(raw) >= 10 else "unknown"
+    return raw[:_ISO_DATE_LEN] if len(raw) >= _ISO_DATE_LEN else "unknown"
 
 
 def _format_log_index_md(by_date: dict[str, list[dict[str, Any]]]) -> str:
@@ -324,6 +327,7 @@ def wiki_sync(
     ctx: click.Context,
     out: str | None,
     architecture: str | None,
+    *,
     json_mode: bool,
 ) -> None:
     """Materialise the wiki MD tree from live classifications (chunk C, #376c).

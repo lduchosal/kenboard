@@ -38,9 +38,14 @@ from flask import Flask, g, jsonify, request
 from flask_login import current_user
 
 from dashboard import db
+from dashboard.auth_user import _is_login_disabled
 from dashboard.config import Config
 from dashboard.logging import get_logger
-from dashboard.onboarding import cat_id_from_path, onboarding_json
+from dashboard.onboarding import (
+    cat_id_from_path,
+    derive_base_url,
+    onboarding_json,
+)
 
 log = get_logger("auth")
 
@@ -385,8 +390,6 @@ def _enforce() -> Any:
     # disables Flask-Login's @login_required). The helper carries the
     # production guard (#199) — it raises if the flag is set without
     # ``Config.DEBUG=True`` so a misconfigured prod crashes loud.
-    from dashboard.auth_user import _is_login_disabled
-
     if _is_login_disabled():
         g.api_auth_principal = "test"
         return None
@@ -411,8 +414,6 @@ def _enforce() -> Any:
         # Embed the install / init runbook so an LLM agent that hits an
         # API endpoint without credentials learns how to self-onboard
         # instead of just seeing a one-line "missing header" error (#117).
-        from dashboard.onboarding import derive_base_url
-
         return jsonify(onboarding_json(cat_id_from_path(path), derive_base_url())), 401
 
     return _enforce_api_key(token, method, path)

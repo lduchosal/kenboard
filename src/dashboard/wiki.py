@@ -11,7 +11,7 @@ provides the schema parser + data shapes shared by ``ken wiki groom``,
 This file ships the **foundations** (chunk A of #376): parsing
 ``ARCHITECTURE.md``, surfacing the section list to callers, with typed
 data shapes the later chunks consume. The CLI commands and the export /
-render / lint operations land in subsequent chunks (B–E).
+render / lint operations land in subsequent chunks (B-E).
 """
 
 from __future__ import annotations
