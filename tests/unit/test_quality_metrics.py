@@ -22,7 +22,7 @@ BEST = {
     "funcs_over_50": 25,
     "c901_over_10": 3,
     "ruff_debt": 255,
-    "test_cov": 89.54,
+    "test_cov": 91.69,
 }
 
 
@@ -35,8 +35,8 @@ def _metrics(**overrides: object) -> dict[str, object]:
         "vulture": 0,
         "refurb": 0,
         "docstring_cov": 100.0,
-        "test_cov": 89.54,
-        "min_file_cov": 65.0,
+        "test_cov": 91.69,
+        "min_file_cov": 75.0,
         "files_over_500": 0,
         "funcs_over_50": 20,
         "c901_over_10": 0,
@@ -86,9 +86,9 @@ def test_ratchet_blocks_count_regression() -> None:
 
 def test_ratchet_coverage_slack() -> None:
     """Coverage may dip within the slack but not beyond it."""
-    within, _ = qm.evaluate_gate(_metrics(test_cov=89.2), BEST)
+    within, _ = qm.evaluate_gate(_metrics(test_cov=91.3), BEST)
     assert within == []
-    beyond, _ = qm.evaluate_gate(_metrics(test_cov=88.9), BEST)
+    beyond, _ = qm.evaluate_gate(_metrics(test_cov=91.0), BEST)
     assert any("test_cov" in failure for failure in beyond)
 
 

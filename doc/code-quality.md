@@ -45,13 +45,13 @@ et l'historique long terme côté cloud.
 | `min_file_cov` | pire couverture par fichier (#788 — attrape un module neuf sans tests) | — | 30.36 % (email.py) | ↑, ≥ 25 (gate) |
 
 Le jeu `ruff_debt` (constante `DEBT_SELECT` du script) :
-`PLR, ANN401` — soit le stock `ANN401` (paliers 4-5) et `PLR0913`
-(args ≤ 5, ×3). Sortis en 2026-06, tombés à zéro et verrouillés dans le
-gate ruff (ratchet) : `DTZ`, `PERF`, au palier 2 (ken #798) `EM`, `TRY`,
-`FBT`, `ARG`, `BLE`, `SLF`, `G`, `PTH`, `PLR2004`, `PLC0415` (CLIs
-exemptés — lazy imports délibérés), puis au palier 3 la famille `RUF`
-complète (`RUF100` différé jusqu'à l'activation de `PLR0913`, cf
-commentaire pyproject).
+`ANN401` — le dernier stock (39, cible 0 au palier 5). Sortis en 2026-06,
+tombés à zéro et verrouillés dans le gate ruff (ratchet) : `DTZ`, `PERF`,
+au palier 2 (ken #798) `EM`, `TRY`, `FBT`, `ARG`, `BLE`, `SLF`, `G`,
+`PTH`, `PLC0415` (CLIs exemptés — lazy imports délibérés), au palier 3 la
+famille `RUF`, puis au palier 4 la famille `PLR` complète (args ≤ 5
+inclus, noqa argumentés sur les commandes click) avec la levée du différé
+`RUF100`.
 Exclus volontairement : les règles purement stylistiques en conflit avec black
 (`COM812`, `D4xx`, `ISC001`) et les règles `S*` (bandit) dont les hits actuels
 sont des faux positifs sur des noms de variables (`secret_key`, `token_line`)
@@ -71,13 +71,12 @@ fraîche. Trois mécanismes complémentaires :
 ### 1. Verrous ruff — par fonction, échec dès `pdm run lint`
 
 Chaque famille tombée à zéro est activée dans `[tool.ruff.lint]
-extend-select` (pyproject) : `DTZ` (acquis #785), `PLR0402` (acquis #784),
-`UP017`. Les datetimes naïfs restent tolérés dans `tests/**`
-(per-file-ignores). Prochaines activations, dès que leur compteur atteint
-zéro : `C901 ≤ 10` (#789), `PLR0913` args ≤ 5, `PLR0912` branches ≤ 12,
-`PLR0911` returns ≤ 6, `PLR0915` statements ≤ 50 (6 violations restantes,
-portées par les mêmes fonctions que #789), `PLR1702` imbrication ≤ 5 (dès
-sa sortie de preview ruff).
+extend-select` (pyproject). Actives au palier 4 : `C901 ≤ 10`, `DTZ`,
+`PERF`, `RUF` (RUF100 inclus), `EM`, `TRY`, `FBT`, `ARG`, `BLE`, `SLF`,
+`G`, `PTH`, `PLC0415`, `PLR` complète, `UP017` — les tests et les CLIs
+gardent des exemptions ciblées (per-file-ignores). Restent à activer :
+`ANN401` (dès zéro, palier 5) et `PLR1702` imbrication ≤ 5 (dès sa sortie
+de preview ruff).
 
 ### 2. Cibles par paliers (`GATE_MAX`/`GATE_MIN` du script)
 
@@ -90,8 +89,8 @@ courant est `GATE_PALIER` dans `scripts/quality_metrics.py`.
 |---|---:|---:|---:|---:|---:|---:|---|
 | 1 — ✓ fait 2026-06-10 | ≤ 900 | ≤ 130 | = 0 | ≤ 240 | ≥ 75 | ≥ 25 | ken #789 : C901 = 0, dette 238 — `C901`/`PERF`/`PLR0911/0912/0915` verrouillés dans ruff |
 | 2 — ✓ fait 2026-06-10 | ≤ 700 | ≤ 100 | = 0 | ≤ 150 | ≥ 85 | ≥ 40 | ken #798 : auth_user/pages découpés, dette 114, email.py 100 % — 12 familles ruff verrouillées |
-| **3 — actif** | ≤ 500 | ≤ 80 | = 0 | ≤ 60 | ≥ 88 | ≥ 60 | ken #803 : `auth_user.py` (556) ; fonctions > 80 (3) ; PLR0913 ×3 + ~51 ANN401 ; tests `cli.py` (min_file_cov ≥ 60) |
-| 4 | ≤ 400 | ≤ 60 | = 0 | ≤ 20 | ≥ 90 | ≥ 70 | fonctions > 60 (~14) ; gros du stock ANN401 |
+| 3 — ✓ fait 2026-06-10 | ≤ 500 | ≤ 80 | = 0 | ≤ 60 | ≥ 88 | ≥ 60 | ken #803/#804 : scopes extraits, ANN401 115 → 39, cli.py testé — `PLR0913` à zéro |
+| **4 — actif** | ≤ 400 | ≤ 60 | = 0 | ≤ 20 | ≥ 90 | ≥ 70 | ken #805 : 6 fichiers > 400 ; 10 fonctions > 60 ; ANN401 −19 ; `PLR`+`RUF100` verrouillés |
 | 5 — cible | ≤ 300 | ≤ 50 | = 0 | = 0 | ≥ 90 | ≥ 75 | dernières fonctions > 50 ; ANN401 = 0 |
 
 (`mypy_errors`, `vulture`, `refurb` = 0 et `docstring_cov` ≥ 95 sont

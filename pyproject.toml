@@ -182,12 +182,10 @@ version-major = "pdm bump -v major"
 [tool.ruff.lint]
 # Verrous métriques (#788, principe ratchet de doc/code-quality.md) : chaque
 # famille de règles tombée à zéro est activée ici pour verrouiller l'acquis,
-# en plus des règles ruff par défaut (E4, E7, E9, F). Prochaines activations
-# quand leur compteur atteint zéro : PLR0913 (args ≤ 5, ×3 restants — avec
-# lui RUF100, cf ignore ci-dessous), PLR1702 (imbrication — dès sa sortie
-# de preview ruff).
+# en plus des règles ruff par défaut (E4, E7, E9, F). Dernière activation
+# prévue : PLR1702 (imbrication ≤ 5 — dès sa sortie de preview ruff).
 extend-select = [
-    "RUF",     # règles ruff natives (palier 3) — RUF100 différé, cf ignore
+    "RUF",     # règles ruff natives, RUF100 inclus depuis le palier 4
     "ARG",     # arguments inutilisés (acquis palier 2, ken #798)
     "BLE",     # blind except interdits sauf noqa argumenté (palier 2)
     "C901",    # complexité cyclomatique ≤ 10 (acquis ken #789)
@@ -197,20 +195,13 @@ extend-select = [
     "G",       # logging — log.exception plutôt que exc_info=True (palier 2)
     "PERF",    # perflint — comprehensions, incremental list build (palier 1)
     "PLC0415", # imports en tête de module (palier 2 — CLIs exemptés ci-dessous)
-    "PLR0402", # imports alias propres (acquis ken #784)
-    "PLR0911", # returns ≤ 6 (acquis palier 1)
-    "PLR0912", # branches ≤ 12 (acquis palier 1)
-    "PLR0915", # statements ≤ 50 (acquis palier 1)
-    "PLR2004", # magic values nommées (acquis palier 2)
+    "PLR",     # famille pylint-refactor complète (palier 4 — args ≤ 5 inclus,
+               # les commandes click portent des noqa argumentés)
     "PTH",     # pathlib plutôt qu'os.path (acquis palier 2)
     "SLF",     # accès privés interdits sauf noqa argumenté (palier 2)
     "TRY",     # hygiène des raise/try (acquis palier 2)
     "UP017",   # datetime.UTC plutôt que timezone.utc
 ]
-# RUF100 (noqa inutilisés) attendra l'activation de PLR0913 : tant que la
-# règle n'est pas sélectionnée, RUF100 considère les `# noqa: PLR0913`
-# légitimes des commandes click comme morts et `lint --fix` les supprime.
-ignore = ["RUF100"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
@@ -220,7 +211,7 @@ max-complexity = 10
 # complexité non bloquante (helpers de schéma séquentiels dans conftest) et
 # familles "hygiène src" non imposées au code de test (mêmes exemptions que
 # mypy strict / interrogate). Le gate métrique (#788) ne mesure que src/.
-"tests/**" = ["DTZ", "C901", "ARG", "BLE", "EM", "FBT", "G", "PLC0415", "PLR2004", "PTH", "SLF", "TRY"]
+"tests/**" = ["DTZ", "C901", "ARG", "BLE", "EM", "FBT", "G", "PLC0415", "PLR", "PTH", "SLF", "TRY"]
 # CLIs : lazy imports délibérés — chaque commande importe ses dépendances au
 # moment de l'exécution pour garder le démarrage instantané (`ken` est
 # stdlib-only au boot) et ne charger flask/yoyo/markdown/yaml qu'au besoin.
