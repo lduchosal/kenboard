@@ -99,12 +99,18 @@ def _wait_for_analysis(token: str, commit: str, timeout: int, interval: int) -> 
 
 
 def _check_gate(token: str, analysis_key: str) -> tuple[bool, list[dict]]:
-    """Check the quality gate status for an analysis.
+    """Check the LIVE quality gate status of the main branch.
 
-    Returns (passed, conditions).
+    ``analysis_key`` n'est plus passé à l'API : le statut figé par analysisId
+    ignore le triage d'issues postérieur à l'analyse (faux positif marqué dans
+    l'UI → la branche repasse OK mais l'analyse resterait FAILED à jamais).
+    L'appelant a déjà attendu l'analyse du commit courant, ce qui garantit que
+    le statut live couvre bien ce code. Returns (passed, conditions).
     """
+    del analysis_key  # fraîcheur déjà garantie par _wait_for_analysis
     data = _api("/qualitygates/project_status", token, {
-        "analysisId": analysis_key,
+        "projectKey": PROJECT_KEY,
+        "branch": "main",
     })
     status = data.get("projectStatus", {})
     passed = status.get("status") == "OK"
