@@ -90,8 +90,8 @@ courant est `GATE_PALIER` dans `scripts/quality_metrics.py`.
 | 1 — ✓ fait 2026-06-10 | ≤ 900 | ≤ 130 | = 0 | ≤ 240 | ≥ 75 | ≥ 25 | ken #789 : C901 = 0, dette 238 — `C901`/`PERF`/`PLR0911/0912/0915` verrouillés dans ruff |
 | 2 — ✓ fait 2026-06-10 | ≤ 700 | ≤ 100 | = 0 | ≤ 150 | ≥ 85 | ≥ 40 | ken #798 : auth_user/pages découpés, dette 114, email.py 100 % — 12 familles ruff verrouillées |
 | 3 — ✓ fait 2026-06-10 | ≤ 500 | ≤ 80 | = 0 | ≤ 60 | ≥ 88 | ≥ 60 | ken #803/#804 : scopes extraits, ANN401 115 → 39, cli.py testé — `PLR0913` à zéro |
-| **4 — actif** | ≤ 400 | ≤ 60 | = 0 | ≤ 20 | ≥ 90 | ≥ 70 | ken #805 : 6 fichiers > 400 ; 10 fonctions > 60 ; ANN401 −19 ; `PLR`+`RUF100` verrouillés |
-| 5 — cible | ≤ 300 | ≤ 50 | = 0 | = 0 | ≥ 90 | ≥ 75 | dernières fonctions > 50 ; ANN401 = 0 |
+| 4 — ✓ fait 2026-06-10 | ≤ 400 | ≤ 60 | = 0 | ≤ 20 | ≥ 90 | ≥ 70 | ken #805 : max fichier 386, dette 9, couverture 92.68 % |
+| **5 — actif (final)** | ≤ 300 | ≤ 50 | = 0 | = 0 | ≥ 90 | ≥ 75 | ken #807 : 9 fichiers > 300 ; 20 fonctions > 50 ; ANN401 ×9 → verrou ; min_file_cov 71 → 75 |
 
 (`mypy_errors`, `vulture`, `refurb` = 0 et `docstring_cov` ≥ 95 sont
 bloquants à tous les paliers.)

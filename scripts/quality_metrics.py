@@ -53,12 +53,12 @@ BIG_FILE_LINES = 500
 # un snapshot puis on resserre au palier suivant — un gate vert n'est
 # jamais un état stable. On ne détend JAMAIS un seuil sans décision
 # humaine explicite.
-GATE_PALIER = 4  # paliers 1..5, cf doc/code-quality.md
+GATE_PALIER = 5  # palier final — ensuite le gate reste en mode verrou
 GATE_MAX = {
-    "max_file_lines": 400,
-    "max_func_lines": 60,
+    "max_file_lines": 300,
+    "max_func_lines": 50,
     "c901_over_10": 0,
-    "ruff_debt": 20,
+    "ruff_debt": 0,
     "mypy_errors": 0,
     "vulture": 0,
     "refurb": 0,
@@ -66,7 +66,7 @@ GATE_MAX = {
 GATE_MIN = {
     "docstring_cov": 95.0,
     "test_cov": 90.0,
-    "min_file_cov": 70.0,
+    "min_file_cov": 75.0,
 }
 # Best-ever ratchet: counts may never exceed their lowest recorded value,
 # coverage may not drop more than RATCHET_COV_SLACK below its highest.

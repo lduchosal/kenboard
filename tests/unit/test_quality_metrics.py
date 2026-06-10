@@ -22,21 +22,21 @@ BEST = {
     "funcs_over_50": 25,
     "c901_over_10": 3,
     "ruff_debt": 255,
-    "test_cov": 91.69,
+    "test_cov": 92.68,
 }
 
 
 def _metrics(**overrides: object) -> dict[str, object]:
     """Build a debt-free snapshot (strict targets met), overridable per test."""
     base: dict[str, object] = {
-        "max_file_lines": 400,
+        "max_file_lines": 250,
         "max_func_lines": 45,
         "mypy_errors": 0,
         "vulture": 0,
         "refurb": 0,
         "docstring_cov": 100.0,
-        "test_cov": 91.69,
-        "min_file_cov": 75.0,
+        "test_cov": 92.68,
+        "min_file_cov": 80.0,
         "files_over_500": 0,
         "funcs_over_50": 20,
         "c901_over_10": 0,
@@ -86,9 +86,9 @@ def test_ratchet_blocks_count_regression() -> None:
 
 def test_ratchet_coverage_slack() -> None:
     """Coverage may dip within the slack but not beyond it."""
-    within, _ = qm.evaluate_gate(_metrics(test_cov=91.3), BEST)
+    within, _ = qm.evaluate_gate(_metrics(test_cov=92.3), BEST)
     assert within == []
-    beyond, _ = qm.evaluate_gate(_metrics(test_cov=91.0), BEST)
+    beyond, _ = qm.evaluate_gate(_metrics(test_cov=92.0), BEST)
     assert any("test_cov" in failure for failure in beyond)
 
 
