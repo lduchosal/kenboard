@@ -807,8 +807,6 @@ def register_post() -> Any:
 @bp.route("/verify-email/<token>", methods=["GET"])
 def verify_email(token: str) -> Any:
     """Verify the token, create the user, their category and project."""
-    import random
-
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     conn = db.get_connection()
     queries = db.load_queries()
@@ -838,7 +836,9 @@ def verify_email(token: str) -> Any:
         # Create user
         user_id = str(uuid.uuid4())
         name = email
-        color = random.choice(_AVATAR_COLORS)
+        # secrets.choice: pas un besoin crypto (couleur d'avatar), mais évite
+        # le hotspot Sonar "pseudorandom" et un import local pour rien.
+        color = secrets.choice(_AVATAR_COLORS)
         queries.usr_create(
             conn,
             id=user_id,
