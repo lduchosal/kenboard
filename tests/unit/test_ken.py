@@ -9,6 +9,7 @@ import json
 import os
 import re
 import sys
+from datetime import UTC
 from unittest.mock import patch
 
 import pytest
@@ -2161,10 +2162,10 @@ class TestBuildFooter:
     """Wiki HTML pages show the build version + generation timestamp (#743)."""
 
     def test_format_footer_includes_version_and_date(self):
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         out = ken._format_footer(
-            "0.1.131", datetime(2026, 6, 4, 14, 32, 10, tzinfo=timezone.utc)
+            "0.1.131", datetime(2026, 6, 4, 14, 32, 10, tzinfo=UTC)
         )
         assert "kenboard 0.1.131" in out
         assert "2026-06-04 14:32:10 UTC" in out

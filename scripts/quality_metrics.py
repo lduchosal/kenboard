@@ -8,10 +8,15 @@ vulture / refurb findings, docstring coverage (interrogate) and test
 coverage (read from the last `coverage` run, if any).
 
 Usage:
-    .venv/bin/python scripts/quality_metrics.py [--json] [--record]
+    .venv/bin/python scripts/quality_metrics.py [--json] [--record] [--gate]
 
 --record appends a CSV row to doc/quality-history.csv so the evolution
 of each criterion stays visible over time.
+
+--gate (ken #788) evaluates the blocking quality gate: absolute
+ceilings/floors plus a best-ever ratchet against quality-history.csv
+(no tracked criterion may regress past its best recorded value). Exits
+non-zero on any violation; wired into `pdm run check` and publish.sh.
 """
 
 import argparse
@@ -31,11 +36,41 @@ VENV_BIN = Path(sys.executable).parent
 
 # Lint debt: curated rules NOT yet enforced by the ruff gate. Style-only
 # rules that fight black (COM, D4xx, ISC) and the S-rules (false positives
-# on variable names, audited 2026-06) are deliberately excluded.
-DEBT_SELECT = "PLC0415,PLR,DTZ,EM,TRY,PERF,PTH,FBT,ARG,BLE,SLF,G,ANN401,RUF"
+# on variable names, audited 2026-06) are deliberately excluded. DTZ left
+# in 2026-06 when the family reached zero and moved to the ruff gate
+# (ratchet principle, ken #785/#788).
+DEBT_SELECT = "PLC0415,PLR,EM,TRY,PERF,PTH,FBT,ARG,BLE,SLF,G,ANN401,RUF"
 
 LONG_FUNC_LINES = 50
 BIG_FILE_LINES = 500
+
+# --- Blocking gate (ken #788), policy in doc/code-quality.md ------------
+# Progression par paliers (décision 2026-06-10) : les seuils ci-dessous
+# matérialisent le PALIER COURANT du tableau de doc/code-quality.md
+# (§ Gate bloquant). Procédure : dès que le gate est vert, on enregistre
+# un snapshot puis on resserre au palier suivant — un gate vert n'est
+# jamais un état stable. On ne détend JAMAIS un seuil sans décision
+# humaine explicite.
+GATE_PALIER = 1  # paliers 1..5, cf doc/code-quality.md
+GATE_MAX = {
+    "max_file_lines": 900,
+    "max_func_lines": 130,
+    "c901_over_10": 0,
+    "ruff_debt": 240,
+    "mypy_errors": 0,
+    "vulture": 0,
+    "refurb": 0,
+}
+GATE_MIN = {
+    "docstring_cov": 95.0,
+    "test_cov": 75.0,
+    "min_file_cov": 25.0,
+}
+# Best-ever ratchet: counts may never exceed their lowest recorded value,
+# coverage may not drop more than RATCHET_COV_SLACK below its highest.
+RATCHET_DOWN = ("files_over_500", "funcs_over_50", "c901_over_10", "ruff_debt")
+RATCHET_UP = ("test_cov",)
+RATCHET_COV_SLACK = 0.5
 
 
 def _run(tool: str, *args: str) -> subprocess.CompletedProcess[str]:
@@ -78,8 +113,15 @@ def _ast_stats() -> dict[str, int]:
 
 
 def _ruff_count(select: str) -> int:
-    """Count ruff findings in src for the given rule selection."""
-    proc = _run("ruff", "check", "src", "--select", select, "--output-format", "json")
+    """Count ruff findings in src for the given rule selection.
+
+    Uses --extend-select so the configured gate rules (pyproject
+    [tool.ruff.lint]) stay active: a `# noqa` justifying a gate rule
+    is then correctly seen as used instead of inflating RUF100.
+    """
+    proc = _run(
+        "ruff", "check", "src", "--extend-select", select, "--output-format", "json"
+    )
     return len(json.loads(proc.stdout or "[]"))
 
 
@@ -120,6 +162,175 @@ def _test_coverage() -> float | None:
         return None
 
 
+def _offending_files(limit: int) -> list[str]:
+    """List src files longer than limit lines, biggest first."""
+    rows = []
+    for path in sorted(SRC.rglob("*.py")):
+        text = path.read_text()
+        lines = text.count("\n") + (0 if text.endswith("\n") else 1)
+        if lines > limit:
+            rows.append((lines, str(path.relative_to(REPO))))
+    return [f"{lines} lignes  {path}" for lines, path in sorted(rows, reverse=True)]
+
+
+def _offending_functions(limit: int) -> list[str]:
+    """List src functions longer than limit lines, longest first."""
+    rows = []
+    for path in sorted(SRC.rglob("*.py")):
+        for node in ast.walk(ast.parse(path.read_text())):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                length = (node.end_lineno or node.lineno) - node.lineno + 1
+                if length > limit:
+                    location = f"{path.relative_to(REPO)}:{node.lineno}"
+                    rows.append((length, node.name, location))
+    return [
+        f"{length} lignes  {name}  {location}"
+        for length, name, location in sorted(rows, reverse=True)
+    ]
+
+
+def _ruff_findings(select: str) -> list[str]:
+    """Per-finding concise ruff output for the given selection."""
+    proc = _run(
+        "ruff", "check", "src", "--extend-select", select, "--output-format", "concise"
+    )
+    return [line for line in proc.stdout.splitlines() if ".py:" in line]
+
+
+def _ruff_statistics(select: str) -> list[str]:
+    """Findings count per rule for the given selection, descending."""
+    proc = _run("ruff", "check", "src", "--extend-select", select, "--statistics")
+    return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+
+
+def _undercovered_files(floor: float) -> list[str]:
+    """List files whose coverage sits below the given floor."""
+    proc = _run("coverage", "json", "-o", "-")
+    try:
+        data = json.loads(proc.stdout)
+    except ValueError:
+        return []
+    return [
+        f"{summary['summary']['percent_covered']:.1f} %  {name}"
+        for name, summary in sorted(data["files"].items())
+        if summary["summary"]["percent_covered"] < floor
+    ]
+
+
+def gate_details(key: str) -> list[str]:
+    """Actionable offender list for a violated gate rule.
+
+    This is what tells an agent *what* to fix, not just that the gate
+    is red; computed lazily, only for the rules that actually failed.
+    """
+    if key == "max_file_lines":
+        return _offending_files(GATE_MAX["max_file_lines"])
+    if key == "files_over_500":
+        return _offending_files(BIG_FILE_LINES)
+    if key == "max_func_lines":
+        return _offending_functions(GATE_MAX["max_func_lines"])
+    if key == "funcs_over_50":
+        return _offending_functions(LONG_FUNC_LINES)
+    if key == "c901_over_10":
+        return _ruff_findings("C901")
+    if key == "ruff_debt":
+        return _ruff_statistics(DEBT_SELECT) + [
+            f"détail par fichier : ruff check src --extend-select {DEBT_SELECT}"
+        ]
+    if key == "min_file_cov":
+        return _undercovered_files(GATE_MIN["min_file_cov"])
+    if key == "test_cov":
+        return ["détail : .venv/bin/coverage report --sort=cover"]
+    if key == "mypy_errors":
+        return ["détail : pdm run typecheck"]
+    if key == "vulture":
+        return ["détail : pdm run vulture"]
+    if key == "refurb":
+        return ["détail : pdm run refurb"]
+    if key == "docstring_cov":
+        return ["détail : pdm run interrogate -- -vv"]
+    return []
+
+
+def _min_file_coverage() -> float | None:
+    """Read the lowest per-file coverage from the last run.
+
+    Catches the classic drift of a new module landing without tests:
+    the total barely moves but the per-file minimum collapses.
+    """
+    if not (REPO / ".coverage").exists():
+        return None
+    proc = _run("coverage", "json", "-o", "-")
+    try:
+        data = json.loads(proc.stdout)
+    except ValueError:
+        return None
+    percents = [f["summary"]["percent_covered"] for f in data["files"].values()]
+    return round(min(percents), 2) if percents else None
+
+
+def _history_best(path: Path = HISTORY) -> dict[str, float]:
+    """Best-ever value per ratcheted metric across the recorded history."""
+    best: dict[str, float] = {}
+    if not path.exists():
+        return best
+    with path.open(newline="") as handle:
+        for row in csv.DictReader(handle):
+            for key in RATCHET_DOWN + RATCHET_UP:
+                raw = (row.get(key) or "").strip()
+                if not raw:
+                    continue
+                value = float(raw)
+                if key in RATCHET_DOWN:
+                    best[key] = min(best.get(key, value), value)
+                else:
+                    best[key] = max(best.get(key, value), value)
+    return best
+
+
+def evaluate_gate(
+    metrics: dict[str, object], best: dict[str, float]
+) -> tuple[list[str], list[str]]:
+    """Evaluate the blocking gate; return (failures, skipped-rule names).
+
+    Rules whose metric is unavailable (no coverage data) are skipped,
+    not failed — publish.sh --ci runs the gate right after test-ci so
+    coverage is fresh there.
+    """
+    failures: list[str] = []
+    skipped: list[str] = []
+    for key, ceiling in GATE_MAX.items():
+        value = metrics.get(key)
+        if value is None:
+            skipped.append(key)
+        elif float(str(value)) > ceiling:
+            failures.append(f"{key} = {value} > plafond absolu {ceiling}")
+    for key, floor in GATE_MIN.items():
+        value = metrics.get(key)
+        if value is None:
+            skipped.append(key)
+        elif float(str(value)) < floor:
+            failures.append(f"{key} = {value} < plancher absolu {floor}")
+    for key in RATCHET_DOWN:
+        value, limit = metrics.get(key), best.get(key)
+        if value is None or limit is None:
+            continue
+        if float(str(value)) > limit:
+            failures.append(
+                f"{key} = {value} > meilleur historique {limit:g} (ratchet)"
+            )
+    for key in RATCHET_UP:
+        value, limit = metrics.get(key), best.get(key)
+        if value is None or limit is None:
+            continue
+        if float(str(value)) < limit - RATCHET_COV_SLACK:
+            failures.append(
+                f"{key} = {value} < meilleur historique {limit:g} "
+                f"- tolérance {RATCHET_COV_SLACK} (ratchet)"
+            )
+    return failures, skipped
+
+
 def _version() -> str:
     """Read the package version from src/dashboard/__init__.py."""
     text = (SRC / "__init__.py").read_text()
@@ -141,16 +352,29 @@ def collect() -> dict[str, object]:
     metrics["refurb"] = _refurb_findings()
     metrics["docstring_cov"] = _docstring_coverage()
     metrics["test_cov"] = _test_coverage()
+    metrics["min_file_cov"] = _min_file_coverage()
     return metrics
 
 
 def record(metrics: dict[str, object]) -> None:
-    """Append the snapshot as a CSV row to doc/quality-history.csv."""
-    fresh = not HISTORY.exists()
-    with HISTORY.open("a", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(metrics))
-        if fresh:
-            writer.writeheader()
+    """Append the snapshot to doc/quality-history.csv.
+
+    Rewrites the file when the snapshot carries new columns (e.g.
+    min_file_cov added by #788) so the header stays the union of all
+    known criteria; historical rows keep blanks for the new ones.
+    """
+    fieldnames = list(metrics)
+    rows: list[dict[str, str]] = []
+    if HISTORY.exists():
+        with HISTORY.open(newline="") as handle:
+            reader = csv.DictReader(handle)
+            existing = list(reader.fieldnames or [])
+            rows = list(reader)
+        fieldnames = existing + [key for key in fieldnames if key not in existing]
+    with HISTORY.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, restval="")
+        writer.writeheader()
+        writer.writerows(rows)
         writer.writerow(metrics)
 
 
@@ -160,6 +384,11 @@ def main() -> int:
     parser.add_argument("--json", action="store_true", help="output as JSON")
     parser.add_argument(
         "--record", action="store_true", help="append to doc/quality-history.csv"
+    )
+    parser.add_argument(
+        "--gate",
+        action="store_true",
+        help="enforce the blocking quality gate (ken #788), exit 1 on violation",
     )
     args = parser.parse_args()
 
@@ -174,6 +403,22 @@ def main() -> int:
     if args.record:
         record(metrics)
         print(f"\nrecorded -> {HISTORY.relative_to(REPO)}")
+    if args.gate:
+        failures, skipped = evaluate_gate(metrics, _history_best())
+        print()
+        if skipped:
+            print(f"gate: règles sautées faute de données : {', '.join(skipped)}")
+        if failures:
+            print(f"gate (palier {GATE_PALIER}): FAIL")
+            for failure in failures:
+                print(f"  ✗ {failure}")
+                for line in gate_details(failure.split(" = ")[0]):
+                    print(f"        {line}")
+            return 1
+        print(
+            f"gate (palier {GATE_PALIER}): PASS — enregistrer un snapshot et "
+            "resserrer au palier suivant (doc/code-quality.md § Gate bloquant)"
+        )
     return 0
 
 

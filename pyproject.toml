@@ -142,9 +142,10 @@ interrogate = "interrogate src/"
 vulture = "vulture src/ tests/ vulture_whitelist.py"
 refurb = "refurb src/"
 
-# Quality metrics snapshot (#783) — see doc/code-quality.md
+# Quality metrics snapshot (#783) & blocking gate (#788) — see doc/code-quality.md
 metrics = "python scripts/quality_metrics.py"
 metrics-record = "python scripts/quality_metrics.py --record"
+metrics-gate = "python scripts/quality_metrics.py --gate"
 
 # JS toolchain (#251) — Vite bundler, Vitest unit tests, Biome lint+format,
 # tsc --noEmit for opt-in JSDoc type-check.
@@ -161,7 +162,7 @@ js-build = { shell = "npx vite build" }
 build-extension = { shell = "npm run build-extension" }
 
 # Composite checks
-check = { composite = ["isort", "docformatter", "format", "typecheck", "flake8", "interrogate", "refurb", "lint", "vulture", "js-lint", "js-typecheck", "js-test", "js-build", "test-quick"] }
+check = { composite = ["isort", "docformatter", "format", "typecheck", "flake8", "interrogate", "refurb", "lint", "vulture", "js-lint", "js-typecheck", "js-test", "js-build", "test-quick", "metrics-gate"] }
 
 # Build & generation
 screenshots = "python scripts/screenshots.py"
@@ -176,6 +177,24 @@ version-show = "python -c \"import dashboard; print(dashboard.__version__)\"" # 
 version-patch = "pdm bump -v patch"
 version-minor = "pdm bump -v minor"
 version-major = "pdm bump -v major"
+
+# -- Ruff ---------------------------------------------------------------------
+
+[tool.ruff.lint]
+# Verrous métriques (#788, principe ratchet de doc/code-quality.md) : chaque
+# famille de règles tombée à zéro est activée ici pour verrouiller l'acquis,
+# en plus des règles ruff par défaut (E4, E7, E9, F). Prochaines activations
+# quand leur compteur atteint zéro : C901 (#789), PLR0911/0912/0913/0915,
+# PLR1702 (imbrication — dès sa sortie de preview ruff).
+extend-select = [
+    "DTZ",     # datetimes naïfs interdits (acquis ken #785)
+    "PLR0402", # imports alias propres (acquis ken #784)
+    "UP017",   # datetime.UTC plutôt que timezone.utc
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Datetimes naïfs tolérés dans les tests (fixtures et comparaisons locales).
+"tests/**" = ["DTZ"]
 
 # -- Black --------------------------------------------------------------------
 

@@ -193,6 +193,12 @@ if [ "$CI_MODE" = false ]; then
     run_command "pdm run test-e2e" "E2E Tests"
 fi
 
+# Blocking quality-metrics gate (#788): absolute ceilings + best-ever
+# ratchet vs doc/quality-history.csv. Runs after the tests so the
+# coverage-based rules read fresh data in CI mode.
+print_step "Quality Metrics Gate (ratchet)"
+run_command "pdm run metrics-gate" "Quality metrics gate"
+
 # Exit here if --quality flag is set
 if [ "$QUALITY_ONLY" = true ]; then
     echo ""
