@@ -4,11 +4,14 @@ import os
 import secrets
 import time
 import traceback
+from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from flask import Flask, jsonify, make_response, render_template, request
+from flask import Flask, Request, jsonify, make_response, render_template, request
+from flask.typing import ResponseReturnValue
+from flask.wrappers import Response
 from flask_cors import CORS
 from pydantic import ValidationError
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -51,7 +54,7 @@ def _configure_security(app: Flask) -> None:
         CORS(app, origins=Config.KENBOARD_CORS_ORIGINS, supports_credentials=True)
 
     @app.after_request
-    def security_headers(response: Any) -> Any:
+    def security_headers(response: Response) -> Response:
         """Apply hardening HTTP headers to every response."""
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
@@ -96,7 +99,7 @@ def _register_request_logging(app: Flask) -> None:
             )
 
     @app.after_request
-    def log_response(response: Any) -> Any:
+    def log_response(response: Response) -> Response:
         """Log outgoing response."""
         if request.path.startswith(API_PATH_PREFIX):
             duration = time.time() - getattr(request, "_start_time", time.time())
@@ -115,7 +118,7 @@ def _register_request_logging(app: Flask) -> None:
 _PASSWORD_FIELDS = {"password", "new_password", "old_password"}
 
 
-def _safe_pydantic_errors(errors: Any) -> list[dict[str, Any]]:
+def _safe_pydantic_errors(errors: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
     """Make Pydantic's ``.errors()`` JSON-serializable.
 
     Pydantic 2 embeds the original exception under ``ctx.error`` for ``value_error``
@@ -225,7 +228,7 @@ def _register_error_handlers(app: Flask, *, debug: bool) -> None:
     """Register Pydantic validation and generic error handlers."""
 
     @app.errorhandler(ValidationError)
-    def handle_validation_error(e: ValidationError) -> Any:
+    def handle_validation_error(e: ValidationError) -> ResponseReturnValue:
         """Return 422 for Pydantic validation errors."""
         details = _safe_pydantic_errors(e.errors())
         log.warning("validation_error", path=request.path, errors=details)
@@ -247,7 +250,7 @@ def _register_error_handlers(app: Flask, *, debug: bool) -> None:
     # ``PROPAGATE_EXCEPTIONS`` is False (the production default), and
     # exposes the original exception via ``e.original_exception``.
     @app.errorhandler(500)
-    def handle_internal_server_error(e: Any) -> Any:
+    def handle_internal_server_error(e: Exception) -> ResponseReturnValue:
         """Friendly fatal-error response for unhandled 500s (#268).
 
         API callers (anything under ``/api/`` or asking for JSON) keep the existing
@@ -292,7 +295,7 @@ def _register_error_handlers(app: Flask, *, debug: bool) -> None:
         )
 
 
-def _wants_json(req: Any) -> bool:
+def _wants_json(req: Request) -> bool:
     """Return True when the caller looks like an API/XHR consumer."""
     if req.path.startswith(API_PATH_PREFIX):
         return True
@@ -321,37 +324,37 @@ def _register_static_routes(app: Flask) -> None:
     """Register convenience routes that serve static assets at root URLs."""
 
     @app.route("/style.css", methods=["GET"])
-    def serve_css() -> Any:
+    def serve_css() -> ResponseReturnValue:
         """Serve stylesheet from root URL."""
         return app.send_static_file("style.css")
 
     @app.route("/app.js", methods=["GET"])
-    def serve_js() -> Any:
+    def serve_js() -> ResponseReturnValue:
         """Serve the Vite-bundled app from root URL (#251)."""
         return app.send_static_file("dist/app.js")
 
     @app.route("/app.js.map", methods=["GET"])
-    def serve_js_map() -> Any:
+    def serve_js_map() -> ResponseReturnValue:
         """Serve the Vite source map so DevTools can debug the bundle."""
         return app.send_static_file("dist/app.js.map")
 
     @app.route("/sortable.min.js", methods=["GET"])
-    def serve_sortable() -> Any:
+    def serve_sortable() -> ResponseReturnValue:
         """Serve vendored Sortable.js from root URL."""
         return app.send_static_file("sortable.min.js")
 
     @app.route("/marked.min.js", methods=["GET"])
-    def serve_marked() -> Any:
+    def serve_marked() -> ResponseReturnValue:
         """Serve vendored marked.js from root URL."""
         return app.send_static_file("marked.min.js")
 
     @app.route("/dompurify.min.js", methods=["GET"])
-    def serve_dompurify() -> Any:
+    def serve_dompurify() -> ResponseReturnValue:
         """Serve vendored DOMPurify from root URL."""
         return app.send_static_file("dompurify.min.js")
 
     @app.route("/favicon.ico", methods=["GET"])
-    def favicon() -> Any:
+    def favicon() -> ResponseReturnValue:
         """Return empty favicon."""
         return "", 204
 

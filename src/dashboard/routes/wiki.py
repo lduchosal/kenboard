@@ -8,13 +8,13 @@ architecture file out of the DB and out of the server's request path.
 """
 
 from contextlib import suppress
-from typing import Any
 
 from flask import Blueprint, g, jsonify, request
+from flask.typing import ResponseReturnValue
 from flask_login import current_user
 
 from dashboard import db
-from dashboard.auth_user import current_user_can_project
+from dashboard.auth_scopes import current_user_can_project
 
 bp = Blueprint("wiki", __name__, url_prefix="/api/v1/wiki")
 
@@ -30,7 +30,7 @@ def _principal_name() -> str:
 
 
 @bp.route("/unclassified", methods=["GET"])
-def list_unclassified() -> Any:
+def list_unclassified() -> ResponseReturnValue:
     """Return every task without a wiki classification.
 
     Optional ``?project=<id>`` filter — when set, the response is scoped to a single
@@ -52,7 +52,7 @@ def list_unclassified() -> Any:
 
 
 @bp.route("/all", methods=["GET"])
-def list_all() -> Any:
+def list_all() -> ResponseReturnValue:
     """Return every classification joined with task data.
 
     Consumed by ``ken wiki sync`` to render the MD tree. Same project-scoping rules as
@@ -91,7 +91,7 @@ def list_all() -> Any:
 
 
 @bp.route("/classify/<int:task_id>", methods=["GET"])
-def get_classification(task_id: int) -> Any:
+def get_classification(task_id: int) -> ResponseReturnValue:
     """Return the current classification for a task, or 404 if unclassified."""
     conn = db.get_connection()
     queries = db.load_queries()
@@ -119,7 +119,7 @@ def get_classification(task_id: int) -> Any:
 
 
 @bp.route("/classify", methods=["POST"])
-def classify() -> Any:
+def classify() -> ResponseReturnValue:
     """Upsert a classification.
 
     Body: ``{task_id: int, section_path: str}``.
@@ -167,7 +167,7 @@ def classify() -> Any:
 
 
 @bp.route("/classify/<int:task_id>", methods=["DELETE"])
-def clear_classification(task_id: int) -> Any:
+def clear_classification(task_id: int) -> ResponseReturnValue:
     """Drop the classification for a task."""
     conn = db.get_connection()
     queries = db.load_queries()

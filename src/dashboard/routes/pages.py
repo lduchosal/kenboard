@@ -4,14 +4,12 @@ from datetime import date, datetime, timedelta
 from typing import Any
 
 from flask import Blueprint, abort, render_template
+from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 
 from dashboard import __version__, db
-from dashboard.auth_user import (
-    _is_login_disabled,
-    admin_required,
-    current_user_can,
-)
+from dashboard.auth_scopes import current_user_can
+from dashboard.auth_user import _is_login_disabled, admin_required
 from dashboard.routes.charts import (
     TASKERS_WINDOW_DAYS,
     _build_taskers_daily_chart,
@@ -82,7 +80,7 @@ def _filter_by_scope(
     return categories, all_projects
 
 
-def _build_context(
+def _build_context(  # noqa: PLR0913 — contexte template : un kwarg par dataset, par design
     categories: list[dict[str, Any]],
     all_projects: list[dict[str, Any]],
     users: list[dict[str, Any]],
@@ -134,7 +132,7 @@ def _build_context(
 
 @bp.route("/", methods=["GET"])
 @login_required
-def index() -> Any:
+def index() -> ResponseReturnValue:
     """Serve the dashboard with doing tasks and per-project counts (#226)."""
     conn = db.get_connection()
     queries = db.load_queries()
@@ -216,7 +214,7 @@ def index() -> Any:
 
 @bp.route("/admin/users", methods=["GET"])
 @login_required
-def admin_users() -> Any:
+def admin_users() -> ResponseReturnValue:
     """Serve the user management admin page (#225).
 
     No tasks or burndown needed — only categories, users, and scopes.
@@ -244,7 +242,7 @@ def admin_users() -> Any:
 
 @bp.route("/admin/keys", methods=["GET"])
 @login_required
-def admin_keys() -> Any:
+def admin_keys() -> ResponseReturnValue:
     """Serve the API keys management admin page (#223).
 
     No tasks or burndown needed — only categories, projects, users, and API keys with
@@ -286,7 +284,7 @@ def admin_keys() -> Any:
 
 @bp.route("/admin/board", methods=["GET"])
 @login_required
-def admin_board() -> Any:
+def admin_board() -> ResponseReturnValue:
     """Serve the category/project management admin page (#224).
 
     No tasks or burndown needed — only categories and projects.
@@ -310,7 +308,7 @@ def admin_board() -> Any:
 
 @bp.route("/aide", methods=["GET"])
 @login_required
-def aide() -> Any:
+def aide() -> ResponseReturnValue:
     """Serve the help page: using ken for bots and the browser extension."""
     conn = db.get_connection()
     queries = db.load_queries()
@@ -328,9 +326,46 @@ def aide() -> Any:
     return render_template("aide.html", **ctx)
 
 
+def _attach_category_project_data(
+    conn: Any, queries: Any, cat_id: str, cat_projects: list[dict[str, Any]]
+) -> None:
+    """Attach tasks, done/total counts and burndown snapshots to each project.
+
+    Loads tasks and burndown for the whole category in two batched queries instead of
+    fanning out per project (#338). Previously a 9-project category did 18 queries (one
+    task + one snapshot per project) plus the 4 setup queries → 21 > 20 perf budget.
+    """
+    all_tasks = list(queries.task_get_by_category(conn, category_id=cat_id))
+    tasks_by_project: dict[str, list[dict[str, Any]]] = {}
+    for t in all_tasks:
+        tasks_by_project.setdefault(t["project_id"], []).append(t)
+    snapshot_rows = list(
+        queries.burndown_get_for_category_projects(conn, category_id=cat_id, days=60)
+    )
+    snapshots_by_project: dict[str, list[dict[str, Any]]] = {}
+    for s in snapshot_rows:
+        # Strip ``project_id`` before grouping — the partials/burndown.html
+        # template expects rows shaped like ``burndown_get_by_project``
+        # (no project_id field).
+        snapshots_by_project.setdefault(s["project_id"], []).append(
+            {
+                "snapshot_date": s["snapshot_date"],
+                "todo": s["todo"],
+                "doing": s["doing"],
+                "review": s["review"],
+                "done": s["done"],
+            }
+        )
+    for p in cat_projects:
+        p["tasks"] = tasks_by_project.get(p["id"], [])
+        p["done"] = sum(1 for t in p["tasks"] if t["status"] == "done")
+        p["total"] = len(p["tasks"])
+        p["snapshots"] = snapshots_by_project.get(p["id"], [])
+
+
 @bp.route("/cat/<cat_id>.html", methods=["GET"])
 @login_required
-def category(cat_id: str) -> Any:
+def category(cat_id: str) -> ResponseReturnValue:
     """Serve a category detail page (#221).
 
     Loads only the projects and tasks for the requested category instead of all
@@ -351,39 +386,8 @@ def category(cat_id: str) -> Any:
         if not cat:
             return "Not found", 404
 
-        # Load tasks and burndown for the whole category in two batched
-        # queries instead of fanning out per project (#338). Previously a
-        # 9-project category did 18 queries (one task + one snapshot per
-        # project) plus the 4 setup queries → 21 > 20 perf budget.
         cat_projects = [p for p in all_projects if p["cat_id"] == cat_id]
-        all_tasks = list(queries.task_get_by_category(conn, category_id=cat_id))
-        tasks_by_project: dict[str, list[dict[str, Any]]] = {}
-        for t in all_tasks:
-            tasks_by_project.setdefault(t["project_id"], []).append(t)
-        snapshot_rows = list(
-            queries.burndown_get_for_category_projects(
-                conn, category_id=cat_id, days=60
-            )
-        )
-        snapshots_by_project: dict[str, list[dict[str, Any]]] = {}
-        for s in snapshot_rows:
-            # Strip ``project_id`` before grouping — the partials/burndown.html
-            # template expects rows shaped like ``burndown_get_by_project``
-            # (no project_id field).
-            snapshots_by_project.setdefault(s["project_id"], []).append(
-                {
-                    "snapshot_date": s["snapshot_date"],
-                    "todo": s["todo"],
-                    "doing": s["doing"],
-                    "review": s["review"],
-                    "done": s["done"],
-                }
-            )
-        for p in cat_projects:
-            p["tasks"] = tasks_by_project.get(p["id"], [])
-            p["done"] = sum(1 for t in p["tasks"] if t["status"] == "done")
-            p["total"] = len(p["tasks"])
-            p["snapshots"] = snapshots_by_project.get(p["id"], [])
+        _attach_category_project_data(conn, queries, cat_id, cat_projects)
 
         cat_snapshots: dict[str, list[dict[str, Any]]] = {}
         cat_snapshots[cat_id] = list(

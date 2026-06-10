@@ -13,6 +13,7 @@ import uuid
 from typing import Any
 
 from flask import abort, render_template, request
+from flask.typing import ResponseReturnValue
 
 from dashboard import db
 from dashboard import email as email_mod
@@ -64,7 +65,7 @@ def _get_or_create_users_category(
 
 
 @bp.route("/register", methods=["GET"])
-def register() -> Any:
+def register() -> ResponseReturnValue:
     """Render the registration form (only if domain restriction is set)."""
     domain = Config.REGISTER_ALLOWED_DOMAIN
     if not domain:
@@ -74,7 +75,7 @@ def register() -> Any:
 
 @bp.route("/register", methods=["POST"])
 @limiter.limit(_REGISTER_RATE_LIMITS)
-def register_post() -> Any:
+def register_post() -> ResponseReturnValue:
     """Validate input, send verification email, and store pending registration."""
     domain = Config.REGISTER_ALLOWED_DOMAIN
     if not domain:
@@ -84,7 +85,7 @@ def register_post() -> Any:
     password = request.form.get("password") or ""
     password_confirm = request.form.get("password_confirm") or ""
 
-    def _err(msg: str) -> Any:
+    def _err(msg: str) -> ResponseReturnValue:
         """Render the register form with an error message."""
         return render_template(
             _REGISTER_TEMPLATE, domain=domain, error=msg, message=None
@@ -141,8 +142,56 @@ def register_post() -> Any:
     )
 
 
+def _provision_user(queries: Any, conn: Any, email: str, pw_hash: str) -> str:
+    """Create the user, their 'Users' category, personal project and scope.
+
+    Returns the new project id.
+    """
+    user_id = str(uuid.uuid4())
+    name = email
+    # secrets.choice: pas un besoin crypto (couleur d'avatar), mais évite
+    # le hotspot Sonar "pseudorandom" et un import local pour rien.
+    color = secrets.choice(_AVATAR_COLORS)
+    queries.usr_create(
+        conn,
+        id=user_id,
+        name=name,
+        email=email,
+        color=color,
+        password_hash=pw_hash,
+        is_admin=0,
+    )
+
+    # Get or create "Users" category
+    cat_id = _get_or_create_users_category(queries, conn)
+
+    # Create personal project "user@email"
+    proj_id = str(uuid.uuid4())
+    max_pos = queries.proj_max_position_in_cat(conn, cat_id=cat_id)
+    queries.proj_create(
+        conn,
+        id=proj_id,
+        cat_id=cat_id,
+        name=email,
+        acronym=email.split("@")[0][:4].upper(),
+        status="active",
+        position=max_pos + 1,
+        default_who=name,
+    )
+
+    # Grant write scope on "Users" category (write implies read)
+    queries.usr_scopes_add(conn, user_id=user_id, category_id=cat_id, scope="write")
+    log.info(
+        "auth.registration_verified",
+        user_id=user_id,
+        email=email,
+        project_id=proj_id,
+    )
+    return proj_id
+
+
 @bp.route("/verify-email/<token>", methods=["GET"])
-def verify_email(token: str) -> Any:
+def verify_email(token: str) -> ResponseReturnValue:
     """Verify the token, create the user, their category and project."""
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     conn = db.get_connection()
@@ -158,7 +207,6 @@ def verify_email(token: str) -> Any:
             )
 
         email = row["email"]
-        pw_hash = row["password_hash"]
 
         # Check email not taken (race condition guard)
         if queries.usr_get_by_email(conn, email=email):
@@ -170,50 +218,10 @@ def verify_email(token: str) -> Any:
                 message="Ce compte existe déjà. Connectez-vous.",
             )
 
-        # Create user
-        user_id = str(uuid.uuid4())
-        name = email
-        # secrets.choice: pas un besoin crypto (couleur d'avatar), mais évite
-        # le hotspot Sonar "pseudorandom" et un import local pour rien.
-        color = secrets.choice(_AVATAR_COLORS)
-        queries.usr_create(
-            conn,
-            id=user_id,
-            name=name,
-            email=email,
-            color=color,
-            password_hash=pw_hash,
-            is_admin=0,
-        )
-
-        # Get or create "Users" category
-        cat_id = _get_or_create_users_category(queries, conn)
-
-        # Create personal project "user@email"
-        proj_id = str(uuid.uuid4())
-        max_pos = queries.proj_max_position_in_cat(conn, cat_id=cat_id)
-        queries.proj_create(
-            conn,
-            id=proj_id,
-            cat_id=cat_id,
-            name=email,
-            acronym=email.split("@")[0][:4].upper(),
-            status="active",
-            position=max_pos + 1,
-            default_who=name,
-        )
-
-        # Grant write scope on "Users" category (write implies read)
-        queries.usr_scopes_add(conn, user_id=user_id, category_id=cat_id, scope="write")
+        _provision_user(queries, conn, email, row["password_hash"])
 
         # Mark token as used
         queries.evt_mark_used(conn, id=row["id"])
-        log.info(
-            "auth.registration_verified",
-            user_id=user_id,
-            email=email,
-            project_id=proj_id,
-        )
     finally:
         conn.close()
 

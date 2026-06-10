@@ -1,18 +1,14 @@
 """Category API routes."""
 
 import uuid
-from typing import Any
 
 from flask import Blueprint, g, jsonify, request
+from flask.typing import ResponseReturnValue
 from flask_login import current_user
 
 from dashboard import db
-from dashboard.auth_user import (
-    _is_api_key_principal,
-    _is_login_disabled,
-    api_admin_required,
-    current_user_can,
-)
+from dashboard.auth_scopes import _is_api_key_principal, current_user_can
+from dashboard.auth_user import _is_login_disabled, api_admin_required
 from dashboard.models.category import Category, CategoryCreate, CategoryUpdate
 
 bp = Blueprint("categories", __name__, url_prefix="/api/v1/categories")
@@ -36,7 +32,7 @@ def _should_filter_for_current_user() -> bool:
 
 
 @bp.route("", methods=["GET"])
-def list_categories() -> Any:
+def list_categories() -> ResponseReturnValue:
     """List all categories (filtered to the user's scopes for non-admins)."""
     conn = db.get_connection()
     queries = db.load_queries()
@@ -51,7 +47,7 @@ def list_categories() -> Any:
 
 
 @bp.route("", methods=["POST"])
-def create_category() -> Any:
+def create_category() -> ResponseReturnValue:
     """Create a new category (admin only — non-admins cannot create boards).
 
     Automatically creates a first project "Project <name>" inside the new category so
@@ -91,7 +87,7 @@ def create_category() -> Any:
 
 
 @bp.route("/<cat_id>", methods=["PATCH"])
-def update_category(cat_id: str) -> Any:
+def update_category(cat_id: str) -> ResponseReturnValue:
     """Update a category (requires write scope on the category)."""
     if not current_user_can(cat_id, "write"):
         return jsonify({"error": "forbidden"}), 403
@@ -119,7 +115,7 @@ def update_category(cat_id: str) -> Any:
 
 
 @bp.route("/<cat_id>", methods=["DELETE"])
-def delete_category(cat_id: str) -> Any:
+def delete_category(cat_id: str) -> ResponseReturnValue:
     """Delete a category (admin only — destructive, board-wide)."""
     api_admin_required()
     conn = db.get_connection()
@@ -132,7 +128,7 @@ def delete_category(cat_id: str) -> Any:
 
 
 @bp.route("/reorder", methods=["POST"])
-def reorder_categories() -> Any:
+def reorder_categories() -> ResponseReturnValue:
     """Reorder categories (admin only — changes global layout)."""
     api_admin_required()
     data = request.get_json()

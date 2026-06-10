@@ -18,6 +18,8 @@ from flask import (
     request,
     template_rendered,
 )
+from flask.wrappers import Response
+from jinja2 import Template
 
 from dashboard import db
 from dashboard.config import Config
@@ -229,7 +231,7 @@ def _should_skip() -> bool:
     )
 
 
-def _build_request_summary(response: Any) -> dict[str, Any] | None:
+def _build_request_summary(response: Response) -> dict[str, Any] | None:
     """Build a performance summary for the current request."""
     start = getattr(request, "_start_time", None)
     if start is None:
@@ -276,19 +278,19 @@ def _perf_before() -> None:
     g.perf = PerfCollector()
 
 
-def _perf_before_template(_sender: Any, **_kwargs: Any) -> None:
+def _perf_before_template(_sender: Flask, **_kwargs: Any) -> None:
     """Record template render start."""
     if has_request_context() and hasattr(g, "perf"):
         g.perf.start_template()
 
 
-def _perf_after_template(_sender: Any, template: Any, **_kwargs: Any) -> None:
+def _perf_after_template(_sender: Flask, template: Template, **_kwargs: Any) -> None:
     """Record template render end."""
     if has_request_context() and hasattr(g, "perf"):
         g.perf.end_template(template.name or "unknown")
 
 
-def _perf_after(response: Any) -> Any:
+def _perf_after(response: Response) -> Response:
     """Evaluate performance budget and create a task if exceeded."""
     if not hasattr(g, "perf"):
         return response

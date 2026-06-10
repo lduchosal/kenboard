@@ -1,18 +1,18 @@
 """Project API routes."""
 
 import uuid
-from typing import Any
 
 from flask import Blueprint, g, jsonify, request
+from flask.typing import ResponseReturnValue
 from flask_login import current_user
 
 from dashboard import db
-from dashboard.auth_user import (
+from dashboard.auth_scopes import (
     _is_api_key_principal,
-    _is_login_disabled,
     current_user_can,
     current_user_can_project,
 )
+from dashboard.auth_user import _is_login_disabled
 from dashboard.models.project import Project, ProjectCreate, ProjectUpdate
 
 bp = Blueprint("projects", __name__, url_prefix="/api/v1/projects")
@@ -30,7 +30,7 @@ def _should_filter_for_current_user() -> bool:
 
 
 @bp.route("", methods=["GET"])
-def list_projects() -> Any:
+def list_projects() -> ResponseReturnValue:
     """List projects, optionally filtered by category.
 
     Non-admin cookie users only see projects in categories they have a scope on. If
@@ -55,7 +55,7 @@ def list_projects() -> Any:
 
 
 @bp.route("", methods=["POST"])
-def create_project() -> Any:
+def create_project() -> ResponseReturnValue:
     """Create a new project (write scope on the target category required)."""
     payload = request.get_json() or {}
     target_cat = payload.get("cat")
@@ -84,7 +84,7 @@ def create_project() -> Any:
 
 
 @bp.route("/<proj_id>", methods=["PATCH"])
-def update_project(proj_id: str) -> Any:
+def update_project(proj_id: str) -> ResponseReturnValue:
     """Update a project (write scope on its owning category required)."""
     if not current_user_can_project(proj_id, "write"):
         return jsonify({"error": "forbidden"}), 403
@@ -127,7 +127,7 @@ def update_project(proj_id: str) -> Any:
 
 
 @bp.route("/<proj_id>", methods=["DELETE"])
-def delete_project(proj_id: str) -> Any:
+def delete_project(proj_id: str) -> ResponseReturnValue:
     """Delete a project (only if no tasks, write scope on its category)."""
     if not current_user_can_project(proj_id, "write"):
         return jsonify({"error": "forbidden"}), 403

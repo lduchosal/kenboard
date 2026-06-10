@@ -3,6 +3,7 @@
 from typing import Any
 
 from flask import Blueprint, jsonify, request
+from flask.typing import ResponseReturnValue
 
 from dashboard import db
 from dashboard.activity import (
@@ -12,14 +13,14 @@ from dashboard.activity import (
     ACTION_SAVE,
     log_activity,
 )
-from dashboard.auth_user import current_user_can_project
+from dashboard.auth_scopes import current_user_can_project
 from dashboard.models.task import Task, TaskCreate, TaskUpdate
 
 bp = Blueprint("tasks", __name__, url_prefix="/api/v1/tasks")
 
 
 @bp.route("", methods=["GET"])
-def list_tasks() -> Any:
+def list_tasks() -> ResponseReturnValue:
     """List tasks for a project (read scope on its category required)."""
     project_id = request.args.get("project")
     if not project_id:
@@ -36,7 +37,7 @@ def list_tasks() -> Any:
 
 
 @bp.route("/<int:task_id>", methods=["GET"])
-def get_task(task_id: int) -> Any:
+def get_task(task_id: int) -> ResponseReturnValue:
     """Get a single task by id (#168)."""
     conn = db.get_connection()
     queries = db.load_queries()
@@ -52,7 +53,7 @@ def get_task(task_id: int) -> Any:
 
 
 @bp.route("", methods=["POST"])
-def create_task() -> Any:
+def create_task() -> ResponseReturnValue:
     """Create a new task (write scope on the project's category required)."""
     payload = request.get_json() or {}
     target_project = payload.get("project_id")
@@ -172,7 +173,7 @@ def _apply_field_updates(
 
 
 @bp.route("/<int:task_id>", methods=["PATCH"])
-def update_task(task_id: int) -> Any:
+def update_task(task_id: int) -> ResponseReturnValue:
     """Update a task (write scope on its project's category required)."""
     data = TaskUpdate(**request.get_json())
     conn = db.get_connection()
@@ -231,7 +232,7 @@ def update_task(task_id: int) -> Any:
 
 
 @bp.route("/<int:task_id>", methods=["DELETE"])
-def delete_task(task_id: int) -> Any:
+def delete_task(task_id: int) -> ResponseReturnValue:
     """Delete a task (write scope on its project's category required)."""
     conn = db.get_connection()
     queries = db.load_queries()

@@ -19,6 +19,7 @@ import re
 from typing import Any
 
 from flask import Blueprint, make_response, request
+from flask.typing import ResponseReturnValue
 from flask.wrappers import Request
 
 from dashboard.config import Config
@@ -178,7 +179,7 @@ onboard_bp = Blueprint("onboard", __name__)
 
 
 @onboard_bp.route("/onboard/cat/<cat_id>/project/<project_id>", methods=["GET"])
-def onboard_route(cat_id: str, project_id: str) -> Any:
+def onboard_route(cat_id: str, project_id: str) -> ResponseReturnValue:
     """Serve the onboarding runbook as 200 text/plain.
 
     This route has **no authentication**. It exists so that high-level HTTP tools
@@ -196,6 +197,44 @@ def onboard_route(cat_id: str, project_id: str) -> Any:
     response = make_response(body, 200)
     response.headers["Content-Type"] = "text/plain; charset=utf-8"
     return response
+
+
+# Static middle section of the full runbook — everything that doesn't depend
+# on the category/project/token of the URL.
+_RUNBOOK_GUIDE = (
+    "## 3. Travailler\n"
+    "\n"
+    "   ken list --who Claude --status todo --json\n"
+    "   ken show <id> --json\n"
+    '   ken add "MODULE / Titre" --desc "..." --who Claude --status todo\n'
+    "   ken move <id> --to doing\n"
+    "   ken move <id> --to review\n"
+    '   ken update <id> --desc "<original>\\n\\n---\\n\\n## Résolution\\n..."\n'
+    "   ken wiki groom <id> <section>   # classifier après review\n"
+    "\n"
+    "Références :\n"
+    "   ken --help     commandes disponibles\n"
+    "   ken help       guide des bonnes pratiques agent\n"
+    "\n"
+    "## Bonnes pratiques\n"
+    "\n"
+    "- Workflow : todo → doing → review → groom → done\n"
+    "  L'agent gère todo → doing → review puis ken wiki groom.\n"
+    "  Seul l'utilisateur passe review → done.\n"
+    "\n"
+    "- Titres de tâches : MODULE / Titre\n"
+    "  AUTH, BUG, CLEAN, SEC, UI, DOC, QUALITY, AGENT, FIX\n"
+    "\n"
+    "- Avant de passer en review :\n"
+    "  ken move <id> --to review\n"
+    "  ken update <id> --desc (ajouter Résolution : Modifications,\n"
+    "  Comportements obtenus, Garde-fous)\n"
+    "\n"
+    "- Toujours utiliser --json quand on parse la sortie\n"
+    "- Ne jamais marquer une tâche done soi-même\n"
+    "- .ken est gitignored (contient un token), ne jamais le committer\n"
+    "\n"
+)
 
 
 def onboarding_text_full(
@@ -241,40 +280,13 @@ def onboarding_text_full(
         "\n"
         f"cat_id={cat_id}\n"
         f"project_id={project_id}\n"
-        f"base_url={base_url}\n" + token_line.lstrip() + "\n" + step3 + "\n"
-        "## 3. Travailler\n"
-        "\n"
-        "   ken list --who Claude --status todo --json\n"
-        "   ken show <id> --json\n"
-        '   ken add "MODULE / Titre" --desc "..." --who Claude --status todo\n'
-        "   ken move <id> --to doing\n"
-        "   ken move <id> --to review\n"
-        '   ken update <id> --desc "<original>\\n\\n---\\n\\n## Résolution\\n..."\n'
-        "   ken wiki groom <id> <section>   # classifier après review\n"
-        "\n"
-        "Références :\n"
-        "   ken --help     commandes disponibles\n"
-        "   ken help       guide des bonnes pratiques agent\n"
-        "\n"
-        "## Bonnes pratiques\n"
-        "\n"
-        "- Workflow : todo → doing → review → groom → done\n"
-        "  L'agent gère todo → doing → review puis ken wiki groom.\n"
-        "  Seul l'utilisateur passe review → done.\n"
-        "\n"
-        "- Titres de tâches : MODULE / Titre\n"
-        "  AUTH, BUG, CLEAN, SEC, UI, DOC, QUALITY, AGENT, FIX\n"
-        "\n"
-        "- Avant de passer en review :\n"
-        "  ken move <id> --to review\n"
-        "  ken update <id> --desc (ajouter Résolution : Modifications,\n"
-        "  Comportements obtenus, Garde-fous)\n"
-        "\n"
-        "- Toujours utiliser --json quand on parse la sortie\n"
-        "- Ne jamais marquer une tâche done soi-même\n"
-        "- .ken est gitignored (contient un token), ne jamais le committer\n"
-        "\n"
-        "---\n"
+        f"base_url={base_url}\n"
+        + token_line.lstrip()
+        + "\n"
+        + step3
+        + "\n"
+        + _RUNBOOK_GUIDE
+        + "---\n"
         f"cat_id={cat_id}  project_id={project_id}\n"
         f"base_url={base_url}\n"
         + (f"api_token={_sanitize_token(token)}\n" if token else "")

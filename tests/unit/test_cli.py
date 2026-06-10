@@ -151,3 +151,86 @@ class TestUtf8Encoding:
         import dashboard.ken
 
         assert dashboard.ken is not None
+
+
+class TestMigrateCommands:
+    """``kenboard migrate`` / ``migrate-test`` wrap yoyo (mocked here)."""
+
+    def test_migrate_invokes_yoyo_batch_on_prod_db(self):
+        runner = CliRunner()
+        with patch("subprocess.run") as run:
+            result = runner.invoke(cli, ["migrate"])
+        assert result.exit_code == 0, result.output
+        argv = run.call_args[0][0]
+        assert argv[0] == "yoyo"
+        assert "--batch" in argv
+        assert argv[-1].endswith("migrations")
+
+    def test_migrate_test_targets_the_test_db(self):
+        from dashboard.config import Config
+
+        runner = CliRunner()
+        with patch("subprocess.run") as run:
+            result = runner.invoke(cli, ["migrate-test"])
+        assert result.exit_code == 0, result.output
+        argv = run.call_args[0][0]
+        db_url = argv[argv.index("--database") + 1]
+        assert Config.DB_TEST_NAME in db_url
+
+
+class TestSetPassword:
+    """``kenboard set-password`` prompts twice and enforces strength (#198)."""
+
+    STRONG = "Tr0ub4dor&3-horse-staple"
+
+    def _invoke(self, name, prompts):
+        runner = CliRunner()
+        with patch("getpass.getpass", side_effect=prompts):
+            return runner.invoke(cli, ["set-password", name])
+
+    def test_mismatched_passwords_exit_1(self):
+        result = self._invoke("alice", ["one", "two"])
+        assert result.exit_code == 1
+        assert "do not match" in result.output
+
+    def test_weak_password_rejected(self):
+        result = self._invoke("alice", ["abc", "abc"])
+        assert result.exit_code == 1
+
+    def test_unknown_user_exits_1(self, app, db):
+        result = self._invoke("nobody-here", [self.STRONG, self.STRONG])
+        assert result.exit_code == 1
+        assert "not found" in result.output
+
+    def test_updates_password_hash(self, app, db, queries):
+        cur = db.cursor()
+        cur.execute(
+            "INSERT INTO users (id, name, color) VALUES (%s, %s, %s)",
+            ("u-cli", "cliuser", "var(--accent)"),
+        )
+        db.commit()
+        result = self._invoke("cliuser", [self.STRONG, self.STRONG])
+        assert result.exit_code == 0, result.output
+        assert "Password updated" in result.output
+        row = queries.usr_get_by_name(db, name="cliuser")
+        assert row["password_hash"].startswith("$argon2")
+
+
+class TestGrantLegacyRead:
+    """``kenboard grant-legacy-read --yes`` grants read on every category (#197)."""
+
+    def test_grants_read_scope_to_non_admin_users(self, app, db, queries):
+        cur = db.cursor()
+        cur.execute(
+            "INSERT INTO users (id, name, color, is_admin) VALUES (%s, %s, %s, %s)",
+            ("u-legacy", "legacy", "var(--accent)", 0),
+        )
+        cur.execute(
+            "INSERT INTO categories (id, name, color, position) VALUES (%s, %s, %s, %s)",
+            ("cat-legacy", "Legacy", "var(--accent)", 0),
+        )
+        db.commit()
+        result = CliRunner().invoke(cli, ["grant-legacy-read", "--yes"])
+        assert result.exit_code == 0, result.output
+        rows = list(queries.usr_scopes_get(db, user_id="u-legacy"))
+        assert any(r["category_id"] == "cat-legacy" for r in rows)

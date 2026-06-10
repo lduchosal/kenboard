@@ -74,7 +74,7 @@ def _bucket_activity_by_person(
     return per_day, totals_by_person
 
 
-def _layout_taskers_bars(
+def _layout_taskers_bars(  # noqa: PLR0913 — géométrie : données + dimensions explicites
     per_day: dict[str, dict[str, int]],
     day_keys: list[str],
     persons: list[str],

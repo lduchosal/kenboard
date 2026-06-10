@@ -10,9 +10,9 @@ from __future__ import annotations
 import hashlib
 import secrets
 import uuid
-from typing import Any
 
 from flask import render_template, request
+from flask.typing import ResponseReturnValue
 
 from dashboard import db
 from dashboard import email as email_mod
@@ -36,14 +36,14 @@ _INVALID_LINK_MSG = "Lien invalide ou expiré."
 
 
 @bp.route("/forgot-password", methods=["GET"])
-def forgot_password() -> Any:
+def forgot_password() -> ResponseReturnValue:
     """Render the forgot-password form."""
     return render_template(_FORGOT_TEMPLATE, message=None, is_error=False)
 
 
 @bp.route("/forgot-password", methods=["POST"])
 @limiter.limit(_FORGOT_RATE_LIMITS)
-def forgot_password_post() -> Any:
+def forgot_password_post() -> ResponseReturnValue:
     """Generate a reset token and send the email.
 
     Always responds with the same message regardless of whether the email exists — no
@@ -87,7 +87,7 @@ def forgot_password_post() -> Any:
 
 
 @bp.route("/reset-password/<token>", methods=["GET"])
-def reset_password(token: str) -> Any:
+def reset_password(token: str) -> ResponseReturnValue:
     """Render the new-password form if the token is valid."""
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     conn = db.get_connection()
@@ -106,7 +106,7 @@ def reset_password(token: str) -> Any:
 
 
 @bp.route("/reset-password/<token>", methods=["POST"])
-def reset_password_post(token: str) -> Any:
+def reset_password_post(token: str) -> ResponseReturnValue:
     """Validate the token and apply the new password."""
     token_hash = hashlib.sha256(token.encode()).hexdigest()
     password = request.form.get("password") or ""

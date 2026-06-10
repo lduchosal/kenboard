@@ -18,7 +18,7 @@ from __future__ import annotations
 import secrets
 import uuid
 from datetime import timedelta
-from typing import Any
+from typing import cast
 
 from authlib.integrations.flask_client import OAuth
 from flask import (
@@ -29,6 +29,7 @@ from flask import (
     session,
     url_for,
 )
+from flask.typing import ResponseReturnValue
 from flask_login import login_user
 
 from dashboard import db
@@ -69,15 +70,16 @@ def init_oidc(app: Flask) -> None:
 
 
 @bp.route("/oidc/login", methods=["GET"])
-def oidc_login() -> Any:
+def oidc_login() -> ResponseReturnValue:
     """Redirect the browser to the IdP's authorization endpoint."""
     session["oidc_next"] = session.get("next") or ""
     redirect_uri = url_for("auth_oidc.oidc_callback", _external=True)
-    return oauth.oidc.authorize_redirect(redirect_uri)
+    # authlib n'est pas typé (retourne Any) ; c'est un redirect Flask.
+    return cast("ResponseReturnValue", oauth.oidc.authorize_redirect(redirect_uri))
 
 
 @bp.route("/oidc/callback", methods=["GET"])
-def oidc_callback() -> Any:
+def oidc_callback() -> ResponseReturnValue:
     """Exchange the authorization code for tokens and log the user in.
 
     The ``id_token`` is verified automatically by Authlib (signature, audience, expiry

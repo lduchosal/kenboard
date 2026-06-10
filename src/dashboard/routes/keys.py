@@ -13,6 +13,7 @@ import uuid
 from typing import Any
 
 from flask import Blueprint, g, jsonify, request
+from flask.typing import ResponseReturnValue
 
 from dashboard import db
 from dashboard.auth import _hash_key
@@ -53,7 +54,7 @@ def _serialize(row: dict[str, Any]) -> dict[str, Any]:
 
 
 @bp.route("", methods=["GET"])
-def list_keys() -> Any:
+def list_keys() -> ResponseReturnValue:
     """List all api_keys (without the plain-text key, ever)."""
     conn = db.get_connection()
     queries = db.load_queries()
@@ -66,7 +67,7 @@ def list_keys() -> Any:
 
 @bp.route("", methods=["POST"])
 @limiter.limit("10 per hour")
-def create_key() -> Any:
+def create_key() -> ResponseReturnValue:
     """Create a new api_key.
 
     Returns the plain-text key ONCE in the response.
@@ -113,7 +114,7 @@ def create_key() -> Any:
 
 
 @bp.route("/onboard", methods=["POST"])
-def create_onboard_token() -> Any:
+def create_onboard_token() -> ResponseReturnValue:
     """Create (or replace) an onboarding token for a project (#159).
 
     If an active onboarding token already exists for the project, it is revoked and a
@@ -172,7 +173,7 @@ def create_onboard_token() -> Any:
 
 
 @bp.route("/<key_id>", methods=["PATCH"])
-def update_key(key_id: str) -> Any:
+def update_key(key_id: str) -> ResponseReturnValue:
     """Update label, expires_at, and/or scopes of an api_key."""
     data = ApiKeyUpdate(**request.get_json())
     conn = db.get_connection()
@@ -219,7 +220,7 @@ def update_key(key_id: str) -> Any:
 
 
 @bp.route("/<key_id>", methods=["DELETE"])
-def revoke_key(key_id: str) -> Any:
+def revoke_key(key_id: str) -> ResponseReturnValue:
     """Revoke an api_key (sets revoked_at = NOW()).
 
     Idempotent.

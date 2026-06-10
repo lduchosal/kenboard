@@ -6,6 +6,7 @@ from typing import Any
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from flask import Blueprint, g, jsonify, request
+from flask.typing import ResponseReturnValue
 from flask_login import current_user
 
 from dashboard import db
@@ -41,7 +42,7 @@ def _row_with_scopes(conn: Any, queries: Any, row: dict[str, Any]) -> dict[str, 
 
 
 @bp.route("", methods=["GET"])
-def list_users() -> Any:
+def list_users() -> ResponseReturnValue:
     """List all users with their category scopes (#197)."""
     conn = db.get_connection()
     queries = db.load_queries()
@@ -55,7 +56,7 @@ def list_users() -> Any:
 
 @bp.route("", methods=["POST"])
 @limiter.limit("10 per hour")
-def create_user() -> Any:
+def create_user() -> ResponseReturnValue:
     """Create a new user."""
     data = UserCreate(**request.get_json())
     conn = db.get_connection()
@@ -92,7 +93,7 @@ def create_user() -> Any:
 
 
 @bp.route("/<user_id>", methods=["PATCH"])
-def update_user(user_id: str) -> Any:
+def update_user(user_id: str) -> ResponseReturnValue:
     """Update a user (name, color, is_admin only — passwords go elsewhere)."""
     data = UserUpdate(**request.get_json())
     conn = db.get_connection()
@@ -131,7 +132,7 @@ def update_user(user_id: str) -> Any:
 
 
 @bp.route("/<user_id>/password", methods=["POST"])
-def change_password(user_id: str) -> Any:
+def change_password(user_id: str) -> ResponseReturnValue:
     """Change one's own password (#53).
 
     Requires a Flask-Login session that matches ``user_id`` and a valid
@@ -170,7 +171,7 @@ def change_password(user_id: str) -> Any:
 
 @bp.route("/<user_id>/reset-password", methods=["POST"])
 @limiter.limit("5 per hour")
-def reset_password(user_id: str) -> Any:
+def reset_password(user_id: str) -> ResponseReturnValue:
     """Admin reset of another user's password (#53).
 
     Caller must be an admin (cookie session with ``is_admin=True`` or the static
@@ -194,7 +195,7 @@ def reset_password(user_id: str) -> Any:
 
 
 @bp.route("/<user_id>/scopes", methods=["PUT"])
-def update_user_scopes(user_id: str) -> Any:
+def update_user_scopes(user_id: str) -> ResponseReturnValue:
     """Replace a user's category scopes atomically (#197).
 
     Admin only. The request body ``{"scopes": [...]}`` fully replaces the
@@ -246,7 +247,7 @@ def update_user_scopes(user_id: str) -> Any:
 
 
 @bp.route("/<user_id>", methods=["DELETE"])
-def delete_user(user_id: str) -> Any:
+def delete_user(user_id: str) -> ResponseReturnValue:
     """Delete a user."""
     conn = db.get_connection()
     queries = db.load_queries()
