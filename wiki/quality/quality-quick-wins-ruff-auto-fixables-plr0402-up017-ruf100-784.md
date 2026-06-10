@@ -1,7 +1,7 @@
 ---
 id: 784
 title: "QUALITY / Quick wins ruff auto-fixables (PLR0402, UP017, RUF100)"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-06-09T23:46:32

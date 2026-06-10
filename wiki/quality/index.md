@@ -4,14 +4,7 @@ Tests (unit/integration/e2e), lint, typecheck, coverage, Sonarcloud.
 
 Section: `quality`
 
-## En cours (4)
-
-- [QUALITY / Code cleanup : analyse du repo python et plan de nettoyage](quality-code-cleanup-analyse-du-repo-python-et-plan-de-nettoyage-783.md) — _review_
-- [QUALITY / Quick wins ruff auto-fixables (PLR0402, UP017, RUF100)](quality-quick-wins-ruff-auto-fixables-plr0402-up017-ruf100-784.md) — _review_
-- [QUALITY / Datetimes naïfs : corriger ou justifier les 6 sites DTZ](quality-datetimes-naifs-corriger-ou-justifier-les-6-sites-dtz-785.md) — _review_
-- [CI / SonarCloud / Quality Gate](ci-sonarcloud-quality-gate-411.md) — _todo_
-
-## Archivé (29)
+## Archivé (43)
 
 - [TEST / AUTH / Tests units & E2E Test](test-auth-tests-units-e2e-test-13.md)
 - [TEST / Tests units && E2E](test-tests-units-e2e-18.md)
@@ -41,4 +34,18 @@ Section: `quality`
 - [CI / Error: SONAR_TOKEN not found in env or .env](ci-error-sonar-token-not-found-in-env-or-env-346.md)
 - [QUALITY / Sonarcloud](quality-sonarcloud-372.md)
 - [CI / SonarCloud / Quality Gate](ci-sonarcloud-quality-gate-375.md)
+- [CI / SonarCloud / Quality Gate](ci-sonarcloud-quality-gate-411.md)
 - [BUG / QUALITY / e2e test_duplicate_task[chromium] flaky — race sur l'init du modal](bug-quality-e2e-test-duplicate-task-chromium-flaky-race-sur-l-init-du-modal-570.md)
+- [QUALITY / Code cleanup : analyse du repo python et plan de nettoyage](quality-code-cleanup-analyse-du-repo-python-et-plan-de-nettoyage-783.md)
+- [QUALITY / Quick wins ruff auto-fixables (PLR0402, UP017, RUF100)](quality-quick-wins-ruff-auto-fixables-plr0402-up017-ruf100-784.md)
+- [QUALITY / Datetimes naïfs : corriger ou justifier les 6 sites DTZ](quality-datetimes-naifs-corriger-ou-justifier-les-6-sites-dtz-785.md)
+- [QUALITY / Règles d'architecture structurelles automatisées (import-linter + tests)](quality-regles-d-architecture-structurelles-automatisees-import-linter-tests-787.md)
+- [QUALITY / Gate métriques bloquant au publish (taille fichiers, longueur fonctions, complexité)](quality-gate-metriques-bloquant-au-publish-taille-fichiers-longueur-fonctions-complexite-788.md)
+- [QUALITY / Palier 1 — gate vert : C901 → 0 + ruff_debt ≤ 240](quality-palier-1-gate-vert-c901-0-ruff-debt-240-789.md)
+- [QUALITY / Palier 2 — gate vert : fichiers ≤ 700, fonctions ≤ 100, dette ≤ 150, min_file_cov ≥ 40](quality-palier-2-gate-vert-fichiers-700-fonctions-100-dette-150-min-file-cov-40-798.md)
+- [QUALITY / Palier 3 — gate vert : fichiers ≤ 500, fonctions ≤ 80, dette ≤ 60, min_file_cov ≥ 60](quality-palier-3-gate-vert-fichiers-500-fonctions-80-dette-60-min-file-cov-60-803.md)
+- [QUALITY / Palier 3 — gate vert : fichiers ≤ 500, fonctions ≤ 80, dette ≤ 60, min_file_cov ≥ 60](quality-palier-3-gate-vert-fichiers-500-fonctions-80-dette-60-min-file-cov-60-804.md)
+- [QUALITY / Palier 4 — gate vert : fichiers ≤ 400, fonctions ≤ 60, dette ≤ 20, min_file_cov ≥ 70](quality-palier-4-gate-vert-fichiers-400-fonctions-60-dette-20-min-file-cov-70-805.md)
+- [QUALITY / Palier 4 — gate vert : fichiers ≤ 400, fonctions ≤ 60, dette ≤ 20, min_file_cov ≥ 70](quality-palier-4-gate-vert-fichiers-400-fonctions-60-dette-20-min-file-cov-70-806.md)
+- [QUALITY / Palier 5 (final) — gate vert : fichiers ≤ 300, fonctions ≤ 50, dette = 0, min_file_cov ≥ 75](quality-palier-5-final-gate-vert-fichiers-300-fonctions-50-dette-0-min-file-cov-75-807.md)
+- [QUALITY / Palier 5 (final) — gate vert : fichiers ≤ 300, fonctions ≤ 50, dette = 0, min_file_cov ≥ 75](quality-palier-5-final-gate-vert-fichiers-300-fonctions-50-dette-0-min-file-cov-75-808.md)

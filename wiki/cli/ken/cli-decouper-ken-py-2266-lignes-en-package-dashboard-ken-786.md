@@ -1,7 +1,7 @@
 ---
 id: 786
 title: "CLI / Découper ken.py (2266 lignes) en package dashboard/ken/"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-06-10T07:24:05

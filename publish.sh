@@ -65,9 +65,9 @@ if [ "$QUALITY_ONLY" = true ]; then
     fi
 else
     if [ "$CI_MODE" = true ]; then
-        STEPS=28
+        STEPS=30
     else
-        STEPS=29
+        STEPS=31
     fi
 fi
 STEP=0
@@ -208,6 +208,16 @@ if [ "$QUALITY_ONLY" = true ]; then
     echo ""
     exit 0
 fi
+
+# Refresh the kenboard wiki from classified tasks so the release commit
+# below ships an up-to-date wiki/ (MD source, git-tracked). wiki-html/ is
+# gitignored — the build step acts as a render check only. Needs the board
+# API (.ken token), hence publish-only: --quality/CI never reach this point.
+print_step "Wiki Sync (ken wiki sync)"
+run_command "pdm run ken wiki sync" "Wiki sync"
+
+print_step "Wiki Build (ken wiki build)"
+run_command "pdm run ken wiki build" "Wiki build"
 
 # Push code to trigger Sonarcloud analysis, then wait for the gate
 print_step "Pushing Code for Sonarcloud Analysis"

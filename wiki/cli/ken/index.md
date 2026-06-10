@@ -4,12 +4,7 @@ list/show/add/update/move/done + wiki subcommands.
 
 Section: `cli/ken`
 
-## En cours (2)
-
-- [CLI / Split .ken (secrets) + ken.ini (config versionnée)](cli-split-ken-secrets-ken-ini-config-versionnee-778.md) — _review_
-- [CLI / Découper ken.py (2266 lignes) en package dashboard/ken/](cli-decouper-ken-py-2266-lignes-en-package-dashboard-ken-786.md) — _review_
-
-## Archivé (22)
+## Archivé (24)
 
 - [CLI / CLI ken pour Claude](cli-cli-ken-pour-claude-5.md)
 - [AGENT / CLI / Bonnes pratiques](agent-cli-bonnes-pratiques-118.md)
@@ -33,3 +28,5 @@ Section: `cli/ken`
 - [WIKI / sync et build / DIR dans le .ken](wiki-sync-et-build-dir-dans-le-ken-479.md)
 - [AGENT / post-processeur LLM des tâches paintbrush](agent-post-processeur-llm-des-taches-paintbrush-550.md)
 - [CLI / ken — exposer l'attachement SVG (#541) sur show/add/update + doc agent_guide](cli-ken-exposer-l-attachement-svg-541-sur-show-add-update-doc-agent-guide-574.md)
+- [CLI / Split .ken (secrets) + ken.ini (config versionnée)](cli-split-ken-secrets-ken-ini-config-versionnee-778.md)
+- [CLI / Découper ken.py (2266 lignes) en package dashboard/ken/](cli-decouper-ken-py-2266-lignes-en-package-dashboard-ken-786.md)

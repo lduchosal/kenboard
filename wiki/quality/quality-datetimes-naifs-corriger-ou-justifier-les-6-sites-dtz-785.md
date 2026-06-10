@@ -1,7 +1,7 @@
 ---
 id: 785
 title: "QUALITY / Datetimes naïfs : corriger ou justifier les 6 sites DTZ"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-06-09T23:51:27

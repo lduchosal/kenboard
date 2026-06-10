@@ -1,7 +1,7 @@
 ---
 id: 783
 title: "QUALITY / Code cleanup : analyse du repo python et plan de nettoyage"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-06-09T22:00:43

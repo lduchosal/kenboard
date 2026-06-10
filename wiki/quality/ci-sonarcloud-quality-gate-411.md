@@ -1,7 +1,7 @@
 ---
 id: 411
 title: "CI / SonarCloud / Quality Gate"
-status: todo
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-05-24T14:30:08

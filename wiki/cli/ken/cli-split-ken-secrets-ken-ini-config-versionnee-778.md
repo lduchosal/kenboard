@@ -1,7 +1,7 @@
 ---
 id: 778
 title: "CLI / Split .ken (secrets) + ken.ini (config versionnée)"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-06-09T09:01:05
