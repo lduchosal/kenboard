@@ -26,21 +26,21 @@ et l'historique long terme côté cloud.
 
 ## Critères suivis
 
-| Critère | Définition | Baseline (2026-06-09, v0.1.132) | Direction |
-|---|---|---:|---|
-| `loc_src` | lignes totales `src/dashboard/**/*.py` | 8 101 | informatif |
-| `max_file_lines` | plus gros fichier (ken.py) | 2 266 | ↓ |
-| `files_over_500` | fichiers > 500 lignes | 3 | ↓ → 0 |
-| `functions` | fonctions définies (AST) | 267 | informatif |
-| `max_func_lines` | plus longue fonction (`groom`, ken.py) | 126 | ↓ |
-| `funcs_over_50` | fonctions > 50 lignes | 25 | ↓ |
-| `c901_over_10` | fonctions de complexité cyclomatique > 10 (ruff C901) | 3 | ↓ → 0 |
-| `ruff_debt` | findings du jeu de règles ruff *non encore imposées* (voir ci-dessous) | 267 | ↓ |
-| `mypy_errors` | erreurs mypy strict | 0 | = 0 (gate) |
-| `vulture` | code mort (confiance ≥ 80) | 0 | = 0 (gate) |
-| `refurb` | findings refurb | 0 | = 0 (gate) |
-| `docstring_cov` | couverture docstrings (interrogate) | 100 % | ≥ 95 (gate) |
-| `test_cov` | couverture de tests (hors e2e) | 89.29 % | ↑, ≥ 75 (gate) |
+| Critère | Définition | Baseline (2026-06-09, v0.1.132) | 2026-06-10 (v0.1.133) | Direction |
+|---|---|---:|---:|---|
+| `loc_src` | lignes totales `src/dashboard/**/*.py` | 8 101 | 8 317 | informatif |
+| `max_file_lines` | plus gros fichier | 2 266 (ken.py) | 890 (auth_user.py) | ↓ |
+| `files_over_500` | fichiers > 500 lignes | 3 | 2 | ↓ → 0 |
+| `functions` | fonctions définies (AST) | 267 | 267 | informatif |
+| `max_func_lines` | plus longue fonction | 126 (`groom`, ken.py) | 126 (`groom`, ken/wiki.py) | ↓ |
+| `funcs_over_50` | fonctions > 50 lignes | 25 | 25 | ↓ |
+| `c901_over_10` | fonctions de complexité cyclomatique > 10 (ruff C901) | 3 | 3 | ↓ → 0 |
+| `ruff_debt` | findings du jeu de règles ruff *non encore imposées* (voir ci-dessous) | 267 | 255 | ↓ |
+| `mypy_errors` | erreurs mypy strict | 0 | 0 | = 0 (gate) |
+| `vulture` | code mort (confiance ≥ 80) | 0 | 0 | = 0 (gate) |
+| `refurb` | findings refurb | 0 | 0 | = 0 (gate) |
+| `docstring_cov` | couverture docstrings (interrogate) | 100 % | 100 % | ≥ 95 (gate) |
+| `test_cov` | couverture de tests (hors e2e) | 89.29 % | 89.54 % | ↑, ≥ 75 (gate) |
 
 Le jeu `ruff_debt` (constante `DEBT_SELECT` du script) :
 `PLC0415, PLR, DTZ, EM, TRY, PERF, PTH, FBT, ARG, BLE, SLF, G, ANN401, RUF`.
@@ -71,22 +71,39 @@ La dette restante est donc structurelle, pas du laisser-aller :
   d'exception), `PLR0402` ×12 (auto-fixable), `DTZ` ×6 (datetimes naïfs).
 - **Couverture inégale** : `email.py` 30 %, `cli.py` 42 % — le reste ≥ 83 %.
 
+### Mise à jour 2026-06-10 (v0.1.133, post #784–786)
+
+Le refactoring #784 (quick wins ruff), #785 (DTZ) et #786 (découpe de
+`ken.py` en package `dashboard/ken/`) a purgé les étapes 1, 2 et 4 du plan :
+`max_file_lines` 2 266 → 890, `files_over_500` 3 → 2, `ruff_debt` 267 → 255,
+`DTZ` et `PLR0402` à zéro. Reste inchangé :
+
+- **`c901_over_10` = 3** — `groom` (16, `ken/wiki.py:164`, toujours 126
+  lignes), `_resolve_project_id` (11, `auth.py:89`), `init_perf` (11,
+  `perf.py:266`). Étape 3 du plan, non couverte par #784–786 → ken #789.
+- **`funcs_over_50` = 25** — le découpage a déplacé les fonctions sans les
+  raccourcir. Top : `groom` 126, `_build_taskers_daily_chart` 110
+  (`routes/pages.py`), `category` 90 (`routes/pages.py`),
+  `onboarding_text_full` 82, `verify_email` 81 (`auth_user.py`).
+- **2 fichiers > 500 lignes** : `auth_user.py` (891), `routes/pages.py` (702).
+- **`ruff_debt` 255**, dominé par `ANN401` ×111, `PLC0415` ×48, `FBT001` ×18,
+  `TRY003` ×17, `RUF100` ×10 (noqa rendus obsolètes par le refactoring —
+  auto-fixables), `EM10x` ×17.
+- **Couverture** : `email.py` 30 % et `cli.py` 42 % restent les points
+  faibles ; le nouveau `ken/cli.py` est à 74 %, le reste ≥ 83 %.
+
 ## Plan de nettoyage proposé (priorisé)
 
-1. **Quick wins auto-fixables** — `PLR0402` (×12), `UP017` (×2), `RUF100`
-   (×1) : un `ruff check --select PLR0402,UP017,RUF100 --fix` + revue.
-   Effort minutes, `ruff_debt` −15.
-2. **Datetimes naïfs (`DTZ005`/`DTZ011`, ×6)** — bug latent de fuseau
-   (`app.py`, `auth_user.py`, `pages.py`, `models/task.py`, `cli.py`,
-   `ken.py`) : passer à `datetime.now(timezone.utc)` là où la valeur est
-   stockée/comparée. Vérifier la cohérence avec les colonnes MySQL.
+1. ~~**Quick wins auto-fixables**~~ — ✅ fait (ken #784, 2026-06-10).
+   Nouveaux `RUF100` ×10 apparus depuis (noqa obsolètes post-refactoring),
+   auto-fixables au prochain passage.
+2. ~~**Datetimes naïfs (`DTZ005`/`DTZ011`)**~~ — ✅ fait (ken #785,
+   2026-06-10). `DTZ` = 0.
 3. **Casser la complexité des 3 fonctions C901** — extraire des helpers de
    `groom`, `_resolve_project_id`, `init_perf`. Cible : `c901_over_10 = 0`,
-   puis ajouter `C901` au gate ruff (ratchet).
-4. **Découper `ken.py` en package** `dashboard/ken/` (config, client HTTP,
-   formatting, commandes task, commandes wiki) en gardant l'entry point
-   `dashboard.ken:cli`. C'est le gros morceau : `max_file_lines` 2 266 → <500,
-   et ça débloque la baisse de `funcs_over_50`.
+   puis ajouter `C901` au gate ruff (ratchet). → ken #789.
+4. ~~**Découper `ken.py` en package**~~ — ✅ fait (ken #786, 2026-06-10).
+   `max_file_lines` 2 266 → 890, entry point `dashboard.ken:cli` conservé.
 5. **Couverture `email.py` (30 %) et `cli.py` (42 %)** — tests unitaires sur
    l'envoi SMTP (mock `aiosmtpd` déjà en dev-deps) et les commandes admin.
    Cible `test_cov` ≥ 92 %.
