@@ -2,17 +2,17 @@
   <div class="project-add-card">
     <button class="modal-close" onclick="this.closest('.project-add-modal').style.display='none'">&times;</button>
     <h3 id="task-modal-heading">Nouvelle t&acirc;che</h3>
-    <div class="edit-row"><input type="text" id="task-modal-title" placeholder="Titre" style="font-weight:600"></div>
-    <div class="edit-row"><textarea id="task-modal-desc" placeholder="Detail"></textarea></div>
+    <div class="edit-row"><input type="text" id="task-modal-title" placeholder="Titre" aria-label="Titre de la t&acirc;che" style="font-weight:600"></div>
+    <div class="edit-row"><textarea id="task-modal-desc" placeholder="Detail" aria-label="Description"></textarea></div>
     <div id="task-modal-attachement" class="task-modal-attachement" style="display:none" title="Annotation paintbrush attachée à la tâche"></div>
     <div class="edit-row">
-      <select id="task-modal-who">
+      <select id="task-modal-who" aria-label="Assign&eacute; &agrave;">
         {% for name in avatar_colors %}
         <option {% if current_user.is_authenticated and current_user.name == name %}selected{% endif %}>{{ name }}</option>
         {% endfor %}
       </select>
-      <input type="text" id="task-modal-when" placeholder="dd.mm" style="width:60px;flex:none">
-      <select id="task-modal-status">
+      <input type="text" id="task-modal-when" placeholder="dd.mm" aria-label="&Eacute;ch&eacute;ance" style="width:60px;flex:none">
+      <select id="task-modal-status" aria-label="Statut">
         {% for col in columns %}
         <option value="{{ col.id }}">{{ col.name }}</option>
         {% endfor %}

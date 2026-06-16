@@ -2,13 +2,13 @@
   <div class="project-add-card">
     <button class="modal-close" onclick="this.closest('.project-add-modal').style.display='none'">&times;</button>
     <h3 id="proj-modal-title">Projet</h3>
-    <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" style="font-weight:600"></div>
+    <div class="edit-row"><input type="text" id="new-proj-name" placeholder="Nom du projet" aria-label="Nom du projet" style="font-weight:600"></div>
     <div class="edit-row">
-      <input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" style="width:60px;flex:none;text-transform:uppercase">
-      <select id="new-proj-status"><option value="active">Actif</option><option value="archived">Archiv&eacute;</option></select>
+      <input type="text" id="new-proj-acronym" placeholder="ACRO" maxlength="4" aria-label="Acronyme du projet" style="width:60px;flex:none;text-transform:uppercase">
+      <select id="new-proj-status" aria-label="Statut du projet"><option value="active">Actif</option><option value="archived">Archiv&eacute;</option></select>
     </div>
     <div class="edit-row">
-      <select id="new-proj-default-who" title="Utilisateur par d&eacute;faut">
+      <select id="new-proj-default-who" title="Utilisateur par d&eacute;faut" aria-label="Utilisateur par d&eacute;faut">
         <option value="">— par d&eacute;faut: utilisateur logu&eacute; —</option>
         {% for name in avatar_colors %}
         <option value="{{ name }}">{{ name }}</option>
