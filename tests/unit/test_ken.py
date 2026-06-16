@@ -1342,6 +1342,48 @@ class TestCliMutations:
         assert 'href="backend/index.html"' in index
         assert "index.md" not in index  # all .md links rewritten
 
+    def test_wiki_build_deep_page_links_resolve(self, cwd_tmp, runner):
+        # #856 — end-to-end guard: a depth-2 section page must emit links that
+        # resolve to files that exist. This also pins the Windows root cause —
+        # if the caller reverts to str(rel) (backslashes), the deep page's
+        # Home href collapses to "index.html" and this fails on Windows CI.
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: functional\n"
+            "      title: Hostgroups\n"
+            "      sub:\n"
+            "        - id: base\n"
+            "          title: BASE\n",
+        )
+        wiki = cwd_tmp / "wiki"
+        wiki.mkdir()
+        (wiki / "index.md").write_text("# kenboard wiki\n", encoding="utf-8")
+        (wiki / "functional").mkdir()
+        (wiki / "functional" / "index.md").write_text(
+            "# Hostgroups\n", encoding="utf-8"
+        )
+        (wiki / "functional" / "base").mkdir()
+        (wiki / "functional" / "base" / "index.md").write_text(
+            "# BASE\n", encoding="utf-8"
+        )
+        result = runner.invoke(ken.cli, ["wiki", "build"])
+        assert result.exit_code == 0, result.output
+        out = cwd_tmp / "wiki-html"
+        deep = out / "functional" / "base" / "index.html"
+        body = deep.read_text(encoding="utf-8")
+        # No backslashes leaked into hrefs or path keys.
+        assert "\\" not in body
+        # Home climbs two levels; parent section climbs one.
+        m_home = re.search(r'<a href="([^"]+)"[^>]*>Home</a>', body)
+        assert m_home and m_home.group(1) == "../../index.html"
+        m_func = re.search(r'<a href="([^"]+)"[^>]*>Hostgroups</a>', body)
+        assert m_func and m_func.group(1) == "../index.html"
+        # Every emitted internal href resolves to a file that exists on disk.
+        for href in re.findall(r'<a href="([^"#]+\.html)"', body):
+            resolved = (deep.parent / href).resolve()
+            assert resolved.is_file(), f"dangling link {href!r} -> {resolved}"
+
     def test_wiki_build_missing_input_fails(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
         self._write_architecture(
@@ -1952,7 +1994,12 @@ class TestSlugify:
 
 
 class TestSidebarNav:
-    """``_format_sidebar_nav`` builds file://-safe relative hrefs (#741)."""
+    """``_format_sidebar_nav`` builds hrefs relative to each page's directory.
+
+    Links are computed with ``posixpath.relpath`` so they resolve at any nesting
+    depth and under any mount point — ``file://``, ``/``, or ``/wiki/`` (#856,
+    superseding the ``../``-prefix scheme of #741).
+    """
 
     @staticmethod
     def _sections():
@@ -1998,11 +2045,12 @@ class TestSidebarNav:
 
     def test_section_index_climbs_one_level(self):
         html = ken._format_sidebar_nav(self._sections(), "docs/index.md", "docs")
-        # #741 — Home was "index.html" (resolves to docs/index.html), now ../.
+        # From docs/, Home climbs one level; the section's own link is a
+        # self-reference (#856 — minimal relpath, not "../docs/index.html").
         assert self._home_href(html) == "../index.html"
         assert self._section_href(html, "Backend") == "../backend/index.html"
-        assert self._section_href(html, "Documentation") == "../docs/index.html"
-        assert 'href="../docs/index.html" class="current"' in html
+        assert self._section_href(html, "Documentation") == "index.html"
+        assert 'href="index.html" class="current"' in html
 
     def test_task_page_in_section_climbs_one_level(self):
         html = ken._format_sidebar_nav(
@@ -2012,19 +2060,19 @@ class TestSidebarNav:
         )
         # Task page sits in docs/, same depth as docs/index.html.
         assert self._home_href(html) == "../index.html"
-        assert self._section_href(html, "Documentation") == "../docs/index.html"
+        assert self._section_href(html, "Documentation") == "index.html"
 
     def test_nested_section_climbs_two_levels(self):
-        # #741 — Home was "../index.html" (resolves to backend/index.html),
-        # now correctly "../../index.html".
+        # From backend/api/, Home climbs two levels; sibling sections resolve via
+        # the shortest relative path (#856).
         html = ken._format_sidebar_nav(
             self._sections(),
             "backend/api/index.md",
             "backend/api",
         )
         assert self._home_href(html) == "../../index.html"
-        assert self._section_href(html, "Backend") == "../../backend/index.html"
-        assert self._section_href(html, "REST API") == "../../backend/api/index.html"
+        assert self._section_href(html, "Backend") == "../index.html"
+        assert self._section_href(html, "REST API") == "index.html"
 
     def test_task_page_in_nested_section_climbs_two_levels(self):
         html = ken._format_sidebar_nav(
@@ -2033,7 +2081,7 @@ class TestSidebarNav:
             "backend/api",
         )
         assert self._home_href(html) == "../../index.html"
-        assert self._section_href(html, "REST API") == "../../backend/api/index.html"
+        assert self._section_href(html, "REST API") == "index.html"
 
     def test_no_home_when_current_section_none(self):
         html = ken._format_sidebar_nav(self._sections(), "log.md", None)
@@ -2080,9 +2128,10 @@ class TestSidebarNav:
             "log/2026-06-04",
             daily_dates=["2026-06-04", "2026-06-01"],
         )
-        # Day link is current, but the Journal index is not.
-        assert '<a href="../log/2026-06-04.html" class="current">2026-06-04</a>' in html
-        assert '<a href="../log/index.html">Journal</a>' in html
+        # Day link is current, but the Journal index is not. Both are inside
+        # log/, so they resolve to bare filenames (#856 — minimal relpath).
+        assert '<a href="2026-06-04.html" class="current">2026-06-04</a>' in html
+        assert '<a href="index.html">Journal</a>' in html
 
     def test_journal_index_highlighted_on_log_index(self):
         html = ken._format_sidebar_nav(
@@ -2091,7 +2140,52 @@ class TestSidebarNav:
             "log",
             daily_dates=["2026-06-04"],
         )
-        assert '<a href="../log/index.html" class="current">Journal</a>' in html
+        assert '<a href="index.html" class="current">Journal</a>' in html
+
+    def test_acceptance_856_depth2_page_links_resolve(self):
+        # #856 — exact acceptance criteria from the bug report: on a depth-2
+        # page the Home link is "../../index.html" and the link to the parent
+        # section "functional/index.html" is "../index.html". Sibling sections
+        # resolve via "../<sibling>/index.html"; the page's own section is a
+        # self-reference. The previous root-relative emission (no "../") left
+        # every link broken on any sub-page.
+        from dashboard.wiki import Section
+
+        sections = [
+            Section(
+                id="functional",
+                title="Hostgroups fonctionnels",
+                sub=[
+                    Section(id="base", title="BASE"),
+                    Section(id="freebsd", title="FreeBSD"),
+                ],
+            ),
+        ]
+        html = ken._format_sidebar_nav(
+            sections,
+            "functional/base/index.md",
+            "functional/base",
+            daily_dates=["2026-06-12"],
+        )
+        assert self._home_href(html) == "../../index.html"
+        assert self._section_href(html, "Hostgroups fonctionnels") == "../index.html"
+        assert self._section_href(html, "FreeBSD") == "../freebsd/index.html"
+        assert self._section_href(html, "BASE") == "index.html"
+        # Journal links climb back to the wiki root from depth 2.
+        assert '<a href="../../log/2026-06-12.html"' in html
+
+    def test_links_are_os_independent_with_posix_input(self):
+        # #856 — the caller (_build_html_plan) must hand this function an
+        # as_posix() path. A backslash path (what str(WindowsPath) yields)
+        # would zero the relpath and reintroduce the bug, so assert the
+        # forward-slash contract produces a climbing Home link.
+        html = ken._format_sidebar_nav(
+            self._sections(),
+            "backend/api/index.md",
+            "backend/api",
+        )
+        assert "\\" not in html
+        assert self._home_href(html) == "../../index.html"
 
 
 class TestLogHelpers:
@@ -2155,7 +2249,55 @@ class TestLogHelpers:
         # Each link goes ../<section>/<slug>-<id>.md (build rewrites to .html).
         assert "../wiki/slugify-accents-740.md" in out
         assert "../wiki/sidebar-home-741.md" in out
-        assert "`wiki`" in out and "par Claude" in out
+        assert "`wiki`" in out
+
+    def test_format_log_day_drops_opaque_actor(self):
+        # #857 — the ``classified_by`` actor (an opaque ``key:…:user:…`` token)
+        # is pure noise on the journal and must never reach the rendered page.
+        out = ken._format_log_day_md(
+            "2026-06-04",
+            [
+                {
+                    "task_id": 444,
+                    "title": "PERF / GET /cat/.html / budget 554.0ms > 500ms",
+                    "section_path": "backend/perf",
+                    "classified_by": (
+                        "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:"
+                        "user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
+                    ),
+                    "status": "done",
+                },
+            ],
+        )
+        assert "par " not in out
+        assert "key:" not in out
+        assert "user:" not in out
+
+    def test_format_log_day_hides_status_when_archived(self):
+        # #857 — "done" is the dominant status on a journal page and carries no
+        # signal, so it is hidden; a non-archived status (review) is still shown.
+        out = ken._format_log_day_md(
+            "2026-06-04",
+            [
+                {
+                    "task_id": 1,
+                    "title": "shipped",
+                    "section_path": "wiki",
+                    "status": "done",
+                },
+                {
+                    "task_id": 2,
+                    "title": "in review",
+                    "section_path": "wiki",
+                    "status": "review",
+                },
+            ],
+        )
+        done_line = next(ln for ln in out.splitlines() if "#1" in ln)
+        review_line = next(ln for ln in out.splitlines() if "#2" in ln)
+        assert "_done_" not in done_line
+        assert done_line.endswith("`wiki`")
+        assert "_review_" in review_line
 
 
 class TestBuildFooter:

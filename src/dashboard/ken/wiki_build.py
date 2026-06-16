@@ -7,6 +7,7 @@ task view (#376f, #741, #742, #743).
 
 from __future__ import annotations
 
+import posixpath
 import shutil
 from datetime import UTC, datetime
 from pathlib import Path
@@ -24,11 +25,6 @@ from dashboard.ken.wiki_detail import (
 )
 
 
-# Stable per-name avatar colour — picked from a small palette so the
-# detail page renders the same swatch as the board card. Mirrors
-# ``buildAvatar`` in ``static/js/tasks.js`` at a high level (palette
-# differs in length but the deterministic hash keeps it consistent
-# per identity).
 def _split_frontmatter(md_text: str) -> tuple[dict[str, Any], str]:
     r"""Strip a leading ``---\n…\n---`` block; return ``(meta, body)``.
 
@@ -57,6 +53,40 @@ def _split_frontmatter(md_text: str) -> tuple[dict[str, Any], str]:
     return data, body
 
 
+def _rel_href(target: str, page_dir: str) -> str:
+    """Return ``target`` (wiki-root-relative posix path) relative to ``page_dir``.
+
+    Links computed relative to the page's directory stay valid at any depth and
+    under any mount point — ``file://``, ``/``, or ``/wiki/`` (#856). Both args use
+    ``/`` on every OS, so callers must pass ``Path.as_posix()`` (not ``str(Path)``,
+    which yields backslashes on Windows and breaks the computation).
+    """
+    return posixpath.relpath(target, page_dir or ".")
+
+
+def _format_journal_nav(
+    daily_dates: list[str], current_section: str | None, page_dir: str
+) -> list[str]:
+    """Render the "Journal" sidebar group: index link + one entry per date (#742).
+
+    Hrefs are computed relative to ``page_dir`` via :func:`_rel_href` so the group
+    resolves at any nesting depth and under any mount point (#856).
+    """
+    log_cls = ' class="current"' if current_section == "log" else ""
+    log_href = _rel_href("log/index.html", page_dir)
+    out = [
+        f'<li style="padding-left:0px"><a href="{log_href}"{log_cls}>Journal</a></li>',
+    ]
+    for date in daily_dates:
+        day_cls = ' class="current"' if current_section == f"log/{date}" else ""
+        day_href = _rel_href(f"log/{date}.html", page_dir)
+        out.append(
+            f'<li style="padding-left:12px">'
+            f'<a href="{day_href}"{day_cls}>{date}</a></li>',
+        )
+    return out
+
+
 def _format_sidebar_nav(
     sections: list,
     current_file: str,
@@ -65,46 +95,32 @@ def _format_sidebar_nav(
 ) -> str:
     """Render the per-page sidebar nav, marking the current page with ``class=current``.
 
-    ``current_file`` is the rendered page's path relative to the wiki root
-    (e.g. ``"index.md"``, ``"docs/index.md"``, ``"log/2026-06-04.md"``,
-    ``"backend/api/foo.md"``). Its ``count("/")`` gives the on-disk depth
-    used to prefix every href with the right number of ``../`` so links work
-    when the wiki is browsed via ``file://`` (#741).
+    ``current_file`` is the page's path relative to the wiki root, ``/``-separated
+    (e.g. ``"backend/api/foo.md"``). Every href is rewritten relative to its
+    directory via :func:`_rel_href`, so links resolve at any depth and mount point
+    (#856, supersedes the ``../``-prefix scheme of #741).
 
-    ``current_section`` is matched against the section path to highlight the
-    active entry: ``""`` for the root index, ``"<section>"`` for
-    section/task pages, ``"log"`` for the journal index, ``"log/<date>"``
-    for a daily page, ``None`` to suppress the Home link.
-
-    ``daily_dates`` (#742) is the list of dates with a daily log page,
-    newest first. When non-empty, a "Journal" group is appended after the
-    architecture tree, with one sub-entry per date.
+    ``current_section`` selects the highlighted entry: ``""`` for the root index,
+    ``"<section>"`` for section/task pages, ``"log"`` / ``"log/<date>"`` for the
+    journal, ``None`` to suppress the Home link. ``daily_dates`` (#742), newest
+    first, appends a "Journal" group when non-empty.
     """
-    up = "../" * current_file.count("/")
+    page_dir = posixpath.dirname(current_file)
     lines = ['<nav class="sidebar"><h1>kenboard wiki</h1><ul>']
     if current_section is not None:
         root_cls = ' class="current"' if current_section == "" else ""
-        lines.append(f'<li><a href="{up}index.html"{root_cls}>Home</a></li>')
+        home = _rel_href("index.html", page_dir)
+        lines.append(f'<li><a href="{home}"{root_cls}>Home</a></li>')
     for section in sections:
         for path, node in section.flatten():
             indent_style = f"padding-left:{path.count('/') * 12}px"
-            href = f"{up}{path}/index.html"
+            href = _rel_href(f"{path}/index.html", page_dir)
             cls = ' class="current"' if path == current_section else ""
             lines.append(
                 f'<li style="{indent_style}"><a href="{href}"{cls}>{node.title}</a></li>',
             )
     if daily_dates:
-        log_cls = ' class="current"' if current_section == "log" else ""
-        lines.append(
-            f'<li style="padding-left:0px">'
-            f'<a href="{up}log/index.html"{log_cls}>Journal</a></li>',
-        )
-        for date in daily_dates:
-            day_cls = ' class="current"' if current_section == f"log/{date}" else ""
-            lines.append(
-                f'<li style="padding-left:12px">'
-                f'<a href="{up}log/{date}.html"{day_cls}>{date}</a></li>',
-            )
+        lines.extend(_format_journal_nav(daily_dates, current_section, page_dir))
     lines.append("</ul></nav>")
     return "".join(lines)
 
@@ -153,6 +169,22 @@ def _extract_title(md_text: str) -> str:
     return "kenboard wiki"
 
 
+def _sidebar_section_key(rel: Path, meta: dict[str, Any]) -> str:
+    """Compute the sidebar "current"-highlight key for the page ``rel`` (#742, #856).
+
+    Section dir for index/detail pages, ``log/<date>`` for a daily journal page,
+    the bare posix filename for any other MD, ``""`` for root. ``as_posix()`` keeps
+    it matching the ``/``-joined section paths on every OS.
+    """
+    if rel.name == "index.md" or meta:
+        key = rel.parent.as_posix()
+    elif rel.parent.as_posix() == "log":
+        key = rel.with_suffix("").as_posix()
+    else:
+        key = rel.as_posix()
+    return "" if key == "." else key
+
+
 def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
     """Walk every ``.md`` under ``in_dir`` and return ``[{path, content}]`` for HTML
     output.
@@ -178,20 +210,14 @@ def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
     footer_html = _format_footer(_version(), datetime.now(UTC))
     for md_path in sorted(in_dir.rglob("*.md")):
         rel = md_path.relative_to(in_dir)
+        # Always derive path strings from ``as_posix()`` (not ``str(rel)``): on
+        # Windows ``str`` yields backslashes, which zeroes the depth/relpath
+        # computation in the sidebar and breaks every internal link (#856).
+        rel_posix = rel.as_posix()
         md_text = md_path.read_text(encoding="utf-8")
         meta, body_md = _split_frontmatter(md_text)
-        # Sidebar "current" key: section directory for index/detail pages,
-        # ``log/<date>`` for a daily journal page so the sidebar entry lights
-        # up (#742), else the bare filename for any other free-standing MD.
-        if rel.name == "index.md" or meta:
-            section_key = str(rel.parent)
-        elif str(rel.parent) == "log":
-            section_key = str(rel.with_suffix(""))
-        else:
-            section_key = str(rel)
-        if section_key == ".":
-            section_key = ""
-        sidebar = _format_sidebar_nav(sections, str(rel), section_key, daily_dates)
+        section_key = _sidebar_section_key(rel, meta)
+        sidebar = _format_sidebar_nav(sections, rel_posix, section_key, daily_dates)
         if meta and "id" in meta:
             page_title = f"#{meta.get('id')} — {meta.get('title') or 'task'}"
             body_html = _render_task_detail(meta, body_md)
@@ -199,7 +225,7 @@ def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
             page_title = _extract_title(md_text)
             body_html = _rewrite_md_links_to_html(_render_markdown(md_text))
         html = _wrap_html(page_title, body_html, sidebar, footer_html)
-        files.append({"path": str(rel.with_suffix(".html")), "content": html})
+        files.append({"path": rel.with_suffix(".html").as_posix(), "content": html})
     return files
 
 
