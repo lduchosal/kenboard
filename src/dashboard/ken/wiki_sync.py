@@ -16,6 +16,7 @@ import click
 from dashboard.ken.config import KenConfig
 from dashboard.ken.http import _request
 from dashboard.ken.wiki_log import (
+    _ARCHIVED_STATUSES,
     _classified_date,
     _format_log_day_md,
     _format_log_index_md,
@@ -31,7 +32,6 @@ from dashboard.ken.wiki import (
     wiki,
 )
 
-_ARCHIVED_STATUSES = frozenset({"done"})
 _ACTIVE_STATUS_ORDER = ("doing", "review", "todo")
 
 

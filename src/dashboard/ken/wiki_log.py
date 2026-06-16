@@ -13,6 +13,11 @@ from dashboard.ken.wiki import _task_filename
 # Length of an ISO ``YYYY-MM-DD`` date prefix.
 _ISO_DATE_LEN = 10
 
+# Statuses treated as "archived" — their status carries no signal once a task
+# reaches them, so it is hidden in listings. Single source of truth, also
+# imported by ``wiki_sync`` (#857).
+_ARCHIVED_STATUSES = frozenset({"done"})
+
 
 def _classified_date(row: dict[str, Any]) -> str:
     """Extract the ISO date (``YYYY-MM-DD``) prefix from a classification row (#742).
@@ -49,25 +54,30 @@ def _format_log_index_md(by_date: dict[str, list[dict[str, Any]]]) -> str:
 
 
 def _format_log_day_md(date: str, tasks: list[dict[str, Any]]) -> str:
-    """Render ``log/<date>.md`` — one day's classifications (#742).
+    """Render ``log/<date>.md`` — one day's classifications (#742, #857).
 
     Tasks are sorted by id for stable output. Each line links to the task's detail page
     (``../<section>/<slug>-<id>.md``); ``_rewrite_md_links_to_html`` converts the
     ``.md`` suffix at build time.
+
+    Each row is trimmed to signal (#857): the title link plus its section. The
+    ``classified_by`` actor is dropped (an opaque ``key:…:user:…`` token with no reader
+    value, mirroring the section index which omits ``who``), and ``status`` is shown
+    only when it still carries information — hidden once the task is archived
+    (``done``), the dominant case on a journal page.
     """
     lines = [f"# {date}", "", f"{len(tasks)} task(s) classée(s) ce jour.", ""]
     for t in sorted(tasks, key=lambda r: int(r["task_id"])):
         title = t.get("title") or ""
         section = t.get("section_path") or "?"
-        who = t.get("classified_by") or "?"
         status = t.get("status") or ""
         task_file = _task_filename({"task_id": t["task_id"], "title": title})
         # log/<date>.md → ../<section>/<task>.md to reach the detail page.
         link = f"../{section}/{task_file}"
-        lines.append(
-            f"- [#{t['task_id']} {title}]({link}) — `{section}` — "
-            f"_{status}_ — par {who}",
-        )
+        line = f"- [#{t['task_id']} {title}]({link}) — `{section}`"
+        if status and status not in _ARCHIVED_STATUSES:
+            line += f" — _{status}_"
+        lines.append(line)
     return "\n".join(lines) + "\n"
 
 
