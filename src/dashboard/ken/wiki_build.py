@@ -95,15 +95,15 @@ def _format_sidebar_nav(
 ) -> str:
     """Render the per-page sidebar nav, marking the current page with ``class=current``.
 
-    ``current_file`` is the page's path relative to the wiki root, ``/``-separated
-    (e.g. ``"backend/api/foo.md"``). Every href is rewritten relative to its
-    directory via :func:`_rel_href`, so links resolve at any depth and mount point
-    (#856, supersedes the ``../``-prefix scheme of #741).
+    ``current_file`` is the page's path relative to the wiki root, ``/``-separated (e.g.
+    ``"backend/api/foo.md"``). Every href is rewritten relative to its directory via
+    :func:`_rel_href`, so links resolve at any depth and mount point (#856, supersedes
+    the ``../``-prefix scheme of #741).
 
     ``current_section`` selects the highlighted entry: ``""`` for the root index,
     ``"<section>"`` for section/task pages, ``"log"`` / ``"log/<date>"`` for the
-    journal, ``None`` to suppress the Home link. ``daily_dates`` (#742), newest
-    first, appends a "Journal" group when non-empty.
+    journal, ``None`` to suppress the Home link. ``daily_dates`` (#742), newest first,
+    appends a "Journal" group when non-empty.
     """
     page_dir = posixpath.dirname(current_file)
     lines = ['<nav class="sidebar"><h1>kenboard wiki</h1><ul>']
@@ -172,9 +172,9 @@ def _extract_title(md_text: str) -> str:
 def _sidebar_section_key(rel: Path, meta: dict[str, Any]) -> str:
     """Compute the sidebar "current"-highlight key for the page ``rel`` (#742, #856).
 
-    Section dir for index/detail pages, ``log/<date>`` for a daily journal page,
-    the bare posix filename for any other MD, ``""`` for root. ``as_posix()`` keeps
-    it matching the ``/``-joined section paths on every OS.
+    Section dir for index/detail pages, ``log/<date>`` for a daily journal page, the
+    bare posix filename for any other MD, ``""`` for root. ``as_posix()`` keeps it
+    matching the ``/``-joined section paths on every OS.
     """
     if rel.name == "index.md" or meta:
         key = rel.parent.as_posix()
