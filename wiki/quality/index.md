@@ -4,6 +4,10 @@ Tests (unit/integration/e2e), lint, typecheck, coverage, Sonarcloud.
 
 Section: `quality`
 
+## En cours (1)
+
+- [QUALITY / perf.py couverture sous 75% bloque le publish](quality-perf-py-couverture-sous-75-bloque-le-publish-923.md) — _review_
+
 ## Archivé (43)
 
 - [TEST / AUTH / Tests units & E2E Test](test-auth-tests-units-e2e-test-13.md)
