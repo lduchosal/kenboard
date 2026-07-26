@@ -115,8 +115,15 @@ pdm run check              # composite: isort, format, docformatter, typecheck,
 - Coverage `fail_under = 75`.
 - interrogate `fail-under = 95` — every public function/class needs a
   docstring. Init methods/modules are exempted.
-- Line length **88** (black, isort) but **125** for flake8.
-- Docstring convention: **google** (per `.flake8`).
+- Line length **88** (black, isort) but **125** for ruff `E501`
+  (`[tool.ruff.lint.pycodestyle]`, héritage flake8).
+- Docstring convention: **google** — style vérifié par ruff (`D`,
+  `[tool.ruff.lint.pydocstyle]`) ; complétude (args/returns/raises) par
+  flake8, scopé aux seules règles `DCO` de flake8-docstrings-complete
+  (ken #993 — à re-migrer quand la famille `DOC` de ruff sortira de preview).
+- ruff porte aussi les 413 règles par défaut 0.16 + les familles étendues
+  (`extend-select`) ; refurb reste au composite : 57 de ses 93 checks n'ont
+  pas d'équivalent ruff (audit ken #993).
 - vulture min_confidence 80; whitelist lives in `vulture_whitelist.py`.
 
 ## `ken` CLI workflow

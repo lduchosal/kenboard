@@ -1,7 +1,11 @@
+# flake8 est scopé aux seules règles DCO (flake8-docstrings-complete :
+# complétude des docstrings — args/returns/raises documentés). Tout le reste
+# (pycodestyle E/W, pyflakes F, pydocstyle D) est porté par ruff — cf.
+# [tool.ruff.lint] dans pyproject.toml (ken #993). À retirer entièrement
+# quand la famille DOC de ruff (pydoclint) sortira de preview.
 [flake8]
-max-line-length = 125
-extend-ignore = E203, W503, D203, D205, D212, D415, DCO020, DCO030, DCO031, DCO060
-docstring-convention = google
+select = DCO
+extend-ignore = DCO020, DCO030, DCO031, DCO060
 exclude =
     .git,
     __pycache__,

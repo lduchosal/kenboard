@@ -186,13 +186,12 @@ def _sidebar_section_key(rel: Path, meta: dict[str, Any]) -> str:
 
 
 def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
-    """Walk every ``.md`` under ``in_dir`` and return ``[{path, content}]`` for HTML
-    output.
+    """Walk ``in_dir`` and return the ``[{path, content}]`` HTML plan.
 
-    Detail pages (any MD with a YAML frontmatter block — written by
-    ``_format_task_detail_md`` since #376f) get the ``.fullscreen-card`` layout
-    mirroring the kenboard board's full-screen task view; everything else gets the plain
-    Markdown layout.
+    Covers every ``.md`` file under the tree. Detail pages (any MD with a YAML
+    frontmatter block — written by ``_format_task_detail_md`` since #376f) get the
+    ``.fullscreen-card`` layout mirroring the kenboard board's full-screen task view;
+    everything else gets the plain Markdown layout.
     """
     files: list[dict[str, str]] = []
     # #742 — discover daily log pages so the sidebar can list them as a

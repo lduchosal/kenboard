@@ -89,8 +89,10 @@ dev = [
     # Pas de borne supérieure — un upgrade qui fait rougir le gate = nouvelle
     # tâche qualité (principe ratchet), cf. ken #992.
     "ruff>=0.16",
+    # flake8 : uniquement les règles DCO (complétude docstrings) — le reste
+    # est porté par ruff depuis ken #993. flake8-docstrings (pydocstyle) a
+    # migré vers la famille D de ruff (convention google).
     "flake8>=7.3",
-    "flake8-docstrings>=1.7.0",
     "flake8-docstrings-complete>=1.3.0",
     "mypy>=1.18",
     "types-PyYAML>=6.0",
@@ -196,6 +198,11 @@ extend-select = [
     "E4",      # pycodestyle imports — retirés des défauts 0.16, acquis restauré (ken #992)
     "E7",      # pycodestyle statements (E711/E712/E731/E741…) — idem
     "E9",      # pycodestyle runtime errors — idem
+    "E501",    # ligne ≤ 125 (cf. pycodestyle.max-line-length) — repris de flake8 (ken #993)
+    "W",       # pycodestyle warnings (tabs, trailing whitespace…) — repris de flake8 (ken #993)
+    "D",       # pydocstyle, convention google — remplace flake8-docstrings (ken #993)
+    "FURB",    # famille refurb-ruff complète (ken #993) — refurb l'outil reste au
+               # composite : 57 de ses 93 checks n'ont pas d'équivalent ruff
     "RUF",     # règles ruff natives, RUF100 inclus depuis le palier 4
     "ANN401",  # plus de Any nu — noqa argumentés seulement (acquis palier 5, ken #808)
     "ARG",     # arguments inutilisés (acquis palier 2, ken #798)
@@ -211,6 +218,19 @@ extend-select = [
     "SLF",     # accès privés interdits sauf noqa argumenté (palier 2)
     "TRY",     # hygiène des raise/try (acquis palier 2)
 ]
+# flake8 reste au composite, scopé aux seules règles DCO (complétude des
+# docstrings, flake8-docstrings-complete) : la famille DOC de ruff (pydoclint)
+# est encore 100 % preview. À re-migrer quand DOC sort de preview (ken #993).
+# ``external`` protège les éventuels ``# noqa: DCO...`` du nettoyage RUF100.
+external = ["DCO"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.pycodestyle]
+# E501 à 125 (héritage .flake8) ; black continue de wrapper à 88 — la marge
+# couvre les lignes insécables (URLs, chaînes littérales).
+max-line-length = 125
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
@@ -219,8 +239,10 @@ max-complexity = 10
 # Tests : datetimes naïfs tolérés (fixtures et comparaisons locales),
 # complexité non bloquante (helpers de schéma séquentiels dans conftest) et
 # familles "hygiène src" non imposées au code de test (mêmes exemptions que
-# mypy strict / interrogate). Le gate métrique (#788) ne mesure que src/.
-"tests/**" = ["ANN401", "DTZ", "C901", "ARG", "BLE", "EM", "FBT", "G", "PLC0415", "PLR", "PTH", "SLF", "TRY"]
+# mypy strict / interrogate — "D" inclus : docstrings non exigées en tests,
+# comme interrogate qui exclut tests/). Le gate métrique (#788) ne mesure
+# que src/.
+"tests/**" = ["ANN401", "D", "DTZ", "C901", "ARG", "BLE", "EM", "FBT", "G", "PLC0415", "PLR", "PTH", "SLF", "TRY"]
 # CLIs : lazy imports délibérés — chaque commande importe ses dépendances au
 # moment de l'exécution pour garder le démarrage instantané (`ken` est
 # stdlib-only au boot) et ne charger flask/yoyo/markdown/yaml qu'au besoin.
