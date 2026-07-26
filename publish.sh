@@ -227,7 +227,11 @@ print_step "Sonarcloud Quality Gate"
 # 900s : la CI GitHub met ~4-5 min à produire l'analyse du commit poussé —
 # un timeout court (300s) perdait la course et avortait des publishes sains
 # (releases 0.1.134/0.1.135). On attend l'analyse, pas un délai arbitraire.
-if python scripts/sonar_gate.py --timeout 900 --interval 20; then
+# Au-delà des 900s, le gate ne s'arrête que si NI la CI GitHub NI la file
+# compute-engine Sonarcloud n'ont de tâche en cours (maintenance Sonar du
+# 26.07.2026 : rapport en file ~70 min, publish 0.2.4 avorté — ken #995).
+# Cap dur : --max-wait 3600s.
+if python scripts/sonar_gate.py --timeout 900 --interval 20 --max-wait 3600; then
     echo "${GREEN}${BOLD}✓ Sonarcloud quality gate passed${NC}"
 else
     echo "${RED}${BOLD}✗ Sonarcloud quality gate FAILED — aborting publish${NC}"
