@@ -1,7 +1,7 @@
 ---
 id: 923
 title: "QUALITY / perf.py couverture sous 75% bloque le publish"
-status: review
+status: done
 who: "Claude"
 due_date: 
 classified_at: 2026-06-30T07:36:11

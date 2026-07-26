@@ -4,11 +4,7 @@ Tests (unit/integration/e2e), lint, typecheck, coverage, Sonarcloud.
 
 Section: `quality`
 
-## En cours (1)
-
-- [QUALITY / perf.py couverture sous 75% bloque le publish](quality-perf-py-couverture-sous-75-bloque-le-publish-923.md) — _review_
-
-## Archivé (43)
+## Archivé (46)
 
 - [TEST / AUTH / Tests units & E2E Test](test-auth-tests-units-e2e-test-13.md)
 - [TEST / Tests units && E2E](test-tests-units-e2e-18.md)
@@ -53,3 +49,6 @@ Section: `quality`
 - [QUALITY / Palier 4 — gate vert : fichiers ≤ 400, fonctions ≤ 60, dette ≤ 20, min_file_cov ≥ 70](quality-palier-4-gate-vert-fichiers-400-fonctions-60-dette-20-min-file-cov-70-806.md)
 - [QUALITY / Palier 5 (final) — gate vert : fichiers ≤ 300, fonctions ≤ 50, dette = 0, min_file_cov ≥ 75](quality-palier-5-final-gate-vert-fichiers-300-fonctions-50-dette-0-min-file-cov-75-807.md)
 - [QUALITY / Palier 5 (final) — gate vert : fichiers ≤ 300, fonctions ≤ 50, dette = 0, min_file_cov ≥ 75](quality-palier-5-final-gate-vert-fichiers-300-fonctions-50-dette-0-min-file-cov-75-808.md)
+- [QUALITY / perf.py couverture sous 75% bloque le publish](quality-perf-py-couverture-sous-75-bloque-le-publish-923.md)
+- [QUALITY / ruff 0.16 — adopter les 413 règles par défaut et réparer le gate](quality-ruff-0-16-adopter-les-413-regles-par-defaut-et-reparer-le-gate-992.md)
+- [QUALITY / palier C — consolider refurb et flake8 dans ruff](quality-palier-c-consolider-refurb-et-flake8-dans-ruff-993.md)
