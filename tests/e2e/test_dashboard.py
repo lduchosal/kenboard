@@ -772,17 +772,18 @@ class TestAdminUsers:
                 page.wait_for_selector("#users-create-btn")
 
                 # Seed Alice + Q (admin), reloading after each
-                expected = 0
-                for name, color, is_admin in [
-                    ("Alice", "#8250df", False),
-                    ("Q", "#0969da", True),
-                ]:
+                for expected, (name, color, is_admin) in enumerate(
+                    [
+                        ("Alice", "#8250df", False),
+                        ("Q", "#0969da", True),
+                    ],
+                    start=1,
+                ):
                     page.fill("#new-name", name)
                     page.fill("#new-color", color)
                     if is_admin:
                         page.check("#new-admin")
                     page.click("#users-create-btn")
-                    expected += 1
                     expect(
                         page.locator("#users-table tbody tr[data-user-id]")
                     ).to_have_count(expected)

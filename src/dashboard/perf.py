@@ -86,10 +86,14 @@ def _build_description(summary: dict[str, Any], violations: list[str]) -> str:
         "## Metriques",
         "",
         f"- **Temps total** : {summary['total_ms']}ms",
-        f"- **Queries SQL** : {summary['query_count']} "
-        f"({summary['sql_total_ms']}ms cumule)",
-        f"- **Template** : {summary['template_name'] or 'N/A'} "
-        f"({summary['template_ms']}ms)",
+        (
+            f"- **Queries SQL** : {summary['query_count']} "
+            f"({summary['sql_total_ms']}ms cumule)"
+        ),
+        (
+            f"- **Template** : {summary['template_name'] or 'N/A'} "
+            f"({summary['template_ms']}ms)"
+        ),
         f"- **Taille reponse** : {summary['response_kb']}KB",
         "",
         "## Violations",

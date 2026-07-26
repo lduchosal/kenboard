@@ -240,17 +240,17 @@ _RUNBOOK_GUIDE = (
 def _token_section(token: str) -> tuple[str, str]:
     """``(ligne api_token, étape 3)`` du runbook — selon qu'un token est fourni."""
     if token:
-        return (
-            f"api_token={_sanitize_token(token)}\n",
+        step3 = (
             "3. Le token API est déjà inclus ci-dessus. Vous pouvez\n"
-            "   commencer à travailler immédiatement.\n",
+            "   commencer à travailler immédiatement.\n"
         )
-    return (
-        "api_token=<API key — voir étape 3>\n",
+        return f"api_token={_sanitize_token(token)}\n", step3
+    step3 = (
         "3. Demander à l'utilisateur de générer une API key sur\n"
         "   /admin/keys (avec au moins le scope 'read' sur ce projet)\n"
-        "   et de la coller dans la ligne api_token= du fichier .ken\n",
+        "   et de la coller dans la ligne api_token= du fichier .ken\n"
     )
+    return "api_token=<API key — voir étape 3>\n", step3
 
 
 def onboarding_text_full(

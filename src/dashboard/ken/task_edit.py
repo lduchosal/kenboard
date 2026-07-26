@@ -103,10 +103,13 @@ def _resolve_desc(desc: str | None, desc_file: str | None = None) -> str | None:
     help="Read an SVG attachement (#541) from this path",
 )
 @click.option("--json", "json_mode", is_flag=True, help="Output as JSON")
-# One option per task field, by design — silence the "too many arguments" warning.
+# One option per task field, by design — silence the "too many arguments"
+# warning. Everything keyword-only : click invoque le callback en kwargs, et
+# PLR0917 (positional) est satisfait sans noqa supplémentaire.
 @click.pass_context
 def add(  # noqa: PLR0913
     ctx: click.Context,
+    *,
     title: str,
     desc: str,
     desc_file: str | None,
@@ -114,7 +117,6 @@ def add(  # noqa: PLR0913
     status: str,
     when: str | None,
     attachement_file: str | None,
-    *,
     json_mode: bool,
 ) -> None:
     r"""Add a new task to the current project.
@@ -165,10 +167,13 @@ def add(  # noqa: PLR0913
     help="Read an SVG attachement (#541) from this path",
 )
 @click.option("--json", "json_mode", is_flag=True, help="Output as JSON")
-# One option per task field, by design — silence the "too many arguments" warning.
+# One option per task field, by design — silence the "too many arguments"
+# warning. Everything keyword-only : click invoque le callback en kwargs, et
+# PLR0917 (positional) est satisfait sans noqa supplémentaire.
 @click.pass_context
 def update(  # noqa: PLR0913
     ctx: click.Context,
+    *,
     task_id: int,
     title: str | None,
     desc: str | None,
@@ -177,7 +182,6 @@ def update(  # noqa: PLR0913
     status: str | None,
     when: str | None,
     attachement_file: str | None,
-    *,
     json_mode: bool,
 ) -> None:
     r"""Update an existing task (only the fields you pass).

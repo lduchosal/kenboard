@@ -28,17 +28,25 @@ def _polish_prompt(
             svg_note,
             "",
             "Action attendue (agent / LLM) :",
-            "  1. Lis la description (et le SVG si présent : il a la page "
-            "encadrée par l'utilisateur).",
-            "  2. Produis un nouveau MODULE / Titre concis (convention "
-            "kenboard, cf. `ken help`).",
-            "  3. Réécris la description en mode résolution actionnable "
-            "(contexte, ce qu'il faut faire, garde-fous).",
+            (
+                "  1. Lis la description (et le SVG si présent : il a la page "
+                "encadrée par l'utilisateur)."
+            ),
+            (
+                "  2. Produis un nouveau MODULE / Titre concis (convention "
+                "kenboard, cf. `ken help`)."
+            ),
+            (
+                "  3. Réécris la description en mode résolution actionnable "
+                "(contexte, ce qu'il faut faire, garde-fous)."
+            ),
             "  4. Applique :",
-            f"       ken update {task_id} --title 'MODULE / ...' "
-            f"--desc-file {desc_path}",
+            (
+                f"       ken update {task_id} --title 'MODULE / ...' "
+                f"--desc-file {desc_path}"
+            ),
             "",
-            "Le SVG attachement reste inchangé (trace de la demande " "d'origine).",
+            "Le SVG attachement reste inchangé (trace de la demande d'origine).",
         ]
     )
 

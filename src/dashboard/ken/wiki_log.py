@@ -40,8 +40,10 @@ def _format_log_index_md(by_date: dict[str, list[dict[str, Any]]]) -> str:
     lines = [
         "# Journal d'exploitation",
         "",
-        "Une page par jour, du plus récent au plus ancien. "
-        "Chaque page liste les tâches classées ce jour-là.",
+        (
+            "Une page par jour, du plus récent au plus ancien. "
+            "Chaque page liste les tâches classées ce jour-là."
+        ),
         "",
     ]
     if not by_date:
@@ -86,8 +88,10 @@ def _format_orphans_md(orphans: dict[str, list[dict[str, Any]]]) -> str:
     lines = [
         "# Orphan classifications",
         "",
-        "These section paths are referenced by tasks but **not** declared in "
-        "``ARCHITECTURE.md``. Re-classify the tasks or add the section.",
+        (
+            "These section paths are referenced by tasks but **not** declared in "
+            "``ARCHITECTURE.md``. Re-classify the tasks or add the section."
+        ),
         "",
     ]
     for path, tasks in sorted(orphans.items()):

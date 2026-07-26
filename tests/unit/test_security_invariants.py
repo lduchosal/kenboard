@@ -103,9 +103,11 @@ class TestLoginDisabledRuntimeGuard:
         app.config["LOGIN_DISABLED"] = True
         app.config["TESTING"] = False
         try:
-            with app.test_request_context("/api/v1/categories"):
-                with pytest.raises(RuntimeError, match="LOGIN_DISABLED"):
-                    _is_login_disabled()
+            with (
+                app.test_request_context("/api/v1/categories"),
+                pytest.raises(RuntimeError, match="LOGIN_DISABLED"),
+            ):
+                _is_login_disabled()
         finally:
             app.config["LOGIN_DISABLED"] = prev_flag
             app.config["TESTING"] = prev_testing

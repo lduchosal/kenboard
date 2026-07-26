@@ -48,9 +48,10 @@ def _required_scope(method: str) -> str:
 def _is_admin_only(method: str, path: str) -> bool:
     """Return True if the endpoint is reserved to the admin key."""
     for prefix, methods in ADMIN_ONLY_PREFIXES:
-        if path == prefix or path.startswith(prefix + "/"):
-            if methods is None or method in methods:
-                return True
+        if (path == prefix or path.startswith(prefix + "/")) and (
+            methods is None or method in methods
+        ):
+            return True
     return False
 
 

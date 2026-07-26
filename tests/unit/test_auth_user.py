@@ -219,7 +219,7 @@ class TestLoginFlow:
             follow_redirects=False,
         )
         assert r.status_code == 200  # form re-rendered with error
-        assert "Identifiants invalides".encode("utf-8") in r.data
+        assert b"Identifiants invalides" in r.data
 
     def test_post_unknown_user(self, auth_client, db):
         r = auth_client.post(
@@ -228,7 +228,7 @@ class TestLoginFlow:
             follow_redirects=False,
         )
         assert r.status_code == 200
-        assert "Identifiants invalides".encode("utf-8") in r.data
+        assert b"Identifiants invalides" in r.data
 
     def test_post_success_redirects(self, auth_client, db, admin_user):
         r = auth_client.post(
@@ -352,7 +352,7 @@ class TestLoginFlow:
             follow_redirects=False,
         )
         assert login.status_code == 200  # form re-rendered with error
-        assert "Identifiants invalides".encode("utf-8") in login.data
+        assert b"Identifiants invalides" in login.data
 
     def test_admin_reset_password_endpoint_enables_login(
         self, auth_client, db, admin_user
@@ -588,7 +588,7 @@ class TestLoginRateLimit:
             follow_redirects=False,
         )
         assert r.status_code == 429
-        assert "Trop de tentatives".encode("utf-8") in r.data
+        assert b"Trop de tentatives" in r.data
 
     def test_successful_login_does_not_count(self, rate_limited_client, db, admin_user):
         # 4 wrong attempts → still under the limit

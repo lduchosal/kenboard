@@ -84,6 +84,7 @@ def _build_context(  # noqa: PLR0913 — contexte template : un kwarg par datase
     categories: list[dict[str, Any]],
     all_projects: list[dict[str, Any]],
     users: list[dict[str, Any]],
+    *,
     cat_snapshots: dict[str, list[dict[str, Any]]] | None = None,
     prefix: str = "",
     current_cat: dict[str, Any] | None = None,
@@ -217,7 +218,9 @@ def index() -> ResponseReturnValue:
     finally:
         conn.close()
 
-    ctx = _build_context(categories, all_projects, users, cat_snapshots, prefix="/")
+    ctx = _build_context(
+        categories, all_projects, users, cat_snapshots=cat_snapshots, prefix="/"
+    )
     ctx["title"] = "KEN"
     ctx["doing_tasks"] = _doing_tasks_ctx(categories, all_projects)
 

@@ -85,7 +85,10 @@ dev = [
     "black>=25.0",
     "isort>=6.0",
     "docformatter>=1.7",
-    "ruff>=0.13.0",
+    # Plancher 0.16 : la config lint suppose les nouveaux défauts (413 règles).
+    # Pas de borne supérieure — un upgrade qui fait rougir le gate = nouvelle
+    # tâche qualité (principe ratchet), cf. ken #992.
+    "ruff>=0.16",
     "flake8>=7.3",
     "flake8-docstrings>=1.7.0",
     "flake8-docstrings-complete>=1.3.0",
@@ -182,15 +185,21 @@ version-major = "pdm bump -v major"
 [tool.ruff.lint]
 # Verrous métriques (#788, principe ratchet de doc/code-quality.md) : chaque
 # famille de règles tombée à zéro est activée ici pour verrouiller l'acquis,
-# en plus des règles ruff par défaut (E4, E7, E9, F). Dernière activation
-# prévue : PLR1702 (imbrication ≤ 5 — dès sa sortie de preview ruff).
+# en plus des règles ruff par défaut. Depuis ruff 0.16 les défauts couvrent
+# 413 règles (B, UP, SIM, FURB, PYI, ASYNC, ISC, LOG, DTZ, BLE001, sous-
+# ensembles PLR/PLW/PLE…) — l'acquis DTZ (ken #785), BLE et UP017 est donc
+# verrouillé par les défauts et n'a plus besoin d'être listé ici (ken #992).
+# Les familles ci-dessous ajoutent ce que les défauts ne couvrent pas.
+# Dernière activation prévue : PLR1702 (imbrication ≤ 5 — dès sa sortie de
+# preview ruff).
 extend-select = [
+    "E4",      # pycodestyle imports — retirés des défauts 0.16, acquis restauré (ken #992)
+    "E7",      # pycodestyle statements (E711/E712/E731/E741…) — idem
+    "E9",      # pycodestyle runtime errors — idem
     "RUF",     # règles ruff natives, RUF100 inclus depuis le palier 4
     "ANN401",  # plus de Any nu — noqa argumentés seulement (acquis palier 5, ken #808)
     "ARG",     # arguments inutilisés (acquis palier 2, ken #798)
-    "BLE",     # blind except interdits sauf noqa argumenté (palier 2)
     "C901",    # complexité cyclomatique ≤ 10 (acquis ken #789)
-    "DTZ",     # datetimes naïfs interdits (acquis ken #785)
     "EM",      # messages d'exception via variable (acquis palier 2)
     "FBT",     # booléens keyword-only dans les signatures (palier 2)
     "G",       # logging — log.exception plutôt que exc_info=True (palier 2)
@@ -201,7 +210,6 @@ extend-select = [
     "PTH",     # pathlib plutôt qu'os.path (acquis palier 2)
     "SLF",     # accès privés interdits sauf noqa argumenté (palier 2)
     "TRY",     # hygiène des raise/try (acquis palier 2)
-    "UP017",   # datetime.UTC plutôt que timezone.utc
 ]
 
 [tool.ruff.lint.mccabe]

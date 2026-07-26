@@ -139,7 +139,7 @@ def _autocreate_error_task(
             log.info("autocreate_error_task", error_id=error_id, project_id=project_id)
         finally:
             conn.close()
-    except Exception:  # noqa: BLE001 — ne pas re-crasher le handler 500
+    except Exception:
         log.warning("autocreate_error_task_failed", error_id=error_id, exc_info=True)
 
 
@@ -215,13 +215,16 @@ def _register_fatal_handler(app: Flask) -> None:
         original = getattr(e, "original_exception", None) or e
         error_id = f"E-{int(time.time()):x}-{secrets.token_hex(2)}"
         error_class = type(original).__name__
+        # ``exc_info=original`` plutôt que ``True`` : le handler Flask tourne
+        # hors bloc ``except`` (LOG014) — passer l'exception explicitement ne
+        # dépend pas de ``sys.exc_info()``.
         log.error(
             "unhandled_error",
             path=request.path,
             error=str(original),
             error_class=error_class,
             error_id=error_id,
-            exc_info=True,
+            exc_info=original,
         )
         # #517: best-effort — file this 500 as a task on the configured board.
         route = str(request.url_rule) if request.url_rule else request.path

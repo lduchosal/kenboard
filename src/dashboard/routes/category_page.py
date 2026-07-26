@@ -131,7 +131,7 @@ def category(cat_id: str) -> ResponseReturnValue:
         categories,
         all_projects,
         users,
-        cat_snapshots,
+        cat_snapshots=cat_snapshots,
         prefix="/",
         current_cat=cat,
     )

@@ -145,7 +145,7 @@ def _taskers_axis_legend(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Build the day-axis labels and the per-person legend of the taskers chart."""
     default_color = "var(--dimmed)"
-    axis = [{"label": "%s %d" % (_FR_WEEKDAYS[d.weekday()], d.day)} for d in day_seq]
+    axis = [{"label": f"{_FR_WEEKDAYS[d.weekday()]} {d.day}"} for d in day_seq]
     legend = [
         {
             "person": p,
