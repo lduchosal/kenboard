@@ -179,6 +179,8 @@ class TestListAll:
         assert row["status"] == "todo"
         assert row["project_id"] == project["project_id"]
         assert row["classified_at"] is not None
+        # #999 — the task's last-modified stamp feeds the wiki page footers.
+        assert row["updated_at"] is not None
 
     def test_project_filter(self, client, db, project):
         tid = project["tasks"][0]

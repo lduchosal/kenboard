@@ -50,7 +50,7 @@ main a{color:#0969da}
 .wiki-nav{margin-top:20px;padding-top:12px;border-top:1px solid #d0d7de;
   font-size:13px;color:#57606a}
 .wiki-nav a{color:#0969da}
-/* Build footer (#743) — version of ``ken`` + generation timestamp. */
+/* Page footer (#743, #999) — ``ken`` version + task last-modified stamp. */
 .wiki-footer{margin-top:40px;padding-top:12px;border-top:1px solid #d0d7de;
   font-size:11px;color:#57606a;text-align:right}
 """

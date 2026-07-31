@@ -111,6 +111,7 @@ def _format_task_detail_md(
         f"status: {task.get('status') or ''}",
         f"who: {_yaml_str(task.get('who') or '')}",
         f"due_date: {task.get('due_date') or ''}",
+        f"updated_at: {task.get('updated_at') or ''}",
         f"classified_at: {task.get('classified_at') or ''}",
         f"classified_by: {_yaml_str(task.get('classified_by') or '')}",
         f"section: {section_path}",

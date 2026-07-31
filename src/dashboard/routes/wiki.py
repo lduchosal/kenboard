@@ -84,6 +84,9 @@ def list_all() -> ResponseReturnValue:
                 "status": r["status"],
                 "who": r["who"],
                 "project_id": r["project_id"],
+                "updated_at": (
+                    r["updated_at"].isoformat() if r["updated_at"] else None
+                ),
             }
             for r in rows
         ],

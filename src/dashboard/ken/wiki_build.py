@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import posixpath
 import shutil
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -125,19 +125,19 @@ def _format_sidebar_nav(
     return "".join(lines)
 
 
-def _format_footer(version: str, generated_at: datetime) -> str:
-    """Render the build footer shown at the bottom of every wiki page (#743).
+def _format_footer(version: str, updated_at: datetime | str | None = None) -> str:
+    """Render the footer shown at the bottom of every wiki page (#743, #999).
 
-    The footer carries the version of ``ken`` (= kenboard) and the build timestamp so a
-    reader can tell at a glance how fresh the rendered HTML is and which release
-    produced it. UTC is used to stay portable across machines that publish the wiki.
+    Version + the task's last-modified stamp on detail pages (frontmatter datetime or
+    ISO string) — never the build time, so an unchanged wiki rebuilds identical bytes
+    instead of churning the whole SVN-committed tree (#999).
     """
-    stamp = generated_at.strftime("%Y-%m-%d %H:%M:%S UTC")
-    return (
-        f'<footer class="wiki-footer">'
-        f"Généré le {stamp} par kenboard {version}"
-        f"</footer>"
-    )
+    if isinstance(updated_at, datetime):
+        stamp = updated_at.strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        stamp = str(updated_at or "").replace("T", " ")
+    prefix = f"Modifié le {stamp} — " if stamp else ""
+    return f'<footer class="wiki-footer">{prefix}kenboard {version}</footer>'
 
 
 def _wrap_html(
@@ -205,8 +205,8 @@ def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
         if log_dir.is_dir()
         else []
     )
-    # #743 — build footer computed once and embedded on every page.
-    footer_html = _format_footer(_version(), datetime.now(UTC))
+    # #743/#999 — version + per-task stamp footer; never the build time (churn).
+    version = _version()
     for md_path in sorted(in_dir.rglob("*.md")):
         rel = md_path.relative_to(in_dir)
         # Always derive path strings from ``as_posix()`` (not ``str(rel)``): on
@@ -220,9 +220,11 @@ def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
         if meta and "id" in meta:
             page_title = f"#{meta.get('id')} — {meta.get('title') or 'task'}"
             body_html = _render_task_detail(meta, body_md)
+            footer_html = _format_footer(version, meta.get("updated_at"))
         else:
             page_title = _extract_title(md_text)
             body_html = _rewrite_md_links_to_html(_render_markdown(md_text))
+            footer_html = _format_footer(version)
         html = _wrap_html(page_title, body_html, sidebar, footer_html)
         files.append({"path": rel.with_suffix(".html").as_posix(), "content": html})
     return files

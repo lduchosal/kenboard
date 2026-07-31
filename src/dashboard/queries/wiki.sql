@@ -30,9 +30,10 @@ WHERE task_id = :task_id;
 
 -- name: wiki_get_all
 -- Every classification row, joined with the task title for downstream
--- convenience (sync writes ``<id> - <title>.md`` filenames).
+-- convenience (sync writes ``<id> - <title>.md`` filenames). t.updated_at
+-- feeds the per-page footer of the HTML wiki (ken #999).
 SELECT c.task_id, c.section_path, c.classified_at, c.classified_by,
-       t.title, t.description, t.status, t.who, t.project_id
+       t.title, t.description, t.status, t.who, t.project_id, t.updated_at
 FROM task_wiki_classifications c
 JOIN tasks t ON t.id = c.task_id
 ORDER BY c.section_path ASC, c.task_id ASC;
