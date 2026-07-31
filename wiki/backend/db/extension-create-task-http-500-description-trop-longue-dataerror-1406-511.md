@@ -4,6 +4,7 @@ title: "EXTENSION / create task — HTTP 500 (description trop longue, DataError
 status: done
 who: "Claude"
 due_date: 
+updated_at: 
 classified_at: 2026-05-29T10:12:36
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: backend/db

@@ -4,6 +4,7 @@ title: "QUALITY / Palier 4 — gate vert : fichiers ≤ 400, fonctions ≤ 60, d
 status: done
 who: "Claude"
 due_date: 
+updated_at: 
 classified_at: 2026-06-10T22:32:28
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: quality

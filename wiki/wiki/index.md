@@ -4,7 +4,7 @@ LLM-wiki pattern (Karpathy) — classification, sync, build, lint.
 
 Section: `wiki`
 
-## Archivé (10)
+## Archivé (11)
 
 - [Export / wiki](export-wiki-376.md)
 - [WIKI / ken wiki sync (#376c)](wiki-ken-wiki-sync-376c-419.md)
@@ -16,3 +16,4 @@ Section: `wiki`
 - [WIKI / Build / Footer version + date de génération](wiki-build-footer-version-date-de-generation-743.md)
 - [BUG — `ken wiki build` : liens internes cassés sur toutes les sous-pages (relatifs non corrigés selon la profondeur)](bug-ken-wiki-build-liens-internes-casses-sur-toutes-les-sous-pages-relatifs-non-corriges-selon-la-profondeur-856.md)
 - [wiki / journal / day page](wiki-journal-day-page-857.md)
+- [WIKI / publish — remplacer la date de génération par la date de modif du ticket (File Churn)](wiki-publish-remplacer-la-date-de-generation-par-la-date-de-modif-du-ticket-file-churn-999.md)

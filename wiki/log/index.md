@@ -2,6 +2,7 @@
 
 Une page par jour, du plus récent au plus ancien. Chaque page liste les tâches classées ce jour-là.
 
+- [2026-07-31](2026-07-31.md) — 1 task(s)
 - [2026-07-26](2026-07-26.md) — 3 task(s)
 - [2026-06-30](2026-06-30.md) — 1 task(s)
 - [2026-06-16](2026-06-16.md) — 2 task(s)
