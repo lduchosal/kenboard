@@ -54,20 +54,26 @@ for arg in "$@"; do
     esac
 done
 
-# Set total steps based on mode
-# E2E tests are skipped in CI mode (require Playwright browsers + running DB)
-# JS toolchain (#251) adds 5 steps: install, lint, typecheck, test, build
+# Set total steps based on mode. Counts recomputed from the actual
+# print_step calls (ken #1009): the extension zip + GitHub Release steps
+# (#480/#501) had never been added, so the counters undershot and the
+# banner printed "34/30".
+#   22 = 21 common steps (clean → pytest) + metrics gate
+#   +1 non-CI: E2E tests (need Playwright browsers + running DB)
+#   +1 non-CI: wiki sync (needs the board API, unreachable from a runner)
+#   +12 publish-only: wiki build, push, sonar gate, bump, build, PyPI,
+#       git add, commit, tag, extension zip, GitHub Release, final clean
 if [ "$QUALITY_ONLY" = true ]; then
     if [ "$CI_MODE" = true ]; then
-        STEPS=21
-    else
         STEPS=22
+    else
+        STEPS=23
     fi
 else
     if [ "$CI_MODE" = true ]; then
-        STEPS=30
+        STEPS=34
     else
-        STEPS=31
+        STEPS=36
     fi
 fi
 STEP=0
@@ -211,10 +217,21 @@ fi
 
 # Refresh the kenboard wiki from classified tasks so the release commit
 # below ships an up-to-date wiki/ (MD source, git-tracked). wiki-html/ is
-# gitignored — the build step acts as a render check only. Needs the board
-# API (.ken token), hence publish-only: --quality/CI never reach this point.
-print_step "Wiki Sync (ken wiki sync)"
-run_command "pdm run ken wiki sync" "Wiki sync"
+# gitignored — the build step acts as a render check only.
+#
+# The sync hits the board API (localhost:9090 by default, .ken token) —
+# unreachable from a GitHub runner, where there is neither a kenboard
+# server nor a .ken (gitignored). An earlier comment here claimed CI never
+# reached this point; it did (only --quality exits above), so every
+# scheduled Monday publish since 0.2.1 died on "cannot reach
+# http://localhost:9090/api/v1/wiki/all: Connection refused" (ken #1009).
+# Skip the sync in CI mode: wiki/ is synced + committed from the laptop.
+# The build stays — it reads the committed wiki/ offline and is a free
+# render check.
+if [ "$CI_MODE" = false ]; then
+    print_step "Wiki Sync (ken wiki sync)"
+    run_command "pdm run ken wiki sync" "Wiki sync"
+fi
 
 print_step "Wiki Build (ken wiki build)"
 run_command "pdm run ken wiki build" "Wiki build"
