@@ -4,7 +4,7 @@ title: "QUALITY / Sonar Web:S6848 — non-native interactive div in index.html:2
 status: done
 who: "Claude"
 due_date: 
-updated_at: 
+updated_at: 2026-04-09T15:34:42
 classified_at: 2026-05-24T14:29:25
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: frontend/a11y

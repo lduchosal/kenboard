@@ -4,7 +4,7 @@ title: "WEB / Link to extension — page d'aide (ken bots + browser extension)"
 status: done
 who: "Claude"
 due_date: 
-updated_at: 
+updated_at: 2026-05-29T23:29:37
 classified_at: 2026-05-29T10:19:00
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: frontend/pages

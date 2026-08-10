@@ -4,7 +4,7 @@ title: "WIKI / ARCHITECTURE"
 status: done
 who: "Claude"
 due_date: 
-updated_at: 
+updated_at: 2026-05-27T13:41:02
 classified_at: 2026-05-27T10:44:48
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: cli/ken

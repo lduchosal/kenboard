@@ -4,7 +4,7 @@ title: "WIKI / SPEC / Format de l'export (#376 followup)"
 status: done
 who: "Q"
 due_date: 
-updated_at: 
+updated_at: 2026-05-27T16:17:31
 classified_at: 2026-05-24T18:17:27
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: wiki

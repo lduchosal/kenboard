@@ -4,7 +4,7 @@ title: "wiki / Liens HTML cassés en navigation file:// (Home off-by-one)"
 status: done
 who: "Claude"
 due_date: 
-updated_at: 
+updated_at: 2026-06-07T12:59:51
 classified_at: 2026-06-04T16:28:09
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: wiki

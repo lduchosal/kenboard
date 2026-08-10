@@ -4,7 +4,7 @@ title: "EXTENSION / Configuration : HTTP 403 sur onboarding link collé"
 status: done
 who: "Claude"
 due_date: 
-updated_at: 
+updated_at: 2026-05-29T11:51:52
 classified_at: 2026-05-29T09:59:24
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: extension

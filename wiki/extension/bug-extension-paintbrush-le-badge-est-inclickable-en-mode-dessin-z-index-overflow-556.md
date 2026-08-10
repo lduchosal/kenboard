@@ -4,7 +4,7 @@ title: "BUG / EXTENSION / paintbrush — le badge est inclickable en mode dessin
 status: done
 who: "Claude"
 due_date: 
-updated_at: 
+updated_at: 2026-05-30T23:59:10
 classified_at: 2026-05-30T16:33:18
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: extension
