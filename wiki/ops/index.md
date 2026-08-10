@@ -4,7 +4,7 @@ Ansible role, FreeBSD rc.d, update workflow, packaging, PyPI publish.
 
 Section: `ops`
 
-## Archivé (10)
+## Archivé (11)
 
 - [DEPLOY / le RC script update  commande](deploy-le-rc-script-update-commande-9.md)
 - [PYPI / Quality and publish](pypi-quality-and-publish-10.md)
@@ -16,3 +16,4 @@ Section: `ops`
 - [OPS / kenboard update / auto-update bloqué sur le marqueur last-attempted](ops-kenboard-update-auto-update-bloque-sur-le-marqueur-last-attempted-499.md)
 - [DEPLOY / signer l'extension Firefox dans publish.sh + attacher le .xpi à la release](deploy-signer-l-extension-firefox-dans-publish-sh-attacher-le-xpi-a-la-release-518.md)
 - [KENBOARD / update](kenboard-update-629.md)
+- [publish / CI hebdo cassée : `ken wiki sync` injoignable (localhost:9090)](publish-ci-hebdo-cassee-ken-wiki-sync-injoignable-localhost-9090-1009.md)
