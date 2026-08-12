@@ -130,8 +130,8 @@ def _format_footer(updated_at: datetime | str | None = None) -> str:
 
     ``updated_at`` is the frontmatter datetime (or ISO string); pages with no backing
     task get ``""`` — no footer at all. Carries neither the build time (#999) nor the
-    ``ken`` version (#1014): both are page-independent, so either one rewrites the
-    whole committed HTML tree on every release. Only per-task data belongs here.
+    ``ken`` version (#1014): both are page-independent, so either one rewrites the whole
+    committed HTML tree on every release. Only per-task data belongs here.
     """
     if isinstance(updated_at, datetime):
         stamp = updated_at.strftime("%Y-%m-%d %H:%M:%S")

@@ -4,7 +4,7 @@ title: "WIKI / CHURN - Retirer le numéro de version du ken dans le wiki génér
 status: review
 who: "Claude"
 due_date: 
-updated_at: 2026-08-12T18:06:30
+updated_at: 2026-08-12T18:09:20
 classified_at: 2026-08-12T18:06:36
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: wiki
@@ -67,6 +67,13 @@ Gates :
 ## Note de publication
 
 Le prochain `angel publish` produira un diff one-shot large (retrait de la ligne version sur 326 pages + suppression de 38 footers devenus vides). C'est le coût unique de la bascule ; après ça, les releases ne touchent plus le wiki.
+
+## Commits
+
+- `857e3d3` — fix(wiki): retirer le numéro de version du HTML généré (ken #1014)
+- `77858c1` — docs(wiki): sync — #1014 classé dans wiki
+
+Confirmé sur le sync réel post-fix : `ken wiki sync` + `ken wiki build` (328 pages) ne produisent que **5 fichiers modifiés** dans `wiki/` — la page de #1014 et ses 3 index. Aucune page tierce touchée : le churn est éteint.
 ---
 
 [← retour à wiki](index.md) · [voir log](../log/2026-08-12.md)
