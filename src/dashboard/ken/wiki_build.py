@@ -126,23 +126,18 @@ def _format_sidebar_nav(
 
 
 def _format_footer(updated_at: datetime | str | None = None) -> str:
-    """Render the footer of a wiki page: the task's last-modified stamp (#743, #999).
+    """Render a page's footer: the task's last-modified stamp (#743, #999, #1014).
 
-    ``updated_at`` is the detail page's frontmatter datetime (or ISO string). Pages with
-    no backing task (index, journal) get **no** footer at all — returns ``""``.
-
-    Deliberately carries neither the build time (#999) nor the ``ken`` version (#1014):
-    both are page-independent, so either one turns every release into a full rewrite of
-    the committed HTML tree. Only per-task data may appear here, so an unchanged wiki
-    rebuilds byte-identical.
+    ``updated_at`` is the frontmatter datetime (or ISO string); pages with no backing
+    task get ``""`` — no footer at all. Carries neither the build time (#999) nor the
+    ``ken`` version (#1014): both are page-independent, so either one rewrites the
+    whole committed HTML tree on every release. Only per-task data belongs here.
     """
     if isinstance(updated_at, datetime):
         stamp = updated_at.strftime("%Y-%m-%d %H:%M:%S")
     else:
         stamp = str(updated_at or "").replace("T", " ")
-    if not stamp:
-        return ""
-    return f'<footer class="wiki-footer">Modifié le {stamp}</footer>'
+    return f'<footer class="wiki-footer">Modifié le {stamp}</footer>' if stamp else ""
 
 
 def _wrap_html(
@@ -210,8 +205,7 @@ def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
         if log_dir.is_dir()
         else []
     )
-    # #743/#999/#1014 — per-task stamp footer only; never the build time nor the
-    # ken version, both of which churn the whole committed tree on every release.
+    # #999/#1014 — per-task stamp only; no build time, no version (both churn).
     for md_path in sorted(in_dir.rglob("*.md")):
         rel = md_path.relative_to(in_dir)
         # Always derive path strings from ``as_posix()`` (not ``str(rel)``): on
