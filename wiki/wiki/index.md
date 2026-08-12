@@ -4,6 +4,10 @@ LLM-wiki pattern (Karpathy) — classification, sync, build, lint.
 
 Section: `wiki`
 
+## En cours (1)
+
+- [WIKI / CHURN - Retirer le numéro de version du ken dans le wiki généré](wiki-churn-retirer-le-numero-de-version-du-ken-dans-le-wiki-genere-1014.md) — _review_
+
 ## Archivé (11)
 
 - [Export / wiki](export-wiki-376.md)
