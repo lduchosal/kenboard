@@ -1320,16 +1320,42 @@ class TestCliMutations:
         assert 'class="sidebar"' in body
         # Inline CSS — page is self-contained
         assert "<style>" in body
-        # #743 — every built page carries the footer; #999 — without any
-        # build timestamp (the HTML is committed to SVN).
-        assert 'class="wiki-footer"' in body
-        assert "kenboard" in body
+        # #999/#1014 — pages carry no build timestamp and no ken version, so a
+        # rebuild of an unchanged wiki is byte-identical (the HTML is committed).
+        from dashboard import __version__
+
         assert "Généré le" not in body
-        # Footer is rendered on every page kind: root index, log index too.
-        assert 'class="wiki-footer"' in (out / "index.html").read_text(encoding="utf-8")
-        assert 'class="wiki-footer"' in (out / "log" / "index.html").read_text(
-            encoding="utf-8"
+        assert __version__ not in body
+        # #1014 — pages with no backing task (section index, root index, journal)
+        # render no footer at all: it would now be empty.
+        assert 'class="wiki-footer"' not in body
+        for page in ("index.html", "log/index.html"):
+            assert 'class="wiki-footer"' not in (out / page).read_text(encoding="utf-8")
+
+    def test_wiki_build_is_byte_stable_across_versions(
+        self, cwd_tmp, runner, monkeypatch
+    ):
+        # #1014 — the churn regression guard: bumping the ken version must not
+        # change a single byte of the built tree.
+        self._setup(cwd_tmp)
+        self._write_architecture(
+            cwd_tmp,
+            "    - id: backend\n      title: Backend\n",
         )
+        self._make_md_tree(cwd_tmp)
+        out = cwd_tmp / "wiki-html"
+
+        def build_all():
+            assert runner.invoke(ken.cli, ["wiki", "build"]).exit_code == 0
+            return {
+                p.relative_to(out).as_posix(): p.read_text(encoding="utf-8")
+                for p in sorted(out.rglob("*.html"))
+            }
+
+        monkeypatch.setattr("dashboard.__version__", "0.1.131")
+        before = build_all()
+        monkeypatch.setattr("dashboard.__version__", "9.9.9")
+        assert build_all() == before
 
     def test_wiki_build_rewrites_md_links_to_html(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
@@ -2334,28 +2360,35 @@ class TestLogHelpers:
 
 
 class TestBuildFooter:
-    """Footer = version + task-modified stamp, never build time (#743, #999)."""
+    """Footer = task-modified stamp only — no build time, no version (#999, #1014)."""
 
     def test_format_footer_with_task_updated_at(self):
         from datetime import datetime
 
-        out = ken._format_footer("0.1.131", datetime(2026, 6, 4, 14, 32, 10))
-        assert "kenboard 0.1.131" in out
+        out = ken._format_footer(datetime(2026, 6, 4, 14, 32, 10))
         assert "Modifié le 2026-06-04 14:32:10" in out
         assert 'class="wiki-footer"' in out
 
     def test_format_footer_accepts_iso_string(self):
         # Frontmatter values may survive YAML parsing as plain strings.
-        out = ken._format_footer("0.1.131", "2026-06-04T14:32:10")
+        out = ken._format_footer("2026-06-04T14:32:10")
         assert "Modifié le 2026-06-04 14:32:10" in out
 
-    def test_format_footer_without_date_shows_version_only(self):
-        # Index / journal pages have no backing task — version only, and
+    def test_format_footer_omits_ken_version(self):
+        # #1014 — the version is page-independent: emitting it turned every
+        # release into a full rewrite of the committed HTML tree.
+        from datetime import datetime
+
+        from dashboard import __version__
+
+        out = ken._format_footer(datetime(2026, 6, 4, 14, 32, 10))
+        assert "kenboard" not in out
+        assert __version__ not in out
+
+    def test_format_footer_without_date_is_empty(self):
+        # Index / journal pages have no backing task — no footer at all, and
         # especially no build timestamp (SVN churn, #999).
-        out = ken._format_footer("0.1.131")
-        assert "kenboard 0.1.131" in out
-        assert "Modifié" not in out
-        assert "Généré" not in out
+        assert ken._format_footer() == ""
 
     def test_wrap_html_appends_footer_inside_main(self):
         out = ken._wrap_html("title", "<p>body</p>", "<nav/>", "<footer/>")

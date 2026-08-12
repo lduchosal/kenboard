@@ -1,8 +1,8 @@
 """``ken wiki build`` — render the wiki MD tree as standalone HTML.
 
-Wraps every page in the standard layout (sidebar + main + build footer) and renders per-
-task detail pages with the ``.fullscreen-card`` layout mirroring the board's full-screen
-task view (#376f, #741, #742, #743).
+Wraps every page in the standard layout (sidebar + main, plus a per-task footer on
+detail pages) and renders per-task detail pages with the ``.fullscreen-card`` layout
+mirroring the board's full-screen task view (#376f, #741, #742, #743).
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from typing import Any
 
 import click
 
-from dashboard.ken.config import KenConfig, _version
+from dashboard.ken.config import KenConfig
 from dashboard.ken.wiki import _architecture_help, _load_sections, wiki
 from dashboard.ken.wiki_css import _WIKI_HTML_CSS
 from dashboard.ken.wiki_detail import (
@@ -125,19 +125,24 @@ def _format_sidebar_nav(
     return "".join(lines)
 
 
-def _format_footer(version: str, updated_at: datetime | str | None = None) -> str:
-    """Render the footer shown at the bottom of every wiki page (#743, #999).
+def _format_footer(updated_at: datetime | str | None = None) -> str:
+    """Render the footer of a wiki page: the task's last-modified stamp (#743, #999).
 
-    Version + the task's last-modified stamp on detail pages (frontmatter datetime or
-    ISO string) — never the build time, so an unchanged wiki rebuilds identical bytes
-    instead of churning the whole SVN-committed tree (#999).
+    ``updated_at`` is the detail page's frontmatter datetime (or ISO string). Pages with
+    no backing task (index, journal) get **no** footer at all — returns ``""``.
+
+    Deliberately carries neither the build time (#999) nor the ``ken`` version (#1014):
+    both are page-independent, so either one turns every release into a full rewrite of
+    the committed HTML tree. Only per-task data may appear here, so an unchanged wiki
+    rebuilds byte-identical.
     """
     if isinstance(updated_at, datetime):
         stamp = updated_at.strftime("%Y-%m-%d %H:%M:%S")
     else:
         stamp = str(updated_at or "").replace("T", " ")
-    prefix = f"Modifié le {stamp} — " if stamp else ""
-    return f'<footer class="wiki-footer">{prefix}kenboard {version}</footer>'
+    if not stamp:
+        return ""
+    return f'<footer class="wiki-footer">Modifié le {stamp}</footer>'
 
 
 def _wrap_html(
@@ -146,8 +151,8 @@ def _wrap_html(
     """Wrap a rendered body with the standard layout (head + sidebar + main).
 
     ``footer_html`` is appended inside ``<main>`` after the body so it sits at the
-    bottom of the content column on every page (#743). Optional for callers that don't
-    care (defaults to empty), but ``_build_html_plan`` always passes a non-empty value.
+    bottom of the content column (#743). Empty on pages with no per-task stamp — index
+    and journal pages render no footer at all (#1014).
     """
     return (
         '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
@@ -205,8 +210,8 @@ def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
         if log_dir.is_dir()
         else []
     )
-    # #743/#999 — version + per-task stamp footer; never the build time (churn).
-    version = _version()
+    # #743/#999/#1014 — per-task stamp footer only; never the build time nor the
+    # ken version, both of which churn the whole committed tree on every release.
     for md_path in sorted(in_dir.rglob("*.md")):
         rel = md_path.relative_to(in_dir)
         # Always derive path strings from ``as_posix()`` (not ``str(rel)``): on
@@ -220,11 +225,11 @@ def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
         if meta and "id" in meta:
             page_title = f"#{meta.get('id')} — {meta.get('title') or 'task'}"
             body_html = _render_task_detail(meta, body_md)
-            footer_html = _format_footer(version, meta.get("updated_at"))
+            footer_html = _format_footer(meta.get("updated_at"))
         else:
             page_title = _extract_title(md_text)
             body_html = _rewrite_md_links_to_html(_render_markdown(md_text))
-            footer_html = _format_footer(version)
+            footer_html = ""
         html = _wrap_html(page_title, body_html, sidebar, footer_html)
         files.append({"path": rel.with_suffix(".html").as_posix(), "content": html})
     return files
