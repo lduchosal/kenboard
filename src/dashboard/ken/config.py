@@ -59,15 +59,10 @@ class KenConfig:
     wiki_html_dir: str = DEFAULT_WIKI_HTML_DIR
     description: str = ""
 
-    #: True when ``base_url`` is the hardcoded :data:`DEFAULT_BASE_URL` because
-    #: nothing configured one — no ``--base-url``, no ``KEN_BASE_URL``, and no
-    #: ``.ken``/``ken.ini`` found above the cwd. Legitimate for local dev, but it
-    #: also means a command run from an unrelated directory silently talks to
-    #: whatever listens on localhost:9090 instead of the real board (#1021).
+    # #1021: nothing configured a base_url (no flag, no env, no file found), plus
+    # the dir the search started from. Both quoted by ``_default_base_url_hint``
+    # — that silent fallback targets localhost, not the board.
     base_url_is_default: bool = False
-
-    #: Directory the upward search for ``.ken``/``ken.ini`` started from, quoted in
-    #: the diagnostic when the fallback above turns out to be wrong.
     search_root: Path | None = None
 
 

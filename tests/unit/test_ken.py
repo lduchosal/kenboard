@@ -297,10 +297,11 @@ _PROXY_REFUSAL = "Method PATCH not implemented (try POST)"
 class TestDefaultBaseUrlDiagnostic:
     """A command run outside the project must not blame the board.
 
-    Reproduces the scenario behind #1013: ``ken update`` was run as ``cd <scratchpad>
-    && ken update … --desc-file …`` so the CLI sat next to the file. No ``.ken`` /
+    Reproduces the scenario behind #1013: ``ken update`` was run as ``cd <scratchpad> &&
+    ken update … --desc-file …`` so the CLI sat next to the file. No ``.ken`` /
     ``ken.ini`` exists above a scratch dir, so ``base_url`` silently fell back to
-    ``http://localhost:9090``, an unrelated local service answered ``400 Method PATCH
+    ``http://localhost:9090``,
+    an unrelated local service answered ``400 Method PATCH
     not implemented (try POST)``, and the failure was filed as a kenboard bug.
     """
 

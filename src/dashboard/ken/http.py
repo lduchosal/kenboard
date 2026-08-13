@@ -79,8 +79,8 @@ def _request(
 
     Errors name the full URL, not just the path: knowing *which host* answered is what
     tells a real board error apart from a call that silently went to the default
-    localhost fallback (#1021). Applies to every endpoint — this is the CLI's only
-    HTTP entry point.
+    localhost fallback (#1021). Applies to every endpoint — this is the CLI's only HTTP
+    entry point.
     """
     url = cfg.base_url + path
     data = json_lib.dumps(body).encode("utf-8") if body is not None else None
