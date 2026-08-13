@@ -4,7 +4,7 @@ list/show/add/update/move/done + wiki subcommands.
 
 Section: `cli/ken`
 
-## Archivé (24)
+## Archivé (26)
 
 - [CLI / CLI ken pour Claude](cli-cli-ken-pour-claude-5.md)
 - [AGENT / CLI / Bonnes pratiques](agent-cli-bonnes-pratiques-118.md)
@@ -30,3 +30,5 @@ Section: `cli/ken`
 - [CLI / ken — exposer l'attachement SVG (#541) sur show/add/update + doc agent_guide](cli-ken-exposer-l-attachement-svg-541-sur-show-add-update-doc-agent-guide-574.md)
 - [CLI / Split .ken (secrets) + ken.ini (config versionnée)](cli-split-ken-secrets-ken-ini-config-versionnee-778.md)
 - [CLI / Découper ken.py (2266 lignes) en package dashboard/ken/](cli-decouper-ken-py-2266-lignes-en-package-dashboard-ken-786.md)
+- [BUG - Method PATCH not implemented (try POST](bug-method-patch-not-implemented-try-post-1013.md)
+- [BUG - Alternative explaination](bug-alternative-explaination-1021.md)
