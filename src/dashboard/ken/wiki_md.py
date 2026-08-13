@@ -1,0 +1,147 @@
+"""Markdown formatters for ``ken wiki sync`` — one function per page kind.
+
+Split out of ``wiki_sync`` (#1017), which was pinned at the ``max_file_lines`` ceiling.
+Pure string builders with no IO and no click: ``wiki_sync`` keeps only the plan
+building, the HTTP fetch and the command wiring (#376c, #376f, #742).
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+from dashboard.ken.wiki import _task_filename
+from dashboard.ken.wiki_log import _ARCHIVED_STATUSES, _classified_date
+
+if TYPE_CHECKING:
+    from dashboard.wiki import Section
+
+_ACTIVE_STATUS_ORDER = ("doing", "review", "todo")
+
+
+def _format_section_md(node: Section, path: str, tasks: list[dict[str, Any]]) -> str:
+    """Render one section's ``index.md`` — split into "En cours" / "Archivé" (#376f).
+
+    Each row links to ``<slug>-<id>.md`` (the per-task detail page). ``who`` is omitted
+    (always Q/Claude → no signal). ``status`` and ``due_date`` are only shown when they
+    carry information (status hidden on archived rows; due_date only if set on a non-
+    done task).
+    """
+    lines = [f"# {node.title}", ""]
+    if node.description:
+        lines.extend([node.description, ""])
+    lines.extend([f"Section: `{path}`", ""])
+    if not tasks:
+        lines.append("(no tasks classified yet)")
+        return "\n".join(lines) + "\n"
+
+    active = [t for t in tasks if (t.get("status") or "") not in _ARCHIVED_STATUSES]
+    archived = [t for t in tasks if (t.get("status") or "") in _ARCHIVED_STATUSES]
+
+    def _active_key(t: dict[str, Any]) -> tuple[int, int]:
+        """Sort key: doing → review → todo → others, ties broken by id."""
+        status = t.get("status") or ""
+        order = (
+            _ACTIVE_STATUS_ORDER.index(status)
+            if status in _ACTIVE_STATUS_ORDER
+            else len(_ACTIVE_STATUS_ORDER)
+        )
+        return (order, int(t["task_id"]))
+
+    if active:
+        lines.extend((f"## En cours ({len(active)})", ""))
+        lines.extend(
+            _format_section_row(t, archived=False)
+            for t in sorted(active, key=_active_key)
+        )
+        lines.append("")
+    if archived:
+        lines.extend((f"## Archivé ({len(archived)})", ""))
+        lines.extend(
+            _format_section_row(t, archived=True)
+            for t in sorted(archived, key=lambda x: int(x["task_id"]))
+        )
+    return "\n".join(lines) + "\n"
+
+
+def _format_section_row(task: dict[str, Any], *, archived: bool) -> str:
+    """One bullet line for the section index — `[title](slug-id.md)` + metadata."""
+    title = task.get("title") or ""
+    href = _task_filename(task)
+    line = f"- [{title}]({href})"
+    if not archived:
+        status = task.get("status") or ""
+        if status:
+            line += f" — _{status}_"
+        due = task.get("due_date")
+        if due:
+            line += f" — due {due}"
+    return line
+
+
+def _format_task_detail_md(
+    task: dict[str, Any], section_path: str, section_title: str
+) -> str:
+    """Render the per-task detail page (#376f).
+
+    Emits YAML frontmatter so ``wiki build`` can lift the metadata into the
+    ``.fullscreen-card`` HTML layout without re-parsing the body. The body is the task
+    description, rendered as-is (already MD).
+    """
+    fm_lines = [
+        "---",
+        f"id: {task['task_id']}",
+        f"title: {_yaml_str(task.get('title') or '')}",
+        f"status: {task.get('status') or ''}",
+        f"who: {_yaml_str(task.get('who') or '')}",
+        f"due_date: {task.get('due_date') or ''}",
+        f"updated_at: {task.get('updated_at') or ''}",
+        f"classified_at: {task.get('classified_at') or ''}",
+        f"classified_by: {_yaml_str(task.get('classified_by') or '')}",
+        f"section: {section_path}",
+        f"section_title: {_yaml_str(section_title)}",
+        "---",
+        "",
+    ]
+    title = task.get("title") or ""
+    body_lines = [
+        f"# #{task['task_id']} — {title}",
+        "",
+    ]
+    desc = task.get("description") or ""
+    if desc.strip():
+        body_lines.extend([desc.rstrip(), ""])
+    else:
+        body_lines.extend(["*(no description)*", ""])
+    # #742 — point "voir log" at the task's specific day instead of a flat
+    # log.md, so readers land on the daily journal page that contains it.
+    log_day = _classified_date(task)
+    up_to_root = "../" * (section_path.count("/") + 1)
+    nav = (
+        f"---\n\n[← retour à {section_path}](index.md) · "
+        f"[voir log]({up_to_root}log/{log_day}.md)\n"
+    )
+    return "\n".join(fm_lines + body_lines) + nav
+
+
+def _yaml_str(text: str) -> str:
+    """Quote a YAML scalar so colons / `#` / leading whitespace don't break parsing."""
+    escaped = text.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'
+
+
+def _format_root_index_md(
+    sections: list, by_path: dict[str, list[dict[str, Any]]]
+) -> str:
+    """Render the wiki root ``index.md`` (sidebar-style TOC + counts)."""
+    lines = ["# kenboard wiki", "", "Generated by `ken wiki sync`.", ""]
+    total = sum(len(v) for v in by_path.values())
+    lines.extend([f"Total classified: **{total}**.", ""])
+    for section in sections:
+        for path, node in section.flatten():
+            depth = path.count("/")
+            indent = "  " * depth
+            count = len(by_path.get(path, []))
+            lines.append(
+                f"{indent}- [{node.title}]({path}/index.md) — {count} task(s)",
+            )
+    return "\n".join(lines) + "\n"

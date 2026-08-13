@@ -63,8 +63,12 @@ from dashboard.ken.fmt import (
 )
 from dashboard.ken.http import _request
 from dashboard.ken.wiki import _slugify, _task_filename
-from dashboard.ken.wiki_build import _format_footer, _format_sidebar_nav, _wrap_html
-from dashboard.ken.wiki_sync import (
+from dashboard.ken.wiki_layout import (
+    _format_footer,
+    _format_sidebar_nav,
+    _wrap_html,
+)
+from dashboard.ken.wiki_log import (
     _classified_date,
     _format_log_day_md,
     _format_log_index_md,
