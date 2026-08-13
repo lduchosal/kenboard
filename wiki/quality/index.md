@@ -4,7 +4,7 @@ Tests (unit/integration/e2e), lint, typecheck, coverage, Sonarcloud.
 
 Section: `quality`
 
-## Archivé (47)
+## Archivé (48)
 
 - [TEST / AUTH / Tests units & E2E Test](test-auth-tests-units-e2e-test-13.md)
 - [TEST / Tests units && E2E](test-tests-units-e2e-18.md)
@@ -53,3 +53,4 @@ Section: `quality`
 - [QUALITY / ruff 0.16 — adopter les 413 règles par défaut et réparer le gate](quality-ruff-0-16-adopter-les-413-regles-par-defaut-et-reparer-le-gate-992.md)
 - [QUALITY / palier C — consolider refurb et flake8 dans ruff](quality-palier-c-consolider-refurb-et-flake8-dans-ruff-993.md)
 - [QUALITY / sonar_gate — attendre CI/file CE au lieu du timeout aveugle](quality-sonar-gate-attendre-ci-file-ce-au-lieu-du-timeout-aveugle-995.md)
+- [QUALITY / REFACTOR - Découper wiki_build.py et wiki_sync.py sous le plafond metrics-gate](quality-refactor-decouper-wiki-build-py-et-wiki-sync-py-sous-le-plafond-metrics-gate-1017.md)
