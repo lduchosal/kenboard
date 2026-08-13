@@ -5,10 +5,13 @@ boundary, and the working directory is swapped to a tmp_path so ``.ken`` discove
 writes stay isolated.
 """
 
+import email.message
+import io
 import json
 import os
 import re
 import sys
+import urllib.error
 from unittest.mock import patch
 
 import pytest
@@ -247,6 +250,118 @@ class TestRequest:
         with patch("dashboard.ken.http.urllib_request.urlopen", impl):
             ken._request(cfg, "POST", "/api/v1/tasks", body={"title": "T"})
         assert calls[0][2] == {"title": "T"}
+
+
+# -- HTTP error helpers -------------------------------------------------------
+
+
+def _http_error(code, body):
+    """Build a urllib HTTPError carrying ``body`` as its response payload."""
+    return urllib.error.HTTPError(
+        "http://x:9090/api/v1/tasks/1",
+        code,
+        "refused",
+        email.message.Message(),
+        io.BytesIO(body.encode()),
+    )
+
+
+def _urlopen_raising(outcomes):
+    """Urlopen replacement replaying ``outcomes`` in order.
+
+    Each outcome is either an exception to raise or a python object to return as the
+    JSON body.
+    """
+    calls = []
+    queue = list(outcomes)
+
+    def _impl(req, *_args, **_kwargs):
+        headers = {k.lower(): v for k, v in req.headers.items()}
+        calls.append((req.get_method(), req.full_url, req.data, headers))
+        outcome = queue.pop(0)
+        if isinstance(outcome, Exception):
+            raise outcome
+        return _FakeResponse(json.dumps(outcome).encode())
+
+    return _impl, calls
+
+
+# The body an unrelated service listening on localhost:9090 answered when a
+# `ken update` ran from a directory with no config (#1013 -> #1021).
+_PROXY_REFUSAL = "Method PATCH not implemented (try POST)"
+
+
+# -- Unconfigured base_url (#1021) --------------------------------------------
+
+
+class TestDefaultBaseUrlDiagnostic:
+    """A command run outside the project must not blame the board.
+
+    Reproduces the scenario behind #1013: ``ken update`` was run as ``cd <scratchpad>
+    && ken update … --desc-file …`` so the CLI sat next to the file. No ``.ken`` /
+    ``ken.ini`` exists above a scratch dir, so ``base_url`` silently fell back to
+    ``http://localhost:9090``, an unrelated local service answered ``400 Method PATCH
+    not implemented (try POST)``, and the failure was filed as a kenboard bug.
+    """
+
+    def test_update_outside_a_project_targets_localhost_and_says_so(
+        self, cwd_tmp, runner
+    ):
+        desc = cwd_tmp / "ken-1108-resolution.md"
+        desc.write_text("## Résolution\n", encoding="utf-8")
+        impl, calls = _urlopen_raising([_http_error(400, _PROXY_REFUSAL)])
+        with patch("dashboard.ken.http.urllib_request.urlopen", impl):
+            result = runner.invoke(
+                ken.cli, ["update", "1108", "--desc-file", str(desc)]
+            )
+
+        assert result.exit_code == 1
+        # The request never went to a board: no config was found above the cwd.
+        assert calls[0][1] == "http://localhost:9090/api/v1/tasks/1108"
+        # And no blind replay towards that unknown listener (#1013 workaround off).
+        assert len(calls) == 1
+        # The message names the host, then explains the fallback instead of
+        # letting the peer's answer look like a kenboard failure.
+        out = result.output
+        assert "HTTP 400 on PATCH http://localhost:9090/api/v1/tasks/1108" in out
+        assert ".ken / ken.ini was found above" in out
+        assert "built-in default base_url" in out
+        assert "never reached your board" in out
+        assert "--base-url / set KEN_BASE_URL" in out
+
+    def test_connection_refused_gets_the_same_hint(self, cwd_tmp, runner):
+        # The commoner shape of the same mistake: nothing listens on 9090 at all.
+        impl, _calls = _urlopen_raising(
+            [urllib.error.URLError("[Errno 61] Connection refused")]
+        )
+        with patch("dashboard.ken.http.urllib_request.urlopen", impl):
+            result = runner.invoke(ken.cli, ["move", "1108", "--to", "review"])
+        assert result.exit_code == 1
+        assert "cannot reach http://localhost:9090/api/v1/tasks/1108" in result.output
+        assert "built-in default base_url" in result.output
+
+    def test_configured_base_url_gets_no_hint(self, cwd_tmp, runner, monkeypatch):
+        # A real 400 from a configured board must stay a plain error: no noise.
+        monkeypatch.setenv("KEN_BASE_URL", "https://kenboard.example.com")
+        impl, _calls = _urlopen_raising(
+            [_http_error(400, json.dumps({"error": "invalid status"}))]
+        )
+        with patch("dashboard.ken.http.urllib_request.urlopen", impl):
+            result = runner.invoke(ken.cli, ["move", "1108", "--to", "review"])
+        assert result.exit_code == 1
+        assert "https://kenboard.example.com/api/v1/tasks/1108" in result.output
+        assert "built-in default base_url" not in result.output
+
+    def test_diagnostic_is_not_specific_to_the_tasks_endpoint(self, cwd_tmp, runner):
+        # `_request` is the CLI's only HTTP entry point, so every endpoint gets the
+        # same treatment. `ken init` hits /api/v1/projects — no task in sight.
+        impl, calls = _urlopen_raising([_http_error(500, "<html>oops</html>")])
+        with patch("dashboard.ken.http.urllib_request.urlopen", impl):
+            result = runner.invoke(ken.cli, ["init", "some-uuid"])
+        assert result.exit_code == 1
+        assert calls[0][1] == "http://localhost:9090/api/v1/projects"
+        assert "HTTP 500 on GET http://localhost:9090/api/v1/projects" in result.output
+        assert "built-in default base_url" in result.output
 
 
 # -- CLI commands -------------------------------------------------------------

@@ -59,6 +59,17 @@ class KenConfig:
     wiki_html_dir: str = DEFAULT_WIKI_HTML_DIR
     description: str = ""
 
+    #: True when ``base_url`` is the hardcoded :data:`DEFAULT_BASE_URL` because
+    #: nothing configured one — no ``--base-url``, no ``KEN_BASE_URL``, and no
+    #: ``.ken``/``ken.ini`` found above the cwd. Legitimate for local dev, but it
+    #: also means a command run from an unrelated directory silently talks to
+    #: whatever listens on localhost:9090 instead of the real board (#1021).
+    base_url_is_default: bool = False
+
+    #: Directory the upward search for ``.ken``/``ken.ini`` started from, quoted in
+    #: the diagnostic when the fallback above turns out to be wrong.
+    search_root: Path | None = None
+
 
 def _find_file_upwards(start: Path, name: str) -> Path | None:
     """Walk up from ``start`` looking for a file or dir named ``name``."""
@@ -211,9 +222,12 @@ def _load_config(
 
     fields = _resolved_fields(file_data, ini_data)
     project_id = project_override or fields["project_id"]
-    base_url = (base_url_override or fields["base_url"] or DEFAULT_BASE_URL).rstrip("/")
+    configured_url = base_url_override or fields["base_url"]
+    base_url = (configured_url or DEFAULT_BASE_URL).rstrip("/")
     api_token = token_override or fields["api_token"]
     return KenConfig(
+        base_url_is_default=not configured_url,
+        search_root=Path.cwd(),
         project_id=project_id,
         base_url=base_url,
         api_token=api_token,
