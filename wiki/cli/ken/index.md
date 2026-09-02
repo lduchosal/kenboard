@@ -4,7 +4,7 @@ list/show/add/update/move/done + wiki subcommands.
 
 Section: `cli/ken`
 
-## Archivé (26)
+## Archivé (27)
 
 - [CLI / CLI ken pour Claude](cli-cli-ken-pour-claude-5.md)
 - [AGENT / CLI / Bonnes pratiques](agent-cli-bonnes-pratiques-118.md)
@@ -32,3 +32,4 @@ Section: `cli/ken`
 - [CLI / Découper ken.py (2266 lignes) en package dashboard/ken/](cli-decouper-ken-py-2266-lignes-en-package-dashboard-ken-786.md)
 - [BUG - Method PATCH not implemented (try POST](bug-method-patch-not-implemented-try-post-1013.md)
 - [BUG - Alternative explaination](bug-alternative-explaination-1021.md)
+- [CLI / ken init : URL d'onboarding à la place de PROJECT_UUID](cli-ken-init-url-d-onboarding-a-la-place-de-project-uuid-1089.md)
