@@ -20,8 +20,8 @@ def runner():
 
 
 @pytest.fixture()
-def project_id(live_server, clean_db):
-    """Create a category + project via the API and return the project_id."""
+def board_ids(live_server, clean_db):
+    """Create a category + project via the API and return ``(cat_id, project_id)``."""
     import urllib.request as ur
 
     base = live_server
@@ -41,7 +41,19 @@ def project_id(live_server, clean_db):
         "/api/v1/projects",
         {"cat": cat["id"], "name": "Demo", "acronym": "DEMO"},
     )
-    return proj["id"]
+    return cat["id"], proj["id"]
+
+
+@pytest.fixture()
+def project_id(board_ids):
+    """The project half of the category/project pair created for the test."""
+    return board_ids[1]
+
+
+def _onboarding_url(live_server, board_ids, token="tok-e2e"):
+    """Build the link the board's *copy onboard link* button would produce."""
+    cat_id, proj_id = board_ids
+    return f"{live_server}/onboard/cat/{cat_id}/project/{proj_id}?token={token}"
 
 
 @pytest.fixture()
@@ -77,18 +89,23 @@ class TestKenE2E:
         assert any(p["id"] == project_id for p in data)
 
     def test_init_writes_ken_file(
-        self, runner, live_server, clean_db, project_id, cwd_tmp, monkeypatch
+        self, runner, live_server, clean_db, board_ids, project_id, cwd_tmp
     ):
         # Pretend we're in a git repo so .gitignore handling fires
         (cwd_tmp / ".git").mkdir()
-        # #778: ken.ini holds the shared config; .ken (api_token only) is
-        # written only when a token is resolved.
-        monkeypatch.setenv("KEN_API_TOKEN", "tok-e2e")
-        result = _ken(runner, live_server, "init", project_id)
+        # #1089: the onboarding URL is the only input — no --base-url, no
+        # KEN_API_TOKEN, nothing on disk. #778: ken.ini holds the shared
+        # config, .ken the token alone.
+        result = runner.invoke(
+            ken.cli, ["init", _onboarding_url(live_server, board_ids)]
+        )
         assert result.exit_code == 0, result.output
         ini_content = (cwd_tmp / "ken.ini").read_text()
         assert f"project_id = {project_id}" in ini_content
         assert f"base_url = {live_server}" in ini_content
+        assert "wiki_dir = wiki" in ini_content
+        # The name comes from GET /api/v1/projects/<id> (#1089).
+        assert "description = Demo" in ini_content
         ken_file = cwd_tmp / ".ken"
         assert ken_file.exists()
         assert "api_token=tok-e2e" in ken_file.read_text()
@@ -208,11 +225,13 @@ class TestKenE2E:
         assert titles == ["T2", "T3"]
 
     def test_walk_up_parents_finds_ken(
-        self, runner, live_server, clean_db, project_id, cwd_tmp
+        self, runner, live_server, clean_db, board_ids, project_id, cwd_tmp
     ):
         """Ken init at the root, then commands from a deep subdir."""
         (cwd_tmp / ".git").mkdir()
-        result = _ken(runner, live_server, "init", project_id)
+        result = runner.invoke(
+            ken.cli, ["init", _onboarding_url(live_server, board_ids)]
+        )
         assert result.exit_code == 0, result.output
 
         deep = cwd_tmp / "a" / "b" / "c"

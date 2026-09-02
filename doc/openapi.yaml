@@ -199,6 +199,22 @@ paths:
   /api/v1/projects/{proj_id}:
     parameters:
       - $ref: "#/components/parameters/ProjId"
+    get:
+      tags: [projects]
+      summary: Read a single project
+      description: >
+        Project-scoped, unlike the listing: an api_key limited to this project may
+        call it. `ken init` uses it to name the board it just bootstrapped.
+      responses:
+        "200":
+          description: The project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
     patch:
       tags: [projects]
       summary: Update a project

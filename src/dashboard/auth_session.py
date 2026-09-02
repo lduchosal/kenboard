@@ -96,8 +96,9 @@ def _unauthorized() -> ResponseReturnValue:
     Browser callers (``Accept`` includes ``text/html``) get the original 302 → /login
     redirect so the cookie flow stays unchanged. CLI tools and LLM agents instead
     receive a 401 with a plain-text body explaining how to ``pip install kenboard`` and
-    ``ken init <category-id>`` (#117). The category id, when present in the URL, is
-    interpolated into the init command so the agent can copy-paste it.
+    bootstrap a config — ``ken init <onboarding-url>``, or the ``.ken`` file by hand
+    (#117). The category id, when present in the URL, is interpolated into the runbook
+    so the agent can copy-paste it.
 
     The ``?onboard`` query parameter forces the machine response regardless of the
     ``Accept`` header. This is what the copy-onboard-link button generates, so that

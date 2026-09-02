@@ -83,6 +83,27 @@ def create_project() -> ResponseReturnValue:
         conn.close()
 
 
+@bp.route("/<proj_id>", methods=["GET"])
+def get_project(proj_id: str) -> ResponseReturnValue:
+    """Return one project (read scope on its owning category required).
+
+    The cross-project listing is closed to per-project api_keys: the scope check
+    cannot derive a project from it and answers 403. This by-id route is the one such
+    a token can read, which is how ``ken init`` picks the board's name up for
+    ``ken.ini`` right after following an onboarding link (#1089).
+    """
+    if not current_user_can_project(proj_id, "read"):
+        return jsonify({"error": "forbidden"}), 403
+    conn = db.get_connection()
+    try:
+        row = db.load_queries().proj_get_by_id(conn, id=proj_id)
+        if not row:
+            return jsonify({"error": "Not found"}), 404
+        return jsonify(Project(**row).model_dump())
+    finally:
+        conn.close()
+
+
 @bp.route("/<proj_id>", methods=["PATCH"])
 def update_project(proj_id: str) -> ResponseReturnValue:
     """Update a project (write scope on its owning category required)."""

@@ -259,7 +259,7 @@ Désactivable globalement via `PERF_ENABLED=false`.
 
 Le binaire `ken` lit sa config par ordre de priorité :
 flag CLI > variable d'environnement > fichier `.ken` > défaut. `.ken` est
-créé par `ken init <project-id>` (mode 0600, contient le token API — ne
+créé par `ken init "<onboarding-url>"` (mode 0600, contient le token API — ne
 **jamais** le commiter).
 
 | Variable | Défaut | Description |

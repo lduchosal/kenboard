@@ -1,28 +1,27 @@
 """Root Click group and lifecycle commands of the ``ken`` CLI.
 
 Holds the ``cli`` group every command registers on, plus the commands that manage the
-CLI itself: ``init`` (bootstrap ken.ini / .ken), ``self-update`` (pip upgrade) and
-``help`` (agent guide).
+CLI itself: ``init`` (bootstrap ken.ini / .ken, from the URL parsed by ``onboard_url``
+and written by ``init_files``), ``self-update`` (pip upgrade) and ``help`` (agent
+guide).
 """
 
 from __future__ import annotations
 
-import configparser
 import sys
 from importlib import resources
 from pathlib import Path
 
 import click
 
-from dashboard.ken.config import (
-    KEN_FILE,
-    KEN_INI_FILE,
-    KEN_INI_SECTION,
-    KenConfig,
-    _add_to_gitignore,
-    _load_config,
+from dashboard.ken.config import KenConfig, _load_config
+from dashboard.ken.http import _request, _try_request
+from dashboard.ken.init_files import _refuse_existing_files, _write_config_files
+from dashboard.ken.onboard_url import (
+    OnboardingLink,
+    parse_onboarding_url,
+    read_url_argument,
 )
-from dashboard.ken.http import _request
 
 
 @click.group()
@@ -38,107 +37,100 @@ def cli(
     token: str | None,
     config_file: str | None,
 ) -> None:
-    """Ken — task CLI for the kenboard board."""
+    """Ken — task CLI for the kenboard board.
+
+    Config is resolved flag > env (KEN_*) > .ken (local secrets, gitignored) > ken.ini
+    (shared, versioned) > built-in defaults. Provide no base_url and ken falls back to a
+    default that points at localhost:9090 — nothing reaches your board, and the failure
+    then looks like the board misbehaving (#1021).
+
+    Bootstrap a repo with `ken init <onboarding-url>`: paste the link behind the board's
+    "copy onboard link" button and ken writes ken.ini + .ken for you.
+    """
     ctx.ensure_object(dict)
     ctx.obj["cfg"] = _load_config(project, base_url, token, config_file)
 
 
-def _choose_project(
-    cfg: KenConfig,
-    projects_data: list[dict[str, str]],
-    project_uuid: str | None,
-) -> tuple[str, str]:
-    """Resolve the target project: interactive prompt or explicit UUID lookup."""
-    if project_uuid is None:
-        click.echo("Available projects:")
-        for i, p in enumerate(projects_data, 1):
-            click.echo(f"  {i}. {p['name']} ({p.get('acronym', '')}) — {p['id']}")
-        choice = click.prompt(
-            "Select a project (number)",
-            type=click.IntRange(1, len(projects_data)),
-        )
-        return projects_data[choice - 1]["id"], projects_data[choice - 1]["name"]
-    match = next((p for p in projects_data if p["id"] == project_uuid), None)
-    if match is None:
-        click.echo(
-            f"Error: project {project_uuid} not found on {cfg.base_url}.",
-            err=True,
-        )
-        sys.exit(1)
-    return project_uuid, match["name"]
+def _config_from_link(ctx: click.Context, link: OnboardingLink) -> KenConfig:
+    """Build the config ``init`` runs on: the URL alone, plus explicit global flags.
+
+    The group's resolved ``ctx.obj["cfg"]`` is deliberately ignored here — on the fresh
+    checkout ``init`` exists for, it *is* the localhost fallback. ``--base-url`` and
+    ``--token`` still win when the operator passes them (an API host that differs from
+    the public one, a link handed over without its token).
+    """
+    overrides = ctx.parent.params if ctx.parent is not None else {}
+    return KenConfig(
+        project_id=link.project_id,
+        base_url=(overrides.get("base_url") or link.base_url).rstrip("/"),
+        api_token=overrides.get("token") or link.token,
+        ken_file=None,
+    )
 
 
-def _write_config_files(
-    cfg: KenConfig, cwd: Path, project_uuid: str, chosen_name: str
-) -> None:
-    """Write ``ken.ini`` (shared) and, when a token is resolved, ``.ken`` (0600)."""
-    ini_parser = configparser.ConfigParser()
-    ini_parser[KEN_INI_SECTION] = {
-        "project_id": project_uuid,
-        "base_url": cfg.base_url,
-        "description": chosen_name,
-    }
-    with (cwd / KEN_INI_FILE).open("w", encoding="utf-8") as fh:
-        ini_parser.write(fh)
-    click.echo(f"Wrote {KEN_INI_FILE} (project: {chosen_name})")
+def _verify_project(cfg: KenConfig, project_id: str) -> str:
+    """Prove the link works, and read the project's name when the board serves it.
 
-    if cfg.api_token:
-        ken_target = cwd / KEN_FILE
-        ken_target.write_text(f"api_token={cfg.api_token}\n", encoding="utf-8")
-        ken_target.chmod(0o600)
-        click.echo(f"Wrote {KEN_FILE} (api_token)")
-        _add_to_gitignore(cwd)
-    else:
-        click.echo(
-            f"Note: no api_token resolved — skipped {KEN_FILE}. "
-            f"Set KEN_API_TOKEN or pass --token, then re-run `ken init --force`.",
-            err=True,
-        )
+    ``GET /api/v1/projects/<id>`` answers both questions at once: it demands the very
+    read scope every later command needs, and it carries the name that becomes
+    ``description``. It is a recent route (#1089), so a CLI talking to an older board
+    falls back to that project's task list — same authorisation, no label. The
+    cross-project listing is not an option here: a token minted by an onboarding link
+    is scoped to one project and the board answers 403 on it.
+    """
+    project = _try_request(cfg, "GET", f"/api/v1/projects/{project_id}")
+    if isinstance(project, dict) and project.get("name"):
+        return str(project["name"])
+    _request(
+        cfg,
+        "GET",
+        f"/api/v1/tasks?project={project_id}",
+        hints={
+            401: "\nHint: the token in the onboarding link is missing, invalid or "
+            "expired — ask for a fresh link.",
+            403: f"\nHint: that token carries no access to project {project_id} on "
+            "this board — ask for a fresh onboarding link.",
+        },
+    )
+    return ""
 
 
 @cli.command()
-@click.argument("project_uuid", required=False)
+@click.argument("onboarding_url")
 @click.option("--force", is_flag=True, help="Overwrite an existing ken.ini and/or .ken")
 @click.pass_context
-def init(ctx: click.Context, project_uuid: str | None, *, force: bool) -> None:
-    """Initialize ``ken.ini`` (and ``.ken`` if a token is set) in the cwd.
+def init(ctx: click.Context, onboarding_url: str, *, force: bool) -> None:
+    r"""Bootstrap this repo's config from the board's onboarding URL.
 
-    ``ken.ini`` is the versioned, shared config — it holds ``project_id``, ``base_url``
-    and ``description``. It is **not** added to ``.gitignore`` so the whole team picks
-    up the same defaults.
+    ONBOARDING_URL is the link behind the board's "copy onboard link" button:
 
-    ``.ken`` is the local secrets file — it holds ``api_token`` only (when one is
-    resolved from flags/env), is created with mode ``0600`` and added to the repository
-    ``.gitignore``. Skipped when no token is available.
+    \b
+        https://board.example.com/onboard/cat/<cat-id>/project/<project-id>?token=<token>
+
+    It carries everything ken needs — base_url, project_id and, when the link
+    includes ?token=, the API token — so init needs no prior configuration. That is
+    the point: every other command reads .ken / ken.ini, the very files a fresh
+    checkout does not have yet, which is why a config-driven init would aim at
+    http://localhost:9090 instead of your board.
+
+    Pass `-` to read the URL from stdin and keep the token out of the shell history:
+
+    \b
+        pbpaste | ken init -
+
+    Two files are written in the current directory:
+
+    \b
+      ken.ini  shared, versioned — project_id, base_url, description and the
+               wiki/sync paths. Commit it; it never holds the token.
+      .ken     local secrets — api_token only, mode 0600, added to .gitignore.
     """
-    cfg: KenConfig = ctx.obj["cfg"]
+    link = parse_onboarding_url(read_url_argument(onboarding_url))
+    cfg = _config_from_link(ctx, link)
     cwd = Path.cwd()
-    ini_target = cwd / KEN_INI_FILE
-    ken_target = cwd / KEN_FILE
-    if ini_target.exists() and not force:
-        click.echo(
-            f"Error: {KEN_INI_FILE} already exists. Use --force to overwrite.",
-            err=True,
-        )
-        sys.exit(1)
-    if cfg.api_token and ken_target.exists() and not force:
-        click.echo(
-            f"Error: {KEN_FILE} already exists. Use --force to overwrite.",
-            err=True,
-        )
-        sys.exit(1)
-
-    projects_data = _request(cfg, "GET", "/api/v1/projects")
-    if not projects_data:
-        click.echo(
-            "Error: no projects found on the kenboard. "
-            "Create one via the web UI first.",
-            err=True,
-        )
-        sys.exit(1)
-
-    project_uuid, chosen_name = _choose_project(cfg, projects_data, project_uuid)
-    _write_config_files(cfg, cwd, project_uuid, chosen_name)
+    _refuse_existing_files(cwd, has_token=cfg.api_token is not None, force=force)
+    chosen_name = _verify_project(cfg, link.project_id)
+    _write_config_files(cfg, cwd, link.project_id, chosen_name)
 
 
 @cli.command(name="self-update")

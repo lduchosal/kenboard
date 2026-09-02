@@ -129,11 +129,18 @@ pdm run check              # composite: isort, format, docformatter, typecheck,
 ## `ken` CLI workflow
 
 Project metadata is in `KENBOARD.md` (gitignored). Bootstrap once per repo
-with `ken init <project-id>`, which writes `ken.ini` (versioned, shared
-config — `project_id`, `base_url`, `description`) and, if a token is
-resolved from `--token`/`KEN_API_TOKEN`, also writes `.ken` (mode 0600,
-gitignored, holds `api_token` only). Resolution chain: flag > env >
-`.ken` > `ken.ini` > default. See `doc/ken-cli.md` for the split (#778).
+with `ken init "<onboarding-url>"` — the link behind the board's *copy
+onboard link* button
+(`https://<board>/onboard/cat/<cat-id>/project/<project-id>?token=<token>`),
+or `ken init -` to read it from stdin and keep the token out of the shell
+history. The URL carries `base_url`, `project_id` and the token, so `init`
+works before any config exists — it cannot use the resolution chain, whose
+fallback is `http://localhost:9090` (#1013, #1021). It writes `ken.ini`
+(versioned, shared — `project_id`, `base_url`, `description` and the
+wiki/sync paths) and, when a token is resolved, `.ken` (mode 0600,
+gitignored, `api_token` only). Resolution chain for every other command:
+flag > env > `.ken` > `ken.ini` > default. See `doc/ken-cli.md` for the
+split (#778).
 Then:
 
 ```sh

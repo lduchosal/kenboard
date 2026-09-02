@@ -68,21 +68,13 @@ def _default_base_url_hint(cfg: KenConfig) -> str:
     )
 
 
-def _request(
+def _build_request(
     cfg: KenConfig,
     method: str,
-    path: str,
-    *,
+    url: str,
     body: dict[str, Any] | None = None,
-) -> Any:  # noqa: ANN401 — JSON parsé, forme libre
-    """Send a JSON request, return parsed response or None on empty body.
-
-    Errors name the full URL, not just the path: knowing *which host* answered is what
-    tells a real board error apart from a call that silently went to the default
-    localhost fallback (#1021). Applies to every endpoint — this is the CLI's only HTTP
-    entry point.
-    """
-    url = cfg.base_url + path
+) -> urllib_request.Request:
+    """Build the signed JSON request every call goes out with."""
     data = json_lib.dumps(body).encode("utf-8") if body is not None else None
     headers = {
         "Content-Type": "application/json",
@@ -90,7 +82,49 @@ def _request(
     }
     if cfg.api_token:
         headers["Authorization"] = f"Bearer {cfg.api_token}"
-    req = urllib_request.Request(url, data=data, headers=headers, method=method)
+    return urllib_request.Request(url, data=data, headers=headers, method=method)
+
+
+def _try_request(cfg: KenConfig, method: str, path: str) -> Any:  # noqa: ANN401
+    """Best-effort call: parsed body, or ``None`` when anything goes wrong.
+
+    For the enrichment a command can live without. ``ken init`` reads the project's
+    display name off ``/api/v1/projects``, which a token minted by an onboarding link is
+    not allowed to call — it is scoped to one project, and the board answers 403
+    ("cannot resolve project for scope check") on the cross-project listing. Losing the
+    label must not sink the bootstrap.
+    """
+    try:
+        with urllib_request.urlopen(
+            _build_request(cfg, method, cfg.base_url + path), context=_SSL_CTX
+        ) as resp:
+            raw = resp.read()
+            return json_lib.loads(raw) if raw else None
+    except (urllib_error.URLError, ValueError):
+        return None
+
+
+def _request(
+    cfg: KenConfig,
+    method: str,
+    path: str,
+    *,
+    body: dict[str, Any] | None = None,
+    hints: dict[int, str] | None = None,
+) -> Any:  # noqa: ANN401 — JSON parsé, forme libre
+    """Send a JSON request, return parsed response or None on empty body.
+
+    Errors name the full URL, not just the path: knowing *which host* answered is what
+    tells a real board error apart from a call that silently went to the default
+    localhost fallback (#1021). Applies to every endpoint — this is the CLI's only HTTP
+    entry point.
+
+    ``hints`` maps an HTTP status to an extra line appended to the error — what a caller
+    knows about *its own* call that the generic client cannot (``ken init`` reading a
+    401 as an expired token in the onboarding link, say).
+    """
+    url = cfg.base_url + path
+    req = _build_request(cfg, method, url, body)
     try:
         with urllib_request.urlopen(req, context=_SSL_CTX) as resp:
             raw = resp.read()
@@ -101,7 +135,7 @@ def _request(
         body_text = e.read().decode("utf-8", errors="replace")
         click.echo(
             f"Error: HTTP {e.code} on {method} {url}: {body_text}"
-            f"{_default_base_url_hint(cfg)}",
+            f"{(hints or {}).get(e.code, '')}{_default_base_url_hint(cfg)}",
             err=True,
         )
         sys.exit(1)
@@ -117,8 +151,8 @@ def _require_project(cfg: KenConfig) -> str:
     """Return the resolved project_id or exit with a clear error."""
     if not cfg.project_id:
         click.echo(
-            "Error: no project configured. "
-            "Run `ken init <UUID>` or set KEN_PROJECT_ID.",
+            "Error: no project configured. Run `ken init <onboarding-url>` "
+            '(the board\'s "copy onboard link" button) or set KEN_PROJECT_ID.',
             err=True,
         )
         sys.exit(1)

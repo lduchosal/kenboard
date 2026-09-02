@@ -492,6 +492,36 @@ class TestAgentOnboardingHints:
         assert "project_id=xyz-project-id" in body
         assert "abc-cat-id" in body
 
+    def test_onboard_route_offers_ken_init_with_the_link_filled_in(
+        self, auth_client, db
+    ):
+        """#1089: step 2 hands over the ready-to-run command, token included."""
+        r = auth_client.get("/onboard/cat/abc/project/xyz?token=kb_tok")
+        body = r.get_data(as_text=True)
+        assert (
+            'ken init "http://localhost/onboard/cat/abc/project/xyz?token=kb_tok"'
+            in body
+        )
+        assert "ken init -" in body
+        # The manual .ken block stays as the fallback — nothing was replaced.
+        assert "Copier tel quel dans un fichier .ken :" in body
+        assert "project_id=xyz" in body
+
+    def test_401_text_runbook_mentions_ken_init(self, auth_client, db):
+        r = auth_client.get(
+            "/cat/0ee51b6f.html", headers={"Accept": "*/*"}, follow_redirects=False
+        )
+        body = r.get_data(as_text=True)
+        assert "ken init" in body
+        assert "Créer un fichier .ken (mode 0600) dans votre projet :" in body
+
+    def test_401_json_advertises_ken_init(self, auth_client, db):
+        r = auth_client.get("/api/v1/tasks?project=anything")
+        onboarding = r.get_json()["onboarding"]
+        assert "ken init" in onboarding["ken_init"]
+        # ken_file (the manual route) is untouched.
+        assert onboarding["ken_file"]["path"] == ".ken (mode 0600)"
+
     def test_onboard_route_works_with_html_accept(self, auth_client, db):
         """WebFetch sends Accept: text/html — the route must still return 200."""
         r = auth_client.get(

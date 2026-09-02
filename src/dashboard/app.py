@@ -17,7 +17,7 @@ from dashboard.config import Config
 from dashboard.email import init_email
 from dashboard.errors import API_PATH_PREFIX, register_error_handlers
 from dashboard.logging import get_logger, setup_logging
-from dashboard.onboarding import onboard_bp
+from dashboard.onboarding_runbook import onboard_bp
 from dashboard.perf import init_perf
 from dashboard.routes import (
     categories_bp,

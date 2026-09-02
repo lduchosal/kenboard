@@ -15,7 +15,7 @@ edition de projects : geres par l'UI web, hors scope CLI.
 ## Surface CLI
 
 ```
-ken init     [PROJECT_UUID] [--force]                       # crée/met a jour le .ken du cwd
+ken init     ONBOARDING_URL|- [--force]                     # cree ken.ini + .ken depuis le lien d'onboarding
 ken projects [--json]                                       # liste les projects (pour trouver l'UUID)
 ken list     [--status STATUS] [--who WHO] [--json]         # tasks du projet courant
 ken show     ID [--json]                                    # detail d'une task
@@ -46,13 +46,14 @@ payload exact que renvoie l'API REST, avec dates ISO `YYYY-MM-DD`.
 ### Exemples
 
 ```sh
-# Bootstrap : trouver le projet et creer le .ken
-$ ken projects
-ID                                    ACRONYM  NAME
-76a70206-0e6a-4485-a426-d7eb5ab53aac  KEN      Kenboard
+# Bootstrap : coller le lien du bouton "copy onboard link" du board
+$ ken init "https://www.kenboard.2113.ch/onboard/cat/0ee51b6f-.../project/76a70206-...?token=kb_..."
+Wrote ken.ini (project: Kenboard) - commit it
+Wrote .ken (api_token, mode 0600) - never commit it
+Added .ken to /path/to/repo/.gitignore
 
-$ ken init 76a70206-0e6a-4485-a426-d7eb5ab53aac
-Wrote .ken (project: Kenboard)
+# Meme chose sans laisser le token dans l'historique du shell
+$ pbpaste | ken init -
 
 # Lister les tasks ouvertes
 $ ken list --status doing
@@ -133,29 +134,60 @@ garde-fous restent identiques :
 #### `ken init`
 
 ```
-ken init [UUID] [--base-url URL] [--token TOKEN] [--force]
+ken init ONBOARDING_URL [--base-url URL] [--token TOKEN] [--force]
+ken init -                                     # l'URL est lue sur stdin
 ```
 
-- Si `UUID` est fourni → ecrit `ken.ini` avec ce project_id (verifie
-  qu'il existe via `GET /api/v1/projects` et affiche le name).
-- Si omis → liste les projects, propose un choix interactif.
-- `--base-url` et `--token` permettent de seeder ces cles a la
-  creation.
-- `ken.ini` recoit `project_id`, `base_url`, `description`.
-- `.ken` est cree **uniquement si un `api_token` est resolu** (via
-  `--token` ou `KEN_API_TOKEN`) ; sinon `ken` affiche une note et
-  saute l'etape — on pourra relancer plus tard avec `--force`.
+L'argument est l'**URL d'onboarding** du board — le lien du bouton
+*copy onboard link* d'une page de categorie :
+
+```
+https://board.example.com/onboard/cat/<cat-id>/project/<project-id>?token=<token>
+```
+
+C'est la seule forme acceptee (l'ancienne `ken init <PROJECT_UUID>` est
+retiree). Raison : `init` est la commande qu'on lance quand *rien* n'est
+configure, donc elle ne peut pas dependre de la chaine de resolution —
+sans `.ken` ni `ken.ini`, `base_url` vaut `http://localhost:9090` et la
+requete ne touche jamais le board (#1013, #1021). L'URL, elle, porte
+`base_url`, `project_id` et le token.
+
+- Un prefixe de chemin est tolere
+  (`https://host/kenboard/onboard/cat/...`) : le `base_url` derive le
+  garde, pour une instance derriere un reverse-proxy.
+- `-` lit l'URL sur stdin (`pbpaste | ken init -`) — le token n'atterrit
+  pas dans l'historique du shell.
+- Le project_id est verifie via `GET /api/v1/projects/<id>` (route
+  ajoutee avec #1089 : contrairement au listing, elle est *project-scoped*,
+  donc un token d'onboarding limite a un projet peut la lire). Le `name`
+  renvoye devient la `description`. Contre un board plus ancien qui n'a pas
+  la route, `init` retombe sur `GET /api/v1/tasks?project=<id>` — meme
+  verification d'autorisation, `description` vide. 401/403 → le message dit
+  que le token du lien est invalide, expire, ou sans acces au projet.
+- `--base-url` / `--token` restent des surcharges explicites (host d'API
+  different du host public, lien fourni sans son `?token=`).
+- `ken.ini` recoit les **sept** cles : `project_id`, `base_url`,
+  `description`, `sync_dir`, `architecture`, `wiki_dir`, `wiki_html_dir`.
+  Les defauts sont ecrits en clair ; une valeur deja personnalisee dans
+  un `ken.ini` existant est conservee par un `--force`.
+- `.ken` est cree **uniquement si un token est resolu** (dans l'URL, via
+  `--token` ou `KEN_API_TOKEN`) ; sinon `ken` affiche une note et saute
+  l'etape — on relance plus tard avec `--force`.
 - Refuse de reecrire un `ken.ini` ou `.ken` existant sans `--force`.
-- `ken.ini` n'est jamais ajoute a `.gitignore` ; `.ken` l'est.
+- `ken.ini` n'est jamais ajoute a `.gitignore` ; `.ken` l'est. Si une
+  regle du `.gitignore` (`ken*`, `*.ini`) masque quand meme `ken.ini`,
+  `init` le signale : la config partagee ne partirait jamais chez les
+  coequipiers.
 
 #### Onboarding automatise (Copy onboard link)
 
 Pour les agents AI, le flow recommande est le bouton **Copy onboard
-link** sur la page d'un projet (cf. `/admin/board`). Le lien servi
-pointe vers `/onboarding/<token>` et inclut un `api_token` jetable
-de type `onboarding`. Au premier appel `ken init`, ce token est
-consomme et remplace par un token persistant de type `onboarded`
-(scope `write` sur le projet uniquement).
+link** sur la page d'une categorie. Le lien pointe vers
+`/onboard/cat/<cat-id>/project/<project-id>?token=<token>` (route
+publique, 200 text/plain, cf. `src/dashboard/onboarding.py`) : ouvert
+tel quel il sert le runbook, passe a `ken init` il configure le repo.
+C'est la meme URL dans les deux cas, et son etape 2 affiche la commande
+`ken init` deja remplie.
 
 ### Configuration
 
@@ -178,13 +210,16 @@ decide. Quand `--config` est utilise, **un seul** fichier est lu.
 | `project_id` / `KEN_PROJECT_ID` | (aucun) | UUID du projet cible. |
 | `api_token` / `KEN_API_TOKEN` | (aucun) | Bearer token. Envoye en header `Authorization: Bearer <token>` sur chaque requete. A garder dans `.ken`. |
 | `sync_dir` / `KEN_SYNC_DIR` | `doc/kenboard` | Dossier cible de `ken sync`. Chemin relatif resolu par rapport au dossier qui contient `ken.ini` (ou `.ken` legacy). |
+| `architecture` / `KEN_ARCHITECTURE` | `ARCHITECTURE.md` | Fichier declarant les sections wiki. |
+| `wiki_dir` / `KEN_WIKI_DIR` | `wiki` | Markdown genere par `ken wiki sync`. |
+| `wiki_html_dir` / `KEN_WIKI_HTML_DIR` | `wiki-html` | HTML rendu par `ken wiki build`. |
 
 Si apres cette resolution `project_id` est toujours absent et qu'aucun
 `--project` n'est passe, `ken` echoue avec :
 
 ```
 $ ken list
-Error: no project configured. Run `ken init <UUID>` or set KEN_PROJECT_ID.
+Error: no project configured. Run `ken init <onboarding-url>` (the board's "copy onboard link" button) or set KEN_PROJECT_ID.
 ```
 
 ### Auth

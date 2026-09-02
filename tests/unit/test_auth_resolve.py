@@ -33,9 +33,15 @@ class TestResolveProjectId:
         with app.test_request_context("/api/v1/projects/p-1", method="PATCH"):
             assert _resolve_project_id("PATCH", "/api/v1/projects/p-1") == "p-1"
 
-    def test_projects_get_is_not_scoped(self, app):
+    def test_projects_get_by_id_takes_url_id(self, app):
+        # #1089: reading one project is project-scoped, so an onboarding token
+        # can call it — unlike the cross-project listing.
         with app.test_request_context("/api/v1/projects/p-1"):
-            assert _resolve_project_id("GET", "/api/v1/projects/p-1") is None
+            assert _resolve_project_id("GET", "/api/v1/projects/p-1") == "p-1"
+
+    def test_projects_listing_stays_unscoped(self, app):
+        with app.test_request_context("/api/v1/projects"):
+            assert _resolve_project_id("GET", "/api/v1/projects") is None
 
     def test_unknown_path_returns_none(self, app):
         with app.test_request_context("/api/v1/users"):

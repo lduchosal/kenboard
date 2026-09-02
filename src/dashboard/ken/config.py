@@ -236,27 +236,6 @@ def _load_config(
     )
 
 
-def _add_to_gitignore(cwd: Path) -> None:
-    """Append ``.ken`` to the repo ``.gitignore`` if not already present."""
-    git_marker = _find_file_upwards(cwd, ".git")
-    if git_marker is None:
-        click.echo(
-            f"Warning: not in a git repository, "
-            f"{KEN_FILE} not added to any .gitignore",
-            err=True,
-        )
-        return
-    repo_root = git_marker.parent
-    gitignore = repo_root / ".gitignore"
-    existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
-    lines_in = [line.strip() for line in existing.splitlines()]
-    if KEN_FILE in lines_in:
-        return
-    sep = "" if existing.endswith("\n") or not existing else "\n"
-    gitignore.write_text(existing + sep + KEN_FILE + "\n", encoding="utf-8")
-    click.echo(f"Added {KEN_FILE} to {gitignore}")
-
-
 def _resolve_sync_dir(cfg: KenConfig) -> Path:
     """Resolve ``sync_dir`` to an absolute path.
 

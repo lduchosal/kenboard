@@ -130,6 +130,29 @@ class TestProjectAPI:
         assert resp.status_code == 200
         assert len(resp.get_json()) == 1
 
+    def test_get_by_id(self, client, db, queries):
+        """#1089: reading one project — what `ken init` calls to name the board."""
+        queries.cat_create(db, id="cat", name="Cat", color="r", position=0)
+        queries.proj_create(
+            db,
+            id="p1",
+            cat_id="cat",
+            name="Kenboard",
+            acronym="KEN",
+            status="active",
+            position=0,
+            default_who="",
+        )
+        resp = client.get("/api/v1/projects/p1")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data["id"] == "p1"
+        assert data["name"] == "Kenboard"
+
+    def test_get_by_id_unknown_is_404(self, client, db, queries):
+        resp = client.get("/api/v1/projects/nope")
+        assert resp.status_code == 404
+
     def test_create_rejects_html_in_name(self, client, db, queries):
         queries.cat_create(db, id="cat", name="Cat", color="r", position=0)
         resp = client.post(

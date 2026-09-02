@@ -14,10 +14,12 @@ import sys
 import urllib.error
 from unittest.mock import patch
 
+import click
 import pytest
 from click.testing import CliRunner
 
 from dashboard import ken
+from dashboard.ken.onboard_url import parse_onboarding_url, read_url_argument
 
 # -- Helpers ------------------------------------------------------------------
 
@@ -355,10 +357,12 @@ class TestDefaultBaseUrlDiagnostic:
 
     def test_diagnostic_is_not_specific_to_the_tasks_endpoint(self, cwd_tmp, runner):
         # `_request` is the CLI's only HTTP entry point, so every endpoint gets the
-        # same treatment. `ken init` hits /api/v1/projects — no task in sight.
+        # same treatment. `ken projects` hits /api/v1/projects — no task in sight.
+        # (`ken init` is exempt by construction: it reads its base_url off the
+        # onboarding URL, never off the resolved config.)
         impl, calls = _urlopen_raising([_http_error(500, "<html>oops</html>")])
         with patch("dashboard.ken.http.urllib_request.urlopen", impl):
-            result = runner.invoke(ken.cli, ["init", "some-uuid"])
+            result = runner.invoke(ken.cli, ["projects"])
         assert result.exit_code == 1
         assert calls[0][1] == "http://localhost:9090/api/v1/projects"
         assert "HTTP 500 on GET http://localhost:9090/api/v1/projects" in result.output
@@ -374,47 +378,116 @@ def _patch_responses(responses):
     return patch("dashboard.ken.http.urllib_request.urlopen", impl), calls
 
 
-class TestCliInit:
-    """`ken init` writes ken.ini (versioned) and .ken (secrets, gitignored)."""
+class TestOnboardingUrl:
+    """Parsing of the onboarding link — the only input `ken init` accepts."""
 
-    def test_init_with_uuid_writes_ini_only_when_no_token(self, cwd_tmp, runner):
+    def test_parses_base_url_ids_and_token(self):
+        link = parse_onboarding_url(
+            "https://board.test/onboard/cat/cat-1/project/proj-1?token=kb_tok"
+        )
+        assert link.base_url == "https://board.test"
+        assert link.cat_id == "cat-1"
+        assert link.project_id == "proj-1"
+        assert link.token == "kb_tok"
+
+    def test_token_is_optional(self):
+        link = parse_onboarding_url("http://localhost:9090/onboard/cat/c/project/p")
+        assert link.base_url == "http://localhost:9090"
+        assert link.token is None
+
+    def test_path_prefix_survives_in_base_url(self):
+        # An instance mounted under a reverse-proxy subpath: the API lives under
+        # the same prefix, so dropping it would send every later call to /api/v1.
+        link = parse_onboarding_url(
+            "https://host.test/kenboard/onboard/cat/c/project/p?token=t"
+        )
+        assert link.base_url == "https://host.test/kenboard"
+        assert link.project_id == "p"
+
+    def test_trailing_slash_and_extra_query_params(self):
+        link = parse_onboarding_url(
+            "https://board.test:8443/onboard/cat/c/project/p/?token=t&utm=x"
+        )
+        assert link.base_url == "https://board.test:8443"
+        assert link.token == "t"
+
+    def test_bare_uuid_is_rejected_with_a_pointer_to_the_link(self):
+        with pytest.raises(click.UsageError) as exc:
+            parse_onboarding_url("76a70206-0e6a-4485-a426-d7eb5ab53aac")
+        assert "onboarding URL" in str(exc.value)
+        assert "copy onboard link" in str(exc.value)
+
+    def test_board_page_url_is_rejected(self):
+        with pytest.raises(click.UsageError) as exc:
+            parse_onboarding_url("https://board.test/cat/cat-1.html")
+        assert "is not an onboarding URL" in str(exc.value)
+
+    def test_stdin_form_reads_the_url(self, monkeypatch):
+        monkeypatch.setattr(
+            "sys.stdin", io.StringIO("  https://board.test/onboard/x  \n")
+        )
+        assert read_url_argument("-") == "https://board.test/onboard/x"
+
+    def test_empty_stdin_is_an_error(self, monkeypatch):
+        monkeypatch.setattr("sys.stdin", io.StringIO("   \n"))
+        with pytest.raises(click.UsageError) as exc:
+            read_url_argument("-")
+        assert "no URL on stdin" in str(exc.value)
+
+
+_URL = "https://board.test/onboard/cat/cat-1/project/uuid-1"
+_URL_WITH_TOKEN = f"{_URL}?token=tok-secret"
+
+
+class TestCliInit:
+    """`ken init` bootstraps ken.ini (versioned) + .ken (secrets) from the URL."""
+
+    def test_init_without_token_writes_ini_only(self, cwd_tmp, runner):
         (cwd_tmp / ".git").mkdir()
         ctx, _ = _patch_responses(
             [
                 (
                     "GET",
-                    "/api/v1/projects",
-                    [{"id": "uuid-1", "name": "MyProj", "acronym": "MP"}],
+                    "/api/v1/projects/uuid-1",
+                    {"id": "uuid-1", "name": "MyProj", "acronym": "MP"},
                 )
             ]
         )
         with ctx:
-            result = runner.invoke(ken.cli, ["init", "uuid-1"])
+            result = runner.invoke(ken.cli, ["init", _URL])
         assert result.exit_code == 0, result.output
         # ken.ini holds the shared config — versioned, no .gitignore entry.
-        ini_file = cwd_tmp / "ken.ini"
-        assert ini_file.exists()
-        content = ini_file.read_text(encoding="utf-8")
+        content = (cwd_tmp / "ken.ini").read_text(encoding="utf-8")
         assert "[ken]" in content
         assert "project_id = uuid-1" in content
-        assert "base_url = " in content
-        # No api_token → no .ken, no gitignore entry.
+        assert "base_url = https://board.test" in content
+        assert "description = MyProj" in content
+        # No token in the URL → no .ken, no gitignore entry.
         assert not (cwd_tmp / ".ken").exists()
         assert not (cwd_tmp / ".gitignore").exists()
+        assert "no ?token=" in result.output
 
-    def test_init_with_token_writes_ken_with_mode_0600(
-        self, cwd_tmp, runner, monkeypatch
-    ):
-        (cwd_tmp / ".git").mkdir()
-        monkeypatch.setenv("KEN_API_TOKEN", "tok-secret")
-        ctx, _ = _patch_responses(
-            [("GET", "/api/v1/projects", [{"id": "uuid-1", "name": "MyProj"}])]
+    def test_init_reaches_the_url_host_not_the_localhost_default(self, cwd_tmp, runner):
+        # The whole point of #1089: nothing is configured yet, so the resolved
+        # base_url is the localhost fallback. init must ignore it.
+        ctx, calls = _patch_responses(
+            [("GET", "/api/v1/projects/uuid-1", {"id": "uuid-1", "name": "P"})]
         )
         with ctx:
-            result = runner.invoke(ken.cli, ["init", "uuid-1"])
+            result = runner.invoke(ken.cli, ["init", _URL_WITH_TOKEN])
+        assert result.exit_code == 0, result.output
+        assert calls[0][1] == "https://board.test/api/v1/projects/uuid-1"
+        assert calls[0][3]["Authorization"] == "Bearer tok-secret"
+
+    def test_init_with_token_in_url_writes_ken_with_mode_0600(self, cwd_tmp, runner):
+        (cwd_tmp / ".git").mkdir()
+        ctx, _ = _patch_responses(
+            [("GET", "/api/v1/projects/uuid-1", {"id": "uuid-1", "name": "MyProj"})]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["init", _URL_WITH_TOKEN])
         assert result.exit_code == 0, result.output
         ken_file = cwd_tmp / ".ken"
-        assert ken_file.exists()
         content = ken_file.read_text(encoding="utf-8")
         assert "api_token=tok-secret" in content
         # Config keys do NOT leak into .ken — they live in ken.ini.
@@ -425,45 +498,137 @@ class TestCliInit:
         gi = (cwd_tmp / ".gitignore").read_text(encoding="utf-8")
         assert ".ken" in gi.splitlines()
 
-    def test_init_unknown_uuid_fails(self, cwd_tmp, runner):
-        ctx, _ = _patch_responses(
-            [("GET", "/api/v1/projects", [{"id": "other", "name": "X"}])]
+    def test_init_url_read_from_stdin(self, cwd_tmp, runner):
+        ctx, calls = _patch_responses(
+            [("GET", "/api/v1/projects/uuid-1", {"id": "uuid-1", "name": "P"})]
         )
         with ctx:
-            result = runner.invoke(ken.cli, ["init", "missing-uuid"])
-        assert result.exit_code != 0
-        assert "not found" in result.output
+            result = runner.invoke(ken.cli, ["init", "-"], input=_URL_WITH_TOKEN)
+        assert result.exit_code == 0, result.output
+        assert calls[0][1] == "https://board.test/api/v1/projects/uuid-1"
+        assert "api_token=tok-secret" in (cwd_tmp / ".ken").read_text(encoding="utf-8")
+
+    def test_init_writes_every_ini_key_with_its_default(self, cwd_tmp, runner):
+        ctx, _ = _patch_responses(
+            [("GET", "/api/v1/projects/uuid-1", {"id": "uuid-1", "name": "P"})]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["init", _URL])
+        assert result.exit_code == 0, result.output
+        content = (cwd_tmp / "ken.ini").read_text(encoding="utf-8")
+        # The wiki/sync paths are a per-repo convention: spelled out, not implied.
+        assert "sync_dir = doc/kenboard" in content
+        assert "architecture = ARCHITECTURE.md" in content
+        assert "wiki_dir = wiki" in content
+        assert "wiki_html_dir = wiki-html" in content
+        # …and the file the whole team reads must never carry the token.
+        assert "api_token" not in content
+
+    def test_force_refreshes_coordinates_but_keeps_custom_paths(self, cwd_tmp, runner):
+        (cwd_tmp / "ken.ini").write_text(
+            "[ken]\nproject_id = old\nwiki_dir = docs/wiki\nsync_dir = tasks\n",
+            encoding="utf-8",
+        )
+        ctx, _ = _patch_responses(
+            [("GET", "/api/v1/projects/uuid-1", {"id": "uuid-1", "name": "New"})]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["init", _URL, "--force"])
+        assert result.exit_code == 0, result.output
+        content = (cwd_tmp / "ken.ini").read_text(encoding="utf-8")
+        assert "project_id = uuid-1" in content
+        assert "description = New" in content
+        assert "wiki_dir = docs/wiki" in content
+        assert "sync_dir = tasks" in content
+        assert "architecture = ARCHITECTURE.md" in content
+
+    def test_project_the_token_cannot_read_fails(self, cwd_tmp, runner):
+        # Both calls refused: the by-id read (soft) then the task probe (fatal).
+        impl, _calls = _urlopen_raising(
+            [
+                _http_error(403, json.dumps({"error": "insufficient scope"})),
+                _http_error(403, json.dumps({"error": "insufficient scope"})),
+            ]
+        )
+        with patch("dashboard.ken.http.urllib_request.urlopen", impl):
+            result = runner.invoke(ken.cli, ["init", _URL_WITH_TOKEN])
+        assert result.exit_code == 1
+        assert "carries no access to project uuid-1" in result.output
+        assert not (cwd_tmp / "ken.ini").exists()
+
+    def test_older_board_without_the_by_id_route_still_bootstraps(
+        self, cwd_tmp, runner
+    ):
+        # 404 on /projects/<id> (the route came with #1089) → fall back to the
+        # task list of that project: same authorisation, just no display name.
+        impl, calls = _fake_urlopen([("GET", "/api/v1/tasks", [])])
+
+        def _impl(req, *args, **kwargs):
+            if req.full_url.endswith("/api/v1/projects/uuid-1"):
+                raise _http_error(404, "<html>not found</html>")
+            return impl(req, *args, **kwargs)
+
+        with patch("dashboard.ken.http.urllib_request.urlopen", _impl):
+            result = runner.invoke(ken.cli, ["init", _URL_WITH_TOKEN])
+        assert result.exit_code == 0, result.output
+        assert calls[0][1] == "https://board.test/api/v1/tasks?project=uuid-1"
+        content = (cwd_tmp / "ken.ini").read_text(encoding="utf-8")
+        assert "project_id = uuid-1" in content
+        assert "description = \n" in content
+
+    def test_expired_token_gets_a_token_specific_hint(self, cwd_tmp, runner):
+        # 401 on both calls: the soft name lookup, then the fatal probe.
+        impl, _calls = _urlopen_raising(
+            [
+                _http_error(401, json.dumps({"error": "unauthorized"})),
+                _http_error(401, json.dumps({"error": "unauthorized"})),
+            ]
+        )
+        with patch("dashboard.ken.http.urllib_request.urlopen", impl):
+            result = runner.invoke(ken.cli, ["init", _URL_WITH_TOKEN])
+        assert result.exit_code == 1
+        assert "invalid or expired" in result.output
+        # The localhost diagnostic must stay out of it — a base_url was configured.
+        assert "built-in default base_url" not in result.output
 
     def test_init_refuses_overwrite_of_ini(self, cwd_tmp, runner):
         (cwd_tmp / "ken.ini").write_text("[ken]\nproject_id = existing\n")
-        result = runner.invoke(ken.cli, ["init", "uuid-1"])
+        result = runner.invoke(ken.cli, ["init", _URL])
         assert result.exit_code != 0
         assert "already exists" in result.output
 
-    def test_init_force_overwrites_both(self, cwd_tmp, runner, monkeypatch):
+    def test_init_force_overwrites_both(self, cwd_tmp, runner):
         (cwd_tmp / "ken.ini").write_text("[ken]\nproject_id = old\n")
         (cwd_tmp / ".ken").write_text("api_token=old\n")
         os.chmod(cwd_tmp / ".ken", 0o600)
-        monkeypatch.setenv("KEN_API_TOKEN", "new-tok")
         ctx, _ = _patch_responses(
-            [("GET", "/api/v1/projects", [{"id": "uuid-1", "name": "New"}])]
+            [("GET", "/api/v1/projects/uuid-1", {"id": "uuid-1", "name": "New"})]
         )
         with ctx:
-            result = runner.invoke(ken.cli, ["init", "uuid-1", "--force"])
+            result = runner.invoke(ken.cli, ["init", _URL_WITH_TOKEN, "--force"])
         assert result.exit_code == 0, result.output
         ini_content = (cwd_tmp / "ken.ini").read_text(encoding="utf-8")
         assert "project_id = uuid-1" in ini_content
-        assert "api_token=new-tok" in (cwd_tmp / ".ken").read_text(encoding="utf-8")
+        assert "api_token=tok-secret" in (cwd_tmp / ".ken").read_text(encoding="utf-8")
 
-    def test_init_appends_to_existing_gitignore(self, cwd_tmp, runner, monkeypatch):
-        (cwd_tmp / ".git").mkdir()
-        (cwd_tmp / ".gitignore").write_text("__pycache__/\n*.log\n")
-        monkeypatch.setenv("KEN_API_TOKEN", "tok")
-        ctx, _ = _patch_responses(
-            [("GET", "/api/v1/projects", [{"id": "uuid-1", "name": "X"}])]
+    def test_token_flag_overrides_a_link_without_one(self, cwd_tmp, runner):
+        ctx, calls = _patch_responses(
+            [("GET", "/api/v1/projects/uuid-1", {"id": "uuid-1", "name": "P"})]
         )
         with ctx:
-            result = runner.invoke(ken.cli, ["init", "uuid-1"])
+            result = runner.invoke(ken.cli, ["--token", "flag-tok", "init", _URL])
+        assert result.exit_code == 0, result.output
+        assert calls[0][3]["Authorization"] == "Bearer flag-tok"
+        assert "api_token=flag-tok" in (cwd_tmp / ".ken").read_text(encoding="utf-8")
+
+    def test_init_appends_to_existing_gitignore(self, cwd_tmp, runner):
+        (cwd_tmp / ".git").mkdir()
+        (cwd_tmp / ".gitignore").write_text("__pycache__/\n*.log\n")
+        ctx, _ = _patch_responses(
+            [("GET", "/api/v1/projects/uuid-1", {"id": "uuid-1", "name": "X"})]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["init", _URL_WITH_TOKEN])
         assert result.exit_code == 0, result.output
         gi_lines = (cwd_tmp / ".gitignore").read_text(encoding="utf-8").splitlines()
         assert "__pycache__/" in gi_lines
@@ -472,13 +637,35 @@ class TestCliInit:
         # ken.ini stays versioned — never added to .gitignore.
         assert "ken.ini" not in gi_lines
 
-    def test_init_skips_gitignore_outside_git_repo(self, cwd_tmp, runner, monkeypatch):
-        monkeypatch.setenv("KEN_API_TOKEN", "tok")
+    def test_warns_when_a_gitignore_rule_would_hide_ken_ini(self, cwd_tmp, runner):
+        (cwd_tmp / ".git").mkdir()
+        (cwd_tmp / ".gitignore").write_text("*.ini\n", encoding="utf-8")
         ctx, _ = _patch_responses(
-            [("GET", "/api/v1/projects", [{"id": "uuid-1", "name": "X"}])]
+            [("GET", "/api/v1/projects/uuid-1", {"id": "uuid-1", "name": "X"})]
         )
         with ctx:
-            result = runner.invoke(ken.cli, ["init", "uuid-1"])
+            result = runner.invoke(ken.cli, ["init", _URL])
+        assert result.exit_code == 0, result.output
+        assert "matches `*.ini`" in result.output
+        assert "shared config" in result.output
+
+    def test_no_warning_when_the_rule_is_negated(self, cwd_tmp, runner):
+        (cwd_tmp / ".git").mkdir()
+        (cwd_tmp / ".gitignore").write_text("*.ini\n!ken.ini\n", encoding="utf-8")
+        ctx, _ = _patch_responses(
+            [("GET", "/api/v1/projects/uuid-1", {"id": "uuid-1", "name": "X"})]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["init", _URL])
+        assert result.exit_code == 0, result.output
+        assert "never be committed" not in result.output
+
+    def test_init_skips_gitignore_outside_git_repo(self, cwd_tmp, runner):
+        ctx, _ = _patch_responses(
+            [("GET", "/api/v1/projects/uuid-1", {"id": "uuid-1", "name": "X"})]
+        )
+        with ctx:
+            result = runner.invoke(ken.cli, ["init", _URL_WITH_TOKEN])
         assert result.exit_code == 0, result.output
         assert "not in a git repository" in result.output
         assert not (cwd_tmp / ".gitignore").exists()

@@ -73,8 +73,10 @@ def _resolve_project_id(method: str, path: str) -> str | None:
     """
     if path.startswith("/api/v1/tasks"):
         return _project_from_tasks(method, path)
-    # PATCH/DELETE /api/v1/projects/<id> → URL <id>
-    if path.startswith("/api/v1/projects/") and method in ("PATCH", "DELETE"):
+    # GET/PATCH/DELETE /api/v1/projects/<id> → URL <id>. GET included since
+    # #1089: `ken init` reads the project's name with an onboarding-scoped
+    # token, which the cross-project listing cannot serve.
+    if path.startswith("/api/v1/projects/") and method in ("GET", "PATCH", "DELETE"):
         return path.rsplit("/", 1)[1]
     if path.startswith("/api/v1/wiki"):
         return _project_from_wiki(method, path)

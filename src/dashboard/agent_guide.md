@@ -211,6 +211,13 @@ agent host (you).
 
 - The `ken` binary uses only the stdlib for HTTP. Do **not** add
   `requests` or `httpx` as a runtime dependency just for it.
+- Bootstrap a repo with `ken init "<onboarding-url>"` — the link behind
+  the board's *copy onboard link* button. It carries `base_url`,
+  `project_id` and the token, so `init` works before any config exists.
+  `ken init -` reads the URL from stdin, which keeps the token out of
+  the shell history.
+- Two config files (#778): `ken.ini` is shared and **versioned**
+  (`project_id`, `base_url`, `description`, wiki/sync paths) — commit it.
 - The `.ken` file is gitignored and contains an API token (mode 0600).
   Never commit it; never echo its contents.
 - Don't add features, refactor code, or make "improvements" beyond what
@@ -222,4 +229,5 @@ agent host (you).
 
 - `ken --help` for the full command reference.
 - The 401 onboarding runbook (returned by any kenboard URL hit without
-  credentials) explains how to install ken and configure `.ken`.
+  credentials) explains how to install ken and bootstrap the config with
+  `ken init`.
