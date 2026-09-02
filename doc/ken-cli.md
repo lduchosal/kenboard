@@ -17,7 +17,7 @@ edition de projects : geres par l'UI web, hors scope CLI.
 ```
 ken init     ONBOARDING_URL|- [--force]                     # cree ken.ini + .ken depuis le lien d'onboarding
 ken projects [--json]                                       # liste les projects (pour trouver l'UUID)
-ken list     [--status STATUS] [--who WHO] [--json]         # tasks du projet courant
+ken list     [--status STATUS] [--who WHO] [--all] [--json]  # tasks ouvertes du projet courant
 ken show     ID [--json]                                    # detail d'une task
 ken add      TITLE [--desc TEXT] [--who WHO] [--status STATUS] [--when YYYY-MM-DD] [--json]
 ken update   ID [--title T] [--desc D] [--status S] [--who W] [--when YYYY-MM-DD] [--json]
@@ -55,7 +55,19 @@ Added .ken to /path/to/repo/.gitignore
 # Meme chose sans laisser le token dans l'historique du shell
 $ pbpaste | ken init -
 
-# Lister les tasks ouvertes
+# Lister les tasks ouvertes -- `done` est masque par defaut (#1090),
+# le compte des masquees part sur stderr pour ne pas polluer un pipe
+$ ken list
+ID   STATUS  WHO     WHEN        TITLE
+8    doing   Claude  --          RC / script update dans un cron
+14   doing   Q       2026-04-12  UX / Refresh automatique
+(293 done hidden -- ken list --all)
+
+# Rendre l'historique visible : --all, ou le status explicite
+$ ken list --all
+$ ken list --status done
+
+# Filtrer sur un seul status
 $ ken list --status doing
 ID   STATUS  WHO     WHEN        TITLE
 8    doing   Claude  --          RC / script update dans un cron

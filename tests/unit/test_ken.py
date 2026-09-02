@@ -838,6 +838,98 @@ class TestCliList:
         assert parsed == [{"id": 1, "title": "T"}]
 
 
+class TestCliListDoneDefault:
+    """`ken list` hides done unless asked otherwise (#1090)."""
+
+    def _setup(self, cwd_tmp):
+        (cwd_tmp / ".ken").write_text("project_id=p1\n")
+        os.chmod(cwd_tmp / ".ken", 0o600)
+
+    def _tasks(self):
+        return [
+            {"id": 1, "status": "todo", "who": "Claude", "title": "Open"},
+            {"id": 2, "status": "done", "who": "Claude", "title": "ClosedA"},
+            {"id": 3, "status": "done", "who": "Q", "title": "ClosedB"},
+        ]
+
+    def _ctx(self, tasks=None):
+        return _patch_responses(
+            [
+                (
+                    "GET",
+                    "/api/v1/tasks?project=p1",
+                    self._tasks() if tasks is None else tasks,
+                )
+            ]
+        )[0]
+
+    def test_done_hidden_by_default(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        with self._ctx():
+            result = runner.invoke(ken.cli, ["list"])
+        assert result.exit_code == 0, result.output
+        assert "Open" in result.stdout
+        assert "ClosedA" not in result.stdout
+        assert "ClosedB" not in result.stdout
+
+    def test_hidden_count_on_stderr(self, cwd_tmp, runner):
+        """The count is on stderr so `--json` stays pipeable."""
+        self._setup(cwd_tmp)
+        with self._ctx():
+            result = runner.invoke(ken.cli, ["list", "--json"])
+        assert result.exit_code == 0
+        assert "2 done hidden" in result.stderr
+        assert json.loads(result.stdout) == [
+            {"id": 1, "status": "todo", "who": "Claude", "title": "Open"}
+        ]
+
+    def test_all_shows_done(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        with self._ctx():
+            result = runner.invoke(ken.cli, ["list", "--all"])
+        assert result.exit_code == 0, result.output
+        assert "ClosedA" in result.stdout
+        assert "ClosedB" in result.stdout
+        assert "done hidden" not in result.stderr
+
+    def test_explicit_status_done_shows_done(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        with self._ctx():
+            result = runner.invoke(ken.cli, ["list", "--status", "done"])
+        assert result.exit_code == 0, result.output
+        assert "ClosedA" in result.stdout
+        assert "Open" not in result.stdout.split("TITLE")[1]
+        assert "done hidden" not in result.stderr
+
+    def test_hidden_count_follows_who_filter(self, cwd_tmp, runner):
+        """`--who` is applied first, so the count describes the requested view."""
+        self._setup(cwd_tmp)
+        with self._ctx():
+            result = runner.invoke(ken.cli, ["list", "--who", "Q"])
+        assert result.exit_code == 0
+        assert "1 done hidden" in result.stderr
+
+    def test_unknown_status_stays_visible(self, cwd_tmp, runner):
+        """The filter excludes done rather than selecting the open statuses."""
+        self._setup(cwd_tmp)
+        tasks = [
+            {"id": 1, "title": "NoStatus"},
+            {"id": 2, "status": "blocked", "title": "Future"},
+        ]
+        with self._ctx(tasks):
+            result = runner.invoke(ken.cli, ["list"])
+        assert result.exit_code == 0, result.output
+        assert "NoStatus" in result.stdout
+        assert "Future" in result.stdout
+        assert "done hidden" not in result.stderr
+
+    def test_all_with_status_is_rejected(self, cwd_tmp, runner):
+        self._setup(cwd_tmp)
+        result = runner.invoke(ken.cli, ["list", "--all", "--status", "todo"])
+        assert result.exit_code == 2
+        assert "mutually exclusive" in result.output
+
+
 class TestCliMutations:
     """Add / update / move / done / show."""
 

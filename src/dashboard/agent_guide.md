@@ -136,6 +136,11 @@ Always use the native filters; never pipe through jq, awk, or Python:
     ken list --who Claude --status doing   # good — human-readable table
     ken list --json | jq '.[] | ...'       # bad — verbose and pointless
 
+`ken list` hides `done` by default (#1090) — the column only grows, and an
+unfiltered listing ended up being all history and no work. Pass `--all` (or
+`--status done`) to see it. The count of hidden rows is printed on stderr, so
+`--json` stays pipeable.
+
 **Use the human-readable output by default.** The text format from
 `ken list` (aligned table) and `ken show` (key-value pairs) is compact
 and directly readable by an LLM — no post-processing needed. Only add

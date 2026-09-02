@@ -37,19 +37,45 @@ def projects(ctx: click.Context, *, json_mode: bool) -> None:
 @cli.command(name="list")
 @click.option("--status", type=click.Choice(VALID_STATUSES))
 @click.option("--who", help="Filter by assignee")
+@click.option("--all", "show_all", is_flag=True, help="Include done tasks")
 @click.option("--json", "json_mode", is_flag=True, help="Output as JSON")
 @click.pass_context
 def list_tasks(
-    ctx: click.Context, status: str | None, who: str | None, *, json_mode: bool
+    ctx: click.Context,
+    status: str | None,
+    who: str | None,
+    *,
+    show_all: bool,
+    json_mode: bool,
 ) -> None:
-    """List tasks of the current project."""
+    """List the open tasks of the current project.
+
+    ``done`` is hidden unless ``--all`` or ``--status done`` is given (#1090): the
+    column only ever grows, so an unfiltered listing ended up being all history and no
+    work. The filter excludes ``done`` instead of selecting the open statuses, so a task
+    with a missing or future status stays visible — a listing should fail in the
+    direction of showing too much. The count of what was hidden goes to stderr, keeping
+    ``--json`` pipeable.
+
+    Raises:
+        UsageError: when ``--all`` is combined with ``--status``.
+    """
+    if status and show_all:
+        msg = "--all and --status are mutually exclusive"
+        raise click.UsageError(msg)
     cfg: KenConfig = ctx.obj["cfg"]
     project_id = _require_project(cfg)
     tasks = _request(cfg, "GET", f"/api/v1/tasks?project={project_id}")
-    if status:
-        tasks = [t for t in tasks if t.get("status") == status]
     if who:
         tasks = [t for t in tasks if t.get("who") == who]
+    if status:
+        tasks = [t for t in tasks if t.get("status") == status]
+    elif not show_all:
+        kept = [t for t in tasks if t.get("status") != "done"]
+        hidden = len(tasks) - len(kept)
+        tasks = kept
+        if hidden:
+            click.echo(f"({hidden} done hidden — ken list --all)", err=True)
     _output(tasks, json_mode=json_mode, columns=TASK_COLUMNS)
 
 
