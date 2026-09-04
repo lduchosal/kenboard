@@ -4,6 +4,10 @@ list/show/add/update/move/done + wiki subcommands.
 
 Section: `cli/ken`
 
+## En cours (1)
+
+- [CLI / ken tldr : rappeler le TL;DR en tête de description au passage en review](cli-ken-tldr-rappeler-le-tl-dr-en-tete-de-description-au-passage-en-review-1091.md) — _review_
+
 ## Archivé (28)
 
 - [CLI / CLI ken pour Claude](cli-cli-ken-pour-claude-5.md)
