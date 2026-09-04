@@ -4,11 +4,7 @@ list/show/add/update/move/done + wiki subcommands.
 
 Section: `cli/ken`
 
-## En cours (1)
-
-- [CLI / ken tldr : rappeler le TL;DR en tête de description au passage en review](cli-ken-tldr-rappeler-le-tl-dr-en-tete-de-description-au-passage-en-review-1091.md) — _review_
-
-## Archivé (28)
+## Archivé (29)
 
 - [CLI / CLI ken pour Claude](cli-cli-ken-pour-claude-5.md)
 - [AGENT / CLI / Bonnes pratiques](agent-cli-bonnes-pratiques-118.md)
@@ -38,3 +34,4 @@ Section: `cli/ken`
 - [BUG - Alternative explaination](bug-alternative-explaination-1021.md)
 - [CLI / ken init : URL d'onboarding à la place de PROJECT_UUID](cli-ken-init-url-d-onboarding-a-la-place-de-project-uuid-1089.md)
 - [CLI / ken list — masquer les tâches done par défaut](cli-ken-list-masquer-les-taches-done-par-defaut-1090.md)
+- [CLI / ken tldr : rappeler le TL;DR en tête de description au passage en review](cli-ken-tldr-rappeler-le-tl-dr-en-tete-de-description-au-passage-en-review-1091.md)
