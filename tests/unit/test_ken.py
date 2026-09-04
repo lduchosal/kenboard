@@ -2230,8 +2230,9 @@ class TestCliMutations:
         assert "→ doing" in result.output
         # No grooming reminder when moving to non-review status (#376).
         assert "ken wiki groom" not in result.stderr
-        # No résolution reminder either (#605).
+        # No résolution reminder either (#605), nor the TL;DR nudge (#1091).
         assert "Résolution" not in result.stderr
+        assert "TL;DR" not in result.stderr
 
     def test_move_to_review_prints_groom_reminder(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
@@ -2247,7 +2248,7 @@ class TestCliMutations:
 
     def test_move_to_review_prints_update_reminder(self, cwd_tmp, runner):
         """`ken move --to review` reminds the agent to log the implementation trail
-        (#605).
+        (#605) and to open the description with a TL;DR (#1091).
         """
         self._setup(cwd_tmp)
         ctx, _calls = _patch_responses(
@@ -2258,7 +2259,8 @@ class TestCliMutations:
         assert result.exit_code == 0, result.output
         assert "ken update 5 --desc" in result.stderr
         assert "Résolution" in result.stderr
-        assert "Keep the original description intact" in result.stderr
+        assert "TL;DR" in result.stderr
+        assert "original description intact" in result.stderr
 
     def test_update_status_review_prints_groom_reminder(self, cwd_tmp, runner):
         self._setup(cwd_tmp)
@@ -2272,7 +2274,7 @@ class TestCliMutations:
 
     def test_update_status_review_prints_update_reminder(self, cwd_tmp, runner):
         """`ken update --status review` also nudges the agent for the résolution trail
-        (#605).
+        (#605) and the TL;DR header (#1091).
         """
         self._setup(cwd_tmp)
         ctx, _calls = _patch_responses(
@@ -2283,6 +2285,7 @@ class TestCliMutations:
         assert result.exit_code == 0, result.output
         assert "ken update 9 --desc" in result.stderr
         assert "Résolution" in result.stderr
+        assert "TL;DR" in result.stderr
 
     def test_done(self, cwd_tmp, runner):
         self._setup(cwd_tmp)

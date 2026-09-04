@@ -222,17 +222,24 @@ def update(  # noqa: PLR0913
 
 
 def _review_update_reminder(task_id: int) -> None:
-    """Remind the agent to append an implementation trail to the task (#605).
+    """Remind the agent to shape the task description before review (#605, #1091).
 
-    Printed to stderr so it doesn't corrupt ``--json`` output. The original description
-    must be preserved verbatim and the implementation details appended as a new section
-    — the board is the audit trail when commits don't map 1:1 to tasks.
+    Printed to stderr so it doesn't corrupt ``--json`` output. The description must
+    open with a TL;DR (#1091) — the card and the wiki page rendered from it are read by
+    humans who need the gist before the detail — then keep the original description
+    verbatim and append the implementation trail as a new section: the board is the
+    audit trail when commits don't map 1:1 to tasks.
+
+    The suggested idiom is ``--desc-file`` rather than ``--desc``: a double-quoted
+    multi-line shell string stores literal backslash-n's and corrupts the markdown
+    (#393).
     """
     click.echo(
         f"Reminder: update task #{task_id} with the implementation trail before review:\n"
-        f"    ken show {task_id}                          # read the original description\n"
-        f'    ken update {task_id} --desc "<original>\\n\\n---\\n\\n## Résolution\\n..."\n'
-        "Keep the original description intact; append a Résolution section with\n"
+        f"    ken show {task_id}                        # read the original description\n"
+        f"    ken update {task_id} --desc-file <file>   # TL;DR + original + Résolution\n"
+        "Open with a TL;DR line (1-2 sentences: problem → what was done), keep the\n"
+        "original description intact below it, then append a Résolution section with\n"
         "Modifications (files + one-line summary), Comportements obtenus, Garde-fous.",
         err=True,
     )

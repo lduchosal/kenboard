@@ -172,14 +172,17 @@ When the user asks Claude to pick up a kenboard task, follow this loop:
    (e.g. WIP from another in-flight task in the working tree), confirm they
    are not caused by your changes — `git stash && pdm run test-unit && git
    stash pop` is the quick way to prove a clean baseline.
-4. **Update the task description BEFORE moving to review.** Append a
-   resolution block with `ken update <id> --desc "<original>\n\n---\n\n
-   ## Résolution\n..."`. Preserve the original description verbatim,
-   then add sections for *Modifications* (file paths + one-line
-   summary), *Comportements obtenus*, and *Garde-fous* (which gates ran
-   + their result). This is how the board accumulates an audit trail —
-   the commit message alone is not enough since not every task maps 1:1
-   to a commit.
+4. **Update the task description BEFORE moving to review.** Write the
+   new body to a file and pass it with `ken update <id> --desc-file
+   <file>`. Open with a **TL;DR** — one or two sentences, *problème →
+   ce qui a été fait* — so the card and the wiki page rendered from the
+   same description are readable at a glance. Below it, preserve the
+   original description verbatim, then append a `## Résolution` block
+   with sections for *Modifications* (file paths + one-line summary),
+   *Comportements obtenus*, and *Garde-fous* (which gates ran + their
+   result). This is how the board accumulates an audit trail — the
+   commit message alone is not enough since not every task maps 1:1 to
+   a commit.
 5. `ken move <id> --to review` once the description is updated.
 6. **Classify the task for the wiki (#376).** The CLI prints a reminder
    after every move-to-review. Run `ken wiki groom <id> <section>` with

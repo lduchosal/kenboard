@@ -23,9 +23,16 @@ with the package and printed by `ken help`.
    pre-existing failure shows up in an unrelated area, confirm it is
    not caused by your change before proceeding.
 
-4. **Update the task description BEFORE moving to review.** Append a
-   resolution block so the board accumulates an audit trail (commit
-   messages alone are not enough — not every task maps 1:1 to a commit).
+4. **Update the task description BEFORE moving to review.** Open the
+   description with a **TL;DR** and append a resolution block, so the
+   board accumulates an audit trail (commit messages alone are not
+   enough — not every task maps 1:1 to a commit).
+
+   The TL;DR is one or two sentences at the very top — *problem → what
+   was done* — so a human scanning the card, or the wiki page rendered
+   from that same description by `ken wiki sync`, gets the gist without
+   reading the whole trail. It goes **above** the original description,
+   which stays verbatim.
 
    ### Passing multi-line markdown safely
 
@@ -43,6 +50,8 @@ with the package and printed by `ken help`.
    ```sh
    # 1. Write the resolution body to a temp file
    cat > /tmp/ken-<id>.md <<'EOF'
+   **TL;DR** — <problème en une phrase> → <ce qui a été fait>.
+
    <original description verbatim>
 
    ---
@@ -74,6 +83,8 @@ with the package and printed by `ken help`.
 
    ```sh
    ken update <id> --desc "$(cat <<'EOF'
+   **TL;DR** — <problème en une phrase> → <ce qui a été fait>.
+
    <original description verbatim>
 
    ---
@@ -97,7 +108,8 @@ with the package and printed by `ken help`.
 
    Passing both `--desc` and `--desc-file` is an error — pick one.
 
-   Preserve the original description verbatim, then add three sections:
+   Open with the TL;DR, preserve the original description verbatim,
+   then add three sections:
 
    - **Modifications** — file paths + a one-line summary each
    - **Comportements obtenus** — what now works that did not before
@@ -153,7 +165,7 @@ command (e.g. `ken add --json` to capture the created task ID).
     ken show <id>
     ken add "Title" --desc "..." --who Claude --status todo --json
     ken update <id> --status review
-    ken update <id> --desc "<original>\n\n---\n\n## Résolution\n..."
+    ken update <id> --desc-file <file>   # TL;DR + original + Résolution
     ken move <id> --to doing
     ken wiki groom                 # list unclassified + sections
     ken wiki groom <id> <section>  # classify after move-to-review
