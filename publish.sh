@@ -58,22 +58,24 @@ done
 # print_step calls (ken #1009): the extension zip + GitHub Release steps
 # (#480/#501) had never been added, so the counters undershot and the
 # banner printed "34/30".
-#   22 = 21 common steps (clean → pytest) + metrics gate
+#   23 = 22 common steps (clean → pytest, incl. the VS Code extension
+#        checks of ken #1127) + metrics gate
 #   +1 non-CI: E2E tests (need Playwright browsers + running DB)
 #   +1 non-CI: wiki sync (needs the board API, unreachable from a runner)
-#   +12 publish-only: wiki build, push, sonar gate, bump, build, PyPI,
-#       git add, commit, tag, extension zip, GitHub Release, final clean
+#   +13 publish-only: wiki build, push, sonar gate, bump, build, PyPI,
+#       git add, commit, tag, extension zip, VS Code .vsix, GitHub Release,
+#       final clean
 if [ "$QUALITY_ONLY" = true ]; then
     if [ "$CI_MODE" = true ]; then
-        STEPS=22
-    else
         STEPS=23
+    else
+        STEPS=24
     fi
 else
     if [ "$CI_MODE" = true ]; then
-        STEPS=34
-    else
         STEPS=36
+    else
+        STEPS=38
     fi
 fi
 STEP=0
@@ -273,6 +275,12 @@ sed -i.bak "s/__version__ = \".*\"/__version__ = \"${VERSION}\"/" src/dashboard/
 if [ -f extension/manifest.json ]; then
     sed -i.bak 's/"version": "[^"]*"/"version": "'"${VERSION}"'"/' extension/manifest.json && rm extension/manifest.json.bak
 fi
+# Same for the VS Code extension (ken #1127): the .vsix attached to the
+# release carries the kenboard version. `"version"` is the only such key in
+# vscode/package.json (engines uses `"vscode"`).
+if [ -f vscode/package.json ]; then
+    sed -i.bak 's/"version": "[^"]*"/"version": "'"${VERSION}"'"/' vscode/package.json && rm vscode/package.json.bak
+fi
 echo "${BLUE}New version: ${VERSION}${NC}"
 
 print_step "Building Package (pdm)"
@@ -312,9 +320,30 @@ if [ -d extension ]; then
         echo "${YELLOW}WARN: extension/ not zipped${NC}"
         EXTENSION_ZIP=""
     fi
+fi
 
-    if [ -n "${EXTENSION_ZIP}" ] && command -v gh > /dev/null 2>&1; then
-        print_step "Publishing GitHub Release with Extension Artifact"
+# ken #1127: package the VS Code extension and attach the .vsix to the same
+# release (installed with `code --install-extension`, no Marketplace).
+# Best-effort like the zip: vsce is fetched by npx, a failure only warns.
+VSCODE_VSIX=""
+if [ -d vscode ]; then
+    print_step "Packaging VS Code Extension (#1127)"
+    if pdm run vscode-package; then
+        mkdir -p dist
+        VSCODE_VSIX="dist/kenboard-vscode-${VERSION}.vsix"
+        mv "vscode/kenboard-vscode-${VERSION}.vsix" "${VSCODE_VSIX}"
+        echo "${GREEN}✓ VS Code extension packaged to ${VSCODE_VSIX}${NC}"
+    else
+        echo "${YELLOW}WARN: VS Code extension not packaged${NC}"
+    fi
+fi
+
+# Release assets: whichever of the two packages above succeeded (paths have
+# no spaces, so the unquoted expansion below splits them safely).
+RELEASE_ASSETS=$(echo "${EXTENSION_ZIP} ${VSCODE_VSIX}" | xargs)
+if [ -n "${RELEASE_ASSETS}" ]; then
+    if command -v gh > /dev/null 2>&1; then
+        print_step "Publishing GitHub Release with Extension Artifacts"
         # #501: the old `gh release create ... || echo WARN` swallowed any
         # failure, which silently produced a release-less tag (0.1.112) and
         # an extension that never reached users. Make this idempotent and
@@ -325,24 +354,25 @@ if [ -d extension ]; then
         #   - otherwise create it;
         #   - on any failure print a red error + the exact recovery command
         #     (non-fatal: PyPI already shipped, aborting would mislead).
+        # shellcheck disable=SC2086 # RELEASE_ASSETS is a space-separated list
         if gh release view "kenboard-${VERSION}" > /dev/null 2>&1; then
-            if gh release upload "kenboard-${VERSION}" "${EXTENSION_ZIP}" --clobber; then
-                echo "${GREEN}✓ Extension attached to existing release kenboard-${VERSION}${NC}"
+            if gh release upload "kenboard-${VERSION}" ${RELEASE_ASSETS} --clobber; then
+                echo "${GREEN}✓ Extensions attached to existing release kenboard-${VERSION}${NC}"
             else
-                echo "${RED}${BOLD}✗ FAILED to attach extension to kenboard-${VERSION}${NC}"
-                echo "${RED}  Recover: gh release upload kenboard-${VERSION} ${EXTENSION_ZIP} --clobber${NC}"
+                echo "${RED}${BOLD}✗ FAILED to attach extensions to kenboard-${VERSION}${NC}"
+                echo "${RED}  Recover: gh release upload kenboard-${VERSION} ${RELEASE_ASSETS} --clobber${NC}"
             fi
         elif gh release create "kenboard-${VERSION}" \
             --title "kenboard ${VERSION}" \
             --generate-notes \
-            "${EXTENSION_ZIP}"; then
-            echo "${GREEN}✓ Release created with extension attached${NC}"
+            ${RELEASE_ASSETS}; then
+            echo "${GREEN}✓ Release created with extensions attached${NC}"
         else
             echo "${RED}${BOLD}✗ FAILED to create GitHub release kenboard-${VERSION}${NC}"
-            echo "${RED}  Recover: gh release create kenboard-${VERSION} --title \"kenboard ${VERSION}\" --generate-notes ${EXTENSION_ZIP}${NC}"
+            echo "${RED}  Recover: gh release create kenboard-${VERSION} --title \"kenboard ${VERSION}\" --generate-notes ${RELEASE_ASSETS}${NC}"
         fi
-    elif [ -n "${EXTENSION_ZIP}" ]; then
-        echo "${YELLOW}WARN: gh CLI not found — skipping GitHub Release. Upload ${EXTENSION_ZIP} manually.${NC}"
+    else
+        echo "${YELLOW}WARN: gh CLI not found — skipping GitHub Release. Upload ${RELEASE_ASSETS} manually.${NC}"
     fi
 fi
 

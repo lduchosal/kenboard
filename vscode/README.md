@@ -12,7 +12,19 @@ workspace) et parle à l'API REST `/api/v1` avec le token Bearer. Le site web
 n'est pas encapsulé (CSP `frame-ancestors 'none'`, cookies `SameSite=Lax`,
 contrôle CSRF sur `Origin`).
 
-## Build / install
+## Installer
+
+Chaque release kenboard joint le paquet à sa GitHub Release :
+<https://github.com/lduchosal/kenboard/releases> → `kenboard-vscode-<version>.vsix`.
+
+```sh
+code --install-extension kenboard-vscode-<version>.vsix
+```
+
+(ou VS Code → Extensions → `…` → *Install from VSIX…*). La version suit celle
+de kenboard : `publish.sh` la synchronise au bump, comme pour `extension/`.
+
+## Build / qualité
 
 ```sh
 pdm run vscode-lint       # biome (config racine)
