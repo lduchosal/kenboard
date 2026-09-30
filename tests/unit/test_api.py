@@ -827,10 +827,10 @@ class TestMarkdownSanitization:
     """
 
     def test_dompurify_asset_is_served(self, client):
-        resp = client.get("/dompurify.min.js")
-        assert resp.status_code == 200
-        # Confirm we got the real Cure53 release, not a stub.
-        body = resp.data.decode("utf-8", errors="replace")
+        with client.get("/dompurify.min.js") as resp:
+            assert resp.status_code == 200
+            # Confirm we got the real Cure53 release, not a stub.
+            body = resp.data.decode("utf-8", errors="replace")
         assert "DOMPurify" in body
         assert "Cure53" in body
 
@@ -842,6 +842,6 @@ class TestMarkdownSanitization:
         assert b"dompurify.min.js" in resp.data
 
     def test_app_js_calls_dompurify_sanitize(self, client):
-        resp = client.get("/app.js")
-        assert resp.status_code == 200
-        assert b"DOMPurify.sanitize" in resp.data
+        with client.get("/app.js") as resp:
+            assert resp.status_code == 200
+            assert b"DOMPurify.sanitize" in resp.data

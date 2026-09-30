@@ -206,10 +206,10 @@ class TestLoginFlow:
 
     def test_logo_static_asset_is_served(self, auth_client):
         """The logo file is reachable at /static/logo.svg."""
-        r = auth_client.get("/static/logo.svg")
-        assert r.status_code == 200
-        # Confirm it's actually an SVG, not an HTML 404 page or empty body.
-        body = r.data.decode("utf-8", errors="replace")
+        with auth_client.get("/static/logo.svg") as r:
+            assert r.status_code == 200
+            # Confirm it's actually an SVG, not an HTML 404 page or empty body.
+            body = r.data.decode("utf-8", errors="replace")
         assert "<svg" in body
 
     def test_post_bad_credentials(self, auth_client, db, admin_user):

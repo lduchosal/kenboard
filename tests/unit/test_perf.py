@@ -186,8 +186,9 @@ class TestPerfIntegration:
         assert resp.status_code in (200, 401)
 
     def test_static_skipped(self, client):
-        resp = client.get("/style.css")
-        assert resp.status_code == 200
+        # Static responses stream a file handle: close it (ResourceWarning).
+        with client.get("/style.css") as resp:
+            assert resp.status_code == 200
 
 
 class TestCooldown:

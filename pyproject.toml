@@ -115,6 +115,10 @@ build-backend = "pdm.backend"
 
 [tool.pdm]
 distribution = true
+# oidc-provider-mock >= 0.4 needs Python >= 3.12 while we still support 3.11
+# (prod FreeBSD hosts run python311): pdm keeps 0.3.x and would otherwise print
+# one resolver warning per skipped release on every `pdm update`.
+ignore_package_warnings = ["oidc-provider-mock"]
 
 [tool.pdm-bump]
 version-files = ["src/dashboard/__init__.py:__version__"]
@@ -154,6 +158,7 @@ metrics-gate = "python scripts/quality_metrics.py --gate"
 # JS toolchain (#251) — Vite bundler, Vitest unit tests, Biome lint+format,
 # tsc --noEmit for opt-in JSDoc type-check.
 js-install = { shell = "npm ci" }
+js-audit = { shell = "npm audit" }
 js-lint = { shell = "npx biome check src/dashboard/static/js" }
 js-lint-fix = { shell = "npx biome check --write src/dashboard/static/js" }
 js-typecheck = { shell = "npx tsc --noEmit -p jsconfig.json" }
@@ -295,6 +300,16 @@ markers = [
     "integration: marks integration tests",
     "unit: marks unit tests",
     "e2e: marks end-to-end browser tests",
+]
+# publish.sh output must stay clean: any new warning fails the suite. Only the
+# upstream deprecations we cannot fix here are ignored, each scoped to its source.
+filterwarnings = [
+    "error",
+    # oidc-provider-mock (dev dep) still imports authlib.jose / authlib httpx client.
+    "ignore:authlib.jose module is deprecated",
+    "ignore:The httpx module is deprecated",
+    # flask-login 0.6.3 (latest) calls datetime.utcnow() in its remember-cookie code.
+    "ignore:datetime.datetime.utcnow\\(\\) is deprecated:DeprecationWarning:flask_login",
 ]
 
 # -- coverage -----------------------------------------------------------------

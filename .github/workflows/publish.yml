@@ -55,6 +55,13 @@ jobs:
       with:
         python-version: '3.13'
 
+    # publish.sh runs the JS toolchain (vitest 5 / jsdom 30 need Node >= 22.22,
+    # see package.json engines): pin a current Node 22 instead of the image's.
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
     - name: Install PDM
       run: |
         python -m pip install --upgrade pip pdm

@@ -58,8 +58,8 @@ done
 # print_step calls (ken #1009): the extension zip + GitHub Release steps
 # (#480/#501) had never been added, so the counters undershot and the
 # banner printed "34/30".
-#   23 = 22 common steps (clean → pytest, incl. the VS Code extension
-#        checks of ken #1127) + metrics gate
+#   24 = 23 common steps (clean → pytest, incl. the npm audit gate and the
+#        VS Code extension checks of ken #1127/#1130) + metrics gate
 #   +1 non-CI: E2E tests (need Playwright browsers + running DB)
 #   +1 non-CI: wiki sync (needs the board API, unreachable from a runner)
 #   +13 publish-only: wiki build, push, sonar gate, bump, build, PyPI,
@@ -67,15 +67,15 @@ done
 #       final clean
 if [ "$QUALITY_ONLY" = true ]; then
     if [ "$CI_MODE" = true ]; then
-        STEPS=23
-    else
         STEPS=24
+    else
+        STEPS=25
     fi
 else
     if [ "$CI_MODE" = true ]; then
-        STEPS=36
+        STEPS=37
     else
-        STEPS=38
+        STEPS=39
     fi
 fi
 STEP=0
@@ -114,6 +114,17 @@ run_command() {
         print_error "$description failed"
     fi
 }
+
+# One publish.sh at a time per working copy (ken #1130): two concurrent runs
+# once shared pdm bump / git add / dist/ and shipped a 0.4.3 commit carrying
+# 0.4.4 files. mkdir is atomic; the trap releases the lock on any exit.
+PUBLISH_LOCK=".publish.lock"
+if ! mkdir "${PUBLISH_LOCK}" 2>/dev/null; then
+    echo "${RED}${BOLD}✗ Another publish.sh is already running here (${PUBLISH_LOCK} exists).${NC}"
+    echo "${RED}  Wait for it to finish, or remove ${PUBLISH_LOCK} if it crashed.${NC}"
+    exit 1
+fi
+trap 'rmdir "${PUBLISH_LOCK}" 2>/dev/null' EXIT
 
 echo "${BOLD}${BLUE}"
 echo "██╗  ██╗███████╗███╗   ██╗██████╗  ██████╗  █████╗ ██████╗ ██████╗ "
@@ -176,6 +187,11 @@ run_command "pdm run vulture" "Dead code check"
 
 print_step "Installing JS Dependencies (npm ci)"
 run_command "pdm run js-install" "JS dependencies installation"
+
+# The publish output must stay clean (ken #1130): any known vulnerability in
+# the JS toolchain stops the build — fix it (bump the dependency), don't ignore.
+print_step "JS Security Audit (npm audit)"
+run_command "pdm run js-audit" "JS security audit (fix with npm audit / bump the flagged dependency)"
 
 print_step "JS Lint + Format Check (biome)"
 run_command "pdm run js-lint" "JS lint"
@@ -328,13 +344,16 @@ fi
 VSCODE_VSIX=""
 if [ -d vscode ]; then
     print_step "Packaging VS Code Extension (#1127)"
-    if pdm run vscode-package; then
-        mkdir -p dist
+    # vsce names the file after vscode/package.json's version: attach it only
+    # if it matches this release, and check every step (a silent mv failure
+    # once reported ✓ and made `gh release create` fail on a missing asset).
+    BUILT_VSIX="vscode/kenboard-vscode-${VERSION}.vsix"
+    if pdm run vscode-package && [ -f "${BUILT_VSIX}" ] && mkdir -p dist \
+        && mv "${BUILT_VSIX}" "dist/kenboard-vscode-${VERSION}.vsix"; then
         VSCODE_VSIX="dist/kenboard-vscode-${VERSION}.vsix"
-        mv "vscode/kenboard-vscode-${VERSION}.vsix" "${VSCODE_VSIX}"
         echo "${GREEN}✓ VS Code extension packaged to ${VSCODE_VSIX}${NC}"
     else
-        echo "${YELLOW}WARN: VS Code extension not packaged${NC}"
+        echo "${RED}${BOLD}✗ VS Code extension not packaged as ${BUILT_VSIX} — release goes out without it${NC}"
     fi
 fi
 
