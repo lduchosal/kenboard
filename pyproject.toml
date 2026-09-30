@@ -157,7 +157,7 @@ metrics-gate = "python scripts/quality_metrics.py --gate"
 
 # JS toolchain (#251) — Vite bundler, Vitest unit tests, Biome lint+format,
 # tsc --noEmit for opt-in JSDoc type-check.
-js-install = { shell = "npm ci" }
+js-install = { shell = "npm ci --no-fund --no-audit --prefer-offline" }
 js-audit = { shell = "npm audit" }
 js-lint = { shell = "npx biome check src/dashboard/static/js" }
 js-lint-fix = { shell = "npx biome check --write src/dashboard/static/js" }

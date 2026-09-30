@@ -58,12 +58,14 @@ if ! command -v npx > /dev/null 2>&1; then
 fi
 
 echo "Signing extension (unlisted channel) via AMO…"
-npx --yes web-ext sign \
+# Credentials go through web-ext's WEB_EXT_* env options, never argv: command
+# line arguments are world-readable in the process list (`ps`, pgrep -fl) for
+# the whole signing run, which waits minutes for AMO approval (ken #1130).
+WEB_EXT_API_KEY="${AMO_JWT_ISSUER}" WEB_EXT_API_SECRET="${AMO_JWT_SECRET}" \
+    npx --yes web-ext sign \
     --source-dir "${EXT_DIR}" \
     --artifacts-dir "${REPO_ROOT}/web-ext-artifacts" \
-    --channel unlisted \
-    --api-key "${AMO_JWT_ISSUER}" \
-    --api-secret "${AMO_JWT_SECRET}"
+    --channel unlisted
 
 echo "Done. Signed .xpi is in ${REPO_ROOT}/web-ext-artifacts/"
 echo "Install it: Firefox -> about:addons -> gear -> Install Add-on From File."

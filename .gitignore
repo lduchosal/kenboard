@@ -50,3 +50,4 @@ Thumbs.db
 # readable snapshot of the kanban board's classifications.
 /wiki-html/
 .publish.lock/
+publish.out

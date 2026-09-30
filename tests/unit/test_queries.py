@@ -1,5 +1,7 @@
 """Test aiosql queries load correctly and execute against the DB."""
 
+from __future__ import annotations
+
 
 class TestQueriesLoad:
     """Test that all expected queries are loaded."""

@@ -30,6 +30,18 @@ def _ignore_sighup() -> None:
         signal.signal(signal.SIGHUP, signal.SIG_IGN)
 
 
+def _reset_handlers(root: logging.Logger) -> None:
+    """Drop every root handler, closing file ones.
+
+    One setup runs per ``create_app``: a dropped but unclosed file handler of a previous
+    setup would leak its log file descriptor (ResourceWarning).
+    """
+    for handler in root.handlers.copy():
+        root.removeHandler(handler)
+        if isinstance(handler, logging.FileHandler):
+            handler.close()
+
+
 def setup_logging(*, debug: bool = False) -> None:
     """Configure structlog to output to both console and file."""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -48,12 +60,7 @@ def setup_logging(*, debug: bool = False) -> None:
 
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
-    # Close the file handler of a previous setup (one per create_app) before
-    # dropping it, or its log file descriptor leaks (ResourceWarning).
-    for handler in root.handlers.copy():
-        root.removeHandler(handler)
-        if isinstance(handler, logging.FileHandler):
-            handler.close()
+    _reset_handlers(root)
     root.addHandler(file_handler)
     root.addHandler(console_handler)
 

@@ -6,6 +6,20 @@ import tempfile
 
 from playwright.sync_api import Page, Playwright, expect
 
+# JS snapshot of the users table rows (kept out of the call sites: docformatter
+# mistakes a triple-quoted call argument for a docstring and mangles it).
+_ROWS_WITH_ADMIN_JS = """rows => rows.map(r => ({
+    id: r.dataset.userId,
+    name: r.querySelector('.u-name').value,
+    color: r.querySelector('.u-color').value,
+    is_admin: r.querySelector('.u-admin').checked,
+}))"""
+_ROWS_JS = """rows => rows.map(r => ({
+    id: r.dataset.userId,
+    name: r.querySelector('.u-name').value,
+    color: r.querySelector('.u-color').value,
+}))"""
+
 
 class TestDashboardLoads:
     """Test that the dashboard renders correctly."""
@@ -487,8 +501,7 @@ class TestTaskCRUD:
 
         task_id = page.locator(".kanban-task").first.get_attribute("data-task-id")
         project_id = page.locator(".kanban").first.get_attribute("data-project-id")
-        page.evaluate(
-            """async ({ taskId, projectId }) => {
+        move_to_doing_js = """async ({ taskId, projectId }) => {
                 const card = document.querySelector(`[data-task-id="${taskId}"]`);
                 const target = document.querySelector('.kanban-tasks[data-status="doing"]');
                 target.appendChild(card);
@@ -497,7 +510,9 @@ class TestTaskCRUD:
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: 'doing', position: 0, project_id: projectId }),
                 });
-            }""",
+            }"""
+        page.evaluate(
+            move_to_doing_js,
             {"taskId": task_id, "projectId": project_id},
         )
         # No reload — the onclick attribute still has render-time data
@@ -547,8 +562,7 @@ class TestTaskCRUD:
         project_id = page.locator(".kanban").first.get_attribute("data-project-id")
         assert task_id
         assert project_id
-        page.evaluate(
-            """async ({ taskId, projectId }) => {
+        move_to_review_js = """async ({ taskId, projectId }) => {
                 await fetch(`/api/v1/tasks/${taskId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
@@ -558,7 +572,9 @@ class TestTaskCRUD:
                         project_id: projectId,
                     }),
                 });
-            }""",
+            }"""
+        page.evaluate(
+            move_to_review_js,
             {"taskId": task_id, "projectId": project_id},
         )
         page.reload()
@@ -700,12 +716,7 @@ class TestAdminUsers:
         snap_before = sorted(
             page.eval_on_selector_all(
                 "#users-table tbody tr[data-user-id]",
-                """rows => rows.map(r => ({
-                    id: r.dataset.userId,
-                    name: r.querySelector('.u-name').value,
-                    color: r.querySelector('.u-color').value,
-                    is_admin: r.querySelector('.u-admin').checked,
-                }))""",
+                _ROWS_WITH_ADMIN_JS,
             ),
             key=lambda r: r["name"],
         )
@@ -721,12 +732,7 @@ class TestAdminUsers:
         # All previously existing users must be unchanged
         snap_after = page.eval_on_selector_all(
             "#users-table tbody tr[data-user-id]",
-            """rows => rows.map(r => ({
-                id: r.dataset.userId,
-                name: r.querySelector('.u-name').value,
-                color: r.querySelector('.u-color').value,
-                is_admin: r.querySelector('.u-admin').checked,
-            }))""",
+            _ROWS_WITH_ADMIN_JS,
         )
         snap_after_by_id = {r["id"]: r for r in snap_after}
         for orig in snap_before:
@@ -791,11 +797,7 @@ class TestAdminUsers:
 
                 snap_before = page.eval_on_selector_all(
                     "#users-table tbody tr[data-user-id]",
-                    """rows => rows.map(r => ({
-                        id: r.dataset.userId,
-                        name: r.querySelector('.u-name').value,
-                        color: r.querySelector('.u-color').value,
-                    }))""",
+                    _ROWS_JS,
                 )
                 assert len(snap_before) == 2
 
@@ -810,11 +812,7 @@ class TestAdminUsers:
 
                 snap_after = page.eval_on_selector_all(
                     "#users-table tbody tr[data-user-id]",
-                    """rows => rows.map(r => ({
-                        id: r.dataset.userId,
-                        name: r.querySelector('.u-name').value,
-                        color: r.querySelector('.u-color').value,
-                    }))""",
+                    _ROWS_JS,
                 )
             finally:
                 ctx.close()
