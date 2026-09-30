@@ -4,7 +4,7 @@ title: "VSCODE / plugin vscode pour le kenboard ?"
 status: done
 who: "Claude"
 due_date: 
-updated_at: 2026-09-30T14:36:55
+updated_at: 2026-09-30T14:44:59
 classified_at: 2026-09-30T14:36:54
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: extension
@@ -67,7 +67,7 @@ Hors MVP (à voir si le concept tient) : création de tâche, vue détail en mar
 - Clic sur une tâche → détail markdown identique au site ; clic droit → Move to… (le détail ouvert se met à jour).
 - Le site n'est pas encapsulé (frame-ancestors 'none', SameSite=Lax, CSRF Origin) : tout passe par l'API.
 - Distribution : `.vsix` en asset de la GitHub Release, `code --install-extension`. Marketplace non visée (éditeur, LICENSE, anglais, icône à revoir).
-- Limite relevée → #1129 (corrigée en 0.4.2) : `GET /api/v1/tasks/<id>` refusé aux clés API projet ; l'extension affiche le détail depuis la liste.
+- Limite relevée → #1129 (corrigée sur main, `0a81f26`, pas encore publiée) : `GET /api/v1/tasks/<id>` refusé aux clés API projet ; l'extension affiche le détail depuis la liste.
 
 ### Garde-fous
 

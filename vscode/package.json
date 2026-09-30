@@ -2,7 +2,7 @@
   "name": "kenboard-vscode",
   "displayName": "kenboard",
   "description": "Tâches kenboard du projet courant dans VS Code : liste, détail markdown, changement de statut (ken #1127).",
-  "version": "0.0.1",
+  "version": "0.4.4",
   "publisher": "lduchosal",
   "license": "MIT",
   "icon": "media/kenboard.png",

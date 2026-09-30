@@ -4,6 +4,10 @@ Tests (unit/integration/e2e), lint, typecheck, coverage, Sonarcloud.
 
 Section: `quality`
 
+## En cours (1)
+
+- [QUALITY / Sonar : corriger toutes les issues ouvertes (bugs, smells, sécurité)](quality-sonar-corriger-toutes-les-issues-ouvertes-bugs-smells-securite-1130.md) — _review_
+
 ## Archivé (48)
 
 - [TEST / AUTH / Tests units & E2E Test](test-auth-tests-units-e2e-test-13.md)
