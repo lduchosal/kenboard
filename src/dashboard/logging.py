@@ -50,7 +50,7 @@ def setup_logging(*, debug: bool = False) -> None:
     root.setLevel(logging.DEBUG)
     # Close the file handler of a previous setup (one per create_app) before
     # dropping it, or its log file descriptor leaks (ResourceWarning).
-    for handler in list(root.handlers):
+    for handler in root.handlers.copy():
         root.removeHandler(handler)
         if isinstance(handler, logging.FileHandler):
             handler.close()
