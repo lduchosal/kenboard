@@ -501,6 +501,38 @@ class TestMiddlewareEnforced:
         )
         assert r.status_code == 403
 
+    def test_get_task_by_id_scoped_to_key_project(
+        self, enforced_client, db, project, queries, make_api_key
+    ):
+        """GET /api/v1/tasks/<id> resolves the project from the task (#1129)."""
+        queries.cat_create(db, id="cat-2", name="Other", color="#bf8700", position=1)
+        queries.proj_create(
+            db,
+            id="proj-2",
+            cat_id="cat-2",
+            name="Other",
+            acronym="OTH",
+            status="active",
+            position=0,
+            default_who="",
+        )
+        cur = db.cursor()
+        ids = {}
+        for proj in (project, "proj-2"):
+            cur.execute(
+                "INSERT INTO tasks (project_id, title, description, status, who, "
+                "due_date, position) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (proj, "T", "", "todo", "Q", None, 0),
+            )
+            ids[proj] = cur.lastrowid
+        _, plain_key = make_api_key(scopes=[{"project_id": project, "scope": "read"}])
+        headers = {"Authorization": f"Bearer {plain_key}"}
+        r = enforced_client.get(f"/api/v1/tasks/{ids[project]}", headers=headers)
+        assert r.status_code == 200
+        assert r.get_json()["id"] == ids[project]
+        r = enforced_client.get(f"/api/v1/tasks/{ids['proj-2']}", headers=headers)
+        assert r.status_code == 403
+
     def test_wiki_unclassified_requires_project_filter(
         self, enforced_client, db, project, make_api_key
     ):

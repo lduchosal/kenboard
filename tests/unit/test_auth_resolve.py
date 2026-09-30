@@ -51,6 +51,31 @@ class TestResolveProjectId:
         with app.test_request_context("/api/v1/tasks/424242", method="DELETE"):
             assert _resolve_project_id("DELETE", "/api/v1/tasks/424242") is None
 
+    def test_tasks_get_by_id_resolves_via_db(self, app, db):
+        # #1129: a per-project key reads one task — resolved like PATCH/DELETE.
+        cur = db.cursor()
+        cur.execute(
+            "INSERT INTO categories (id, name, color, position) VALUES (%s, %s, %s, %s)",
+            ("cat-res", "Cat", "var(--accent)", 0),
+        )
+        cur.execute(
+            "INSERT INTO projects (id, cat_id, name, acronym, status, position) "
+            "VALUES (%s, %s, %s, %s, %s, %s)",
+            ("proj-res", "cat-res", "Proj", "PROJ", "active", 0),
+        )
+        cur.execute(
+            "INSERT INTO tasks (project_id, title, description, status, who, "
+            "due_date, position) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            ("proj-res", "T", "", "todo", "Q", None, 0),
+        )
+        path = f"/api/v1/tasks/{cur.lastrowid}"
+        with app.test_request_context(path):
+            assert _resolve_project_id("GET", path) == "proj-res"
+
+    def test_tasks_get_unknown_id_returns_none(self, app, db):
+        with app.test_request_context("/api/v1/tasks/424242"):
+            assert _resolve_project_id("GET", "/api/v1/tasks/424242") is None
+
     def test_wiki_classify_post_requires_int_task_id(self, app):
         with app.test_request_context(
             "/api/v1/wiki/classify", method="POST", json={"task_id": "nope"}

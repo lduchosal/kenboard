@@ -40,8 +40,9 @@ def _project_from_tasks(method: str, path: str) -> str | None:
     if path == "/api/v1/tasks" and method == "POST":
         body = request.get_json(silent=True) or {}
         return body.get("project_id")
-    # PATCH/DELETE /api/v1/tasks/<id> → SELECT project_id from DB
-    if path.startswith("/api/v1/tasks/") and method in ("PATCH", "DELETE"):
+    # GET/PATCH/DELETE /api/v1/tasks/<id> → SELECT project_id from DB. GET
+    # included since #1129: reading one task with a per-project key.
+    if path.startswith("/api/v1/tasks/") and method in ("GET", "PATCH", "DELETE"):
         return _task_project_id(_int_suffix(path))
     return None
 
