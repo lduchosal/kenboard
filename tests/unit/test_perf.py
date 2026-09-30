@@ -32,7 +32,7 @@ def _summary(**overrides):
     return base
 
 
-@pytest.fixture()
+@pytest.fixture
 def _clear_cooldowns():
     """Isolate the module-level cooldown map between tests."""
     perf._cooldowns.clear()
@@ -173,10 +173,10 @@ class TestTaskTitle:
 class TestPerfIntegration:
     """Test perf hooks within a Flask request."""
 
-    def test_perf_collector_set_on_request(self, app, client):
-        with app.test_request_context("/"):
+    def test_perf_collector_set_on_request(self, app, client, monkeypatch):
+        with app.test_request_context("/"), monkeypatch.context() as mp:
             # Simulate what before_request does
-            g.perf = PerfCollector()
+            mp.setattr(g, "perf", PerfCollector(), raising=False)
             g.perf.record_query("cat_get_all", 5.0)
             assert g.perf.query_count == 1
 
@@ -302,11 +302,11 @@ class TestRequestSummary:
         with app.test_request_context("/"):
             assert perf._build_request_summary(MagicMock()) is None
 
-    def test_full_summary(self):
+    def test_full_summary(self, monkeypatch):
         app = Flask(__name__)
-        with app.test_request_context("/", method="GET"):
-            request._start_time = time.time() - 0.05
-            g.perf = PerfCollector()
+        with app.test_request_context("/", method="GET"), monkeypatch.context() as mp:
+            mp.setattr(request, "_start_time", time.time() - 0.05, raising=False)
+            mp.setattr(g, "perf", PerfCollector(), raising=False)
             g.perf.record_query("cat_get_all", 4.0)
             resp = MagicMock()
             resp.get_data.return_value = b"x" * 2048
@@ -350,10 +350,10 @@ class TestHooks:
             perf._perf_before()
             assert not hasattr(g, "perf")
 
-    def test_template_hooks_record_timing(self):
+    def test_template_hooks_record_timing(self, monkeypatch):
         app = Flask(__name__)
-        with app.test_request_context("/"):
-            g.perf = PerfCollector()
+        with app.test_request_context("/"), monkeypatch.context() as mp:
+            mp.setattr(g, "perf", PerfCollector(), raising=False)
             perf._perf_before_template(app)
             time.sleep(0.005)
             tmpl = MagicMock()
@@ -380,19 +380,19 @@ class TestHooks:
             resp = MagicMock()
             assert perf._perf_after(resp) is resp
 
-    def test_after_returns_response_without_start_time(self):
+    def test_after_returns_response_without_start_time(self, monkeypatch):
         app = Flask(__name__)
-        with app.test_request_context("/"):
-            g.perf = PerfCollector()
+        with app.test_request_context("/"), monkeypatch.context() as mp:
+            mp.setattr(g, "perf", PerfCollector(), raising=False)
             resp = MagicMock()
             assert perf._perf_after(resp) is resp
 
     def test_after_evaluates_full_request(self, monkeypatch):
         monkeypatch.setattr("dashboard.perf._create_perf_task", MagicMock())
         app = Flask(__name__)
-        with app.test_request_context("/", method="GET"):
-            request._start_time = time.time()
-            g.perf = PerfCollector()
+        with app.test_request_context("/", method="GET"), monkeypatch.context() as mp:
+            mp.setattr(request, "_start_time", time.time(), raising=False)
+            mp.setattr(g, "perf", PerfCollector(), raising=False)
             resp = MagicMock()
             resp.get_data.return_value = b"hello"
             assert perf._perf_after(resp) is resp

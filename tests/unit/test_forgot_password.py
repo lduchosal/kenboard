@@ -12,7 +12,7 @@ import pytest
 from argon2 import PasswordHasher
 
 
-@pytest.fixture()
+@pytest.fixture
 def auth_app(app):
     """Re-enable login_required."""
     prev = app.config.get("LOGIN_DISABLED", False)
@@ -21,13 +21,13 @@ def auth_app(app):
     app.config["LOGIN_DISABLED"] = prev
 
 
-@pytest.fixture()
+@pytest.fixture
 def auth_client(auth_app):
     """Test client with auth enabled."""
     return auth_app.test_client()
 
 
-@pytest.fixture()
+@pytest.fixture
 def user_with_email(db, queries):
     """Create a user with email and password."""
     h = PasswordHasher().hash("OldPassword123!")

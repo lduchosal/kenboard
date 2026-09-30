@@ -10,6 +10,8 @@ from flask import request
 
 from dashboard import db
 
+_TASKS_PATH = "/api/v1/tasks"
+
 
 def _int_suffix(path: str) -> int | None:
     """Parse the trailing ``/<int>`` segment of ``path``, or ``None``."""
@@ -34,15 +36,15 @@ def _task_project_id(task_id: int | None) -> str | None:
 def _project_from_tasks(method: str, path: str) -> str | None:
     """Resolve the project for ``/api/v1/tasks`` endpoints."""
     # GET /api/v1/tasks?project=X
-    if path == "/api/v1/tasks" and method == "GET":
+    if path == _TASKS_PATH and method == "GET":
         return request.args.get("project")
     # POST /api/v1/tasks → body.project_id
-    if path == "/api/v1/tasks" and method == "POST":
+    if path == _TASKS_PATH and method == "POST":
         body = request.get_json(silent=True) or {}
         return body.get("project_id")
     # GET/PATCH/DELETE /api/v1/tasks/<id> → SELECT project_id from DB. GET
     # included since #1129: reading one task with a per-project key.
-    if path.startswith("/api/v1/tasks/") and method in ("GET", "PATCH", "DELETE"):
+    if path.startswith(f"{_TASKS_PATH}/") and method in ("GET", "PATCH", "DELETE"):
         return _task_project_id(_int_suffix(path))
     return None
 
@@ -72,7 +74,7 @@ def _resolve_project_id(method: str, path: str) -> str | None:
     Returns ``None`` if the endpoint is not project-scoped (admin-only) or if the
     project_id cannot be determined (in which case the caller will deny the request).
     """
-    if path.startswith("/api/v1/tasks"):
+    if path.startswith(_TASKS_PATH):
         return _project_from_tasks(method, path)
     # GET/PATCH/DELETE /api/v1/projects/<id> → URL <id>. GET included since
     # #1089: `ken init` reads the project's name with an onboarding-scoped

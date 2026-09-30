@@ -14,7 +14,7 @@ from dashboard.config import Config
 TEMPLATE = "email/password_reset.html"
 
 
-@pytest.fixture()
+@pytest.fixture
 def smtp_app(app, monkeypatch):
     """App wired into the email module with SMTP 'configured' (no TLS/auth)."""
     monkeypatch.setattr(Config, "SMTP_ENABLED", True)

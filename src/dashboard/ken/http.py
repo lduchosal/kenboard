@@ -111,7 +111,8 @@ def _request(
     *,
     body: dict[str, Any] | None = None,
     hints: dict[int, str] | None = None,
-) -> Any:  # noqa: ANN401 — JSON parsé, forme libre
+    # ANN401 : JSON parsé, forme libre.
+) -> Any:  # noqa: ANN401
     """Send a JSON request, return parsed response or None on empty body.
 
     Errors name the full URL, not just the path: knowing *which host* answered is what

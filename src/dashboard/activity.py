@@ -48,7 +48,8 @@ def _principal_name() -> str:
     return ""
 
 
-def log_activity(  # noqa: PLR0913 — un kwarg par colonne d'activité, par design
+# PLR0913 : un kwarg par colonne d'activité, par design.
+def log_activity(  # noqa: PLR0913
     conn: Connection,
     queries: Queries,
     *,

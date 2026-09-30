@@ -1,8 +1,8 @@
 {#
   Burndown chart (#206). Expects a `snapshots` variable — a list of dicts
-  with keys: snapshot_date, todo, doing, review, done. If fewer than 2
+  with keys: snapshot_date plus one count per status column. If fewer than 2
   snapshots, shows a placeholder message. Otherwise renders an SVG polyline
-  of "remaining" (todo+doing+review) over time.
+  of the remaining open tasks (every column but done) over time.
 
   Also expects `color` for the line stroke.
 #}

@@ -52,7 +52,7 @@ def auth_server():
     return f"http://localhost:{AUTH_PORT}"
 
 
-@pytest.fixture()
+@pytest.fixture
 def seeded_admin(clean_db):
     """Create user Q (admin) with password 'topsecret123' before each test."""
     from dashboard.db import load_queries
@@ -73,7 +73,7 @@ def seeded_admin(clean_db):
         conn.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def seeded_normal(clean_db):
     """Create non-admin user Alice with password 'alicepass'."""
     from dashboard.db import load_queries

@@ -12,7 +12,8 @@ _SPEC = importlib.util.spec_from_file_location(
     "quality_metrics",
     Path(__file__).resolve().parents[2] / "scripts" / "quality_metrics.py",
 )
-assert _SPEC is not None and _SPEC.loader is not None
+assert _SPEC is not None
+assert _SPEC.loader is not None
 qm = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(qm)
 

@@ -17,7 +17,7 @@ import pytest
 from dashboard.auth_oidc import oauth
 
 
-@pytest.fixture()
+@pytest.fixture
 def oidc_app(monkeypatch, db):
     """Create a fresh Flask app with OIDC enabled from the start.
 
@@ -50,10 +50,10 @@ def oidc_app(monkeypatch, db):
     app = create_app()
     app.config["LOGIN_DISABLED"] = False
     app.config["TESTING"] = True
-    yield app
+    return app
 
 
-@pytest.fixture()
+@pytest.fixture
 def oidc_client(oidc_app):
     """Test client wired to the OIDC-enabled app."""
     return oidc_app.test_client()

@@ -105,7 +105,7 @@ def live_server(_setup_test_db):
     return f"http://localhost:{SERVER_PORT}"
 
 
-@pytest.fixture()
+@pytest.fixture
 def clean_db():
     """Clean all data before each test."""
     conn = _get_test_connection()

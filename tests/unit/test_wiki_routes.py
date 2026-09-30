@@ -23,7 +23,7 @@ def _ensure_login_disabled(app):
     app.config["LOGIN_DISABLED"] = prev
 
 
-@pytest.fixture()
+@pytest.fixture
 def project(client, db, queries):
     """Seed a category + project + 3 tasks (different states)."""
     queries.cat_create(db, id="cat-w", name="Cat", color="var(--accent)", position=0)

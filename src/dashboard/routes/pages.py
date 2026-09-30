@@ -80,7 +80,8 @@ def _filter_by_scope(
     return categories, all_projects
 
 
-def _build_context(  # noqa: PLR0913 — contexte template : un kwarg par dataset, par design
+# PLR0913 : contexte template : un kwarg par dataset, par design.
+def _build_context(  # noqa: PLR0913
     categories: list[dict[str, Any]],
     all_projects: list[dict[str, Any]],
     users: list[dict[str, Any]],

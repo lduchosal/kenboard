@@ -16,6 +16,8 @@ from flask_login import current_user
 from dashboard import db
 from dashboard.auth_scopes import current_user_can_project
 
+_TASK_NOT_FOUND = "Task not found"
+
 bp = Blueprint("wiki", __name__, url_prefix="/api/v1/wiki")
 
 
@@ -101,7 +103,7 @@ def get_classification(task_id: int) -> ResponseReturnValue:
     try:
         task = queries.task_get_by_id(conn, id=task_id)
         if not task:
-            return jsonify({"error": "Task not found"}), 404
+            return jsonify({"error": _TASK_NOT_FOUND}), 404
         if not current_user_can_project(task["project_id"], "read"):
             return jsonify({"error": "forbidden"}), 403
         row = queries.wiki_get_for_task(conn, task_id=task_id)
@@ -142,7 +144,7 @@ def classify() -> ResponseReturnValue:
     try:
         task = queries.task_get_by_id(conn, id=task_id)
         if not task:
-            return jsonify({"error": "Task not found"}), 404
+            return jsonify({"error": _TASK_NOT_FOUND}), 404
         if not current_user_can_project(task["project_id"], "write"):
             return jsonify({"error": "forbidden"}), 403
         queries.wiki_classify(
@@ -177,7 +179,7 @@ def clear_classification(task_id: int) -> ResponseReturnValue:
     try:
         task = queries.task_get_by_id(conn, id=task_id)
         if not task:
-            return jsonify({"error": "Task not found"}), 404
+            return jsonify({"error": _TASK_NOT_FOUND}), 404
         if not current_user_can_project(task["project_id"], "write"):
             return jsonify({"error": "forbidden"}), 403
         queries.wiki_clear(conn, task_id=task_id)

@@ -1,5 +1,6 @@
 """Unit tests for /api/v1/keys CRUD and the auth middleware behaviour."""
 
+import hashlib
 import json
 
 import pytest
@@ -8,14 +9,14 @@ from dashboard.auth_api_key import _hash_key, _scope_satisfies
 from dashboard.config import Config
 
 
-@pytest.fixture()
+@pytest.fixture
 def admin_key(monkeypatch):
     """Set a known admin key in Config and return it."""
     monkeypatch.setattr(Config, "KENBOARD_ADMIN_KEY", "kb_admin_static_test")
     return "kb_admin_static_test"
 
 
-@pytest.fixture()
+@pytest.fixture
 def project(client, db, queries):
     """Create a category and a project, return the project_id."""
     queries.cat_create(db, id="cat-1", name="Tech", color="#0969da", position=0)
@@ -55,7 +56,7 @@ class TestHashKey:
     """Sha256 hash helper."""
 
     def test_deterministic(self):
-        assert _hash_key("k") == _hash_key("k")
+        assert _hash_key("k") == hashlib.sha256(b"k").hexdigest()
 
     def test_different_keys_different_hashes(self):
         assert _hash_key("a") != _hash_key("b")
@@ -221,7 +222,7 @@ class TestKeysCRUD:
         assert r.status_code == 404
 
 
-@pytest.fixture()
+@pytest.fixture
 def seed_owner(db, queries):
     """Insert a user that can own an api_key, return its id."""
     queries.usr_create(
@@ -348,7 +349,7 @@ class TestOwnedKeyAuthenticates:
 # -- Middleware enforcement ---------------------------------------------------
 
 
-@pytest.fixture()
+@pytest.fixture
 def enforced_app(app):
     """Re-enable the API auth middleware for one test (LOGIN_DISABLED=False)."""
     prev = app.config.get("LOGIN_DISABLED", False)
@@ -357,13 +358,13 @@ def enforced_app(app):
     app.config["LOGIN_DISABLED"] = prev
 
 
-@pytest.fixture()
+@pytest.fixture
 def enforced_client(enforced_app):
     """Test client wired to the auth-enforcing app."""
     return enforced_app.test_client()
 
 
-@pytest.fixture()
+@pytest.fixture
 def make_api_key(db, queries):
     """Create an api_key row directly via SQL and return ``(id, plain_key)``.
 

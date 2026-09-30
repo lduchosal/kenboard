@@ -54,7 +54,8 @@ def send_email(
     to: str,
     subject: str,
     template: str,
-    **ctx: Any,  # noqa: ANN401 — contexte jinja libre
+    # ANN401 : contexte jinja libre.
+    **ctx: Any,  # noqa: ANN401
 ) -> bool:
     """Send a multipart email (text + HTML) rendered from Jinja2 templates.
 

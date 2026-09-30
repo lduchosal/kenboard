@@ -174,7 +174,8 @@ def _apply_field_updates(
     )
 
 
-def _log_update_activity(  # noqa: PLR0913 — avant/après + classification, par design
+# PLR0913 : avant/après + classification, par design.
+def _log_update_activity(  # noqa: PLR0913
     conn: Connection,
     queries: Queries,
     task_id: int,

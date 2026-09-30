@@ -231,7 +231,8 @@ def _perf_before() -> None:
 
 def _perf_before_template(
     _sender: Flask,
-    **_kwargs: Any,  # noqa: ANN401 — signature blinker
+    # ANN401 : signature blinker.
+    **_kwargs: Any,  # noqa: ANN401
 ) -> None:
     """Record template render start."""
     if has_request_context() and hasattr(g, "perf"):
@@ -241,7 +242,8 @@ def _perf_before_template(
 def _perf_after_template(
     _sender: Flask,
     template: Template,
-    **_kwargs: Any,  # noqa: ANN401 — signature blinker
+    # ANN401 : signature blinker.
+    **_kwargs: Any,  # noqa: ANN401
 ) -> None:
     """Record template render end."""
     if has_request_context() and hasattr(g, "perf"):

@@ -16,7 +16,7 @@ from dashboard.auth_user import _ua_only_session_identifier
 SAME_ORIGIN = {"Origin": "http://localhost"}
 
 
-@pytest.fixture()
+@pytest.fixture
 def auth_app(app):
     """Re-enable login_required and return the same app instance."""
     prev = app.config.get("LOGIN_DISABLED", False)
@@ -25,13 +25,13 @@ def auth_app(app):
     app.config["LOGIN_DISABLED"] = prev
 
 
-@pytest.fixture()
+@pytest.fixture
 def auth_client(auth_app):
     """Test client wired to the auth-enabled app."""
     return auth_app.test_client()
 
 
-@pytest.fixture()
+@pytest.fixture
 def admin_user(db, queries):
     """Create an admin user 'Q' with password 'topsecret123' and return the row."""
     h = PasswordHasher().hash("topsecret123")
@@ -47,7 +47,7 @@ def admin_user(db, queries):
     return queries.usr_get_by_id(db, id="user-q")
 
 
-@pytest.fixture()
+@pytest.fixture
 def normal_user(db, queries):
     """Create a non-admin user 'Alice'."""
     h = PasswordHasher().hash("alicepass")
@@ -581,7 +581,7 @@ class TestApiAcceptsSession:
 # -- Rate limiting on /login --------------------------------------------------
 
 
-@pytest.fixture()
+@pytest.fixture
 def rate_limited_client(auth_app):
     """Re-enable flask-limiter for one test and reset its storage."""
     from dashboard.auth_user import limiter

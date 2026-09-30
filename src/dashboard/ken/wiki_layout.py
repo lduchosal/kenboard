@@ -24,6 +24,14 @@ def _rel_href(target: str, page_dir: str) -> str:
     return posixpath.relpath(target, page_dir or ".")
 
 
+_CURRENT_CLS = ' class="current"'
+
+
+def _current_cls(entry: str, current_section: str | None) -> str:
+    """Return ``class="current"`` when ``entry`` is the highlighted one."""
+    return _CURRENT_CLS if entry == current_section else ""
+
+
 def _format_journal_nav(
     daily_dates: list[str], current_section: str | None, page_dir: str
 ) -> list[str]:
@@ -32,13 +40,13 @@ def _format_journal_nav(
     Hrefs are computed relative to ``page_dir`` via :func:`_rel_href` so the group
     resolves at any nesting depth and under any mount point (#856).
     """
-    log_cls = ' class="current"' if current_section == "log" else ""
+    log_cls = _current_cls("log", current_section)
     log_href = _rel_href("log/index.html", page_dir)
     out = [
         f'<li style="padding-left:0px"><a href="{log_href}"{log_cls}>Journal</a></li>',
     ]
     for date in daily_dates:
-        day_cls = ' class="current"' if current_section == f"log/{date}" else ""
+        day_cls = _current_cls(f"log/{date}", current_section)
         day_href = _rel_href(f"log/{date}.html", page_dir)
         out.append(
             f'<li style="padding-left:12px">'
@@ -68,14 +76,14 @@ def _format_sidebar_nav(
     page_dir = posixpath.dirname(current_file)
     lines = ['<nav class="sidebar"><h1>kenboard wiki</h1><ul>']
     if current_section is not None:
-        root_cls = ' class="current"' if current_section == "" else ""
+        root_cls = _current_cls("", current_section)
         home = _rel_href("index.html", page_dir)
         lines.append(f'<li><a href="{home}"{root_cls}>Home</a></li>')
     for section in sections:
         for path, node in section.flatten():
             indent_style = f"padding-left:{path.count('/') * 12}px"
             href = _rel_href(f"{path}/index.html", page_dir)
-            cls = ' class="current"' if path == current_section else ""
+            cls = _current_cls(path, current_section)
             lines.append(
                 f'<li style="{indent_style}"><a href="{href}"{cls}>{node.title}</a></li>',
             )

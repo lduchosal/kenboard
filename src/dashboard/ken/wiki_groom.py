@@ -14,7 +14,7 @@ import click
 
 from dashboard.ken.config import KenConfig
 from dashboard.ken.fmt import _format_columns, _output
-from dashboard.ken.http import _request
+from dashboard.ken.http import _request, _try_request
 from dashboard.ken.wiki import (
     _architecture_help,
     _load_sections,
@@ -94,12 +94,10 @@ def _classified_by(cfg: KenConfig) -> str:
 
 def _show_classification(cfg: KenConfig, task_id: int, *, json_mode: bool) -> None:
     """Print the current classification of ``task_id`` (friendly on 404)."""
-    try:
-        row = _request(cfg, "GET", f"/api/v1/wiki/classify/{task_id}")
-    except SystemExit:
-        # _request exits on HTTPError; the 404 ("Unclassified")
-        # case is informational, not fatal. Re-emit a friendly
-        # line then exit 0 instead of propagating.
+    # The 404 ("Unclassified") case is informational, not fatal: the best-effort
+    # call returns None instead of exiting, and we print a friendly line.
+    row = _try_request(cfg, "GET", f"/api/v1/wiki/classify/{task_id}")
+    if row is None:
         click.echo(f"Task #{task_id} is unclassified.")
         return
     _output(row, json_mode=json_mode, columns=None)

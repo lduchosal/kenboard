@@ -9,19 +9,21 @@ export async function openFullscreen(btn, id) {
   const card = btn.closest('.kanban-task');
   const avatarColor = card?.querySelector('.task-avatar')?.style.background || 'var(--dimmed)';
   // Show the modal immediately with minimal data, then fill from API (#221).
-  populateFullscreen(id, '...', '', '', '', '', avatarColor, btn);
+  populateFullscreen({ id, title: '...' }, avatarColor, btn);
   document.getElementById('task-fullscreen').showModal();
 
   try {
     const r = await apiCall(`${API_BASE}/tasks/${id}`);
     const t = await r.json();
     populateFullscreen(
-      t.id,
-      t.title,
-      t.description || '',
-      t.who || '',
-      t.due_date ? fmtDate(t.due_date) : '',
-      t.attachement || '',
+      {
+        id: t.id,
+        title: t.title,
+        desc: t.description || '',
+        who: t.who || '',
+        when: t.due_date ? fmtDate(t.due_date) : '',
+        attachement: t.attachement || '',
+      },
       avatarColor,
       btn,
     );
@@ -30,7 +32,10 @@ export async function openFullscreen(btn, id) {
   }
 }
 
-function populateFullscreen(id, title, desc, who, when, attachement, avatarColor, btn) {
+// ``task`` carries the fields shown in the modal (id, title, desc, who, when,
+// attachement); missing ones render as empty while the API fetch is pending.
+function populateFullscreen(task, avatarColor, btn) {
+  const { id, title, desc = '', who = '', when = '', attachement = '' } = task;
   document.getElementById('fs-id').textContent = `#${id}`;
   document.getElementById('fs-title').textContent = title;
   document.getElementById('fs-who').textContent = who || '—';
@@ -70,7 +75,7 @@ function populateFullscreen(id, title, desc, who, when, attachement, avatarColor
 
   document.getElementById('fs-edit-btn').onclick = () => {
     closeFullscreen();
-    openEditTask(btn, id);
+    void openEditTask(btn, id);
   };
 }
 

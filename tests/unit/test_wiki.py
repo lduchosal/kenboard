@@ -13,7 +13,7 @@ import dashboard.db as db_module
 from dashboard.wiki import Section, parse_architecture, section_paths
 
 
-@pytest.fixture()
+@pytest.fixture
 def project(db):
     """Seed a category + project + a couple of tasks for classification tests."""
     cur = db.cursor()

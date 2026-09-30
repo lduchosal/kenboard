@@ -72,7 +72,8 @@ login_manager.login_view = LOGIN_VIEW_ENDPOINT
 login_manager.session_protection = "strong"
 # Flask-Login reads ``_session_identifier_generator`` (private name); the
 # public ``session_identifier_generator`` attribute is silently ignored.
-login_manager._session_identifier_generator = (  # noqa: SLF001 — seul hook exposé par flask-login
+# SLF001 : seul hook exposé par flask-login.
+login_manager._session_identifier_generator = (  # noqa: SLF001
     _ua_only_session_identifier
 )
 

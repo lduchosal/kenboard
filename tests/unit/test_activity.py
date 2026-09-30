@@ -23,7 +23,7 @@ from dashboard.activity import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def project(db):
     """Insert a category + project so activity rows have a valid FK target."""
     cur = db.cursor()

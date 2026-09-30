@@ -24,7 +24,7 @@ from argon2 import PasswordHasher
 SAME_ORIGIN = {"Origin": "http://localhost"}
 
 
-@pytest.fixture()
+@pytest.fixture
 def auth_app(app):
     """Re-enable the auth middleware on the shared app fixture."""
     prev = app.config.get("LOGIN_DISABLED", False)
@@ -33,13 +33,13 @@ def auth_app(app):
     app.config["LOGIN_DISABLED"] = prev
 
 
-@pytest.fixture()
+@pytest.fixture
 def auth_client(auth_app):
     """Test client wired to the auth-enabled app."""
     return auth_app.test_client()
 
 
-@pytest.fixture()
+@pytest.fixture
 def admin_user(db, queries):
     """Create an admin user 'adm' with password 'adminpw123'."""
     h = PasswordHasher().hash("adminpw123")
@@ -55,7 +55,7 @@ def admin_user(db, queries):
     return queries.usr_get_by_id(db, id="user-adm")
 
 
-@pytest.fixture()
+@pytest.fixture
 def normal_user(db, queries):
     """Create a non-admin user 'norm' with password 'normpw123'."""
     h = PasswordHasher().hash("normpw123")
@@ -71,7 +71,7 @@ def normal_user(db, queries):
     return queries.usr_get_by_id(db, id="user-norm")
 
 
-@pytest.fixture()
+@pytest.fixture
 def normal_client(auth_client, normal_user):
     """Test client logged in as the non-admin user."""
     auth_client.post(
@@ -82,7 +82,7 @@ def normal_client(auth_client, normal_user):
     return auth_client
 
 
-@pytest.fixture()
+@pytest.fixture
 def admin_client(auth_client, admin_user):
     """Test client logged in as the admin user."""
     auth_client.post(

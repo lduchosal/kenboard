@@ -16,7 +16,7 @@ from argon2 import PasswordHasher
 from dashboard.auth_session import _rotate_session_nonce
 
 
-@pytest.fixture()
+@pytest.fixture
 def auth_app(app):
     """Re-enable Flask-Login on the shared app fixture."""
     prev = app.config.get("LOGIN_DISABLED", False)
@@ -25,13 +25,13 @@ def auth_app(app):
     app.config["LOGIN_DISABLED"] = prev
 
 
-@pytest.fixture()
+@pytest.fixture
 def auth_client(auth_app):
     """Test client wired to the auth-enabled app."""
     return auth_app.test_client()
 
 
-@pytest.fixture()
+@pytest.fixture
 def seeded_user(db, queries):
     """Insert a user 'logout_test' with password 'logoutpw123'."""
     h = PasswordHasher().hash("logoutpw123")

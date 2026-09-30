@@ -37,7 +37,8 @@ def _format_columns(rows: list[dict[str, Any]], columns: list[tuple[str, str]]) 
 
 
 def _output(
-    data: Any,  # noqa: ANN401 — payload JSON arbitraire de l'API
+    # ANN401 : payload JSON arbitraire de l'API.
+    data: Any,  # noqa: ANN401
     *,
     json_mode: bool,
     columns: list[tuple[str, str]] | None = None,

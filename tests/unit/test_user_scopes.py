@@ -14,7 +14,7 @@ from argon2 import PasswordHasher
 SAME_ORIGIN = {"Origin": "http://localhost"}
 
 
-@pytest.fixture()
+@pytest.fixture
 def auth_app(app):
     """Re-enable the auth middleware on the shared app fixture."""
     prev = app.config.get("LOGIN_DISABLED", False)
@@ -23,13 +23,13 @@ def auth_app(app):
     app.config["LOGIN_DISABLED"] = prev
 
 
-@pytest.fixture()
+@pytest.fixture
 def auth_client(auth_app):
     """Test client wired to the auth-enabled app."""
     return auth_app.test_client()
 
 
-@pytest.fixture()
+@pytest.fixture
 def admin_user(db, queries):
     """Create an admin user 'adm'."""
     h = PasswordHasher().hash("adminpw123")
@@ -45,7 +45,7 @@ def admin_user(db, queries):
     return queries.usr_get_by_id(db, id="user-adm")
 
 
-@pytest.fixture()
+@pytest.fixture
 def normal_user(db, queries):
     """Create a non-admin user 'norm'."""
     h = PasswordHasher().hash("normpw123")
@@ -61,7 +61,7 @@ def normal_user(db, queries):
     return queries.usr_get_by_id(db, id="user-norm")
 
 
-@pytest.fixture()
+@pytest.fixture
 def seed_two_categories(db, queries):
     """Insert two categories and a project in each."""
     queries.cat_create(db, id="cat-a", name="Alpha", color="#ffaaaa", position=0)

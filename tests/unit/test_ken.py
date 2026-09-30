@@ -66,7 +66,7 @@ def _fake_urlopen(responses):
     return _impl, calls
 
 
-@pytest.fixture()
+@pytest.fixture
 def cwd_tmp(tmp_path, monkeypatch):
     """Run the test from a clean tmp directory and clear KEN_* env vars."""
     monkeypatch.chdir(tmp_path)
@@ -75,7 +75,7 @@ def cwd_tmp(tmp_path, monkeypatch):
     return tmp_path
 
 
-@pytest.fixture()
+@pytest.fixture
 def runner():
     return CliRunner()
 
@@ -1614,9 +1614,11 @@ class TestCliMutations:
         assert index.index("2026-06-01") < index.index("2026-01-01")
         # Each day page contains its task.
         jan = (wiki / "log" / "2026-01-01.md").read_text(encoding="utf-8")
-        assert "older" in jan and "#1" in jan
+        assert "older" in jan
+        assert "#1" in jan
         jun = (wiki / "log" / "2026-06-01.md").read_text(encoding="utf-8")
-        assert "newer" in jun and "#2" in jun
+        assert "newer" in jun
+        assert "#2" in jun
         # Flat log.md is gone — replaced by log/index.md.
         assert not (wiki / "log.md").exists()
 
@@ -1798,9 +1800,11 @@ class TestCliMutations:
         assert "\\" not in body
         # Home climbs two levels; parent section climbs one.
         m_home = re.search(r'<a href="([^"]+)"[^>]*>Home</a>', body)
-        assert m_home and m_home.group(1) == "../../index.html"
+        assert m_home is not None
+        assert m_home.group(1) == "../../index.html"
         m_func = re.search(r'<a href="([^"]+)"[^>]*>Hostgroups</a>', body)
-        assert m_func and m_func.group(1) == "../index.html"
+        assert m_func is not None
+        assert m_func.group(1) == "../index.html"
         # Every emitted internal href resolves to a file that exists on disk.
         for href in re.findall(r'<a href="([^"#]+\.html)"', body):
             resolved = (deep.parent / href).resolve()

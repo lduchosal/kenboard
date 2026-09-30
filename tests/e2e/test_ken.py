@@ -14,12 +14,12 @@ from click.testing import CliRunner
 from dashboard import ken
 
 
-@pytest.fixture()
+@pytest.fixture
 def runner():
     return CliRunner()
 
 
-@pytest.fixture()
+@pytest.fixture
 def board_ids(live_server, clean_db):
     """Create a category + project via the API and return ``(cat_id, project_id)``."""
     import urllib.request as ur
@@ -44,7 +44,7 @@ def board_ids(live_server, clean_db):
     return cat["id"], proj["id"]
 
 
-@pytest.fixture()
+@pytest.fixture
 def project_id(board_ids):
     """The project half of the category/project pair created for the test."""
     return board_ids[1]
@@ -56,7 +56,7 @@ def _onboarding_url(live_server, board_ids, token="tok-e2e"):
     return f"{live_server}/onboard/cat/{cat_id}/project/{proj_id}?token={token}"
 
 
-@pytest.fixture()
+@pytest.fixture
 def cwd_tmp(tmp_path, monkeypatch):
     """Run from a clean tmp dir with KEN_* env vars cleared."""
     monkeypatch.chdir(tmp_path)

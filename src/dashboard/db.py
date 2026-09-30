@@ -25,7 +25,8 @@ class Queries:
         """Wrap the raw aiosql queries object."""
         object.__setattr__(self, "_queries", queries)
 
-    def __getattr__(self, name: str) -> Any:  # noqa: ANN401 — proxy dynamique aiosql
+    # ANN401 : proxy dynamique aiosql.
+    def __getattr__(self, name: str) -> Any:  # noqa: ANN401
         """Intercept attribute access to wrap callable queries."""
         attr = getattr(object.__getattribute__(self, "_queries"), name)
         if not callable(attr):
@@ -33,12 +34,14 @@ class Queries:
 
         @functools.wraps(attr)
         def timed(
-            *args: Any,  # noqa: ANN401 — wrapper transparent
+            # ANN401 : wrapper transparent.
+            *args: Any,  # noqa: ANN401
             **kwargs: Any,  # noqa: ANN401
         ) -> Any:  # noqa: ANN401
             """Execute the query and record timing if perf is active."""
             try:
-                from flask import (  # noqa: PLC0415 — db doit rester importable sans flask
+                # PLC0415 : db doit rester importable sans flask.
+                from flask import (  # noqa: PLC0415
                     g,
                     has_request_context,
                 )

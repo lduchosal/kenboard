@@ -99,5 +99,5 @@ export function bindHashSync() {
   globalThis.addEventListener('hashchange', applyTaskHash);
   // Initial pass: restore detail mode from the URL on load (incl. after the
   // 60s auto-refresh, which preserves the fragment).
-  applyTaskHash();
+  void applyTaskHash();
 }

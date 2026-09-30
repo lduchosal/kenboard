@@ -186,6 +186,11 @@ def _resolved_fields(
     return fields
 
 
+def _existing_file(path: Path | None) -> Path | None:
+    """Return ``path`` if it points to an existing regular file, else ``None``."""
+    return path if path is not None and path.is_file() else None
+
+
 def _load_config(
     project_override: str | None = None,
     base_url_override: str | None = None,
@@ -204,14 +209,13 @@ def _load_config(
     ``--config`` is passed explicitly, it points to a single file and is parsed
     according to its extension (``.ini`` → ini format, otherwise legacy).
     """
-    ken_path, ini_path = _locate_config_files(config_override)
+    located_ken, located_ini = _locate_config_files(config_override)
+    ken_path = _existing_file(located_ken)
+    ini_path = _existing_file(located_ini)
 
-    ini_data: dict[str, str] = {}
-    if ini_path is not None and ini_path.is_file():
-        ini_data = _parse_ini_file(ini_path)
-
+    ini_data = _parse_ini_file(ini_path) if ini_path is not None else {}
     file_data: dict[str, str] = {}
-    if ken_path is not None and ken_path.is_file():
+    if ken_path is not None:
         _check_ken_permissions(ken_path)
         file_data = _parse_ken_file(ken_path)
 
@@ -226,8 +230,8 @@ def _load_config(
         project_id=project_id,
         base_url=base_url,
         api_token=api_token,
-        ken_file=ken_path if ken_path is not None and ken_path.is_file() else None,
-        ini_file=ini_path if ini_path is not None and ini_path.is_file() else None,
+        ken_file=ken_path,
+        ini_file=ini_path,
         sync_dir=fields["sync_dir"] or DEFAULT_SYNC_DIR,
         architecture=fields["architecture"] or DEFAULT_ARCHITECTURE,
         wiki_dir=fields["wiki_dir"] or DEFAULT_WIKI_DIR,
@@ -274,5 +278,9 @@ def _persist_sync_dir(cfg: KenConfig) -> None:
     for line in text.splitlines():
         if line.strip().startswith("sync_dir="):
             return
+    # Append only the new line — never write back the content just read (keeps
+    # the rest of .ken untouched, and Sonar pythonsecurity:S2083 no longer sees
+    # file content flowing into a write).
     sep = "" if not text or text.endswith("\n") else "\n"
-    cfg.ken_file.write_text(text + sep + f"sync_dir={cfg.sync_dir}\n", encoding="utf-8")
+    with cfg.ken_file.open("a", encoding="utf-8") as fh:
+        fh.write(f"{sep}sync_dir={cfg.sync_dir}\n")

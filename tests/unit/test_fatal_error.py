@@ -14,7 +14,7 @@ import re
 import pytest
 
 
-@pytest.fixture()
+@pytest.fixture
 def boom_app():
     """Build a fresh Flask app + register both /boom and /api/boom routes.
 

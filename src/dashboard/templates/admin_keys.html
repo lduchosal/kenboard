@@ -39,7 +39,8 @@
       <tr data-key-id="{{ k.id }}" style="border-bottom:1px solid var(--border)">
         <td style="padding:6px"><input type="text" class="k-label" value="{{ k.label }}" autocomplete="off" aria-label="Label de la clé" style="width:100%"></td>
         <td style="padding:6px">
-          <select class="k-user" aria-label="Utilisateur de la clé" style="width:100%;font-size:11px">
+          <label for="k-user-{{ k.id }}" class="sr-only">Utilisateur de la clé</label>
+          <select id="k-user-{{ k.id }}" class="k-user" style="width:100%;font-size:11px">
             <option value="">&mdash;</option>
             {% for u in key_users %}
             <option value="{{ u.id }}" {% if u.id == k.user_id %}selected{% endif %}>{{ u.name }}</option>
@@ -61,7 +62,8 @@
           <div class="k-scopes">
             {% for s in k.scopes %}
             <div class="k-scope-row" data-project-id="{{ s.project_id }}" style="display:flex;gap:4px;margin-bottom:2px;font-size:11px;align-items:center">
-              <select class="k-scope-project" aria-label="Projet du scope" style="flex:1;font-size:11px">
+              <label for="k-scope-{{ k.id }}-{{ loop.index }}" class="sr-only">Projet du scope</label>
+              <select id="k-scope-{{ k.id }}-{{ loop.index }}" class="k-scope-project" style="flex:1;font-size:11px">
                 {% for p in projects %}
                 <option value="{{ p.id }}" {% if p.id == s.project_id %}selected{% endif %}>{{ p.acronym or p.name[:4]|upper }} / {{ p.name }}</option>
                 {% endfor %}
@@ -87,7 +89,8 @@
       <tr id="keys-add-row" style="border-bottom:1px solid var(--border);background:var(--bg)">
         <td style="padding:6px"><input type="text" id="new-key-label" placeholder="Label" autocomplete="off" aria-label="Label de la clé" style="width:100%"></td>
         <td style="padding:6px">
-          <select id="new-key-user" aria-label="Utilisateur de la clé" style="width:100%;font-size:11px">
+          <label for="new-key-user" class="sr-only">Utilisateur de la clé</label>
+          <select id="new-key-user" style="width:100%;font-size:11px">
             <option value="">&mdash;</option>
             {% for u in key_users %}
             <option value="{{ u.id }}">{{ u.name }}</option>

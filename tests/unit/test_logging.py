@@ -11,7 +11,7 @@ import pytest
 from dashboard import logging as dashboard_logging
 
 
-@pytest.fixture()
+@pytest.fixture
 def isolated_log_dir(tmp_path, monkeypatch):
     """Point LOG_DIR / LOG_FILE at a tmp dir for the test."""
     monkeypatch.setattr(dashboard_logging, "LOG_DIR", tmp_path)

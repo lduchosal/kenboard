@@ -184,7 +184,7 @@ function actionOpen() {
   const item = selected();
   if (!item) return;
   if (item.classList.contains('kanban-task')) {
-    toggleDetail(item, { detail: 1 });
+    void toggleDetail(item, { detail: 1 });
     return;
   }
   if (item.tagName === 'A' && item.href) {
@@ -199,12 +199,12 @@ function actionOpen() {
 // non-card items (home tiles) are silently ignored for these actions.
 function actionEdit() {
   const card = selectedCard();
-  if (card) openEditTask(card, card.dataset.taskId);
+  if (card) void openEditTask(card, card.dataset.taskId);
 }
 
 function actionFullscreen() {
   const card = selectedCard();
-  if (card) openFullscreen(card, card.dataset.taskId);
+  if (card) void openFullscreen(card, card.dataset.taskId);
 }
 
 function actionCreate() {

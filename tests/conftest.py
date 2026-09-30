@@ -224,7 +224,7 @@ def queries():
     return load_queries()
 
 
-@pytest.fixture()
+@pytest.fixture
 def db():
     """Create a test database connection, clean tables before and after."""
     if not _mysql_available:
@@ -266,7 +266,7 @@ def db():
     conn.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def seed_category(db, queries):
     """Insert a test category and return it."""
     queries.cat_create(
@@ -275,7 +275,7 @@ def seed_category(db, queries):
     return queries.cat_get_by_id(db, id="test-cat")
 
 
-@pytest.fixture()
+@pytest.fixture
 def seed_project(db, queries, seed_category):
     """Insert a test project and return it."""
     queries.proj_create(
@@ -291,7 +291,7 @@ def seed_project(db, queries, seed_category):
     return queries.proj_get_by_id(db, id="test-proj")
 
 
-@pytest.fixture()
+@pytest.fixture
 def seed_task(db, queries, seed_project):
     """Insert a test task and return it."""
     queries.task_create(

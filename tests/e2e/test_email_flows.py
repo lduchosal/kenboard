@@ -155,7 +155,7 @@ def _clear_emails():
     SMTP_MESSAGES.clear()
 
 
-@pytest.fixture()
+@pytest.fixture
 def seeded_user(clean_db):
     """Create a user with email for password reset tests."""
     from dashboard.db import load_queries

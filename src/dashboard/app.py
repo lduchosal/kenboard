@@ -82,7 +82,8 @@ def _register_request_logging(app: Flask) -> None:
     @app.before_request
     def log_request() -> None:
         """Log incoming request."""
-        request._start_time = time.time()  # type: ignore[attr-defined] # noqa: SLF001 — stash volontaire sur request
+        # SLF001 : stash volontaire sur request.
+        request._start_time = time.time()  # type: ignore[attr-defined] # noqa: SLF001
         if request.path.startswith(API_PATH_PREFIX):
             log.debug(
                 "request",

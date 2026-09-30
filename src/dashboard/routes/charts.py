@@ -86,7 +86,8 @@ def _bar_grid(
     return band, group_w, slot_w, bar_w, plot_h, pad_bottom
 
 
-def _layout_taskers_bars(  # noqa: PLR0913 — géométrie : données + dimensions explicites
+# PLR0913 : géométrie : données + dimensions explicites.
+def _layout_taskers_bars(  # noqa: PLR0913
     per_day: dict[str, dict[str, int]],
     day_keys: list[str],
     persons: list[str],

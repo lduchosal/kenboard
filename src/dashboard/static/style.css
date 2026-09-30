@@ -17,6 +17,20 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* Label read by screen readers but not displayed (form controls whose
+ * visible context is a column header or placeholder option). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 body {
   background: var(--bg);
   color: var(--text);

@@ -14,7 +14,7 @@ from argon2 import PasswordHasher
 from dashboard.config import Config
 
 
-@pytest.fixture()
+@pytest.fixture
 def auth_app(app):
     """Re-enable login_required."""
     prev = app.config.get("LOGIN_DISABLED", False)
@@ -23,21 +23,15 @@ def auth_app(app):
     app.config["LOGIN_DISABLED"] = prev
 
 
-@pytest.fixture()
-def register_app(auth_app):
+@pytest.fixture
+def register_app(auth_app, monkeypatch):
     """Enable registration with a test domain."""
-    prev_domain = Config.REGISTER_ALLOWED_DOMAIN
-    Config.REGISTER_ALLOWED_DOMAIN = "test.com"
-    auth_app.config["REGISTER_ALLOWED_DOMAIN"] = "test.com"
-    yield auth_app
-    Config.REGISTER_ALLOWED_DOMAIN = prev_domain
-    if prev_domain:
-        auth_app.config["REGISTER_ALLOWED_DOMAIN"] = prev_domain
-    else:
-        auth_app.config.pop("REGISTER_ALLOWED_DOMAIN", None)
+    monkeypatch.setattr(Config, "REGISTER_ALLOWED_DOMAIN", "test.com")
+    monkeypatch.setitem(auth_app.config, "REGISTER_ALLOWED_DOMAIN", "test.com")
+    return auth_app
 
 
-@pytest.fixture()
+@pytest.fixture
 def register_client(register_app):
     """Test client with registration enabled."""
     return register_app.test_client()
@@ -52,15 +46,11 @@ class TestRegisterPage:
         assert resp.status_code == 200
         assert "test.com" in resp.data.decode()
 
-    def test_returns_404_when_disabled(self, client):
+    def test_returns_404_when_disabled(self, client, monkeypatch):
         """Register page returns 404 when no domain configured."""
-        prev = Config.REGISTER_ALLOWED_DOMAIN
-        Config.REGISTER_ALLOWED_DOMAIN = ""
-        try:
-            resp = client.get("/register")
-            assert resp.status_code == 404
-        finally:
-            Config.REGISTER_ALLOWED_DOMAIN = prev
+        monkeypatch.setattr(Config, "REGISTER_ALLOWED_DOMAIN", "")
+        resp = client.get("/register")
+        assert resp.status_code == 404
 
     def test_login_shows_register_link(self, register_client):
         """Login page shows 'Créer un compte' when registration enabled."""

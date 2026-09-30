@@ -545,7 +545,8 @@ class TestTaskCRUD:
         task = page.locator(".kanban-task").first
         task_id = task.get_attribute("data-task-id")
         project_id = page.locator(".kanban").first.get_attribute("data-project-id")
-        assert task_id and project_id
+        assert task_id
+        assert project_id
         page.evaluate(
             """async ({ taskId, projectId }) => {
                 await fetch(`/api/v1/tasks/${taskId}`, {

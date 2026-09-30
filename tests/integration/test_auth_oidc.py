@@ -33,7 +33,7 @@ def idp():
         yield f"http://127.0.0.1:{server.server_port}"
 
 
-@pytest.fixture()
+@pytest.fixture
 def oidc_app(idp, monkeypatch, db):
     """Create a Flask app wired to the live mock IdP."""
     import dashboard.config
@@ -55,10 +55,10 @@ def oidc_app(idp, monkeypatch, db):
     app.config["LOGIN_DISABLED"] = False
     app.config["TESTING"] = True
     app.config["SERVER_NAME"] = "localhost"
-    yield app
+    return app
 
 
-@pytest.fixture()
+@pytest.fixture
 def client(oidc_app):
     """Test client for the OIDC-enabled app."""
     return oidc_app.test_client()

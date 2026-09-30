@@ -14,7 +14,7 @@ import pytest
 from argon2 import PasswordHasher
 
 
-@pytest.fixture()
+@pytest.fixture
 def csrf_app(app):
     """Re-enable the auth middleware on the shared app fixture."""
     prev = app.config.get("LOGIN_DISABLED", False)
@@ -23,13 +23,13 @@ def csrf_app(app):
     app.config["LOGIN_DISABLED"] = prev
 
 
-@pytest.fixture()
+@pytest.fixture
 def csrf_client(csrf_app):
     """Test client wired to the auth-enabled app."""
     return csrf_app.test_client()
 
 
-@pytest.fixture()
+@pytest.fixture
 def logged_in_user(db, queries):
     """Create a user 'csrf_test' with password 'csrfpass123'."""
     h = PasswordHasher().hash("csrfpass123")
@@ -45,7 +45,7 @@ def logged_in_user(db, queries):
     return queries.usr_get_by_id(db, id="user-csrf")
 
 
-@pytest.fixture()
+@pytest.fixture
 def authed_client(csrf_client, logged_in_user):
     """Test client with an active session cookie for ``csrf_test``."""
     csrf_client.post(
