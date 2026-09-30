@@ -4,7 +4,7 @@ Tout ce qui touche à l'extension navigateur (Chrome/Edge/Brave/Firefox) qui cap
 
 Section: `extension`
 
-## Archivé (30)
+## Archivé (31)
 
 - [DEPLOY / Auto-zip extension dans publish.sh + GitHub Release](deploy-auto-zip-extension-dans-publish-sh-github-release-485.md)
 - [EXTENSION / Release](extension-release-501.md)
@@ -36,3 +36,4 @@ Section: `extension`
 - [EXTENSION / paintbrush — sélectionner / déplacer / redimensionner / éditer / supprimer les shapes](extension-paintbrush-selectionner-deplacer-redimensionner-editer-supprimer-les-shapes-557.md)
 - [EXTENSION / paintbrush — conversion HTML→SVG légère de la page (background context)](extension-paintbrush-conversion-html-svg-legere-de-la-page-background-context-564.md)
 - [EXTENSION / paintbrush — skeleton viewport-only + couleurs de fond](extension-paintbrush-skeleton-viewport-only-couleurs-de-fond-567.md)
+- [VSCODE / plugin vscode pour le kenboard ?](vscode-plugin-vscode-pour-le-kenboard-1127.md)
