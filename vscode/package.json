@@ -1,0 +1,123 @@
+{
+  "name": "kenboard-vscode",
+  "displayName": "kenboard",
+  "description": "Tâches kenboard du projet courant dans VS Code : liste, détail markdown, changement de statut (ken #1127).",
+  "version": "0.0.1",
+  "publisher": "lduchosal",
+  "license": "MIT",
+  "icon": "media/kenboard.png",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lduchosal/kenboard"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./src/extension.js",
+  "activationEvents": [
+    "workspaceContains:**/ken.ini",
+    "workspaceContains:**/.ken"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "kenboard",
+          "title": "kenboard",
+          "icon": "media/kenboard.svg"
+        }
+      ]
+    },
+    "views": {
+      "kenboard": [
+        {
+          "id": "kenboard.tasks",
+          "name": "Tâches"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "kenboard.refresh",
+        "title": "Rafraîchir",
+        "category": "kenboard",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "kenboard.openBoard",
+        "title": "Ouvrir le board dans le navigateur",
+        "category": "kenboard",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "kenboard.showTask",
+        "title": "Afficher le détail",
+        "category": "kenboard"
+      },
+      {
+        "command": "kenboard.openTask",
+        "title": "Ouvrir dans kenboard",
+        "category": "kenboard"
+      },
+      {
+        "command": "kenboard.moveTo",
+        "title": "Move to…",
+        "category": "kenboard"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "kenboard.refresh",
+          "when": "view == kenboard.tasks",
+          "group": "navigation"
+        },
+        {
+          "command": "kenboard.openBoard",
+          "when": "view == kenboard.tasks",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "kenboard.showTask",
+          "when": "view == kenboard.tasks && viewItem == task",
+          "group": "0_show"
+        },
+        {
+          "command": "kenboard.moveTo",
+          "when": "view == kenboard.tasks && viewItem == task",
+          "group": "1_move"
+        },
+        {
+          "command": "kenboard.openTask",
+          "when": "view == kenboard.tasks && viewItem == task",
+          "group": "2_open"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "kenboard.openTask",
+          "when": "false"
+        },
+        {
+          "command": "kenboard.moveTo",
+          "when": "false"
+        },
+        {
+          "command": "kenboard.showTask",
+          "when": "false"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "vendor": "mkdir -p media/vendor && cp ../src/dashboard/static/marked.min.js ../src/dashboard/static/dompurify.min.js media/vendor/",
+    "package": "npm run vendor && npx --yes @vscode/vsce@3.2.1 package --no-dependencies --skip-license"
+  }
+}

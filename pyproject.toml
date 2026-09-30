@@ -159,6 +159,12 @@ js-lint-fix = { shell = "npx biome check --write src/dashboard/static/js" }
 js-typecheck = { shell = "npx tsc --noEmit -p jsconfig.json" }
 js-test = { shell = "npx vitest run --coverage" }
 js-build = { shell = "npx vite build" }
+# ken #1127 — VS Code extension (vscode/): same biome + tsc toolchain as the
+# frontend, tests on node:test (zero deps), .vsix packaged by vsce.
+vscode-lint = { shell = "npx biome check vscode/src vscode/test vscode/media/render.js" }
+vscode-typecheck = { shell = "npx tsc --noEmit -p vscode/jsconfig.json" }
+vscode-test = { shell = "node --test vscode/test/*.test.js" }
+vscode-package = { shell = "cd vscode && npm run package" }
 # #520 (annotations epic) — bundle the extension content script + its npm deps
 # (dom-anchor-text-quote, dom-anchor-text-position) into a single IIFE file
 # Chrome/Firefox load via content_scripts. Separate from js-build because the

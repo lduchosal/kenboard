@@ -1,0 +1,4 @@
+test/**
+*.vsix
+.gitignore
+jsconfig.json

@@ -1,8 +1,17 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
   "files": {
-    "include": ["src/dashboard/static/js/**/*.js"],
-    "ignore": ["src/dashboard/static/dist/**", "src/dashboard/static/*.min.js", "node_modules/**"]
+    "include": [
+      "src/dashboard/static/js/**/*.js",
+      "vscode/src/**/*.js",
+      "vscode/test/**/*.js",
+      "vscode/media/render.js"
+    ],
+    "ignore": [
+      "src/dashboard/static/dist/**",
+      "src/dashboard/static/*.min.js",
+      "node_modules/**"
+    ]
   },
   "linter": {
     "enabled": true,
@@ -32,6 +41,12 @@
       "semicolons": "always",
       "trailingCommas": "all"
     },
-    "globals": ["Sortable", "marked", "DOMPurify", "API_BASE", "CAT_PROJECTS"]
+    "globals": [
+      "Sortable",
+      "marked",
+      "DOMPurify",
+      "API_BASE",
+      "CAT_PROJECTS"
+    ]
   }
 }

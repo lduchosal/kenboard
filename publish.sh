@@ -187,6 +187,11 @@ run_command "pdm run js-test" "JS unit tests"
 print_step "JS Bundle Build (vite)"
 run_command "pdm run js-build" "JS bundle build"
 
+print_step "VS Code extension: lint + type check + tests (ken #1127)"
+run_command "pdm run vscode-lint" "VS Code extension lint"
+run_command "pdm run vscode-typecheck" "VS Code extension type check"
+run_command "pdm run vscode-test" "VS Code extension unit tests"
+
 print_step "Running Unit Tests (pytest)"
 if [ "$CI_MODE" = true ]; then
     run_command "pdm run test-ci" "Unit Tests (CI)"
