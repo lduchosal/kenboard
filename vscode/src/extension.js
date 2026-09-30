@@ -113,9 +113,19 @@ function activate(context) {
   const provider = new TaskTreeProvider();
   const view = vscode.window.createTreeView('kenboard.tasks', { treeDataProvider: provider });
 
+  // One detail panel, reused from task to task (like the markdown preview).
+  /** @type {vscode.WebviewPanel | null} */
+  let panel = null;
+  /** @type {number | null} */
+  let shownId = null;
+  /** @type {string} */
+  let shownKey = '';
+
+  /** Tree + open detail: both reloaded from the API. */
   const refresh = async () => {
     await provider.reload();
     view.title = provider.project ? `Tâches — ${provider.project.name}` : 'Tâches';
+    await reloadShown();
   };
 
   /** @param {number} [taskId] */
@@ -130,38 +140,18 @@ function activate(context) {
     if (url) vscode.env.openExternal(vscode.Uri.parse(url));
   };
 
-  // One detail panel, reused from task to task (like the markdown preview).
-  /** @type {vscode.WebviewPanel | null} */
-  let panel = null;
-  /** @type {number | null} */
-  let shownId = null;
-
-  /** @param {Task} task */
-  const showTask = (task) => {
-    if (!provider.api) return;
-    if (!panel) {
-      panel = vscode.window.createWebviewPanel(
-        'kenboard.task',
-        '',
-        { viewColumn: vscode.ViewColumn.Active, preserveFocus: false },
-        {
-          enableScripts: true,
-          enableFindWidget: true,
-          localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')],
-        },
-      );
-      panel.iconPath = vscode.Uri.joinPath(context.extensionUri, 'media', 'kenboard.png');
-      panel.onDidDispose(() => {
-        panel = null;
-        shownId = null;
-      });
-    } else {
-      panel.reveal(undefined, false);
-    }
-    panel.title = `#${task.id} ${task.title}`;
+  /**
+   * Render ``task`` in the open panel. Skipped when nothing changed, so a
+   * periodic refresh does not reset the reader's scroll position.
+   * @param {Task} task
+   */
+  const renderTask = (task) => {
+    if (!panel || !provider.api) return;
+    const key = JSON.stringify(task);
+    if (task.id === shownId && key === shownKey) return;
     shownId = task.id;
-    // The task comes from the list (full description included): a per-project
-    // api key cannot GET /api/v1/tasks/<id> (auth_resolve.py, same as `ken show`).
+    shownKey = key;
+    panel.title = `#${task.id} ${task.title}`;
     // Markdown is rendered in the webview by the site's own marked + DOMPurify
     // (media/vendor/, copied from static/ at package time) for the same look.
     const { webview } = panel;
@@ -182,12 +172,73 @@ function activate(context) {
     });
   };
 
+  /**
+   * Re-fetch the task shown in the panel (GET /api/v1/tasks/<id>, readable by
+   * a per-project key since ken #1129). On error the current render stays.
+   */
+  const reloadShown = async () => {
+    if (!panel || shownId === null || !provider.api) return;
+    try {
+      renderTask(await provider.api.getTask(shownId));
+    } catch {
+      // Board unreachable or task deleted: keep what is displayed; the tree
+      // already reports connectivity problems.
+    }
+  };
+
+  /**
+   * Open (or reuse) the detail panel on ``task``: render the list data at once,
+   * then replace it with the fresh copy from the API.
+   * @param {Task} task
+   */
+  const showTask = async (task) => {
+    if (!provider.api) return;
+    if (!panel) {
+      panel = vscode.window.createWebviewPanel(
+        'kenboard.task',
+        '',
+        { viewColumn: vscode.ViewColumn.Active, preserveFocus: false },
+        {
+          enableScripts: true,
+          enableFindWidget: true,
+          localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')],
+        },
+      );
+      panel.iconPath = vscode.Uri.joinPath(context.extensionUri, 'media', 'kenboard.png');
+      panel.onDidDispose(() => {
+        panel = null;
+        shownId = null;
+        shownKey = '';
+      });
+      // Back on the tab after a while: show the current state of the task.
+      panel.onDidChangeViewState((e) => {
+        if (e.webviewPanel.visible) void reloadShown();
+      });
+    } else {
+      panel.reveal(undefined, false);
+    }
+    renderTask(task);
+    await reloadShown();
+  };
+
+  // Periodic refresh like the board page (60s by default, 0 disables it);
+  // skipped while the VS Code window is in the background.
+  const autoRefreshSeconds = vscode.workspace
+    .getConfiguration('kenboard')
+    .get('autoRefreshSeconds', 60);
+  if (autoRefreshSeconds > 0) {
+    const timer = setInterval(() => {
+      if (vscode.window.state.focused) void refresh();
+    }, autoRefreshSeconds * 1000);
+    context.subscriptions.push({ dispose: () => clearInterval(timer) });
+  }
+
   context.subscriptions.push(
     view,
     vscode.commands.registerCommand('kenboard.refresh', refresh),
     vscode.commands.registerCommand('kenboard.openBoard', () => open()),
     vscode.commands.registerCommand('kenboard.showTask', (/** @type {Node} */ node) => {
-      if (node?.kind === 'task') showTask(node.task);
+      if (node?.kind === 'task') void showTask(node.task);
     }),
     vscode.commands.registerCommand('kenboard.openTask', (/** @type {Node} */ node) => {
       if (node?.kind === 'task') open(node.task.id);
@@ -200,21 +251,19 @@ function activate(context) {
         { placeHolder: `Déplacer #${task.id} (${task.status}) vers…` },
       );
       if (!status) return;
-      /** @type {Task | null} */
-      let updated = null;
       try {
-        updated = await provider.api.setStatus(task.id, status);
+        await provider.api.setStatus(task.id, status);
         vscode.window.setStatusBarMessage(`kenboard : #${task.id} → ${status}`, 3000);
       } catch (err) {
         vscode.window.showErrorMessage(`kenboard : ${err instanceof Error ? err.message : err}`);
       }
+      // Reloads the tree and, if it is this task, the open detail.
       await refresh();
-      if (updated && panel && shownId === updated.id) showTask(updated);
     }),
     vscode.workspace.onDidChangeWorkspaceFolders(refresh),
   );
 
-  refresh();
+  void refresh();
 }
 
 function deactivate() {}

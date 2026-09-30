@@ -28,6 +28,13 @@ test('listTasks: GET with Bearer and encoded project', async () => {
   assert.equal(calls[0].init.body, undefined);
 });
 
+test('getTask: GET one task by id', async () => {
+  const { impl, calls } = fakeFetch(200, { id: 7 });
+  await new KenApi(cfg, impl).getTask(7);
+  assert.equal(calls[0].url, 'https://kb/api/v1/tasks/7');
+  assert.equal(calls[0].init.method, 'GET');
+});
+
 test('setStatus: PATCH JSON body', async () => {
   const { impl, calls } = fakeFetch(200, { id: 7, status: 'doing' });
   await new KenApi(cfg, impl).setStatus(7, 'doing');

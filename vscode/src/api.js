@@ -67,6 +67,14 @@ class KenApi {
     return this.request('GET', `/tasks?project=${encodeURIComponent(this.cfg.projectId || '')}`);
   }
 
+  /**
+   * @param {number} id
+   * @returns {Promise<Task>}
+   */
+  getTask(id) {
+    return this.request('GET', `/tasks/${id}`);
+  }
+
   /** @returns {Promise<Project>} */
   getProject() {
     return this.request('GET', `/projects/${encodeURIComponent(this.cfg.projectId || '')}`);

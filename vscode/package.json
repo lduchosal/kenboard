@@ -113,6 +113,17 @@
           "when": "false"
         }
       ]
+    },
+    "configuration": {
+      "title": "kenboard",
+      "properties": {
+        "kenboard.autoRefreshSeconds": {
+          "type": "number",
+          "default": 60,
+          "minimum": 0,
+          "description": "Rafraîchissement automatique de la liste et du détail ouvert, en secondes (0 = désactivé). Ignoré quand la fenêtre VS Code n'a pas le focus."
+        }
+      }
     }
   },
   "scripts": {
