@@ -107,6 +107,20 @@ Install + first-run guide: [`extension/README.md`](extension/README.md).
 Pre-zipped sideload package on every release:
 [GitHub Releases](https://github.com/lduchosal/kenboard/releases).
 
+### VS Code extension — the board in your editor (#1127)
+
+Sidebar view of the current project's tasks (todo / doing / review),
+task detail rendered like the board's fullscreen view, *Move to…* from
+the context menu, and a link back to the board. Zero configuration: it
+reads the same `ken.ini` / `.ken` as `ken` and talks to the REST API
+with your api_key. List and open detail refresh every 60 s
+(`kenboard.autoRefreshSeconds`).
+
+Install: download `kenboard-vscode-<version>.vsix` from the
+[GitHub Releases](https://github.com/lduchosal/kenboard/releases), then
+`code --install-extension kenboard-vscode-<version>.vsix`. Details:
+[`vscode/README.md`](vscode/README.md).
+
 ### References
 
 - Full CLI: [`doc/ken-cli.md`](doc/ken-cli.md)
