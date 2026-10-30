@@ -186,8 +186,12 @@ run_command "pdm outdated" "Outdated dependencies" "-"
 OUTDATED=$(clean_log "$log" | grep '^│ [a-z]' | awk -F'│' '{gsub(/ /, "", $2); gsub(/ /, "", $6); printf "%s%s→%s", sep, $2, $6; sep=", "}')
 [ -z "$OUTDATED" ] || print_ok "newer upstream (pre-releases / Python-gated included): ${OUTDATED}"
 
-print_step "Updating Dependencies (pdm update)"
-run_command "pdm update" "Dependencies update"
+# --update-all : les sous-dépendances suivent aussi. La stratégie par défaut
+# (reuse) bumpait pytest 9.2 en gardant anyio 4.13, dont le plugin pytest
+# importe CallSpec2 → PytestRemovedIn10Warning → suite morte. pdm.lock n'est
+# pas versionné et la prod résout les dernières transitives : on teste ça.
+print_step "Updating Dependencies (pdm update --update-all)"
+run_command "pdm update --update-all" "Dependencies update"
 
 print_step "Converting to Absolute Imports (absolufy-imports)"
 run_command "pdm run absolufy" "Import conversion"
