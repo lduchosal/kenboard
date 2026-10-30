@@ -4,7 +4,7 @@ Tests (unit/integration/e2e), lint, typecheck, coverage, Sonarcloud.
 
 Section: `quality`
 
-## Archivé (50)
+## Archivé (51)
 
 - [TEST / AUTH / Tests units & E2E Test](test-auth-tests-units-e2e-test-13.md)
 - [TEST / Tests units && E2E](test-tests-units-e2e-18.md)
@@ -56,3 +56,4 @@ Section: `quality`
 - [QUALITY / REFACTOR - Découper wiki_build.py et wiki_sync.py sous le plafond metrics-gate](quality-refactor-decouper-wiki-build-py-et-wiki-sync-py-sous-le-plafond-metrics-gate-1017.md)
 - [QUALITY / Sonar : corriger toutes les issues ouvertes (bugs, smells, sécurité)](quality-sonar-corriger-toutes-les-issues-ouvertes-bugs-smells-securite-1130.md)
 - [quality / publish: npm audit high (vite, undici, source-map-js)](quality-publish-npm-audit-high-vite-undici-source-map-js-1158.md)
+- [QUALITY / PUBLISH / publish.sh : npm ci, DTZ ruff 0.17, pdm update-all, playwright](quality-publish-publish-sh-npm-ci-dtz-ruff-0-17-pdm-update-all-playwright-1160.md)
