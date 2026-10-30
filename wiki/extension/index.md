@@ -4,6 +4,10 @@ Tout ce qui touche à l'extension navigateur (Chrome/Edge/Brave/Firefox) qui cap
 
 Section: `extension`
 
+## En cours (1)
+
+- [VSCODE / DETAIL / Afficher created at / updated at sous l'auteur](vscode-detail-afficher-created-at-updated-at-sous-l-auteur-1161.md) — _review_
+
 ## Archivé (31)
 
 - [DEPLOY / Auto-zip extension dans publish.sh + GitHub Release](deploy-auto-zip-extension-dans-publish-sh-github-release-485.md)
