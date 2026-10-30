@@ -199,9 +199,10 @@ version-major = "pdm bump -v major"
 # Verrous métriques (#788, principe ratchet de doc/code-quality.md) : chaque
 # famille de règles tombée à zéro est activée ici pour verrouiller l'acquis,
 # en plus des règles ruff par défaut. Depuis ruff 0.16 les défauts couvrent
-# 413 règles (B, UP, SIM, FURB, PYI, ASYNC, ISC, LOG, DTZ, BLE001, sous-
-# ensembles PLR/PLW/PLE…) — l'acquis DTZ (ken #785), BLE et UP017 est donc
-# verrouillé par les défauts et n'a plus besoin d'être listé ici (ken #992).
+# 413 règles (B, UP, SIM, FURB, PYI, ASYNC, ISC, LOG, BLE001, sous-ensembles
+# PLR/PLW/PLE…) — l'acquis BLE et UP017 est donc verrouillé par les défauts
+# (ken #992). ruff 0.17 a réduit DTZ à 002/003/004 dans les défauts : la
+# famille est relistée ci-dessous pour garder l'acquis DTZ (ken #785).
 # Les familles ci-dessous ajoutent ce que les défauts ne couvrent pas.
 # Dernière activation prévue : PLR1702 (imbrication ≤ 5 — dès sa sortie de
 # preview ruff).
@@ -209,6 +210,7 @@ extend-select = [
     "E4",      # pycodestyle imports — retirés des défauts 0.16, acquis restauré (ken #992)
     "E7",      # pycodestyle statements (E711/E712/E731/E741…) — idem
     "E9",      # pycodestyle runtime errors — idem
+    "DTZ",     # datetime naïfs — sortis des défauts ruff 0.17 (DTZ005/011…), acquis ken #785
     "E501",    # ligne ≤ 125 (cf. pycodestyle.max-line-length) — repris de flake8 (ken #993)
     "W",       # pycodestyle warnings (tabs, trailing whitespace…) — repris de flake8 (ken #993)
     "D",       # pydocstyle, convention google — remplace flake8-docstrings (ken #993)
