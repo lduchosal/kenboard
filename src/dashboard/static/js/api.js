@@ -63,3 +63,14 @@ export function fmtDate(iso) {
   if (parts.length < 3) return iso;
   return `${parts[2]}.${parts[1]}`;
 }
+
+// Format an ISO datetime (YYYY-MM-DDTHH:MM:SS, as serialised by the API) to
+// dd.mm.yyyy HH:MM (#1157). Pure string slicing like ``fmtDate``: the server
+// timestamps are naive, so going through ``Date`` would shift them by the
+// browser's UTC offset.
+export function fmtDateTime(iso) {
+  if (!iso) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(iso);
+  if (!m) return iso;
+  return `${m[3]}.${m[2]}.${m[1]} ${m[4]}:${m[5]}`;
+}

@@ -2,7 +2,7 @@
 // the browser; backdrop click is handled here. Filling the modal is async
 // because the description is fetched on demand (#221).
 
-import { API_BASE, apiCall, fmtDate } from './api.js';
+import { API_BASE, apiCall, fmtDate, fmtDateTime } from './api.js';
 import { openEditTask } from './tasks.js';
 
 export async function openFullscreen(btn, id) {
@@ -23,6 +23,8 @@ export async function openFullscreen(btn, id) {
         who: t.who || '',
         when: t.due_date ? fmtDate(t.due_date) : '',
         attachement: t.attachement || '',
+        created: fmtDateTime(t.created_at),
+        updated: fmtDateTime(t.updated_at),
       },
       avatarColor,
       btn,
@@ -33,13 +35,26 @@ export async function openFullscreen(btn, id) {
 }
 
 // ``task`` carries the fields shown in the modal (id, title, desc, who, when,
-// attachement); missing ones render as empty while the API fetch is pending.
+// attachement, created, updated); missing ones render as empty while the API
+// fetch is pending.
 function populateFullscreen(task, avatarColor, btn) {
-  const { id, title, desc = '', who = '', when = '', attachement = '' } = task;
+  const {
+    id,
+    title,
+    desc = '',
+    who = '',
+    when = '',
+    attachement = '',
+    created = '',
+    updated = '',
+  } = task;
   document.getElementById('fs-id').textContent = `#${id}`;
   document.getElementById('fs-title').textContent = title;
   document.getElementById('fs-who').textContent = who || '—';
   document.getElementById('fs-when').textContent = when || '';
+  // #1157: creation / last-update timestamps under the author line.
+  const dates = [created && `created at ${created}`, updated && `updated at ${updated}`];
+  document.getElementById('fs-dates').textContent = dates.filter(Boolean).join(', ');
 
   const avatar = document.getElementById('fs-avatar');
   avatar.textContent = (who || '?')[0].toUpperCase();

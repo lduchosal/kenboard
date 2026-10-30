@@ -3,7 +3,7 @@
 // their error-routing behaviour even though it's mostly DOM glue.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { apiCall, fmtDate, showError } from './api.js';
+import { apiCall, fmtDate, fmtDateTime, showError } from './api.js';
 
 beforeEach(() => {
   document.body.innerHTML = `
@@ -28,6 +28,22 @@ describe('fmtDate', () => {
   });
   it('passes through non-ISO input verbatim', () => {
     expect(fmtDate('hello')).toBe('hello');
+  });
+});
+
+describe('fmtDateTime', () => {
+  it('reformats ISO datetime to dd.mm.yyyy HH:MM', () => {
+    expect(fmtDateTime('2026-10-30T10:02:06')).toBe('30.10.2026 10:02');
+  });
+  it('accepts a space separator', () => {
+    expect(fmtDateTime('2026-10-30 10:02:06')).toBe('30.10.2026 10:02');
+  });
+  it('returns empty string for empty input', () => {
+    expect(fmtDateTime('')).toBe('');
+    expect(fmtDateTime(null)).toBe('');
+  });
+  it('passes through non-ISO input verbatim', () => {
+    expect(fmtDateTime('hello')).toBe('hello');
   });
 });
 
