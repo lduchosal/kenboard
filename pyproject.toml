@@ -117,8 +117,9 @@ build-backend = "pdm.backend"
 distribution = true
 # oidc-provider-mock >= 0.4 needs Python >= 3.12 while we still support 3.11
 # (prod FreeBSD hosts run python311): pdm keeps 0.3.x and would otherwise print
-# one resolver warning per skipped release on every `pdm update`.
-ignore_package_warnings = ["oidc-provider-mock"]
+# one resolver warning per skipped release on every `pdm update`. Same for the
+# transitive deprecated 3.x / pyee 14.x (Python >= 3.12 only).
+ignore_package_warnings = ["oidc-provider-mock", "deprecated", "pyee"]
 
 [tool.pdm-bump]
 version-files = ["src/dashboard/__init__.py:__version__"]
@@ -297,6 +298,9 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+# Explicite depuis pytest-asyncio 1.4 (warning sinon) ; "function" = le futur
+# défaut annoncé, chaque fixture async garde sa propre boucle.
+asyncio_default_fixture_loop_scope = "function"
 markers = [
     "slow: marks tests as slow",
     "integration: marks integration tests",
