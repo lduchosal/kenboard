@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { escapeHtml, inlineJson, detailHtml } = require('../src/detail');
+const { escapeHtml, fmtDateTime, inlineJson, detailHtml } = require('../src/detail');
 
 const task = {
   id: 7,
@@ -8,6 +8,8 @@ const task = {
   status: 'doing',
   who: 'Claude',
   due_date: null,
+  created_at: '2026-10-30T10:02:06',
+  updated_at: '2026-10-30T11:45:00',
   description: '# t\n</script><script>x',
 };
 const args = {
@@ -59,4 +61,22 @@ test('detailHtml: escaped title, meta, icon above button, nonce scripts, markdow
 test('detailHtml: empty description placeholder', () => {
   const html = detailHtml({ ...args, task: { ...task, description: '' } });
   assert.match(html, /pas de description/);
+});
+
+test('fmtDateTime: ISO datetime to dd.mm.yyyy HH:MM, no timezone shift', () => {
+  assert.equal(fmtDateTime('2026-10-30T10:02:06'), '30.10.2026 10:02');
+  assert.equal(fmtDateTime('2026-10-30 10:02:06'), '30.10.2026 10:02');
+  assert.equal(fmtDateTime(''), '');
+  assert.equal(fmtDateTime(null), '');
+  assert.equal(fmtDateTime('hello'), 'hello');
+});
+
+test('detailHtml: created / updated under the author (#1161)', () => {
+  const html = detailHtml(args);
+  assert.match(
+    html,
+    /<div class="fullscreen-dates">created at 30\.10\.2026 10:02, updated at 30\.10\.2026 11:45<\/div>/,
+  );
+  const bare = detailHtml({ ...args, task: { ...task, created_at: '', updated_at: '' } });
+  assert.match(bare, /<div class="fullscreen-dates"><\/div>/);
 });

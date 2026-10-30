@@ -12,6 +12,8 @@
  * @property {string} who
  * @property {string | null} due_date
  * @property {number} position
+ * @property {string} created_at
+ * @property {string} updated_at
  */
 
 /**

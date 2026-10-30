@@ -17,6 +17,20 @@ function escapeHtml(text) {
 }
 
 /**
+ * ISO datetime (`YYYY-MM-DDTHH:MM:SS`, as serialised by the API) to
+ * `dd.mm.yyyy HH:MM` — same as the site's `fmtDateTime` (#1157): string
+ * slicing, the server timestamps are naive (no `Date`, no UTC shift).
+ * @param {string | null | undefined} iso
+ * @returns {string}
+ */
+function fmtDateTime(iso) {
+  if (!iso) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(iso);
+  if (!m) return iso;
+  return `${m[3]}.${m[2]}.${m[1]} ${m[4]}:${m[5]}`;
+}
+
+/**
  * JSON safe to inline in a <script> element (no `</script>` breakout).
  * @param {unknown} value
  * @returns {string}
@@ -53,7 +67,8 @@ body {
   background: var(--bg); border-radius: 4px; padding: 2px 8px;
 }
 .fullscreen-title { font-size: 22px; font-weight: 700; margin-bottom: 16px; line-height: 1.3; }
-.fullscreen-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 13px; }
+.fullscreen-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; font-size: 13px; }
+.fullscreen-dates { margin: 0 0 20px 38px; font-size: 11px; color: var(--dimmed); }
 .task-avatar {
   width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center;
   justify-content: center; color: white; font-weight: 700; background: var(--dimmed);
@@ -83,7 +98,7 @@ body {
   background: var(--accent); color: #fff; text-decoration: none; white-space: nowrap;
 }
 .btn:hover { opacity: 0.9; }
-.fullscreen-header, .fullscreen-title, .fullscreen-meta { margin-right: 150px; }
+.fullscreen-header, .fullscreen-title, .fullscreen-meta, .fullscreen-dates { margin-right: 150px; }
 `;
 
 /**
@@ -108,6 +123,11 @@ function detailHtml({ task, url, cspSource, nonce, iconUri, scriptUris }) {
     .map((src) => `<script nonce="${nonce}" src="${escapeHtml(src)}"></script>`)
     .join('\n');
   const who = task.who || '—';
+  const created = fmtDateTime(task.created_at);
+  const updated = fmtDateTime(task.updated_at);
+  const dates = [created && `created at ${created}`, updated && `updated at ${updated}`]
+    .filter(Boolean)
+    .join(', ');
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -132,6 +152,7 @@ function detailHtml({ task, url, cspSource, nonce, iconUri, scriptUris }) {
     <span style="font-weight:600">${escapeHtml(who)}</span>
     <span style="color:var(--dimmed)">${escapeHtml(task.due_date ?? '')}</span>
   </div>
+  <div class="fullscreen-dates">${escapeHtml(dates)}</div>
   <div class="fullscreen-desc" id="desc">${task.description ? '' : '<span class="empty">(pas de description)</span>'}</div>
 </div>
 <script type="application/json" id="md">${inlineJson(task.description || '')}</script>
@@ -140,4 +161,4 @@ ${scripts}
 </html>`;
 }
 
-module.exports = { escapeHtml, inlineJson, detailHtml };
+module.exports = { escapeHtml, fmtDateTime, inlineJson, detailHtml };
