@@ -4,11 +4,7 @@ Tests (unit/integration/e2e), lint, typecheck, coverage, Sonarcloud.
 
 Section: `quality`
 
-## En cours (1)
-
-- [QUALITY / Sonar : corriger toutes les issues ouvertes (bugs, smells, sécurité)](quality-sonar-corriger-toutes-les-issues-ouvertes-bugs-smells-securite-1130.md) — _review_
-
-## Archivé (48)
+## Archivé (50)
 
 - [TEST / AUTH / Tests units & E2E Test](test-auth-tests-units-e2e-test-13.md)
 - [TEST / Tests units && E2E](test-tests-units-e2e-18.md)
@@ -58,3 +54,5 @@ Section: `quality`
 - [QUALITY / palier C — consolider refurb et flake8 dans ruff](quality-palier-c-consolider-refurb-et-flake8-dans-ruff-993.md)
 - [QUALITY / sonar_gate — attendre CI/file CE au lieu du timeout aveugle](quality-sonar-gate-attendre-ci-file-ce-au-lieu-du-timeout-aveugle-995.md)
 - [QUALITY / REFACTOR - Découper wiki_build.py et wiki_sync.py sous le plafond metrics-gate](quality-refactor-decouper-wiki-build-py-et-wiki-sync-py-sous-le-plafond-metrics-gate-1017.md)
+- [QUALITY / Sonar : corriger toutes les issues ouvertes (bugs, smells, sécurité)](quality-sonar-corriger-toutes-les-issues-ouvertes-bugs-smells-securite-1130.md)
+- [quality / publish: npm audit high (vite, undici, source-map-js)](quality-publish-npm-audit-high-vite-undici-source-map-js-1158.md)

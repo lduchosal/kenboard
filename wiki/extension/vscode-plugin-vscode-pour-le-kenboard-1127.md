@@ -4,7 +4,7 @@ title: "VSCODE / plugin vscode pour le kenboard ?"
 status: done
 who: "Claude"
 due_date: 
-updated_at: 2026-09-30T14:44:59
+updated_at: 2026-10-02T14:39:19
 classified_at: 2026-09-30T14:36:54
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: extension
@@ -13,7 +13,7 @@ section_title: "Browser extension"
 
 # #1127 — VSCODE / plugin vscode pour le kenboard ?
 
-**TL;DR** — Pas d'outil kenboard dans VS Code → extension `vscode/` qui parle à l'API REST (token de `.ken` / `ken.ini`) : liste des tâches du projet dans la barre latérale, détail rendu comme la vue plein écran du site, « Move to… », ouverture sur le site ; qualité branchée dans `publish.sh --quality` et `.vsix` joint à chaque release GitHub.
+**TL;DR** — Pas d'outil kenboard dans VS Code → extension `vscode/` qui parle à l'API REST (token de `.ken` / `ken.ini`) : liste des tâches du projet, détail rendu comme la vue plein écran du site et rechargé depuis l'API (auto-refresh 60 s), « Move to… », ouverture sur le site ; qualité branchée dans `publish.sh`, `.vsix` joint à chaque release GitHub depuis 0.4.5, documenté dans le README.
 
 Idée d'origine : extension VS Code pour kenboard — lister/afficher les tâches du projet courant (ken.ini), changer de statut (todo/doing/review), créer une tâche depuis l'éditeur, en réutilisant l'API REST (même auth token que `ken`). À explorer : périmètre, réutilisation du CLI `ken` vs appel direct à l'API, distribution (marketplace vs .vsix).
 
@@ -67,7 +67,7 @@ Hors MVP (à voir si le concept tient) : création de tâche, vue détail en mar
 - Clic sur une tâche → détail markdown identique au site ; clic droit → Move to… (le détail ouvert se met à jour).
 - Le site n'est pas encapsulé (frame-ancestors 'none', SameSite=Lax, CSRF Origin) : tout passe par l'API.
 - Distribution : `.vsix` en asset de la GitHub Release, `code --install-extension`. Marketplace non visée (éditeur, LICENSE, anglais, icône à revoir).
-- Limite relevée → #1129 (corrigée sur main, `0a81f26`, pas encore publiée) : `GET /api/v1/tasks/<id>` refusé aux clés API projet ; l'extension affiche le détail depuis la liste.
+- Limite relevée → #1129, corrigée et publiée depuis 0.4.3 : `GET /api/v1/tasks/<id>` est lisible par une clé API projet ; l'extension s'en sert pour recharger le détail.
 
 ### Garde-fous
 
@@ -75,6 +75,21 @@ Hors MVP (à voir si le concept tient) : création de tâche, vue détail en mar
 - tsc strict sur `vscode/src` ; biome sur `vscode/`.
 - Rendu du détail vérifié hors VS Code (jsdom, vraie description de #1127) ; appels live liste + projet contre le board de prod.
 - Packaging simulé (version 9.9.9 → `dist/`, liste d'assets de release) ; `.vsix` installé et validé dans VS Code par l'utilisateur.
+
+
+
+## Suite — détail à jour et documentation
+
+### Modifications
+
+- `vscode/src/extension.js` — le détail est rendu tout de suite depuis la liste puis rechargé par `GET /api/v1/tasks/<id>` ; Rafraîchir, Move to… et le retour sur l'onglet rechargent le détail ouvert ; rafraîchissement automatique toutes les 60 s quand la fenêtre a le focus ; pas de re-rendu si la tâche n'a pas changé (position de lecture conservée).
+- `vscode/src/api.js` — `getTask(id)` ; `vscode/package.json` — réglage `kenboard.autoRefreshSeconds` (0 = off).
+- `README.md` — section « VS Code extension — the board in your editor (#1127) » : fonctions, zéro configuration, installation depuis le `.vsix` des GitHub Releases.
+
+### Garde-fous
+
+- vscode : biome, tsc strict, 15 tests `node:test` (dont `getTask`) ; `GET /api/v1/tasks/1127` vérifié sur le board de prod.
+- `.vsix` installé dans VS Code pour test ; le correctif part avec la release qui suit 0.4.6.
 ---
 
 [← retour à extension](index.md) · [voir log](../log/2026-09-30.md)

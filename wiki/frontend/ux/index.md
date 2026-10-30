@@ -4,7 +4,7 @@ Drag & drop, modals, keyboard shortcuts, markdown rendering.
 
 Section: `frontend/ux`
 
-## Archivé (39)
+## Archivé (40)
 
 - [UI / mode normal des tâches = titre seul](ui-mode-normal-des-taches-titre-seul-8.md)
 - [BUG / L'édition d'une tâche change son status](bug-l-edition-d-une-tache-change-son-status-11.md)
@@ -45,3 +45,4 @@ Section: `frontend/ux`
 - [EXTENSION / paintbrush — afficher l'attachement SVG en mode fullscreen](extension-paintbrush-afficher-l-attachement-svg-en-mode-fullscreen-575.md)
 - [KEN / Projets](ken-projets-579.md)
 - [KEN](ken-620.md)
+- [WEB / DETAIL / Afficher created at / updated at sous l'auteur](web-detail-afficher-created-at-updated-at-sous-l-auteur-1157.md)
