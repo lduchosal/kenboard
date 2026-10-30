@@ -4,7 +4,7 @@
 
 Section: `frontend/pages`
 
-## Archivé (19)
+## Archivé (20)
 
 - [UI / Logo](ui-logo-2.md)
 - [UI / Affichage du numéro de version](ui-affichage-du-numero-de-version-22.md)
@@ -25,3 +25,4 @@ Section: `frontend/pages`
 - [WEB / Link to extension — page d'aide (ken bots + browser extension)](web-link-to-extension-page-d-aide-ken-bots-browser-extension-510.md)
 - [KEN / Aide](ken-aide-531.md)
 - [KEN / Projets / barchart global](ken-projets-barchart-global-572.md)
+- [CONFIG / Branding configurable : KENBOARD_LOGO, KENBOARD_LOGO_ALT, KENBOARD_TITLE](config-branding-configurable-kenboard-logo-kenboard-logo-alt-kenboard-title-1159.md)
