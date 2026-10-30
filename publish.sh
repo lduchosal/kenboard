@@ -257,6 +257,9 @@ fi
 
 if [ "$CI_MODE" = false ]; then
     print_step "Running E2E Tests (playwright)"
+    # pdm update --update-all bumps playwright, whose pinned browser build then
+    # goes missing ("Executable doesn't exist"). No-op when already present.
+    run_command "pdm run playwright install chromium" "Playwright browsers"
     run_command "pdm run test-e2e" "E2E Tests"
 fi
 
