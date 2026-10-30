@@ -51,3 +51,6 @@ Thumbs.db
 /wiki-html/
 .publish.lock/
 publish.out
+
+# Interpréteur pdm local (chemin machine) — committé par erreur en CI (0.4.7)
+.pdm-python
