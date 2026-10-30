@@ -74,6 +74,11 @@ AUTH_PAGES = ["/login", "/register", "/forgot-password", "/reset-password/bogus"
 class TestAuthPages:
     """Logo, alt, title and favicon on the four authentication pages."""
 
+    @pytest.fixture(autouse=True)
+    def _registration_enabled(self, monkeypatch):
+        """/register is a 404 unless a domain is set (the CI has no .env)."""
+        monkeypatch.setattr(Config, "REGISTER_ALLOWED_DOMAIN", "test.com")
+
     @pytest.mark.parametrize("url", AUTH_PAGES)
     def test_defaults(self, auth_client, url):
         html = auth_client.get(url).data.decode()
