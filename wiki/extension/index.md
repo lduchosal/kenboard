@@ -4,11 +4,7 @@ Tout ce qui touche à l'extension navigateur (Chrome/Edge/Brave/Firefox) qui cap
 
 Section: `extension`
 
-## En cours (1)
-
-- [VSCODE / DETAIL / Afficher created at / updated at sous l'auteur](vscode-detail-afficher-created-at-updated-at-sous-l-auteur-1161.md) — _review_
-
-## Archivé (31)
+## Archivé (32)
 
 - [DEPLOY / Auto-zip extension dans publish.sh + GitHub Release](deploy-auto-zip-extension-dans-publish-sh-github-release-485.md)
 - [EXTENSION / Release](extension-release-501.md)
@@ -41,3 +37,4 @@ Section: `extension`
 - [EXTENSION / paintbrush — conversion HTML→SVG légère de la page (background context)](extension-paintbrush-conversion-html-svg-legere-de-la-page-background-context-564.md)
 - [EXTENSION / paintbrush — skeleton viewport-only + couleurs de fond](extension-paintbrush-skeleton-viewport-only-couleurs-de-fond-567.md)
 - [VSCODE / plugin vscode pour le kenboard ?](vscode-plugin-vscode-pour-le-kenboard-1127.md)
+- [VSCODE / DETAIL / Afficher created at / updated at sous l'auteur](vscode-detail-afficher-created-at-updated-at-sous-l-auteur-1161.md)
