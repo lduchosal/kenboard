@@ -13,6 +13,7 @@ from pymysql import Connection
 
 from dashboard import db
 from dashboard.auth_scopes import current_user_can
+from dashboard.branding import page_title
 from dashboard.db import Queries
 from dashboard.routes.charts import _build_wiki_sections_per_project_chart
 from dashboard.routes.pages import (
@@ -86,7 +87,7 @@ def _category_ctx(
 ) -> dict[str, Any]:
     """Category-specific template context: title, project lists, wiki cards."""
     ctx: dict[str, Any] = {
-        "title": f"KEN / {cat['name']}",
+        "title": page_title(cat["name"]),
         "cat": cat,
         "active_projects": [
             p for p in cat_projects if p.get("status", "active") == "active"

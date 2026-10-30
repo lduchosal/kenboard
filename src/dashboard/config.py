@@ -104,6 +104,17 @@ class Config:
     SMTP_USE_TLS: bool = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
     SMTP_ENABLED: bool = bool(os.getenv("SMTP_HOST"))
 
+    # -- Branding (#1159) -----------------------------------------------------
+    # Display name: <title>, header, authentication pages, emails.
+    KENBOARD_TITLE: str = os.getenv("KENBOARD_TITLE", "Kenboard")
+    # Short name prefixing the browser-tab <title> of the board pages.
+    KENBOARD_SHORT_TITLE: str = os.getenv("KENBOARD_SHORT_TITLE", "KEN")
+    # Logo of the authentication pages (URL or absolute path).
+    KENBOARD_LOGO: str = os.getenv("KENBOARD_LOGO", "/static/logo.svg")
+    KENBOARD_LOGO_ALT: str = os.getenv("KENBOARD_LOGO_ALT", "Kenboard")
+    # Single favicon (URL or path). Empty = built-in png/ico/apple-touch set.
+    KENBOARD_FAVICON: str = os.getenv("KENBOARD_FAVICON", "")
+
     # -- Performance monitoring (#214) ----------------------------------------
     PERF_ENABLED: bool = os.getenv("PERF_ENABLED", "true").lower() == "true"
     PERF_BUDGET_MS: int = int(os.getenv("PERF_BUDGET_MS", "500"))

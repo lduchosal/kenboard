@@ -120,7 +120,7 @@ def _create_verification_token(email: str, password: str) -> bool:
     # ``dashboard.email.send_email`` (late binding).
     email_mod.send_email(
         to=email,
-        subject="Kenboard — Vérification de votre email",
+        subject=f"{Config.KENBOARD_TITLE} — Vérification de votre email",
         template="email/verify_email.html",
         verify_url=verify_url,
     )

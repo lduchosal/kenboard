@@ -18,6 +18,7 @@ from dashboard import db
 from dashboard import email as email_mod
 from dashboard.auth_session import _rotate_session_nonce
 from dashboard.auth_user import _LOGIN_TEMPLATE, _hasher, bp, limiter
+from dashboard.config import Config
 from dashboard.logging import get_logger
 from dashboard.password_strength import validate_password_strength
 
@@ -70,7 +71,7 @@ def forgot_password_post() -> ResponseReturnValue:
             # ``dashboard.email.send_email`` (late binding).
             email_mod.send_email(
                 to=email,
-                subject="Kenboard — Réinitialisation du mot de passe",
+                subject=f"{Config.KENBOARD_TITLE} — Réinitialisation du mot de passe",
                 template="email/password_reset.html",
                 reset_url=reset_url,
             )

@@ -10,6 +10,7 @@ from pymysql import Connection
 
 from dashboard import __version__, db
 from dashboard.auth_user import _is_login_disabled
+from dashboard.branding import page_title
 from dashboard.db import Queries
 from dashboard.routes.charts import (
     TASKERS_WINDOW_DAYS,
@@ -222,7 +223,7 @@ def index() -> ResponseReturnValue:
     ctx = _build_context(
         categories, all_projects, users, cat_snapshots=cat_snapshots, prefix="/"
     )
-    ctx["title"] = "KEN"
+    ctx["title"] = page_title()
     ctx["doing_tasks"] = _doing_tasks_ctx(categories, all_projects)
 
     activity_series = _activity_series(today, activity_by_day)
@@ -249,5 +250,5 @@ def aide() -> ResponseReturnValue:
         conn.close()
 
     ctx = _build_context(categories, all_projects, users, prefix="/")
-    ctx["title"] = "KEN / Aide"
+    ctx["title"] = page_title("Aide")
     return render_template("aide.html", **ctx)

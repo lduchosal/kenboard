@@ -13,6 +13,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from dashboard.auth import init_auth
 from dashboard.auth_oidc import init_oidc
 from dashboard.auth_user import init_login_manager
+from dashboard.branding import init_branding
 from dashboard.config import Config
 from dashboard.email import init_email
 from dashboard.errors import API_PATH_PREFIX, register_error_handlers
@@ -211,6 +212,7 @@ def create_app() -> Flask:
     app = _make_flask_app()
 
     # Initialization order matters: login manager → OIDC → email → perf → auth
+    init_branding(app)
     init_login_manager(app)
     init_oidc(app)
     init_email(app)

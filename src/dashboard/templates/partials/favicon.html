@@ -1,0 +1,8 @@
+{% if brand.favicon %}
+<link rel="icon" href="{{ brand.favicon }}">
+<link rel="apple-touch-icon" href="{{ brand.favicon }}">
+{% else %}
+<link rel="icon" type="image/png" href="/static/favicon-32.png" sizes="32x32">
+<link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+{% endif %}

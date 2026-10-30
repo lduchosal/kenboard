@@ -201,6 +201,21 @@ CLI `ken` et lues depuis `src/dashboard/ken.py` ; elles peuvent vivre dans
 | `KENBOARD_ERROR_PROJECT_ID` | *(vide)* | UUID du projet kenboard sur lequel les exceptions 500 non gérées sont auto-créées en BUG. Vide = feature désactivée (aucun changement de comportement). |
 | `KENBOARD_ERROR_WHO` | `kenboard` | Valeur `who` (assigné) des tâches BUG auto-créées. |
 
+#### Branding (#1159)
+
+Personnalise le nom et les visuels affichés. Les fichiers (logo, favicon)
+sont à servir hors du package — typiquement par le reverse proxy
+(`location /branding/ { alias /usr/local/www/branding/; }`) — pour survivre
+aux `pip install -U kenboard`.
+
+| Variable | Défaut | Description |
+|---|---|---|
+| `KENBOARD_TITLE` | `Kenboard` | Nom affiché : header et titre de la page de login (en majuscules), `<title>` des pages d'authentification et d'erreur, sujets et corps des emails. |
+| `KENBOARD_SHORT_TITLE` | `KEN` | Nom court en préfixe du `<title>` (onglet) des pages du board : `KEN`, `KEN / Aide`, `KEN / <catégorie>`. |
+| `KENBOARD_LOGO` | `/static/logo.svg` | URL ou chemin du logo des pages d'authentification (login, register, mot de passe oublié/réinitialisation). |
+| `KENBOARD_LOGO_ALT` | `Kenboard` | Texte alternatif (`alt`) du logo. |
+| `KENBOARD_FAVICON` | *(vide)* | URL ou chemin d'un favicon unique (aussi utilisé comme `apple-touch-icon`). Vide = jeu intégré (`favicon-32.png`, `favicon.ico`, `apple-touch-icon.png`). |
+
 #### OIDC (optionnel, cf. `doc/auth-user.md`)
 
 Les trois variables `OIDC_DISCOVERY_URL`, `OIDC_CLIENT_ID` et

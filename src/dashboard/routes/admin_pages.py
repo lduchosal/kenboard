@@ -12,6 +12,7 @@ from flask_login import login_required
 
 from dashboard import db
 from dashboard.auth_user import admin_required
+from dashboard.branding import page_title
 from dashboard.routes.pages import _build_context, bp
 
 
@@ -38,7 +39,7 @@ def admin_users() -> ResponseReturnValue:
         conn.close()
 
     ctx = _build_context(categories, all_projects, users, prefix="/")
-    ctx["title"] = "KEN / Utilisateurs"
+    ctx["title"] = page_title("Utilisateurs")
     ctx["all_categories"] = categories
     return render_template("admin_users.html", **ctx)
 
@@ -75,7 +76,7 @@ def admin_keys() -> ResponseReturnValue:
         conn.close()
 
     ctx = _build_context(categories, all_projects, users, prefix="/")
-    ctx["title"] = "KEN / Cles API"
+    ctx["title"] = page_title("Cles API")
     ctx["api_keys"] = api_keys
     ctx["projects"] = all_projects
     ctx["key_users"] = users
@@ -103,7 +104,7 @@ def admin_board() -> ResponseReturnValue:
         conn.close()
 
     ctx = _build_context(categories, all_projects, users, prefix="/")
-    ctx["title"] = "KEN / Board"
+    ctx["title"] = page_title("Board")
     ctx["all_categories"] = categories
     ctx["all_projects"] = all_projects
     return render_template("admin_board.html", **ctx)

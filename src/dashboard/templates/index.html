@@ -34,7 +34,7 @@
 
 {% if not categories %}
 {% set es_badge = "Plateforme Kanban" %}
-{% set es_title = "Bienvenue sur KENBOARD" %}
+{% set es_title = "Bienvenue sur " ~ brand.title | upper %}
 {% set es_subtitle = "Organisez vos projets et vos tâches avec clarté. Conçu pour les équipes et les agents IA." %}
 {% set es_cards = [
   {"icon": '<path d="M12 2v6m0 0l3-3m-3 3L9 5"/><rect x="3" y="10" width="7" height="5" rx="1"/><rect x="14" y="10" width="7" height="5" rx="1"/><rect x="8.5" y="17" width="7" height="5" rx="1"/>', "color": "blue", "title": "1. Catégories", "text": "Regroupez vos projets par thème. Chaque catégorie est une vue d'ensemble.", "tag": "Hiérarchie"},
