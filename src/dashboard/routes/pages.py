@@ -8,7 +8,7 @@ from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 from pymysql import Connection
 
-from dashboard import __version__, db
+from dashboard import __version__, about, db
 from dashboard.auth_user import _is_login_disabled
 from dashboard.branding import page_title
 from dashboard.db import Queries
@@ -252,3 +252,37 @@ def aide() -> ResponseReturnValue:
     ctx = _build_context(categories, all_projects, users, prefix="/")
     ctx["title"] = page_title("Aide")
     return render_template("aide.html", **ctx)
+
+
+@bp.route("/about", methods=["GET"])
+@login_required
+def about_page() -> ResponseReturnValue:
+    """Serve the about page: project, version, and — for admins — the runtime.
+
+    Python, platform, installed dependencies and database state are only computed and
+    rendered for admins (#1165); other users see the project summary and version.
+    """
+    is_admin = _is_login_disabled() or (
+        current_user.is_authenticated and current_user.is_admin
+    )
+    conn = db.get_connection()
+    queries = db.load_queries()
+    try:
+        categories = list(queries.cat_get_all(conn))
+        all_projects = list(queries.proj_get_all(conn))
+        users = list(queries.usr_get_all(conn))
+        visible = _visible_category_ids()
+        categories, all_projects = _filter_by_scope(categories, all_projects, visible)
+        database = about.database_info(conn, queries) if is_admin else None
+    finally:
+        conn.close()
+
+    ctx = _build_context(categories, all_projects, users, prefix="/")
+    ctx["title"] = page_title("À propos")
+    ctx["about"] = about.public_info()
+    ctx["is_admin"] = is_admin
+    if is_admin:
+        ctx["runtime"] = about.runtime_info()
+        ctx["deps"] = about.dependencies()
+        ctx["database"] = database
+    return render_template("about.html", **ctx)

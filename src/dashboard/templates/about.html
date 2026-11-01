@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block head %}
+{% include "partials/aide_styles.html" %}
+<style>
+.about-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.about-table th, .about-table td {
+  text-align: left;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.about-table th { color: var(--dimmed); font-weight: 600; }
+.about-table td code { word-break: break-all; }
+.about-kv th { width: 30%; }
+.about-missing { color: var(--dimmed); font-style: italic; }
+</style>
+{% endblock %}
+
+{% block body %}
+{% include "partials/header.html" %}
+
+<div class="aide">
+
+  <div class="section-title" style="padding-left:0">
+    <span>&Agrave; propos du kenboard</span>
+  </div>
+
+  <div class="aide-card">
+    <h2><span class="aide-badge" style="background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--accent)">Projet</span> kenboard {{ about.version }}</h2>
+    <p class="aide-sub">Tableau kanban et gestion de projet, pens&eacute; pour &ecirc;tre pilot&eacute; autant par des humains que par des agents LLM.</p>
+    <p>Les t&acirc;ches sont rang&eacute;es par <strong>cat&eacute;gories</strong> et <strong>projets</strong>, et suivent le flux <code>todo &rarr; doing &rarr; review &rarr; done</code>. Le board se pilote depuis le navigateur, depuis la CLI <code>ken</code> (agents, terminal), depuis l'extension navigateur et depuis l'extension VS Code &mdash; voir l'<a href="{{ prefix }}aide">aide</a>. Les t&acirc;ches termin&eacute;es alimentent un wiki g&eacute;n&eacute;r&eacute; par <code>ken wiki</code>.</p>
+    <p>Stack volontairement sobre : Flask + MySQL, SQL &eacute;crit &agrave; la main (pas d'ORM), validation Pydantic, JavaScript vanilla.</p>
+
+    <h3>Liens</h3>
+    <table class="about-table about-kv">
+      <tr><th>Version</th><td><code>{{ about.version }}</code></td></tr>
+      <tr><th>Licence</th><td>{{ about.license }}</td></tr>
+      <tr><th>Code source</th><td><a href="{{ about.repo_url }}" target="_blank" rel="noopener">{{ about.repo_url }}</a></td></tr>
+      <tr><th>Releases</th><td><a href="{{ about.releases_url }}" target="_blank" rel="noopener">{{ about.releases_url }}</a></td></tr>
+      <tr><th>PyPI</th><td><a href="{{ about.pypi_url }}" target="_blank" rel="noopener">{{ about.pypi_url }}</a></td></tr>
+    </table>
+  </div>
+
+  {% if is_admin %}
+  <div class="aide-card">
+    <h2><span class="aide-badge" style="background:color-mix(in srgb, var(--red) 14%, transparent);color:var(--red)">Admin</span> Environnement d'ex&eacute;cution</h2>
+    <p class="aide-sub">Visible uniquement par les administrateurs.</p>
+
+    <h3>Python &amp; syst&egrave;me</h3>
+    <table class="about-table about-kv">
+      <tr><th>Python</th><td><code>{{ runtime.implementation }} {{ runtime.python }}</code></td></tr>
+      <tr><th>Ex&eacute;cutable</th><td><code>{{ runtime.executable }}</code></td></tr>
+      <tr><th>Environnement</th><td><code>{{ runtime.prefix }}</code></td></tr>
+      <tr><th>Plateforme</th><td><code>{{ runtime.platform }}</code> ({{ runtime.machine }})</td></tr>
+    </table>
+
+    <h3>Base de donn&eacute;es</h3>
+    <table class="about-table about-kv">
+      {% if database and database.server %}
+      <tr><th>Serveur</th><td><code>{{ database.server.version }}</code></td></tr>
+      <tr><th>Base</th><td><code>{{ database.server.name }}</code></td></tr>
+      {% else %}
+      <tr><th>Serveur</th><td class="about-missing">indisponible</td></tr>
+      {% endif %}
+      {% if database and database.migrations and database.migrations.applied %}
+      <tr><th>Migrations</th><td>{{ database.migrations.applied }} appliqu&eacute;es &mdash; derni&egrave;re <code>{{ database.migrations.last_id }}</code> ({{ database.migrations.last_applied_at }} UTC)</td></tr>
+      {% else %}
+      <tr><th>Migrations</th><td class="about-missing">aucune trace yoyo</td></tr>
+      {% endif %}
+    </table>
+
+    <h3>D&eacute;pendances</h3>
+    {% if deps %}
+    <table class="about-table">
+      <tr><th>Paquet</th><th>Requis</th><th>Install&eacute;</th><th>Extra</th></tr>
+      {% for d in deps %}
+      <tr>
+        <td><code>{{ d.name }}</code></td>
+        <td><code>{{ d.spec or '*' }}</code></td>
+        <td>{% if d.installed %}<code>{{ d.installed }}</code>{% else %}<span class="about-missing">absent</span>{% endif %}</td>
+        <td>{{ d.extra or '' }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p class="about-missing">M&eacute;tadonn&eacute;es du paquet introuvables (kenboard non install&eacute; via pip ?).</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
