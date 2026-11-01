@@ -565,3 +565,11 @@ class TestAidePage:
         assert "Le ken pour le navigateur" in html
         assert "pip install kenboard" in html
         assert "github.com/lduchosal/kenboard/releases" in html
+
+    def test_has_vscode_section(self, client, db):
+        """Help page documents installing the VS Code extension (#1164)."""
+        html = client.get("/aide").data.decode()
+        assert "Le ken pour l'&eacute;diteur" in html
+        assert "kenboard-vscode-&lt;version&gt;.vsix" in html
+        assert "code --install-extension" in html
+        assert "ken init" in html

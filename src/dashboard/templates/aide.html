@@ -112,5 +112,25 @@ ken move &lt;id&gt; --to review</code></pre>
     <p>Clic sur le badge &rarr; panneau lat&eacute;ral avec la liste des rectangles + notes &rarr; bouton <strong>Pousser sur kenboard</strong> : une seule t&acirc;che markdown (un blockquote par rectangle + ta note) <strong>plus un SVG d'annotations</strong> attach&eacute; &agrave; la t&acirc;che (squelette de la page viewport + tes rectangles rouges en surimpression), visible dans le modal d&eacute;tail. <kbd>Esc</kbd> ferme le panneau, encore <kbd>Esc</kbd> sort du mode.</p>
   </div>
 
+  <div class="aide-card">
+    <h2><span class="aide-badge" style="background:color-mix(in srgb, var(--green) 14%, transparent);color:var(--green)">VS Code</span> Le ken pour l'&eacute;diteur</h2>
+    <p class="aide-sub">Voir les t&acirc;ches du projet courant dans la barre lat&eacute;rale de VS Code, lire leur d&eacute;tail et changer leur statut sans quitter l'&eacute;diteur.</p>
+
+    <h3>1. T&eacute;l&eacute;charger</h3>
+    <p>Chaque release attache l'extension : <a href="https://github.com/lduchosal/kenboard/releases" target="_blank" rel="noopener">github.com/lduchosal/kenboard/releases</a> &rarr; <code>kenboard-vscode-&lt;version&gt;.vsix</code>. Sa version suit celle de kenboard.</p>
+
+    <h3>2. Installer</h3>
+    <pre><code>code --install-extension kenboard-vscode-&lt;version&gt;.vsix</code></pre>
+    <p>Ou dans VS Code : vue <em>Extensions</em> &rarr; menu <code>&hellip;</code> &rarr; <em>Install from VSIX&hellip;</em> &rarr; choisir le fichier.</p>
+
+    <h3>3. Configurer</h3>
+    <p>Rien &agrave; saisir dans l'extension : elle lit la m&ecirc;me configuration que la CLI <code>ken</code> &mdash; <code>ken.ini</code> et <code>.ken</code>, cherch&eacute;s depuis la racine du workspace en remontant (les variables <code>KEN_*</code> priment). Si le d&eacute;p&ocirc;t n'est pas encore configur&eacute;, lancez-y une fois :</p>
+    <pre><code>ken init "&lt;Copy onboard link&gt;"</code></pre>
+    <p>R&eacute;glage optionnel <code>kenboard.autoRefreshSeconds</code> (d&eacute;faut 60, <code>0</code> = d&eacute;sactiv&eacute;) : rafra&icirc;chissement automatique de la liste et du d&eacute;tail ouvert.</p>
+
+    <h3>4. Utiliser</h3>
+    <p>Ic&ocirc;ne <strong>kenboard</strong> dans la barre d'activit&eacute; &rarr; vue <em>T&acirc;ches</em> (<code>todo</code> / <code>doing</code> / <code>review</code>). Clic sur une t&acirc;che : d&eacute;tail rendu comme la vue plein &eacute;cran du site. Clic droit : <strong>Move to&hellip;</strong> pour changer le statut, ou <em>Ouvrir dans kenboard</em>. Boutons de la vue : rafra&icirc;chir, ouvrir le board dans le navigateur.</p>
+  </div>
+
 </div>
 {% endblock %}
