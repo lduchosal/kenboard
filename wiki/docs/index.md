@@ -4,7 +4,7 @@ README, agent_guide.md, doc/*.md, OpenAPI schema, CLAUDE.md.
 
 Section: `docs`
 
-## Archivé (14)
+## Archivé (15)
 
 - [UI / Screenshot pour le README.md](ui-screenshot-pour-le-readme-md-3.md)
 - [DOC / AUTH / Users api](doc-auth-users-api-12.md)
@@ -20,3 +20,4 @@ Section: `docs`
 - [DOC / refresh des docs restaurées contre l'état courant du code](doc-refresh-des-docs-restaurees-contre-l-etat-courant-du-code-260.md)
 - [DOC / README — workflow wiki et agent-driven (#376 suite)](doc-readme-workflow-wiki-et-agent-driven-376-suite-428.md)
 - [DOCS / INSTALL.md : documenter tous les paramètres .env](docs-install-md-documenter-tous-les-parametres-env-600.md)
+- [doc / extension vscode : /aide ne parle pas de l'installation de l'extension vscode](doc-extension-vscode-aide-ne-parle-pas-de-l-installation-de-l-extension-vscode-1164.md)

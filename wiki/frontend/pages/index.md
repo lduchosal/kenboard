@@ -4,7 +4,7 @@
 
 Section: `frontend/pages`
 
-## Archivé (20)
+## Archivé (22)
 
 - [UI / Logo](ui-logo-2.md)
 - [UI / Affichage du numéro de version](ui-affichage-du-numero-de-version-22.md)
@@ -26,3 +26,5 @@ Section: `frontend/pages`
 - [KEN / Aide](ken-aide-531.md)
 - [KEN / Projets / barchart global](ken-projets-barchart-global-572.md)
 - [CONFIG / Branding configurable : KENBOARD_LOGO, KENBOARD_LOGO_ALT, KENBOARD_TITLE](config-branding-configurable-kenboard-logo-kenboard-logo-alt-kenboard-title-1159.md)
+- [frontend / page à propos : projet, versions, dépendances, python (sections sensibles admin)](frontend-page-a-propos-projet-versions-dependances-python-sections-sensibles-admin-1165.md)
+- [frontend / renommer /aide en /help (redirection 301 depuis /aide)](frontend-renommer-aide-en-help-redirection-301-depuis-aide-1166.md)
