@@ -61,7 +61,7 @@ class TestAboutPageAdmin:
         assert "<code>flask</code>" in html
 
     def test_header_links_about(self, client, db):
-        assert 'href="/about"' in client.get("/aide").data.decode()
+        assert 'href="/about"' in client.get("/help").data.decode()
 
 
 @pytest.fixture

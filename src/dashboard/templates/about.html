@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-{% include "partials/aide_styles.html" %}
+{% include "partials/card_styles.html" %}
 <style>
 .about-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .about-table th, .about-table td {
@@ -29,7 +29,7 @@
   <div class="aide-card">
     <h2><span class="aide-badge" style="background:color-mix(in srgb, var(--accent) 14%, transparent);color:var(--accent)">Projet</span> kenboard {{ about.version }}</h2>
     <p class="aide-sub">Tableau kanban et gestion de projet, pens&eacute; pour &ecirc;tre pilot&eacute; autant par des humains que par des agents LLM.</p>
-    <p>Les t&acirc;ches sont rang&eacute;es par <strong>cat&eacute;gories</strong> et <strong>projets</strong>, et suivent le flux <code>todo &rarr; doing &rarr; review &rarr; done</code>. Le board se pilote depuis le navigateur, depuis la CLI <code>ken</code> (agents, terminal), depuis l'extension navigateur et depuis l'extension VS Code &mdash; voir l'<a href="{{ prefix }}aide">aide</a>. Les t&acirc;ches termin&eacute;es alimentent un wiki g&eacute;n&eacute;r&eacute; par <code>ken wiki</code>.</p>
+    <p>Les t&acirc;ches sont rang&eacute;es par <strong>cat&eacute;gories</strong> et <strong>projets</strong>, et suivent le flux <code>todo &rarr; doing &rarr; review &rarr; done</code>. Le board se pilote depuis le navigateur, depuis la CLI <code>ken</code> (agents, terminal), depuis l'extension navigateur et depuis l'extension VS Code &mdash; voir l'<a href="{{ prefix }}help">aide</a>. Les t&acirc;ches termin&eacute;es alimentent un wiki g&eacute;n&eacute;r&eacute; par <code>ken wiki</code>.</p>
     <p>Stack volontairement sobre : Flask + MySQL, SQL &eacute;crit &agrave; la main (pas d'ORM), validation Pydantic, JavaScript vanilla.</p>
 
     <h3>Liens</h3>

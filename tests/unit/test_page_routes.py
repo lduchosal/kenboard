@@ -551,24 +551,50 @@ class TestAdminKeysPage:
 
 
 class TestAidePage:
-    """GET /aide — help page (#510)."""
+    """GET /help — help page (#510, renamed from /aide in #1166)."""
 
     def test_returns_200(self, client, db):
         """Help page returns 200."""
-        resp = client.get("/aide")
+        resp = client.get("/help")
         assert resp.status_code == 200
 
     def test_has_both_sections(self, client, db):
         """Help page renders both the bots and the extension sections."""
-        html = client.get("/aide").data.decode()
+        html = client.get("/help").data.decode()
         assert "Le ken pour les agents" in html
         assert "Le ken pour le navigateur" in html
         assert "pip install kenboard" in html
         assert "github.com/lduchosal/kenboard/releases" in html
 
+    def test_legacy_aide_redirects_to_help(self, client, db):
+        """/aide is kept as a permanent redirect to /help (#1166)."""
+        resp = client.get("/aide")
+        assert resp.status_code == 301
+        assert resp.location.endswith("/help")
+
+    def test_legacy_aide_redirects_before_login(self, app, db):
+        """Anonymous users hit the 301 first, then /help's login guard (#1166)."""
+        prev = app.config.get("LOGIN_DISABLED", False)
+        app.config["LOGIN_DISABLED"] = False
+        try:
+            c = app.test_client()
+            first = c.get("/aide")
+            second = c.get(first.location)
+        finally:
+            app.config["LOGIN_DISABLED"] = prev
+        assert first.status_code == 301
+        assert second.status_code == 302
+        assert "/login" in second.location
+
+    def test_header_links_help(self, client, db):
+        """The avatar menu points to /help, not the legacy /aide (#1166)."""
+        html = client.get("/help").data.decode()
+        assert 'href="/help"' in html
+        assert 'href="/aide"' not in html
+
     def test_has_vscode_section(self, client, db):
         """Help page documents installing the VS Code extension (#1164)."""
-        html = client.get("/aide").data.decode()
+        html = client.get("/help").data.decode()
         assert "Le ken pour l'&eacute;diteur" in html
         assert "kenboard-vscode-&lt;version&gt;.vsix" in html
         assert "code --install-extension" in html

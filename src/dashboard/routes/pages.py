@@ -3,7 +3,7 @@
 from datetime import date, timedelta
 from typing import Any
 
-from flask import Blueprint, render_template
+from flask import Blueprint, redirect, render_template, url_for
 from flask.typing import ResponseReturnValue
 from flask_login import current_user, login_required
 from pymysql import Connection
@@ -235,9 +235,15 @@ def index() -> ResponseReturnValue:
 
 
 @bp.route("/aide", methods=["GET"])
-@login_required
 def aide() -> ResponseReturnValue:
-    """Serve the help page: using ken for bots and the browser extension."""
+    """Redirect the legacy French URL to ``/help`` (#1166)."""
+    return redirect(url_for("pages.help_page"), code=301)
+
+
+@bp.route("/help", methods=["GET"])
+@login_required
+def help_page() -> ResponseReturnValue:
+    """Serve the help page: the ken CLI, the browser and the VS Code extensions."""
     conn = db.get_connection()
     queries = db.load_queries()
     try:
@@ -251,7 +257,7 @@ def aide() -> ResponseReturnValue:
 
     ctx = _build_context(categories, all_projects, users, prefix="/")
     ctx["title"] = page_title("Aide")
-    return render_template("aide.html", **ctx)
+    return render_template("help.html", **ctx)
 
 
 @bp.route("/about", methods=["GET"])

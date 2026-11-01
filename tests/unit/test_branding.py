@@ -129,8 +129,8 @@ class TestBoardPages:
         assert '<link rel="icon" href="/branding/acme.ico">' in html
 
     @pytest.mark.usefixtures("custom_brand")
-    def test_aide_override(self, client):
-        html = client.get("/aide").data.decode()
+    def test_help_override(self, client):
+        html = client.get("/help").data.decode()
         assert "<title>ACM / Aide</title>" in html
 
 
