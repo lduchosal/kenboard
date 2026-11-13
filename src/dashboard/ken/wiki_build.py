@@ -21,7 +21,13 @@ from dashboard.ken.wiki_detail import (
     _render_task_detail,
     _rewrite_md_links_to_html,
 )
-from dashboard.ken.wiki_layout import _format_footer, _format_sidebar_nav, _wrap_html
+from dashboard.ken.wiki_layout import (
+    _format_footer,
+    _format_sidebar_nav,
+    _rel_href,
+    _wrap_html,
+)
+from dashboard.ken.wiki_search import _search_entry, _search_files
 
 
 def _split_frontmatter(md_text: str) -> tuple[dict[str, Any], str]:
@@ -83,9 +89,11 @@ def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
     Covers every ``.md`` file under the tree. Detail pages (any MD with a YAML
     frontmatter block — written by ``_format_task_detail_md`` since #376f) get the
     ``.fullscreen-card`` layout mirroring the kenboard board's full-screen task view;
-    everything else gets the plain Markdown layout.
+    everything else gets the plain Markdown layout. Task pages also feed the search
+    index; the plan ends with the three search files (#1178).
     """
     files: list[dict[str, str]] = []
+    entries: list[dict[str, Any]] = []
     # #742 — discover daily log pages so the sidebar can list them as a
     # "Journal" group. Newest first (reverse-alpha = reverse-chrono for ISO).
     log_dir = in_dir / "log"
@@ -108,7 +116,9 @@ def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
         meta, body_md = _split_frontmatter(md_text)
         section_key = _sidebar_section_key(rel, meta)
         sidebar = _format_sidebar_nav(sections, rel_posix, section_key, daily_dates)
+        html_path = rel.with_suffix(".html").as_posix()
         if meta and "id" in meta:
+            entries.append(_search_entry(html_path, meta, body_md))
             page_title = f"#{meta.get('id')} — {meta.get('title') or 'task'}"
             body_html = _render_task_detail(meta, body_md)
             footer_html = _format_footer(meta.get("updated_at"))
@@ -116,9 +126,10 @@ def _build_html_plan(in_dir: Path, sections: list) -> list[dict[str, str]]:
             page_title = _extract_title(md_text)
             body_html = _rewrite_md_links_to_html(_render_markdown(md_text))
             footer_html = ""
-        html = _wrap_html(page_title, body_html, sidebar, footer_html)
-        files.append({"path": rel.with_suffix(".html").as_posix(), "content": html})
-    return files
+        search_href = _rel_href("search.html", rel.parent.as_posix())
+        html = _wrap_html(page_title, body_html, sidebar, footer_html, search_href)
+        files.append({"path": html_path, "content": html})
+    return files + _search_files(entries, sections, daily_dates)
 
 
 def _write_html_plan(out: str, files: list[dict[str, str]]) -> None:
@@ -188,4 +199,5 @@ def wiki_build(
         raise click.UsageError(_architecture_help(architecture))
     files = _build_html_plan(src, sections)
     _write_html_plan(out, files)
-    click.echo(f"Wrote {len(files)} HTML file(s) under {out}/.")
+    pages = sum(f["path"].endswith(".html") for f in files)
+    click.echo(f"Wrote {pages} HTML file(s) + search index under {out}/.")

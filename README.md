@@ -81,7 +81,7 @@ then exports the result as a navigable MD/HTML tree.
 ken wiki groom                       # list unclassified + sections
 ken wiki groom <id> <section>        # assign a task to a section
 ken wiki sync   --out wiki           # MD tree (committed in /wiki)
-ken wiki build  --in wiki --out wiki-html   # standalone HTML
+ken wiki build  --in wiki --out wiki-html   # standalone HTML + client-side full-text search (search.html)
 ken wiki lint   --strict             # orphans / unclassified (CI gate)
 ```
 

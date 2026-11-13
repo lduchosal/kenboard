@@ -108,14 +108,36 @@ def _format_footer(updated_at: datetime | str | None = None) -> str:
     return f'<footer class="wiki-footer">Modifié le {stamp}</footer>' if stamp else ""
 
 
+def _format_search_form(search_href: str) -> str:
+    """Render the search box shown at the top of ``<main>`` on every page (#1178).
+
+    A plain GET form to ``search.html?q=…`` — no script on regular pages; only the
+    search page loads the index. ``search_href`` is relative to the current page
+    (:func:`_rel_href`); ``""`` renders nothing.
+    """
+    if not search_href:
+        return ""
+    return (
+        f'<form class="wiki-search" action="{search_href}" method="get" role="search">'
+        '<input type="search" name="q" placeholder="Rechercher dans le wiki…" '
+        'aria-label="Rechercher dans le wiki" autocomplete="off">'
+        "</form>"
+    )
+
+
 def _wrap_html(
-    title: str, body_html: str, sidebar_html: str, footer_html: str = ""
+    title: str,
+    body_html: str,
+    sidebar_html: str,
+    footer_html: str = "",
+    search_href: str = "",
 ) -> str:
     """Wrap a rendered body with the standard layout (head + sidebar + main).
 
     ``footer_html`` is appended inside ``<main>`` after the body so it sits at the
     bottom of the content column (#743). Empty on pages with no per-task stamp — index
-    and journal pages render no footer at all (#1014).
+    and journal pages render no footer at all (#1014). ``search_href`` (#1178) puts the
+    search box at the top of ``<main>``.
     """
     return (
         '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
@@ -123,6 +145,6 @@ def _wrap_html(
         f"<style>{_WIKI_HTML_CSS}</style>"
         '</head><body><div class="layout">'
         f"{sidebar_html}"
-        f"<main>{body_html}{footer_html}</main>"
+        f"<main>{_format_search_form(search_href)}{body_html}{footer_html}</main>"
         "</div></body></html>"
     )

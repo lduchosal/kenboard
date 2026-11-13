@@ -53,4 +53,16 @@ main a{color:#0969da}
 /* Page footer (#743, #999, #1014) — task last-modified stamp only. */
 .wiki-footer{margin-top:40px;padding-top:12px;border-top:1px solid #d0d7de;
   font-size:11px;color:#57606a;text-align:right}
+/* Search (#1178) — box at the top of <main>, results on search.html. */
+.wiki-search{margin:0 0 24px}
+.wiki-search input{width:100%;box-sizing:border-box;padding:8px 12px;font-size:14px;
+  border:1px solid #d0d7de;border-radius:6px;background:#f6f8fa}
+.wiki-search input:focus{outline:2px solid #0969da;background:#fff}
+.wiki-search-count{font-size:13px;color:#57606a}
+.wiki-search-list{list-style:none;padding:0}
+.wiki-search-list li{margin:0 0 14px}
+.wiki-search-section{margin-left:8px;font-size:11px;color:#57606a;background:#f6f8fa;
+  padding:2px 8px;border-radius:10px}
+.wiki-search-snippet{font-size:13px;color:#57606a;line-height:1.5;margin-top:2px}
+.wiki-search-list mark{background:#fff8c5;color:inherit}
 """
