@@ -100,6 +100,11 @@ def _try_request(cfg: KenConfig, method: str, path: str) -> Any:  # noqa: ANN401
         ) as resp:
             raw = resp.read()
             return json_lib.loads(raw) if raw else None
+    except urllib_error.HTTPError as e:
+        # Une HTTPError porte le corps de la réponse (socket / fichier
+        # temporaire) : la fermer, sinon ResourceWarning dès Python 3.14.
+        e.close()
+        return None
     except (urllib_error.URLError, ValueError):
         return None
 
@@ -133,7 +138,8 @@ def _request(
                 return None
             return json_lib.loads(raw)
     except urllib_error.HTTPError as e:
-        body_text = e.read().decode("utf-8", errors="replace")
+        with e:  # ferme le corps de la réponse (ResourceWarning dès 3.14)
+            body_text = e.read().decode("utf-8", errors="replace")
         click.echo(
             f"Error: HTTP {e.code} on {method} {url}: {body_text}"
             f"{(hints or {}).get(e.code, '')}{_default_base_url_hint(cfg)}",
