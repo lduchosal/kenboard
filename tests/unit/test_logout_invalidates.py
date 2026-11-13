@@ -134,3 +134,49 @@ class TestSessionNonce:
             r = _login(c2)
             assert r.status_code == 302
             assert c2.get("/").status_code == 200
+
+
+class TestNoStore:
+    """Authenticated content must not outlive the session in the browser (#1177).
+
+    Without ``Cache-Control: no-store`` the browser replays its local copy of the board
+    (bfcache, tab restore) after the session expired — it looks like the server still
+    serves data although every real request gets 302/401.
+    """
+
+    def test_authenticated_page_is_no_store(self, auth_client, seeded_user, db):
+        _login(auth_client)
+        r = auth_client.get("/")
+        assert r.status_code == 200
+        assert r.headers["Cache-Control"] == "no-store"
+
+    def test_api_response_is_no_store(self, auth_client, seeded_user, db):
+        _login(auth_client)
+        r = auth_client.get("/api/v1/categories")
+        assert r.status_code == 200
+        assert r.headers["Cache-Control"] == "no-store"
+
+    def test_stale_session_gets_no_data(self, auth_client, seeded_user, db):
+        """A stale cookie yields a redirect / 401, never the content."""
+        _login(auth_client)
+        _rotate_session_nonce("user-logout")
+        page = auth_client.get("/", follow_redirects=False)
+        assert page.status_code == 302
+        assert "/login" in page.location
+        assert page.headers["Cache-Control"] == "no-store"
+        api = auth_client.get("/api/v1/categories")
+        assert api.status_code == 401
+        assert api.headers["Cache-Control"] == "no-store"
+
+    def test_login_page_is_no_store(self, auth_client, db):
+        r = auth_client.get("/login")
+        assert r.headers["Cache-Control"] == "no-store"
+
+    def test_static_assets_stay_revalidatable(self, auth_client, db):
+        """Statics keep Flask's own policy (ETag revalidation), not no-store."""
+        for path in ("/style.css", "/app.js", "/static/style.css"):
+            r = auth_client.get(path)
+            r.close()  # send_file streams an open handle
+            assert r.status_code == 200
+            assert "no-store" not in r.headers["Cache-Control"]
+            assert r.headers.get("ETag")

@@ -35,8 +35,10 @@ export async function apiCall(url, opts = {}) {
     }
     let title;
     if (r.status === 401) {
-      title = 'Non authentifié';
-      detail = detail || 'Cette opération nécessite une clé API valide. Voir /admin/keys.';
+      // Depuis l'UI un 401 = session cookie expirée ou révoquée (#1177). Pas
+      // de redirection automatique : elle ferait perdre une saisie en cours.
+      title = 'Session expirée';
+      detail = 'Votre session a expiré. Rechargez la page pour vous reconnecter.';
     } else if (r.status === 403) {
       title = 'Permission refusée';
     } else if (r.status === 404) {

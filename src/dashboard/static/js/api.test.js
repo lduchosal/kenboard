@@ -82,7 +82,8 @@ describe('apiCall', () => {
       }),
     );
     await expect(apiCall('/x')).rejects.toThrow(/HTTP 401/);
-    expect(document.getElementById('error-modal-title').textContent).toBe('Non authentifié');
+    expect(document.getElementById('error-modal-title').textContent).toBe('Session expirée');
+    expect(document.getElementById('error-modal-body').textContent).toContain('Rechargez la page');
   });
 
   it('surfaces a 500 error with the server-side title', async () => {

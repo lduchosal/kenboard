@@ -71,6 +71,12 @@ def _configure_security(app: Flask) -> None:
                 "max-age=31536000; includeSubDomains"
             )
         response.headers["Server"] = "kenboard"
+        # Pages et API portent des données réservées à une session valide :
+        # sans ``no-store`` le navigateur réaffiche sa copie locale (bfcache,
+        # restauration d'onglet) après expiration ou logout, sans repasser
+        # par ``@login_required`` (#1177). Les statiques arrivent ici avec le
+        # ``Cache-Control`` posé par ``send_static_file`` et le conservent.
+        response.headers.setdefault("Cache-Control", "no-store")
         return response
 
 
