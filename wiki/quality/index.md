@@ -4,6 +4,11 @@ Tests (unit/integration/e2e), lint, typecheck, coverage, Sonarcloud.
 
 Section: `quality`
 
+## En cours (2)
+
+- [CI / Python 3.14 et 3.15 : versions supportées + matrice GitHub Actions](ci-python-3-14-et-3-15-versions-supportees-matrice-github-actions-1179.md) — _review_
+- [QUALITY / Sonar : clé Flask de secours en dur (S6779) bloque le gate du publish](quality-sonar-cle-flask-de-secours-en-dur-s6779-bloque-le-gate-du-publish-1181.md) — _review_
+
 ## Archivé (51)
 
 - [TEST / AUTH / Tests units & E2E Test](test-auth-tests-units-e2e-test-13.md)
