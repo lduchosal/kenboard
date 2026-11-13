@@ -16,6 +16,7 @@ seed the first admin password.
 from __future__ import annotations
 
 import hashlib
+import secrets
 from datetime import timedelta
 
 from argon2 import PasswordHasher
@@ -166,23 +167,31 @@ def api_admin_required() -> None:
     abort(403)
 
 
-def init_login_manager(app: Flask) -> None:
-    """Wire Flask-Login on the app and register the auth blueprint.
+def _resolve_secret_key() -> str:
+    """Return the cookie-signing key for this process.
 
     Raises:
         RuntimeError: when ``KENBOARD_SECRET_KEY`` is missing from the
             environment outside of dev/test mode (``Config.DEBUG=False``).
     """
-    if not Config.KENBOARD_SECRET_KEY:
-        # In dev/tests we tolerate a hardcoded fallback so the app boots
-        # without a real secret. In prod (DEBUG=false) the absence of a
-        # secret means cookie sessions can't be safely signed — fail fast.
-        if not Config.DEBUG:
-            msg = "KENBOARD_SECRET_KEY must be set in .env when DEBUG=false"
-            raise RuntimeError(msg)
-        app.secret_key = "dev-only-insecure-key-do-not-use-in-prod"  # nosec B105
-    else:
-        app.secret_key = Config.KENBOARD_SECRET_KEY
+    if Config.KENBOARD_SECRET_KEY:
+        return Config.KENBOARD_SECRET_KEY
+    # In dev/tests the app boots without a configured secret. In prod
+    # (DEBUG=false) the absence of a secret means cookie sessions can't be
+    # safely signed — fail fast.
+    if not Config.DEBUG:
+        msg = "KENBOARD_SECRET_KEY must be set in .env when DEBUG=false"
+        raise RuntimeError(msg)
+    # Per-process random key rather than a constant in the source: a known
+    # key lets anyone forge a session cookie on a DEBUG instance reachable
+    # over the network (Sonar S6779, #1181). Sessions do not survive a
+    # restart — set KENBOARD_SECRET_KEY to keep them.
+    return secrets.token_hex(32)
+
+
+def init_login_manager(app: Flask) -> None:
+    """Wire Flask-Login on the app and register the auth blueprint."""
+    app.secret_key = _resolve_secret_key()
 
     app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days=REMEMBER_DAYS)
     app.config["REMEMBER_COOKIE_HTTPONLY"] = True

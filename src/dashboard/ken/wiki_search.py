@@ -21,6 +21,7 @@ from dashboard.ken.wiki_search_js import _WIKI_SEARCH_JS
 _MD_LINK = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
 _MD_LINE_PREFIX = re.compile(r"^\s*(?:#{1,6}|>)\s+", re.MULTILINE)
 _MD_MARKS = re.compile(r"[`*~]+")
+_SEARCH_PAGE = "search.html"
 
 
 def _plain_text(md_text: str) -> str:
@@ -81,13 +82,11 @@ def _search_files(
         "<noscript><p>La recherche nécessite JavaScript.</p></noscript>"
         '<script src="search-index.js"></script><script src="search.js"></script>'
     )
-    sidebar = _format_sidebar_nav(sections, "search.html", "search", daily_dates)
+    sidebar = _format_sidebar_nav(sections, _SEARCH_PAGE, "search", daily_dates)
     return [
         {
-            "path": "search.html",
-            "content": _wrap_html(
-                "Recherche", body, sidebar, search_href="search.html"
-            ),
+            "path": _SEARCH_PAGE,
+            "content": _wrap_html("Recherche", body, sidebar, search_href=_SEARCH_PAGE),
         },
         {"path": "search.js", "content": _WIKI_SEARCH_JS},
         {"path": "search-index.js", "content": _format_search_index_js(entries)},

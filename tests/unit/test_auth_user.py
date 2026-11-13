@@ -660,3 +660,30 @@ class TestLoginRateLimit:
         assert r.status_code == 429
         # flask-limiter sets these headers when headers_enabled=True
         assert "X-RateLimit-Limit" in r.headers
+
+
+class TestResolveSecretKey:
+    """The cookie-signing key never comes from a constant in the source (#1181)."""
+
+    def test_configured_key_is_used(self, monkeypatch):
+        from dashboard.auth_user import Config, _resolve_secret_key
+
+        monkeypatch.setattr(Config, "KENBOARD_SECRET_KEY", "from-env")
+        assert _resolve_secret_key() == "from-env"
+
+    def test_missing_key_outside_debug_fails_fast(self, monkeypatch):
+        from dashboard.auth_user import Config, _resolve_secret_key
+
+        monkeypatch.setattr(Config, "KENBOARD_SECRET_KEY", "")
+        monkeypatch.setattr(Config, "DEBUG", False)
+        with pytest.raises(RuntimeError, match="KENBOARD_SECRET_KEY"):
+            _resolve_secret_key()
+
+    def test_missing_key_in_debug_is_random_per_call(self, monkeypatch):
+        from dashboard.auth_user import Config, _resolve_secret_key
+
+        monkeypatch.setattr(Config, "KENBOARD_SECRET_KEY", "")
+        monkeypatch.setattr(Config, "DEBUG", True)
+        first, second = _resolve_secret_key(), _resolve_secret_key()
+        assert len(first) == 64
+        assert first != second
