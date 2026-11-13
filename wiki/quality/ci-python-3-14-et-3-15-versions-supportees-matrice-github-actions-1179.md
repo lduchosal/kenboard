@@ -1,10 +1,10 @@
 ---
 id: 1179
 title: "CI / Python 3.14 et 3.15 : versions supportées + matrice GitHub Actions"
-status: review
+status: done
 who: "Claude"
 due_date: 
-updated_at: 2026-11-13T09:52:11
+updated_at: 2026-11-13T14:52:21
 classified_at: 2026-11-13T09:52:11
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: quality

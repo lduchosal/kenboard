@@ -4,12 +4,7 @@ Tests (unit/integration/e2e), lint, typecheck, coverage, Sonarcloud.
 
 Section: `quality`
 
-## En cours (2)
-
-- [CI / Python 3.14 et 3.15 : versions supportées + matrice GitHub Actions](ci-python-3-14-et-3-15-versions-supportees-matrice-github-actions-1179.md) — _review_
-- [QUALITY / Sonar : clé Flask de secours en dur (S6779) bloque le gate du publish](quality-sonar-cle-flask-de-secours-en-dur-s6779-bloque-le-gate-du-publish-1181.md) — _review_
-
-## Archivé (51)
+## Archivé (53)
 
 - [TEST / AUTH / Tests units & E2E Test](test-auth-tests-units-e2e-test-13.md)
 - [TEST / Tests units && E2E](test-tests-units-e2e-18.md)
@@ -62,3 +57,5 @@ Section: `quality`
 - [QUALITY / Sonar : corriger toutes les issues ouvertes (bugs, smells, sécurité)](quality-sonar-corriger-toutes-les-issues-ouvertes-bugs-smells-securite-1130.md)
 - [quality / publish: npm audit high (vite, undici, source-map-js)](quality-publish-npm-audit-high-vite-undici-source-map-js-1158.md)
 - [QUALITY / PUBLISH / publish.sh : npm ci, DTZ ruff 0.17, pdm update-all, playwright](quality-publish-publish-sh-npm-ci-dtz-ruff-0-17-pdm-update-all-playwright-1160.md)
+- [CI / Python 3.14 et 3.15 : versions supportées + matrice GitHub Actions](ci-python-3-14-et-3-15-versions-supportees-matrice-github-actions-1179.md)
+- [QUALITY / Sonar : clé Flask de secours en dur (S6779) bloque le gate du publish](quality-sonar-cle-flask-de-secours-en-dur-s6779-bloque-le-gate-du-publish-1181.md)

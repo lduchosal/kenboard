@@ -1,10 +1,10 @@
 ---
 id: 1181
 title: "QUALITY / Sonar : clé Flask de secours en dur (S6779) bloque le gate du publish"
-status: review
+status: done
 who: "Claude"
 due_date: 
-updated_at: 2026-11-13T09:59:50
+updated_at: 2026-11-13T14:52:22
 classified_at: 2026-11-13T09:59:51
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: quality
