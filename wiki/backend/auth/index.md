@@ -4,7 +4,7 @@ Cookie sessions, OIDC, API keys, scope checks, CSRF.
 
 Section: `backend/auth`
 
-## Archivé (47)
+## Archivé (48)
 
 - [AUTH / Password authentification](auth-password-authentification-1.md)
 - [AUTH / Gestion des users en DB](auth-gestion-des-users-en-db-4.md)
@@ -53,3 +53,4 @@ Section: `backend/auth`
 - [UX / Authentification / Changement d'IP](ux-authentification-changement-d-ip-254.md)
 - [AUTH / OIDC / Trusted certificate](auth-oidc-trusted-certificate-344.md)
 - [BACKEND / auth : GET /api/v1/tasks/{id} refusé (403) aux clés API projet](backend-auth-get-api-v1-tasks-id-refuse-403-aux-cles-api-projet-1129.md)
+- [AUTH / CACHE ou BUG — board affiché avec tout le contenu après expiration de l'auth OIDC](auth-cache-ou-bug-board-affiche-avec-tout-le-contenu-apres-expiration-de-l-auth-oidc-1177.md)

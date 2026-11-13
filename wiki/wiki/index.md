@@ -4,6 +4,10 @@ LLM-wiki pattern (Karpathy) — classification, sync, build, lint.
 
 Section: `wiki`
 
+## En cours (1)
+
+- [WIKI / search / index + recherche full text du wiki statique](wiki-search-index-recherche-full-text-du-wiki-statique-1178.md) — _review_
+
 ## Archivé (12)
 
 - [Export / wiki](export-wiki-376.md)
