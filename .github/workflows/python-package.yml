@@ -158,8 +158,16 @@ jobs:
         # Sonar reads it from ``coverage/lcov.info`` per
         # sonar-project.properties.
         path: coverage
+    # Without sonar.projectVersion every analysis is "not provided", so the
+    # ``previous_version`` new-code period never moves (frozen at 2026-04-08):
+    # "new code" silently meant 7 months of history (ken #1182).
+    - name: Read package version
+      id: version
+      run: echo "version=$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' src/dashboard/__init__.py)" >> "$GITHUB_OUTPUT"
     - name: SonarCloud Scan
       uses: SonarSource/sonarqube-scan-action@v6
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: https://sonarcloud.io
+      with:
+        args: -Dsonar.projectVersion=${{ steps.version.outputs.version }}

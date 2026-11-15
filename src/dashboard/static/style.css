@@ -503,13 +503,6 @@ body {
   align-items: center;
   gap: 8px;
 }
-.section-edit-btn {
-  padding: 1px 8px;
-  font-size: 9px;
-  line-height: 1;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
 .section-onboard-btn {
   padding: 1px 8px;
   font-size: 9px;
@@ -517,15 +510,11 @@ body {
   opacity: 0.6;
   transition: opacity 0.15s;
 }
-.section-title:hover .section-edit-btn {
+/* Doubled class (0,3,0) outranks the generic ``.btn-edit:hover`` (0,2,0)
+   declared later in the file — no ``!important`` needed (css:S9423). */
+.btn-edit.section-onboard-btn:hover {
   opacity: 1;
-}
-.section-onboard-btn:hover {
-  opacity: 1;
-}
-.section-edit-btn:hover,
-.section-onboard-btn:hover {
-  background: var(--card) !important;
+  background: var(--card);
 }
 .section-title.stuck {
   border-bottom-color: var(--border);
@@ -740,10 +729,16 @@ body {
   height: 18px;
   border-radius: 50%;
   cursor: pointer;
-  transition: transform 0.15s;
 }
 .color-dot:hover {
   transform: scale(1.3);
+}
+/* Animate the hover zoom only for users who did not ask for reduced
+   motion; others get the instant scale (css:S9440). */
+@media (prefers-reduced-motion: no-preference) {
+  .color-dot {
+    transition: transform 0.15s;
+  }
 }
 .color-field {
   flex: 1;
@@ -1982,20 +1977,14 @@ button.cat-card-add {
 @media (max-width: 768px) {
   .header-badges { display: none; }
   .header-badges-dropdown { display: block; }
-  .edit-mode .edit-row {
-    flex-direction: column;
-  }
-  .edit-mode .edit-row select,
-  .edit-mode .edit-row input {
-    width: 100% !important;
-    flex: none !important;
-  }
+  /* Same specificity as the base rules, declared later: the cascade
+     already wins — no ``!important`` (css:S9423). */
   .kanban-middle {
-    flex: 1 !important;
+    flex: 1;
     flex-direction: column;
   }
   .kanban-rest {
-    flex: 2 !important;
+    flex: 2;
   }
   /* Edit modal: take 70% on tablets to give the user more breathing room */
   .project-add-card {
@@ -2007,7 +1996,7 @@ button.cat-card-add {
 /* mobile: <= 640px */
 @media (max-width: 640px) {
   .kanban-rest {
-    flex: 1 !important;
+    flex: 1;
     flex-direction: column;
   }
   .kanban-middle {
@@ -2134,19 +2123,23 @@ button.cat-card-add {
   dialog.fullscreen-modal[open]::backdrop {
     display: none;
   }
+  /* Last rules of the file at equal specificity: they already override the
+     screen + mobile ``.fullscreen-card`` / ``.fullscreen-actions`` rules,
+     and none of these properties is set inline — no ``!important``
+     (css:S9423). */
   .fullscreen-card {
-    width: 100% !important;
-    max-width: none !important;
-    max-height: none !important;
-    overflow: visible !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    padding: 16px !important;
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    overflow: visible;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 16px;
     color: black;
   }
   .fullscreen-modal .modal-close,
   .fullscreen-actions {
-    display: none !important;
+    display: none;
   }
   .fullscreen-desc {
     color: black;

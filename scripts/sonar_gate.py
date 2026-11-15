@@ -2,8 +2,11 @@
 """Check the Sonarcloud quality gate for the latest analysis.
 
 Polls the Sonarcloud API until the analysis for the current commit is
-available, then checks the quality gate status. Exits 0 if the gate
-passes, 1 if it fails (with issue details printed to stderr).
+available, then checks the quality gate status **and** requires zero open
+issues (all types, new and existing code) and zero hotspots to review on
+``main`` — the "Sonar way" gate alone tolerates smells as long as the debt
+ratio stays under 5 % (ken #1182). Exits 0 if everything passes, 1
+otherwise (with details printed to stderr).
 
 Usage:
     python scripts/sonar_gate.py [--timeout 300] [--interval 15] [--max-wait 3600]
@@ -193,14 +196,72 @@ def _check_gate(token: str, analysis_key: str) -> tuple[bool, list[dict]]:
     return passed, conditions
 
 
-def _fetch_issues(token: str) -> list[dict]:
-    """Fetch open issues for the project."""
+def _fetch_open_issues(token: str) -> tuple[int, list[dict]]:
+    """Return ``(total, first page)`` of unresolved issues on ``main``.
+
+    Toutes sévérités et tous types (bug, vulnérabilité, code smell), code
+    neuf **et** code existant. Une issue triée dans l'UI (faux positif,
+    won't fix) est *resolved* et sort donc du compte : le triage reste la
+    seule échappatoire, et c'est une décision humaine tracée côté Sonar.
+    """
     data = _api("/issues/search", token, {
         "componentKeys": PROJECT_KEY,
+        "branch": "main",
         "resolved": "false",
-        "ps": "50",
+        "ps": "100",
     })
-    return data.get("issues", [])
+    issues = data.get("issues", [])
+    return data.get("paging", {}).get("total", len(issues)), issues
+
+
+def _fetch_open_hotspots(token: str) -> tuple[int, list[dict]]:
+    """Return ``(total, first page)`` of security hotspots still TO_REVIEW."""
+    data = _api("/hotspots/search", token, {
+        "projectKey": PROJECT_KEY,
+        "branch": "main",
+        "status": "TO_REVIEW",
+        "ps": "100",
+    })
+    hotspots = data.get("hotspots", [])
+    return data.get("paging", {}).get("total", len(hotspots)), hotspots
+
+
+def _location(item: dict) -> str:
+    """Format ``path:line`` for an issue or hotspot payload."""
+    component = item.get("component", "").replace(f"{PROJECT_KEY}:", "")
+    return f"{component}:{item.get('line', '?')}"
+
+
+def _report_failure(
+    conditions: list[dict],
+    issues: tuple[int, list[dict]],
+    hotspots: tuple[int, list[dict]],
+) -> None:
+    """Print every reason the gate failed to stderr."""
+    print("\n✗ Sonarcloud quality gate: FAILED", file=sys.stderr)
+    failed = [c for c in conditions if c.get("status") != "OK"]
+    if failed:
+        print("\nQuality gate conditions (Sonar way, new code):", file=sys.stderr)
+    for c in failed:
+        print(
+            f"  - {c.get('metricKey')}: {c.get('actualValue')} "
+            f"(threshold: {c.get('errorThreshold', 'n/a')})",
+            file=sys.stderr,
+        )
+    total, items = issues
+    if total:
+        print(f"\nOpen issues: {total} (tolérance zéro, ken #1182)", file=sys.stderr)
+    for i in items:
+        print(
+            f"  [{i.get('severity', '?')}] {i.get('rule', '?')} "
+            f"{_location(i)} — {i.get('message', '')}",
+            file=sys.stderr,
+        )
+    total, items = hotspots
+    if total:
+        print(f"\nHotspots to review: {total}", file=sys.stderr)
+    for h in items:
+        print(f"  {_location(h)} — {h.get('message', '')}", file=sys.stderr)
 
 
 def main() -> None:
@@ -239,31 +300,18 @@ def main() -> None:
         sys.exit(1)
 
     passed, conditions = _check_gate(token, analysis_key)
+    # Le gate « Sonar way » ne juge que le new code, et la maintenabilité
+    # en ratio de dette (A ≤ 5 %) : 19 code smells passaient en A (ken #1182).
+    # PHILOSOPHY.md §1 — dette zéro, bloquante : toute issue ouverte échoue.
+    issues = _fetch_open_issues(token)
+    hotspots = _fetch_open_hotspots(token)
 
-    if passed:
-        print("\n✓ Sonarcloud quality gate: PASSED")
+    if passed and not issues[0] and not hotspots[0]:
+        print("\n✓ Sonarcloud quality gate: PASSED (0 open issue, 0 hotspot)")
         sys.exit(0)
 
-    print("\n✗ Sonarcloud quality gate: FAILED", file=sys.stderr)
-    for c in conditions:
-        if c.get("status") != "OK":
-            print(
-                f"  - {c.get('metricKey')}: {c.get('actualValue')} "
-                f"(threshold: {c.get('errorThreshold', 'n/a')})",
-                file=sys.stderr,
-            )
-
-    print("\nOpen issues:", file=sys.stderr)
-    issues = _fetch_issues(token)
-    for issue in issues:
-        component = issue.get("component", "").replace(f"{PROJECT_KEY}:", "")
-        line = issue.get("line", "?")
-        severity = issue.get("severity", "?")
-        msg = issue.get("message", "")
-        print(f"  [{severity}] {component}:{line} — {msg}", file=sys.stderr)
-
+    _report_failure(conditions, issues, hotspots)
     sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

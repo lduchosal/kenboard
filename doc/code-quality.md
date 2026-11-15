@@ -22,8 +22,16 @@ par snapshot, committée). Convention : enregistrer un snapshot après chaque
 chantier de nettoyage notable, au minimum à chaque release mineure.
 
 SonarCloud (`lduchosal_kenboard`, gate vérifié par `publish.sh` via
-`scripts/sonar_gate.py`) complète ces critères locaux pour la **duplication**
-et l'historique long terme côté cloud.
+`scripts/sonar_gate.py`) complète ces critères locaux pour la **duplication**,
+le **CSS / HTML** (hors du champ de ruff) et l'historique long terme côté cloud.
+Le gate est **bloquant à zéro** : au-delà du statut « Sonar way » (qui ne juge
+que le new code, et la maintenabilité en ratio de dette — A tant que la dette
+reste ≤ 5 %), `sonar_gate.py` exige **0 issue ouverte** sur `main` (tous types,
+code neuf et existant) et **0 hotspot** à revoir. Sans cela, 19 code smells
+étaient publiés avec un gate vert (ken #1182) — notamment ceux levés par des
+règles ajoutées à Sonar après coup, que Sonar date à l'historique de la ligne,
+donc hors new code. Seule échappatoire : trier l'issue dans l'UI Sonar
+(faux positif / won't fix), décision humaine tracée — jamais un agent.
 
 ## Critères suivis
 
