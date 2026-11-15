@@ -1185,7 +1185,7 @@ body {
   margin-bottom: 4px;
 }
 .kanban-task .task-desc { font-size: 11px; color: var(--dimmed); margin-bottom: 2px; display: none; }
-.kanban-task.detail-mode .task-desc { display: block; }
+.kanban-task.detail-mode .task-desc { display: block; white-space: normal; }
 .kanban-task .task-right {
   display: none;
   flex-direction: column;
@@ -1431,9 +1431,6 @@ button.cat-card-add {
 }
 .kanban-task.detail-mode .detail-only {
   display: block;
-}
-.kanban-task.detail-mode .task-desc {
-  white-space: normal;
 }
 
 /* -- Markdown rendering inside task descriptions -- */
