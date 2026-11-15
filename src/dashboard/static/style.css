@@ -1173,12 +1173,10 @@ body {
  * plain block so the title text wraps naturally around the floated
  * .task-right.
  */
-.kanban-task.detail-mode .task-title-row,
-.kanban-task.edit-mode .task-title-row {
+.kanban-task.detail-mode .task-title-row {
   display: block;
 }
-.kanban-task.detail-mode .task-title-row .task-id,
-.kanban-task.edit-mode .task-title-row .task-id { display: none; }
+.kanban-task.detail-mode .task-title-row .task-id { display: none; }
 .kanban-task .task-id-detail {
   font-size: 10px;
   color: var(--dimmed);
@@ -1187,16 +1185,14 @@ body {
   margin-bottom: 4px;
 }
 .kanban-task .task-desc { font-size: 11px; color: var(--dimmed); margin-bottom: 2px; display: none; }
-.kanban-task.detail-mode .task-desc,
-.kanban-task.edit-mode .task-desc { display: block; }
+.kanban-task.detail-mode .task-desc { display: block; }
 .kanban-task .task-right {
   display: none;
   flex-direction: column;
   align-items: center;
   gap: 3px;
 }
-.kanban-task.detail-mode .task-right,
-.kanban-task.edit-mode .task-right {
+.kanban-task.detail-mode .task-right {
   display: flex;
   /* Float right so the body text + description wrap around it. The
    * .task-right element comes first in the DOM so the float anchors at
@@ -1212,8 +1208,7 @@ body {
   text-align: right;
   padding-top: 6px;
 }
-.kanban-task.detail-mode .task-actions,
-.kanban-task.edit-mode .task-actions {
+.kanban-task.detail-mode .task-actions {
   display: block;
 }
 .kanban-task .task-when { font-size: 9px; color: var(--dimmed); white-space: nowrap; }
@@ -1493,31 +1488,12 @@ button.cat-card-add {
   margin-top: 6px;
 }
 
-/* -- Task edit mode -- */
-.kanban-task.edit-mode {
-  flex-direction: column;
-  gap: 0;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-  border-color: var(--border);
-  padding: 12px 14px;
-  cursor: default;
-}
-.edit-mode .edit-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-  width: 100%;
-}
-.edit-mode input[type="text"],
-.edit-mode textarea,
+/* -- Modal form fields (the inline task edit mode was removed in
+   7b80781; its ``.edit-mode`` rules went with it in ken #1182) -- */
 .project-add-card input[type="text"],
 .project-add-card textarea {
   width: 100%;
 }
-.edit-mode input,
-.edit-mode textarea,
-.edit-mode select,
 .project-add-card input,
 .project-add-card textarea,
 .project-add-card select {
@@ -1531,18 +1507,9 @@ button.cat-card-add {
   background: var(--card);
   outline: none;
 }
-.edit-mode textarea,
 .project-add-card textarea {
   resize: vertical;
   min-height: 120px;
-}
-.edit-mode .edit-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: flex-end;
-  margin-top: 4px;
-  width: 100%;
 }
 .btn {
   border: none;
