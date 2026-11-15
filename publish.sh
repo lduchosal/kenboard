@@ -308,7 +308,10 @@ print_step "Sonarcloud Quality Gate"
 # compute-engine Sonarcloud n'ont de tâche en cours (maintenance Sonar du
 # 26.07.2026 : rapport en file ~70 min, publish 0.2.4 avorté — ken #995).
 # Cap dur : --max-wait 3600s.
-run_command "python scripts/sonar_gate.py --timeout 900 --interval 20 --max-wait 3600" \
+# ``pdm run`` : interpréteur de la venv (≥ 3.11), pas le premier ``python``
+# du PATH appelant — un python@3.9 Homebrew faisait planter le script à
+# l'import (annotation ``X | None``, ken #1182).
+run_command "pdm run python scripts/sonar_gate.py --timeout 900 --interval 20 --max-wait 3600" \
     "Sonarcloud quality gate" "quality gate"
 
 print_step "Bumping Version (pdm bump ${BUMP_TYPE})"
