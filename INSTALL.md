@@ -505,6 +505,20 @@ server {
 }
 ```
 
+Deux points à respecter derrière un reverse proxy (#1184) :
+
+- **`Host` porte le nom public.** kenboard ignore `X-Forwarded-Host` : un
+  proxy qui ne l'écrase pas transmet la valeur fournie par le client, qui
+  déciderait alors de l'hôte des liens envoyés par mail. Garder
+  `proxy_set_header Host $host;` (ou le nom public en dur) et un
+  `server_name` explicite.
+- **Définir `KENBOARD_BASE_URL`** dans `.env` (ex.
+  `KENBOARD_BASE_URL=https://dashboard.example.com`). Les liens de
+  réinitialisation de mot de passe, de vérification d'e-mail et le runbook
+  d'onboarding sont alors construits à partir de cette valeur, quel que soit
+  l'en-tête `Host` reçu. Sans elle, ils dérivent de `Host` — sûr seulement si
+  le proxy refuse les noms d'hôte inconnus.
+
 ## 10. OIDC (optionnel)
 
 Pour activer l'authentification via un fournisseur OIDC (Google,
