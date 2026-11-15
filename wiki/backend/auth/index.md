@@ -4,7 +4,7 @@ Cookie sessions, OIDC, API keys, scope checks, CSRF.
 
 Section: `backend/auth`
 
-## Archivé (48)
+## Archivé (58)
 
 - [AUTH / Password authentification](auth-password-authentification-1.md)
 - [AUTH / Gestion des users en DB](auth-gestion-des-users-en-db-4.md)
@@ -54,3 +54,13 @@ Section: `backend/auth`
 - [AUTH / OIDC / Trusted certificate](auth-oidc-trusted-certificate-344.md)
 - [BACKEND / auth : GET /api/v1/tasks/{id} refusé (403) aux clés API projet](backend-auth-get-api-v1-tasks-id-refuse-403-aux-cles-api-projet-1129.md)
 - [AUTH / CACHE ou BUG — board affiché avec tout le contenu après expiration de l'auth OIDC](auth-cache-ou-bug-board-affiche-avec-tout-le-contenu-apres-expiration-de-l-auth-oidc-1177.md)
+- [SECURITY / vulnerabilities](security-vulnerabilities-1183.md)
+- [SEC / Reset password : lien détournable par X-Forwarded-Host](sec-reset-password-lien-detournable-par-x-forwarded-host-1184.md)
+- [SEC / Clés API : écriture hors du projet autorisé](sec-cles-api-ecriture-hors-du-projet-autorise-1187.md)
+- [SEC / Inscription : contournement de REGISTER_ALLOWED_DOMAIN](sec-inscription-contournement-de-register-allowed-domain-1188.md)
+- [SEC / Inscription : catégorie Users partagée entre tous les inscrits](sec-inscription-categorie-users-partagee-entre-tous-les-inscrits-1189.md)
+- [SEC / Sessions non révoquées au changement de mot de passe](sec-sessions-non-revoquees-au-changement-de-mot-de-passe-1191.md)
+- [SEC / Login : open redirect via le paramètre next](sec-login-open-redirect-via-le-parametre-next-1192.md)
+- [SEC / Clés API : durée de vie (user supprimé, tokens d'onboarding)](sec-cles-api-duree-de-vie-user-supprime-tokens-d-onboarding-1193.md)
+- [SEC / Inscription : mot de passe choisi avant la preuve d'e-mail](sec-inscription-mot-de-passe-choisi-avant-la-preuve-d-e-mail-1194.md)
+- [SEC / Durcissement post-audit](sec-durcissement-post-audit-1195.md)

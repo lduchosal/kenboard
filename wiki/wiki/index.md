@@ -4,7 +4,7 @@ LLM-wiki pattern (Karpathy) — classification, sync, build, lint.
 
 Section: `wiki`
 
-## Archivé (13)
+## Archivé (14)
 
 - [Export / wiki](export-wiki-376.md)
 - [WIKI / ken wiki sync (#376c)](wiki-ken-wiki-sync-376c-419.md)
@@ -19,3 +19,4 @@ Section: `wiki`
 - [WIKI / publish — remplacer la date de génération par la date de modif du ticket (File Churn)](wiki-publish-remplacer-la-date-de-generation-par-la-date-de-modif-du-ticket-file-churn-999.md)
 - [WIKI / CHURN - Retirer le numéro de version du ken dans le wiki généré](wiki-churn-retirer-le-numero-de-version-du-ken-dans-le-wiki-genere-1014.md)
 - [WIKI / search / index + recherche full text du wiki statique](wiki-search-index-recherche-full-text-du-wiki-statique-1178.md)
+- [SEC / Wiki build : XSS stocké via les descriptions de tâches](sec-wiki-build-xss-stocke-via-les-descriptions-de-taches-1186.md)
