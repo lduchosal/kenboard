@@ -38,13 +38,14 @@ function _ensureLinkOpensNewTab() {
 }
 
 export function renderMarkdown(root) {
-  if (typeof marked === 'undefined') return;
+  // Fail closed (#1195): without the sanitizer the description stays the plain
+  // text Jinja escaped — never unsanitised HTML.
+  if (typeof marked === 'undefined' || typeof DOMPurify === 'undefined') return;
   _ensureLinkOpensNewTab();
   (root || document).querySelectorAll('.task-desc').forEach((el) => {
     if (el.dataset.mdRendered === '1') return;
     const src = el.textContent;
-    const dirty = marked.parse(src);
-    el.innerHTML = typeof DOMPurify === 'undefined' ? dirty : DOMPurify.sanitize(dirty);
+    el.innerHTML = DOMPurify.sanitize(marked.parse(src));
     el.dataset.mdRendered = '1';
   });
 }

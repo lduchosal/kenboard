@@ -120,3 +120,49 @@ class TestInitEmail:
         monkeypatch.setattr(Config, "SMTP_ENABLED", False)
         email_mod.init_email(app)
         assert email_mod._app is app
+
+
+class TestRecipientValidation:
+    """#1188 — only a single bare address is ever handed to the SMTP client."""
+
+    @pytest.mark.parametrize(
+        "address",
+        ["a@b.co", "first.last+tag@sub.example.org", "o'neil@example.com"],
+    )
+    def test_plain_addresses_are_valid(self, address):
+        """Ordinary addresses pass."""
+        assert email_mod.is_valid_address(address)
+
+    @pytest.mark.parametrize(
+        "address",
+        [
+            "",
+            "a@b",
+            "a@evil.com (x@ok.org",
+            "a@evil.com, x@ok.org",
+            "<a@evil.com>x@ok.org",
+            '"x" <a@evil.com>',
+            "a b@ok.org",
+            "a@ok.org\n",
+            "a@ok.org\r\nBcc: x@evil.com",
+            "a@-bad.org",
+            "a" * 250 + "@ok.org",
+        ],
+    )
+    def test_anything_else_is_rejected(self, address):
+        """Display names, comments, lists, whitespace and CR/LF are refused."""
+        assert not email_mod.is_valid_address(address)
+
+    def test_send_email_refuses_an_invalid_recipient(self, app, monkeypatch):
+        """``send_email`` returns False without opening an SMTP connection."""
+        monkeypatch.setattr(Config, "SMTP_ENABLED", True)
+        email_mod.init_email(app)
+        with patch("dashboard.email.smtplib.SMTP") as smtp:
+            sent = email_mod.send_email(
+                to="a@evil.com (x@ok.org",
+                subject="s",
+                template="email/password_reset.html",
+                reset_url="u",
+            )
+        assert sent is False
+        smtp.assert_not_called()

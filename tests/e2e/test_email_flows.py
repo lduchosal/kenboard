@@ -224,7 +224,7 @@ class TestForgotPasswordE2E:
 
 
 class TestRegistrationE2E:
-    """Full browser flow: register → email → verify → login."""
+    """Full browser flow: register → email → choose password → login (#1194)."""
 
     def test_full_registration_flow(self, page: Page, email_server, clean_db):
         """Complete registration flow via browser + real SMTP."""
@@ -235,10 +235,9 @@ class TestRegistrationE2E:
         page.click("a[href='/register']")
         expect(page.locator("h1")).to_contain_text("compte")
 
-        # 2. Fill registration form
+        # 2. Fill registration form — the email only; no password yet (#1194)
+        expect(page.locator("input[name='password']")).to_have_count(0)
         page.fill("input[name='email']", "newuser@test.com")
-        page.fill("input[name='password']", "StrongE2EPass99!")
-        page.fill("input[name='password_confirm']", "StrongE2EPass99!")
         page.click("button[type='submit']")
         expect(page.locator(".login-success")).to_be_visible()
 
@@ -246,8 +245,12 @@ class TestRegistrationE2E:
         time.sleep(0.5)
         verify_url = _extract_link(rf"{re.escape(base)}/verify-email/[A-Za-z0-9_-]+")
 
-        # 4. Follow the verification link
+        # 4. Follow the verification link: it asks for the password
         page.goto(verify_url)
+        expect(page.locator("h1")).to_contain_text("Choisir un mot de passe")
+        page.fill("input[name='password']", "StrongE2EPass99!")
+        page.fill("input[name='password_confirm']", "StrongE2EPass99!")
+        page.click("button[type='submit']")
 
         # 5. Should be on login page with activation message
         expect(page.locator(".login-success")).to_contain_text("activ")
@@ -264,7 +267,5 @@ class TestRegistrationE2E:
         base = email_server
         page.goto(f"{base}/register")
         page.fill("input[name='email']", "user@wrong.com")
-        page.fill("input[name='password']", "StrongPass123!")
-        page.fill("input[name='password_confirm']", "StrongPass123!")
         page.click("button[type='submit']")
         expect(page.locator(".login-error")).to_contain_text("test.com")

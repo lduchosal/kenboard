@@ -14,6 +14,8 @@ NO_ANGLE_BRACKETS = r"^[^<>]*$"
 # a pymysql DataError 1406 → HTTP 500 (#511). We count encoded bytes (not
 # characters) because that is exactly what the column limit measures.
 DESCRIPTION_MAX_BYTES = 65_535
+# tasks.who is VARCHAR(100): a longer value must be a 422, not a DataError → 500.
+WHO_MAX_LEN = 100
 # "dd.mm" short-form due date: at most 5 chars (e.g. "31.12").
 _SHORT_DATE_MAX_LEN = 5
 
@@ -78,7 +80,7 @@ class TaskCreate(_DueDateMixin, BaseModel):
     description: BoundedDescription = ""
     attachement: BoundedAttachement | None = None
     status: Literal["todo", "doing", "review", "done"] = "todo"
-    who: str = ""
+    who: str = Field("", max_length=WHO_MAX_LEN)
     due_date: date | str | None = None
 
 
@@ -92,7 +94,7 @@ class TaskUpdate(_DueDateMixin, BaseModel):
     description: BoundedDescription | None = None
     attachement: BoundedAttachement | None = None
     status: Literal["todo", "doing", "review", "done"] | None = None
-    who: str | None = None
+    who: str | None = Field(None, max_length=WHO_MAX_LEN)
     due_date: date | str | None = None
     position: int | None = None
 

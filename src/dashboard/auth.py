@@ -30,6 +30,7 @@ Behaviour:
 
 from __future__ import annotations
 
+import hmac
 from urllib.parse import urlparse
 
 from flask import Flask, g, jsonify, request
@@ -202,8 +203,15 @@ def _enforce() -> ResponseReturnValue | None:
 
     token = _extract_bearer()
 
-    # Admin shortcut: matches the static .env key.
-    if token and Config.KENBOARD_ADMIN_KEY and token == Config.KENBOARD_ADMIN_KEY:
+    # Admin shortcut: matches the static .env key. Constant-time comparison so
+    # the response time does not reveal how many leading characters match (#1195).
+    if (
+        token
+        and Config.KENBOARD_ADMIN_KEY
+        and hmac.compare_digest(
+            token.encode("utf-8"), Config.KENBOARD_ADMIN_KEY.encode("utf-8")
+        )
+    ):
         g.api_auth_principal = "admin"
         return None
 

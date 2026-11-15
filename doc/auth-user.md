@@ -460,18 +460,33 @@ Vide → la route `/register` retourne 404. Sinon, seuls les emails
 
 ### Flow
 
-1. `/register` (GET) affiche le form (email + password).
-2. `/register` (POST) verifie le domaine, rate-limite 5/heure/IP,
-   genere un token (sha256 stocké dans `email_verification_tokens`
-   avec `expires_at = NOW() + 24h`), envoie un mail avec lien
-   `/verify-email/<token>`. Le password est déjà hashé argon2 et
-   stocké dans la table verification — le user n'existe pas encore.
-3. Le user clique le lien. `/verify-email/<token>` valide le token,
-   crée le `users` row (name = email, is_admin = false), crée la
-   catégorie « Users » si elle n'existe pas, crée un projet
-   personnel pour le user, lui octroie `write` sur la categorie
-   Users (`user_category_scopes`), marque le token `used_at`.
-4. Redirect vers `/login` avec succès.
+Principe : **prouver la boîte mail d'abord, choisir le mot de passe
+ensuite** (#1194). Celui qui soumet l'adresse de quelqu'un d'autre ne
+choisit donc jamais le mot de passe du compte créé.
+
+1. `/register` (GET) affiche le form (email seul).
+2. `/register` (POST) valide l'adresse — une seule adresse nue
+   `local@domaine`, domaine comparé après découpage, pas un simple
+   suffixe (#1188) —, rate-limite 5/heure/IP, genere un token (sha256
+   stocké dans `email_verification_tokens` avec `expires_at = NOW() +
+   24h`, `password_hash` vide), envoie un mail avec lien
+   `/verify-email/<token>`. La réponse est identique que l'adresse ait
+   déjà un compte ou non (pas d'énumération).
+3. Le user ouvre le lien. `/verify-email/<token>` (GET) ne fait
+   qu'afficher le formulaire de mot de passe — les scanners de mails
+   préchargent les liens.
+4. `/verify-email/<token>` (POST) valide le mot de passe, crée le
+   `users` row (name = email, is_admin = false), crée une **catégorie
+   personnelle** au nom de l'email avec un projet dedans, octroie
+   `write` sur cette seule catégorie (`user_category_scopes`), marque
+   le token `used_at`.
+5. Affiche `/login` avec succès.
+
+Avant #1189 tous les inscrits partageaient une catégorie « Users » :
+les scopes étant par catégorie, chacun avait `write` sur les projets
+« personnels » des autres. Les comptes créés avant ce correctif
+restent dans cette catégorie partagée — à répartir à la main depuis
+`/admin/board` et `/admin/users` si l'isolation est attendue.
 
 ### Migration
 

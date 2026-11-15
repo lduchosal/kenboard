@@ -55,6 +55,12 @@ class Config:
     # a TLS-terminating reverse proxy). Enables Secure cookies and HSTS.
     KENBOARD_HTTPS: bool = os.getenv("KENBOARD_HTTPS", "false").lower() == "true"
 
+    # Canonical public URL of this instance (e.g. ``https://kanban.example.com``).
+    # When set, every absolute link kenboard hands out — password-reset and
+    # email-verification mails, onboarding runbook — is built from it instead
+    # of the request's ``Host`` header (#1184). Empty = derive from the request.
+    KENBOARD_BASE_URL: str = os.getenv("KENBOARD_BASE_URL", "").rstrip("/")
+
     # #517: auto-file unhandled 500s as a BUG task on this project so errors
     # don't get lost. Empty (default) → feature OFF, no behaviour change.
     KENBOARD_ERROR_PROJECT_ID: str = os.getenv("KENBOARD_ERROR_PROJECT_ID", "")

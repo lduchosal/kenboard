@@ -7,8 +7,12 @@ See ``doc/auth-user.md`` for the full spec.
 
 from __future__ import annotations
 
+import re
+import secrets
+from contextlib import suppress
 from datetime import timedelta
 from http import HTTPStatus
+from urllib.parse import urlsplit
 
 from argon2.exceptions import VerifyMismatchError
 from flask import make_response, redirect, render_template, request, url_for
@@ -30,6 +34,12 @@ from dashboard.auth_user import (
 from dashboard.logging import get_logger
 
 log = get_logger("auth_user")
+
+# Hash of a random value nobody knows — the stand-in ``_verify_credentials``
+# checks against when the account does not exist.
+_DUMMY_HASH = _hasher.hash(secrets.token_urlsafe(16))
+# ASCII control characters, space, DEL and backslash — see ``_is_safe_url``.
+_UNSAFE_URL_CHARS_RE = re.compile(r"[\x00-\x20\x7f\\]")
 
 
 @bp.route("/login", methods=["GET"])
@@ -145,6 +155,10 @@ def _verify_credentials(name: str, password: str) -> CurrentUser | None:
     finally:
         conn.close()
     if not row or not row.get("password_hash"):
+        # Spend the same argon2 time as for a real account, so the response
+        # time does not tell whether the name exists (#1195).
+        with suppress(VerifyMismatchError):
+            _hasher.verify(_DUMMY_HASH, password)
         return None
     try:
         _hasher.verify(row["password_hash"], password)
@@ -154,11 +168,16 @@ def _verify_credentials(name: str, password: str) -> CurrentUser | None:
 
 
 def _is_safe_url(target: str) -> bool:
-    """Allow only same-origin redirects to prevent open-redirect attacks."""
-    if not target:
+    """Allow only same-origin redirects to prevent open-redirect attacks.
+
+    Accepts a local absolute path (``/cat/x.html?a=b``) and nothing else. Control
+    characters, whitespace and backslashes are refused outright (#1192): URL parsers
+    drop or rewrite them, so ``/<TAB>/evil.example`` is ``//evil.example`` — another
+    host — by the time it reaches the ``Location`` header.
+    """
+    if not target.startswith("/") or target.startswith("//"):
         return False
-    # Reject absolute URLs and protocol-relative URLs
-    if target.startswith("//") or "://" in target:
+    if _UNSAFE_URL_CHARS_RE.search(target):
         return False
-    # Must start with /
-    return target.startswith("/")
+    parts = urlsplit(target)
+    return not parts.scheme and not parts.netloc

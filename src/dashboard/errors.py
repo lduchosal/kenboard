@@ -36,10 +36,13 @@ def _safe_pydantic_errors(errors: Sequence[Mapping[str, Any]]) -> list[dict[str,
     Pydantic 2 embeds the original exception under ``ctx.error`` for ``value_error``
     validators, which Flask's JSON provider refuses to serialize. We stringify the
     exception so debug responses stay useful without crashing.
+
+    ``input`` is dropped (#1190): it is the rejected value — a too-weak password — or,
+    for a missing field, the *whole* request body, and these details are logged.
     """
     cleaned: list[dict[str, Any]] = []
     for err in errors:
-        err_copy: dict[str, Any] = dict(err)
+        err_copy: dict[str, Any] = {k: v for k, v in err.items() if k != "input"}
         ctx = err_copy.get("ctx")
         if isinstance(ctx, dict) and "error" in ctx:
             err_copy["ctx"] = {**ctx, "error": str(ctx["error"])}

@@ -8,15 +8,33 @@ architecture file out of the DB and out of the server's request path.
 """
 
 from contextlib import suppress
+from typing import Any
 
 from flask import Blueprint, g, jsonify, request
 from flask.typing import ResponseReturnValue
 from flask_login import current_user
 
 from dashboard import db
-from dashboard.auth_scopes import current_user_can_project
+from dashboard.auth_scopes import current_user_can_project, visible_project_ids
 
 _TASK_NOT_FOUND = "Task not found"
+
+
+def _scoped_rows(
+    rows: list[dict[str, Any]], project_filter: str | None
+) -> list[dict[str, Any]]:
+    """Keep the rows of ``project_filter``, and only those the caller may read.
+
+    The queries return every project's rows; without this a logged-in user with a scope
+    on a single board would read the whole instance (#1185).
+    """
+    if project_filter:
+        rows = [r for r in rows if r["project_id"] == project_filter]
+    visible = visible_project_ids()
+    if visible is not None:
+        rows = [r for r in rows if r["project_id"] in visible]
+    return rows
+
 
 bp = Blueprint("wiki", __name__, url_prefix="/api/v1/wiki")
 
@@ -37,7 +55,7 @@ def list_unclassified() -> ResponseReturnValue:
 
     Optional ``?project=<id>`` filter — when set, the response is scoped to a single
     project (and read scope is enforced). Without it, every unclassified task across
-    every project the caller can see.
+    every project the caller can see (filtered by ``_scoped_rows``).
     """
     project_filter = request.args.get("project")
     if project_filter and not current_user_can_project(project_filter, "read"):
@@ -48,9 +66,7 @@ def list_unclassified() -> ResponseReturnValue:
         rows = list(queries.wiki_get_unclassified_tasks(conn))
     finally:
         conn.close()
-    if project_filter:
-        rows = [r for r in rows if r["project_id"] == project_filter]
-    return jsonify(rows)
+    return jsonify(_scoped_rows(rows, project_filter))
 
 
 @bp.route("/all", methods=["GET"])
@@ -70,8 +86,7 @@ def list_all() -> ResponseReturnValue:
         rows = list(queries.wiki_get_all(conn))
     finally:
         conn.close()
-    if project_filter:
-        rows = [r for r in rows if r["project_id"] == project_filter]
+    rows = _scoped_rows(rows, project_filter)
     return jsonify(
         [
             {

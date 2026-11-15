@@ -99,7 +99,7 @@ def _promote_onboarding_key(api_key_id: str) -> None:
     """Promote an onboarding token to onboarded on first use (#159)."""
     conn = db.get_connection()
     try:
-        db.load_queries().key_update_type(conn, id=api_key_id, key_type="onboarded")
+        db.load_queries().key_promote_onboarding(conn, id=api_key_id)
     finally:
         conn.close()
     log.info("auth.onboarding_promoted", api_key_id=api_key_id)

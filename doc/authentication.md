@@ -18,7 +18,7 @@ categorie / projet, voir [`permissions.md`](permissions.md).
 | color | VARCHAR(50) | Couleur d'avatar (hex `#0969da` ou variable CSS) |
 | password_hash | VARCHAR(255) | Hash argon2, vide tant qu'aucun mot de passe defini |
 | is_admin | TINYINT(1) | Drapeau admin (0 ou 1) |
-| session_nonce | CHAR(32) | Anti-replay des cookies. Rotate au logout, password reset, OIDC link (#198) |
+| session_nonce | CHAR(32) | Anti-replay des cookies. Rotate au logout, changement / reset de mot de passe (#1191), OIDC link (#198) |
 | created_at | DATETIME | Auto |
 | updated_at | DATETIME | Auto on update |
 

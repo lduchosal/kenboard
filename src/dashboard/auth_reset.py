@@ -20,6 +20,7 @@ from dashboard.auth_session import _rotate_session_nonce
 from dashboard.auth_user import _LOGIN_TEMPLATE, _hasher, bp, limiter
 from dashboard.config import Config
 from dashboard.logging import get_logger
+from dashboard.onboarding import derive_base_url
 from dashboard.password_strength import validate_password_strength
 
 log = get_logger("auth_user")
@@ -66,11 +67,11 @@ def forgot_password_post() -> ResponseReturnValue:
                 token_hash=token_hash,
                 minutes=_RESET_TOKEN_MINUTES,
             )
-            reset_url = request.host_url.rstrip("/") + f"/reset-password/{token}"
+            reset_url = f"{derive_base_url()}/reset-password/{token}"
             # Accès par attribut de module : les tests patchent
             # ``dashboard.email.send_email`` (late binding).
             email_mod.send_email(
-                to=email,
+                to=user["email"],
                 subject=f"{Config.KENBOARD_TITLE} — Réinitialisation du mot de passe",
                 template="email/password_reset.html",
                 reset_url=reset_url,

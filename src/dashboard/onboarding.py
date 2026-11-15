@@ -38,16 +38,16 @@ _SAFE_ID_RE = re.compile(r"[^a-zA-Z0-9\-]")
 def derive_base_url() -> str:
     """Return the public base URL of this kenboard instance.
 
-    Uses ``request.host_url`` (which respects ProxyFix when nginx sends ``X-Forwarded-
-    Proto``). As a fallback for proxies that do NOT forward the header,
-    ``Config.KENBOARD_HTTPS`` forces the scheme to ``https`` so the onboarding runbook
-    and OIDC redirect_uri are always correct behind a TLS-terminating reverse proxy
-    (#147).
+    ``Config.KENBOARD_BASE_URL`` wins when set: it is the only value an HTTP client
+    cannot influence, which matters for the links sent by email (#1184). Otherwise the
+    URL is derived from the request's ``Host``; ``Config.KENBOARD_HTTPS`` forces the
+    scheme to ``https`` behind a TLS-terminating reverse proxy (#147), and anything
+    other than ``http`` / ``https`` in ``X-Forwarded-Proto`` is ignored.
     """
-    url = request.host_url.rstrip("/")
-    if Config.KENBOARD_HTTPS and url.startswith("http://"):
-        url = "https://" + url[7:]
-    return url
+    if Config.KENBOARD_BASE_URL:
+        return Config.KENBOARD_BASE_URL
+    scheme = "https" if Config.KENBOARD_HTTPS or request.scheme == "https" else "http"
+    return f"{scheme}://{request.host}"
 
 
 def _sanitize_token(value: str) -> str:

@@ -287,7 +287,7 @@ est tres au-dessus.
 | color | VARCHAR(50) | Couleur d'avatar |
 | password_hash | VARCHAR(255) | Hash argon2, vide tant qu'aucun mot de passe defini |
 | is_admin | TINYINT(1) | Drapeau admin |
-| session_nonce | CHAR(32) | Anti-replay des cookies. Rotate au logout, password reset, OIDC link |
+| session_nonce | CHAR(32) | Anti-replay des cookies. Rotate au logout, changement / reset de mot de passe (#1191), OIDC link |
 | created_at | DATETIME | Auto |
 | updated_at | DATETIME | Auto on update |
 

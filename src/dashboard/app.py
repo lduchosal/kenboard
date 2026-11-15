@@ -17,7 +17,7 @@ from dashboard.branding import init_branding
 from dashboard.config import Config
 from dashboard.email import init_email
 from dashboard.errors import API_PATH_PREFIX, register_error_handlers
-from dashboard.logging import get_logger, setup_logging
+from dashboard.logging import get_logger, redact, setup_logging
 from dashboard.onboarding_runbook import onboard_bp
 from dashboard.perf import init_perf
 from dashboard.routes import (
@@ -32,6 +32,11 @@ from dashboard.routes.pages import bp as pages_bp
 
 log = get_logger("app")
 
+# Largest request body accepted (#1195). The biggest legitimate payload is a
+# task carrying a paintbrush ``attachement`` (16 MB MEDIUMTEXT) plus its JSON
+# envelope; anything larger is refused with a 413 before being parsed.
+MAX_REQUEST_BYTES = 20 * 1024 * 1024
+
 # Path prefix used to differentiate API/XHR clients (which expect JSON) from
 # browser callers (which want HTML). Centralised so request-logging and the
 # error-content-negotiation logic stay in lockstep.
@@ -42,7 +47,11 @@ log = get_logger("app")
 
 def _configure_security(app: Flask) -> None:
     """Set up reverse-proxy trust, CORS, and hardening response headers."""
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)  # type: ignore[assignment]
+    # ``x_host`` stays off (#1184): a reverse proxy that does not overwrite
+    # ``X-Forwarded-Host`` forwards the client's own value, which would then
+    # decide ``request.host`` — and with it every link we email (password
+    # reset, email verification). The proxy passes the public name in ``Host``.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=0)  # type: ignore[assignment]
 
     if Config.KENBOARD_CORS_ORIGINS:
         CORS(app, origins=Config.KENBOARD_CORS_ORIGINS, supports_credentials=True)
@@ -96,7 +105,7 @@ def _register_request_logging(app: Flask) -> None:
                 "request",
                 method=request.method,
                 path=request.path,
-                body=request.get_json(silent=True),
+                body=redact(request.get_json(silent=True)),
             )
 
     @app.after_request
@@ -196,6 +205,7 @@ def _make_flask_app() -> Flask:
         static_url_path="/static",
     )
     _configure_security(app)
+    app.config["MAX_CONTENT_LENGTH"] = MAX_REQUEST_BYTES
 
     def jsesc(s: str) -> str:
         """Escape a string for use inside JS single-quoted strings."""

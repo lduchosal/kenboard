@@ -1,8 +1,8 @@
-"""Unit tests for the self-registration flow (#236).
+"""Unit tests for the self-registration flow (#236, #1188, #1189, #1194).
 
 The email sending is mocked — we capture the token from the DB and exercise the full
-flow: register → token created → verify email → user + category + project + scope
-created.
+flow: register (email only) → token created → open the link → choose a password → user +
+personal category + project + scope created.
 """
 
 import hashlib
@@ -63,20 +63,13 @@ class TestRegisterPost:
 
     @patch("dashboard.email.send_email", return_value=True)
     def test_valid_registration(self, mock_send, register_client, db, queries):
-        """Valid email + password creates a token and sends email."""
-        resp = register_client.post(
-            "/register",
-            data={
-                "email": "new@test.com",
-                "password": "StrongPass123!",
-                "password_confirm": "StrongPass123!",
-            },
-        )
+        """A valid email creates a token (without any password) and sends email."""
+        resp = register_client.post("/register", data={"email": "new@test.com"})
         assert resp.status_code == 200
         assert "rification" in resp.data.decode().lower()
         mock_send.assert_called_once()
+        assert mock_send.call_args.kwargs["to"] == "new@test.com"
 
-        # Token exists in DB
         cur = db.cursor()
         cur.execute(
             "SELECT * FROM email_verification_tokens WHERE email = 'new@test.com'"
@@ -84,47 +77,74 @@ class TestRegisterPost:
         row = cur.fetchone()
         assert row is not None
         assert row["used_at"] is None
-
-    def test_wrong_domain_rejected(self, register_client, db):
-        """Email from wrong domain is rejected."""
-        resp = register_client.post(
-            "/register",
-            data={
-                "email": "user@wrong.com",
-                "password": "StrongPass123!",
-                "password_confirm": "StrongPass123!",
-            },
-        )
-        assert "test.com" in resp.data.decode()
-
-    def test_password_mismatch(self, register_client, db):
-        """Mismatched passwords are rejected."""
-        resp = register_client.post(
-            "/register",
-            data={
-                "email": "user@test.com",
-                "password": "StrongPass123!",
-                "password_confirm": "Different123!",
-            },
-        )
-        assert "ne correspondent pas" in resp.data.decode()
-
-    def test_weak_password_rejected(self, register_client, db):
-        """Weak password is rejected."""
-        resp = register_client.post(
-            "/register",
-            data={
-                "email": "user@test.com",
-                "password": "123",
-                "password_confirm": "123",
-            },
-        )
-        html = resp.data.decode()
-        assert "mot de passe" in html.lower() or "password" in html.lower()
+        assert row["password_hash"] == ""
 
     @patch("dashboard.email.send_email", return_value=True)
-    def test_duplicate_email_rejected(self, mock_send, register_client, db, queries):
-        """Duplicate email is rejected."""
+    def test_password_fields_are_ignored(self, mock_send, register_client, db):
+        """#1194 — a password posted with the email never reaches the token."""
+        register_client.post(
+            "/register",
+            data={
+                "email": "victim@test.com",
+                "password": "AttackerPass123!",
+                "password_confirm": "AttackerPass123!",
+            },
+        )
+        cur = db.cursor()
+        cur.execute("SELECT password_hash FROM email_verification_tokens")
+        assert cur.fetchone()["password_hash"] == ""
+
+    @patch("dashboard.email.send_email", return_value=True)
+    def test_wrong_domain_rejected(self, mock_send, register_client, db):
+        """Email from wrong domain is rejected."""
+        resp = register_client.post("/register", data={"email": "user@wrong.com"})
+        assert "Seules les adresses" in resp.data.decode()
+        mock_send.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "email",
+        [
+            "a@evil.com (x@test.com",
+            "a@evil.com, x@test.com",
+            "<a@evil.com>x@test.com",
+            "a@evil.com <x@test.com",
+            '"x" <a@evil.com>@test.com',
+            "a@evil.com>@test.com",
+            "a@evil.com;x@test.com",
+            "a@evil.com\n@test.com",
+            "a@evil.com@test.com",
+            "x@test.com\r\nBcc: a@evil.com@test.com",
+            "x y@test.com",
+            "x@sub.test.com",
+            "x@eviltest.com",
+            "@test.com",
+        ],
+    )
+    @patch("dashboard.email.send_email", return_value=True)
+    def test_forged_address_rejected(self, mock_send, register_client, db, email):
+        """#1188 — only a single bare address of the allowed domain is accepted.
+
+        Every string here ends with the allowed domain, or parses to a recipient
+        outside it: none may create a token or trigger a mail.
+        """
+        resp = register_client.post("/register", data={"email": email})
+        assert "Seules les adresses" in resp.data.decode()
+        mock_send.assert_not_called()
+        cur = db.cursor()
+        cur.execute("SELECT COUNT(*) AS n FROM email_verification_tokens")
+        assert cur.fetchone()["n"] == 0
+
+    @patch("dashboard.email.send_email", return_value=True)
+    def test_domain_match_is_case_insensitive(self, mock_send, register_client, db):
+        """``User@TEST.com`` is the same mailbox — accepted, stored lowercased."""
+        register_client.post("/register", data={"email": "User@TEST.com"})
+        assert mock_send.call_args.kwargs["to"] == "user@test.com"
+
+    @patch("dashboard.email.send_email", return_value=True)
+    def test_duplicate_email_is_not_revealed(
+        self, mock_send, register_client, db, queries
+    ):
+        """An existing account gets the same answer, no token and no mail."""
         queries.usr_create(
             db,
             id="existing-user",
@@ -134,123 +154,155 @@ class TestRegisterPost:
             password_hash="x",
             is_admin=0,
         )
-        resp = register_client.post(
-            "/register",
-            data={
-                "email": "existing@test.com",
-                "password": "StrongPass123!",
-                "password_confirm": "StrongPass123!",
-            },
-        )
-        assert "existe" in resp.data.decode().lower()
+        fresh = register_client.post("/register", data={"email": "fresh@test.com"})
+        mock_send.reset_mock()
+        taken = register_client.post("/register", data={"email": "existing@test.com"})
+        assert taken.data == fresh.data
+        mock_send.assert_not_called()
 
 
 class TestVerifyEmail:
-    """GET /verify-email/<token> — account activation."""
+    """/verify-email/<token> — choose a password, then account activation."""
 
-    def _create_verification_token(self, db, queries, email, password):
+    PASSWORD = "AlicePass123!"
+
+    def _create_verification_token(self, db, queries, email, password_hash=""):
         """Create a verification token and return the raw token string."""
         import secrets
         import uuid
 
         token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(token.encode()).hexdigest()
-        pw_hash = PasswordHasher().hash(password)
         queries.evt_create(
             db,
             id=str(uuid.uuid4()),
             email=email,
-            password_hash=pw_hash,
+            password_hash=password_hash,
             token_hash=token_hash,
             hours=24,
         )
         return token
 
-    def test_valid_token_creates_user(self, register_client, db, queries):
-        """Valid verification creates user, category, project, and scope."""
-        token = self._create_verification_token(
-            db, queries, "alice@test.com", "AlicePass123!"
+    def _activate(self, client, token, password=None, confirm=None):
+        """POST the password form of a verification link."""
+        password = password or self.PASSWORD
+        return client.post(
+            f"/verify-email/{token}",
+            data={"password": password, "password_confirm": confirm or password},
         )
+
+    def test_get_shows_password_form_and_creates_nothing(
+        self, register_client, db, queries
+    ):
+        """Opening the link (mail scanners do) must not create the account."""
+        token = self._create_verification_token(db, queries, "alice@test.com")
         resp = register_client.get(f"/verify-email/{token}")
         html = resp.data.decode()
-        assert "activ" in html.lower()
+        assert f'action="/verify-email/{token}"' in html
+        assert 'name="password_confirm"' in html
+        assert queries.usr_get_by_email(db, email="alice@test.com") is None
+        # ... and the token is still usable afterwards.
+        assert "activ" in self._activate(register_client, token).data.decode().lower()
 
-        # User created
+    def test_valid_token_creates_user(self, register_client, db, queries):
+        """Posting a password creates the user with that password."""
+        token = self._create_verification_token(db, queries, "alice@test.com")
+        resp = self._activate(register_client, token)
+        assert "activ" in resp.data.decode().lower()
+
         user = queries.usr_get_by_email(db, email="alice@test.com")
         assert user is not None
         assert user["is_admin"] == 0
         assert user["name"] == "alice@test.com"
+        assert PasswordHasher().verify(user["password_hash"], self.PASSWORD)
 
-        # Password works
-        ph = PasswordHasher()
-        assert ph.verify(user["password_hash"], "AlicePass123!")
+    def test_password_stored_with_token_is_ignored(self, register_client, db, queries):
+        """#1194 — a hash that travelled with the token never becomes the password.
 
-    def test_creates_users_category(self, register_client, db, queries):
-        """Verification creates the 'Users' category."""
+        Covers tokens issued before the fix (and any forged one): the account gets the
+        password typed by whoever opened the mailbox link.
+        """
+        attacker_hash = PasswordHasher().hash("AttackerPass123!")
         token = self._create_verification_token(
-            db, queries, "bob@test.com", "BobPass123!"
+            db, queries, "victim@test.com", attacker_hash
         )
-        register_client.get(f"/verify-email/{token}")
+        self._activate(register_client, token)
+        user = queries.usr_get_by_email(db, email="victim@test.com")
+        assert user["password_hash"] != attacker_hash
+        assert PasswordHasher().verify(user["password_hash"], self.PASSWORD)
 
-        cats = list(queries.cat_get_all(db))
-        users_cat = [c for c in cats if c["name"] == "Users"]
-        assert len(users_cat) == 1
+    def test_password_mismatch(self, register_client, db, queries):
+        """Mismatched passwords re-render the form; nothing is created."""
+        token = self._create_verification_token(db, queries, "bob@test.com")
+        resp = self._activate(register_client, token, confirm="Different123!")
+        assert "ne correspondent pas" in resp.data.decode()
+        assert queries.usr_get_by_email(db, email="bob@test.com") is None
 
-    def test_creates_personal_project(self, register_client, db, queries):
-        """Verification creates a project named after the email."""
-        token = self._create_verification_token(
-            db, queries, "carol@test.com", "CarolPass123!"
-        )
-        register_client.get(f"/verify-email/{token}")
+    def test_weak_password_rejected(self, register_client, db, queries):
+        """A weak password is rejected and the token stays valid."""
+        token = self._create_verification_token(db, queries, "bob@test.com")
+        resp = self._activate(register_client, token, password="123")
+        html = resp.data.decode()
+        assert "mot de passe" in html.lower() or "password" in html.lower()
+        assert queries.usr_get_by_email(db, email="bob@test.com") is None
+        assert "activ" in self._activate(register_client, token).data.decode().lower()
 
-        cats = list(queries.cat_get_all(db))
-        users_cat = next(c for c in cats if c["name"] == "Users")
-        projects = list(queries.proj_get_by_cat(db, cat_id=users_cat["id"]))
-        project_names = [p["name"] for p in projects]
-        assert "carol@test.com" in project_names
+    def test_creates_personal_category_and_project(self, register_client, db, queries):
+        """#1189 — the user gets a category of their own holding their project."""
+        token = self._create_verification_token(db, queries, "carol@test.com")
+        self._activate(register_client, token)
 
-    def test_grants_write_scope(self, register_client, db, queries):
-        """New user gets write scope on the Users category."""
-        token = self._create_verification_token(
-            db, queries, "dave@test.com", "DavePass123!"
-        )
-        register_client.get(f"/verify-email/{token}")
+        cats = [c for c in queries.cat_get_all(db) if c["name"] == "carol@test.com"]
+        assert len(cats) == 1
+        projects = list(queries.proj_get_by_cat(db, cat_id=cats[0]["id"]))
+        assert [p["name"] for p in projects] == ["carol@test.com"]
 
-        user = queries.usr_get_by_email(db, email="dave@test.com")
-        cats = list(queries.cat_get_all(db))
-        users_cat = next(c for c in cats if c["name"] == "Users")
-        scope = queries.usr_scopes_get_for_category(
-            db, user_id=user["id"], category_id=users_cat["id"]
-        )
-        assert scope is not None
-        assert scope["scope"] == "write"
-
-    def test_reuses_existing_users_category(self, register_client, db, queries):
-        """Second registration reuses the same Users category."""
-        t1 = self._create_verification_token(db, queries, "eve@test.com", "EvePass123!")
-        register_client.get(f"/verify-email/{t1}")
-
-        t2 = self._create_verification_token(
-            db, queries, "frank@test.com", "FrankPass123!"
-        )
-        register_client.get(f"/verify-email/{t2}")
-
-        cats = list(queries.cat_get_all(db))
-        users_cats = [c for c in cats if c["name"] == "Users"]
-        assert len(users_cats) == 1
+    def test_grants_write_scope_on_own_category_only(
+        self, register_client, db, queries
+    ):
+        """#1189 — one scope per user, on their own category; no shared board."""
+        for email in ("dave@test.com", "eve@test.com"):
+            self._activate(
+                register_client, self._create_verification_token(db, queries, email)
+            )
+        cats = {c["name"]: c["id"] for c in queries.cat_get_all(db)}
+        assert "Users" not in cats
+        for email, other in (
+            ("dave@test.com", "eve@test.com"),
+            ("eve@test.com", "dave@test.com"),
+        ):
+            user = queries.usr_get_by_email(db, email=email)
+            scopes = list(queries.usr_scopes_get(db, user_id=user["id"]))
+            assert scopes == [{"category_id": cats[email], "scope": "write"}]
+            assert cats[other] not in [s["category_id"] for s in scopes]
 
     def test_invalid_token_shows_error(self, register_client, db):
-        """Invalid token shows error."""
-        resp = register_client.get("/verify-email/bogus-token")
-        assert "invalide" in resp.data.decode().lower()
+        """Invalid token shows error, on GET and on POST."""
+        assert "invalide" in register_client.get("/verify-email/bogus").data.decode()
+        assert "invalide" in self._activate(register_client, "bogus").data.decode()
 
     def test_token_single_use(self, register_client, db, queries):
         """Used token cannot be reused."""
-        token = self._create_verification_token(
-            db, queries, "gina@test.com", "GinaPass123!"
+        token = self._create_verification_token(db, queries, "gina@test.com")
+        self._activate(register_client, token)
+        for resp in (
+            register_client.get(f"/verify-email/{token}"),
+            self._activate(register_client, token),
+        ):
+            assert "invalide" in resp.data.decode().lower()
+
+    def test_email_taken_meanwhile(self, register_client, db, queries):
+        """Race guard: the address got an account before the link was used."""
+        token = self._create_verification_token(db, queries, "hank@test.com")
+        queries.usr_create(
+            db,
+            id="hank",
+            name="hank",
+            email="hank@test.com",
+            color="#f00",
+            password_hash="x",
+            is_admin=0,
         )
-        register_client.get(f"/verify-email/{token}")
-        resp = register_client.get(f"/verify-email/{token}")
-        html = resp.data.decode()
-        # Either "invalid" or "already exists"
-        assert "invalide" in html.lower() or "existe" in html.lower()
+        resp = self._activate(register_client, token)
+        assert "existe" in resp.data.decode().lower()
+        assert queries.usr_get_by_email(db, email="hank@test.com")["id"] == "hank"

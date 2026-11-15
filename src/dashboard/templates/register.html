@@ -20,14 +20,7 @@
           Email
           <input type="email" name="email" required autocomplete="email" placeholder="nom@{{ domain }}">
         </label>
-        <label class="login-label">
-          Mot de passe
-          <input type="password" name="password" required autocomplete="new-password">
-        </label>
-        <label class="login-label">
-          Confirmation
-          <input type="password" name="password_confirm" required autocomplete="new-password">
-        </label>
+        <p style="font-size:12px;color:var(--dimmed);margin:0">Vous choisirez votre mot de passe apr&egrave;s avoir ouvert le lien re&ccedil;u par email.</p>
         {% if error %}
         <div class="login-error">{{ error }}</div>
         {% endif %}

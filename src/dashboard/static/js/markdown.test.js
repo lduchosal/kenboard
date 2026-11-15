@@ -59,6 +59,17 @@ describe('renderMarkdown', () => {
     expect(el.innerHTML).toContain('safe');
   });
 
+  it('fails closed: without DOMPurify the markdown stays plain text (#1195)', () => {
+    globalThis.DOMPurify = undefined;
+    document.body.innerHTML =
+      '<div class="task-desc">**hi** &lt;img src=x onerror=alert(1)&gt;</div>';
+    renderMarkdown();
+    const el = document.querySelector('.task-desc');
+    expect(el.querySelector('img')).toBeNull();
+    expect(el.textContent).toBe('**hi** <img src=x onerror=alert(1)>');
+    expect(el.dataset.mdRendered).toBeUndefined();
+  });
+
   it('is idempotent: a second pass does not re-render', () => {
     document.body.innerHTML = '<div class="task-desc">x</div>';
     renderMarkdown();

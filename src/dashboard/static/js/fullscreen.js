@@ -65,9 +65,9 @@ function populateFullscreen(task, avatarColor, btn) {
   document.getElementById('fs-status').textContent = status;
 
   const descEl = document.getElementById('fs-desc');
-  if (desc && typeof marked !== 'undefined') {
-    const raw = marked.parse(desc);
-    descEl.innerHTML = typeof DOMPurify === 'undefined' ? raw : DOMPurify.sanitize(raw);
+  // Fail closed (#1195): no sanitizer, no HTML — the markdown shows as text.
+  if (desc && typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+    descEl.innerHTML = DOMPurify.sanitize(marked.parse(desc));
   } else {
     descEl.textContent = desc || '(pas de description)';
   }

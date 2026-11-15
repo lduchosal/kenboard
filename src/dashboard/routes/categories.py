@@ -10,6 +10,7 @@ from dashboard import db
 from dashboard.auth_scopes import _is_api_key_principal, current_user_can
 from dashboard.auth_user import _is_login_disabled, api_admin_required
 from dashboard.models.category import Category, CategoryCreate, CategoryUpdate
+from dashboard.routes.projects import reorder_projects
 
 bp = Blueprint("categories", __name__, url_prefix="/api/v1/categories")
 
@@ -104,10 +105,8 @@ def update_category(cat_id: str) -> ResponseReturnValue:
             name=data.name or existing["name"],
             color=data.color or existing["color"],
         )
-        # Reorder projects if requested
         if data.project_order:
-            for i, proj_id in enumerate(data.project_order):
-                queries.proj_update_position(conn, id=proj_id, position=i)
+            reorder_projects(conn, queries, cat_id, data.project_order)
         row = queries.cat_get_by_id(conn, id=cat_id)
         return jsonify(Category(**row).model_dump())
     finally:

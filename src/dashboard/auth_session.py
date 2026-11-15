@@ -8,14 +8,15 @@ Split out of ``auth_user.py`` (ken #808). The ``@login_manager.user_loader`` and
 from __future__ import annotations
 
 import secrets
+from datetime import timedelta
 from typing import Any
 
 from flask import make_response, redirect, request, url_for
 from flask.typing import ResponseReturnValue
-from flask_login import UserMixin
+from flask_login import UserMixin, current_user, login_user
 
 from dashboard import db
-from dashboard.auth_user import LOGIN_VIEW_ENDPOINT, login_manager
+from dashboard.auth_user import LOGIN_VIEW_ENDPOINT, REMEMBER_DAYS, login_manager
 from dashboard.logging import get_logger
 from dashboard.onboarding import (
     cat_id_from_path,
@@ -58,6 +59,25 @@ def _rotate_session_nonce(user_id: str) -> str:
     finally:
         conn.close()
     return nonce
+
+
+def revoke_sessions(user_id: str, *, keep_current: bool) -> None:
+    """Invalidate every session cookie of ``user_id`` after a password change (#1191).
+
+    Rotating ``users.session_nonce`` is what makes a cookie captured earlier — the
+    reason people change a password — unusable. With ``keep_current`` the caller's own
+    session is re-issued on the new nonce, so changing one's password does not log
+    oneself out of the tab doing it.
+    """
+    _rotate_session_nonce(user_id)
+    if not (keep_current and current_user.is_authenticated):
+        return
+    conn = db.get_connection()
+    try:
+        row = db.load_queries().usr_get_by_id(conn, id=user_id)
+    finally:
+        conn.close()
+    login_user(CurrentUser(row), remember=True, duration=timedelta(days=REMEMBER_DAYS))
 
 
 @login_manager.user_loader

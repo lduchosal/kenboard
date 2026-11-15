@@ -3,16 +3,44 @@
 import logging
 import logging.handlers
 import os
+import re
 import signal
 import sys
 from contextlib import suppress
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import structlog
 
 LOG_DIR = Path(os.getenv("LOG_DIR", "logs"))
 LOG_FILE = LOG_DIR / "dashboard.log"
+
+REDACTED = "***"
+# Longest string value logged as-is; anything beyond is cut (a task description
+# or a 16 MB attachement has no business in a log line).
+MAX_LOGGED_VALUE = 200
+_SENSITIVE_KEY_RE = re.compile(r"password|passwd|secret|token|key", re.IGNORECASE)
+
+
+# ANN401 : corps JSON de forme libre, en entrée comme en sortie.
+def redact(value: Any) -> Any:  # noqa: ANN401
+    """Return a copy of a JSON value that is safe to write to a log (#1190).
+
+    Values under a key that names a credential (``password``, ``new_password``,
+    ``api_token``, ``key``…) are masked, at any depth, and long strings are truncated.
+    The log file is opened at DEBUG level in every mode, so whatever is passed to a
+    ``log.debug`` call does reach the disk in production.
+    """
+    if isinstance(value, dict):
+        return {
+            k: REDACTED if _SENSITIVE_KEY_RE.search(str(k)) else redact(v)
+            for k, v in value.items()
+        }
+    if isinstance(value, list):
+        return [redact(v) for v in value]
+    if isinstance(value, str) and len(value) > MAX_LOGGED_VALUE:
+        return f"{value[:MAX_LOGGED_VALUE]}…(+{len(value) - MAX_LOGGED_VALUE} chars)"
+    return value
 
 
 def _ignore_sighup() -> None:

@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from dashboard.email import is_valid_address
+from dashboard.models.category import COLOR_PATTERN
 from dashboard.password_strength import validate_password_strength
 
 UserScope = Literal["read", "write"]
@@ -23,16 +25,32 @@ def _check_password_strength(v: str | None) -> str | None:
     return v
 
 
+def _check_email(v: str | None) -> str | None:
+    """Accept no email, or a single bare ``local@domain`` address (#1188, #1195).
+
+    Raises:
+        ValueError: when the value is not a plain email address.
+    """
+    if v is None or v == "":
+        return v
+    if not is_valid_address(v):
+        msg = "email must be a single plain address"
+        raise ValueError(msg)
+    return v
+
+
 class UserCreate(BaseModel):
     """Input model for creating a user."""
 
     name: str = Field(..., min_length=1, max_length=100)
     email: str | None = Field(None, max_length=255)
-    color: str = Field(..., max_length=50)
+    # Same allowlist as categories: the value lands in an inline ``style``.
+    color: str = Field(..., max_length=50, pattern=COLOR_PATTERN)
     password: str | None = Field(None, max_length=200)
     is_admin: bool = False
 
     _validate_password = field_validator("password")(_check_password_strength)
+    _validate_email = field_validator("email")(_check_email)
 
 
 class UserUpdate(BaseModel):
@@ -47,7 +65,7 @@ class UserUpdate(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     name: str | None = Field(None, min_length=1, max_length=100)
-    color: str | None = Field(None, max_length=50)
+    color: str | None = Field(None, max_length=50, pattern=COLOR_PATTERN)
     is_admin: bool | None = None
 
 

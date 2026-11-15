@@ -193,6 +193,7 @@ CLI `ken` et lues depuis `src/dashboard/ken.py` ; elles peuvent vivre dans
 | `KENBOARD_ADMIN_KEY` | *(vide)* | Bearer token statique pour `/api/v1/*` (cf. `doc/api-keys.md`). Nécessaire pour bootstrap le premier admin via l'API et pour les endpoints admin-only en CLI/CI. Générer : `python -c "import secrets; print('kb_' + secrets.token_urlsafe(32))"`. Vide = bearer-token admin auth désactivé (cookie session uniquement). |
 | `KENBOARD_CORS_ORIGINS` | *(vide)* | Allow-list CORS pour `/api/v1/*`, origines séparées par virgule. Vide = aucun header CORS (same-origin policy, défaut sécurisé). À définir uniquement quand un client externe consomme l'API. |
 | `KENBOARD_HTTPS` | `false` | Mettre à `true` quand kenboard est servi sur HTTPS (directement ou derrière un reverse proxy TLS). Active les cookies `Secure` et l'header HSTS. En dev HTTP local, laisser `false` sinon le navigateur drop le cookie de session. |
+| `KENBOARD_BASE_URL` | *(vide)* | URL publique canonique (ex. `https://kanban.example.com`). Si définie, les liens envoyés par mail (reset de mot de passe, vérification d'e-mail) et le runbook d'onboarding sont construits à partir d'elle plutôt que de l'en-tête `Host` de la requête. **Recommandé en prod** : c'est la seule valeur qu'un client HTTP ne peut pas influencer. kenboard ignore `X-Forwarded-Host` ; le reverse proxy doit transmettre le nom public dans `Host`. |
 
 #### Auto-reporting des erreurs 500 (#517)
 

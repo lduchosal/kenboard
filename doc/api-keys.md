@@ -124,8 +124,16 @@ limiter le risque d'exfiltration en cas d'admin compromis.
 l'utilisateur existe avant d'écrire la FK. Comme pour `expires_at`, le
 PATCH applique la convention « `null` ≡ pas de changement » : pour
 détacher un user d'une clé, il faut pour l'instant passer par SQL ou
-créer une nouvelle clé. La suppression d'un user passe la colonne à
-`NULL` via `ON DELETE SET NULL` — la clé reste mais devient orpheline.
+créer une nouvelle clé. La suppression d'un user (`DELETE
+/api/v1/users/<id>`) **révoque** d'abord toutes ses clés actives
+(#1193) ; la FK `ON DELETE SET NULL` ne fait ensuite que détacher des
+lignes déjà révoquées, conservées pour l'audit.
+
+Une clé par projet ne sort pas de ses projets (#1187) : déplacer une
+tâche vers un autre projet (`PATCH /api/v1/tasks/<id>` avec
+`project_id`) exige le scope `write` sur le projet de destination
+aussi, une clé ne peut pas changer son projet de catégorie, et
+`project_order` n'agit que sur les projets de la catégorie concernée.
 
 `POST` renvoie `201` avec `{"id": ..., "key": "kb_...", "scopes": [...]}`.
 La clé en clair est dans le champ `key` et n'est plus jamais renvoyée
@@ -140,13 +148,15 @@ appelle `POST /api/v1/keys/onboard` qui :
 1. Revoque tout token `onboarding` existant pour ce projet (un seul
    actif a la fois).
 2. Cree une cle `kb_<...>` avec `key_type = "onboarding"`, scope
-   `write` sur le projet cible.
+   `write` sur le projet cible, **expirant apres 7 jours** si personne
+   ne l'utilise (`ONBOARDING_TOKEN_DAYS`, #1193) : le token voyage dans
+   une URL (historique shell, logs de proxy, messagerie).
 3. Retourne le token en clair une seule fois, encode dans le lien
    `/onboarding/<token>`.
 
 Quand l'agent clique le lien et que le runbook est consomme, le
 middleware `auth.py` promeut la cle a `key_type = "onboarded"` au
-premier appel API reussi. Une cle `onboarded` n'est plus revocable
+premier appel API reussi et leve son echeance (`expires_at = NULL`). Une cle `onboarded` n'est plus revocable
 par un re-onboard accidentel ; seul `DELETE /api/v1/keys/<id>` la
 revoque.
 

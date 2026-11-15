@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import posixpath
 from datetime import datetime
+from html import escape
 
 from dashboard.ken.wiki_css import _WIKI_HTML_CSS
 
@@ -141,7 +142,7 @@ def _wrap_html(
     """
     return (
         '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
-        f"<title>{title} — kenboard wiki</title>"
+        f"<title>{escape(title, quote=False)} — kenboard wiki</title>"
         f"<style>{_WIKI_HTML_CSS}</style>"
         '</head><body><div class="layout">'
         f"{sidebar_html}"

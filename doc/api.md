@@ -168,8 +168,9 @@ POST /forgot-password              Genere token + envoie mail (rate-limit 3/h)
 GET  /reset-password/:token        Form nouveau mot de passe
 POST /reset-password/:token        Applique le nouveau mot de passe + rotate nonce
 GET  /register                     Form d'inscription (404 si REGISTER_ALLOWED_DOMAIN vide)
-POST /register                     Genere token verification + envoie mail (rate-limit 5/h)
-GET  /verify-email/:token          Verifie token, cree user + categorie + projet personnel
+POST /register                     Email seul : genere token verification + envoie mail (rate-limit 5/h)
+GET  /verify-email/:token          Form de choix du mot de passe (aucun effet de bord)
+POST /verify-email/:token          Cree user + categorie personnelle + projet (#1189, #1194)
 ```
 
 OIDC (cf. [`auth-user.md`](auth-user.md) section OIDC,

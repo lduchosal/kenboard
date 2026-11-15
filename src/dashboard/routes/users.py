@@ -11,6 +11,7 @@ from flask_login import current_user
 from pymysql import Connection
 
 from dashboard import db
+from dashboard.auth_session import revoke_sessions
 from dashboard.auth_user import _is_login_disabled, api_admin_required, limiter
 from dashboard.db import Queries
 from dashboard.logging import get_logger
@@ -30,6 +31,17 @@ log = get_logger("users")
 NOT_FOUND_ERROR = {"error": "Not found"}
 
 _hasher = PasswordHasher()
+
+
+@bp.before_request
+def _require_admin() -> None:
+    """Refuse non-admin callers on every ``/api/v1/users`` route (#1195).
+
+    Same belt-and-braces guard as ``routes/keys.py``. The self-service password
+    change is the one exception: it enforces its own ownership check.
+    """
+    if request.endpoint != "users.change_password":
+        api_admin_required()
 
 
 def _hash_password(password: str) -> str:
@@ -168,6 +180,7 @@ def change_password(user_id: str) -> ResponseReturnValue:
         queries.usr_update_password(
             conn, id=user_id, password_hash=_hash_password(data.new_password)
         )
+        revoke_sessions(user_id, keep_current=True)
         return "", 204
     finally:
         conn.close()
@@ -193,6 +206,7 @@ def reset_password(user_id: str) -> ResponseReturnValue:
         queries.usr_update_password(
             conn, id=user_id, password_hash=_hash_password(data.new_password)
         )
+        revoke_sessions(user_id, keep_current=False)
         return "", 204
     finally:
         conn.close()
@@ -252,10 +266,11 @@ def update_user_scopes(user_id: str) -> ResponseReturnValue:
 
 @bp.route("/<user_id>", methods=["DELETE"])
 def delete_user(user_id: str) -> ResponseReturnValue:
-    """Delete a user."""
+    """Delete a user, revoking the api_keys they own (#1193)."""
     conn = db.get_connection()
     queries = db.load_queries()
     try:
+        queries.key_revoke_for_user(conn, user_id=user_id)
         queries.usr_delete(conn, id=user_id)
         log.info(
             "admin.user_deleted",

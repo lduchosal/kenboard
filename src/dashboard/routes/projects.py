@@ -5,6 +5,7 @@ import uuid
 from flask import Blueprint, g, jsonify, request
 from flask.typing import ResponseReturnValue
 from flask_login import current_user
+from pymysql import Connection
 
 from dashboard import db
 from dashboard.auth_scopes import (
@@ -13,6 +14,7 @@ from dashboard.auth_scopes import (
     current_user_can_project,
 )
 from dashboard.auth_user import _is_login_disabled
+from dashboard.db import Queries
 from dashboard.models.project import Project, ProjectCreate, ProjectUpdate
 
 bp = Blueprint("projects", __name__, url_prefix="/api/v1/projects")
@@ -27,6 +29,21 @@ def _should_filter_for_current_user() -> bool:
     if not current_user.is_authenticated:
         return False
     return not current_user.is_admin
+
+
+def reorder_projects(
+    conn: Connection, queries: Queries, cat_id: str, order: list[str]
+) -> None:
+    """Apply ``order`` as the positions of the projects of ``cat_id``.
+
+    Ids that do not belong to ``cat_id`` are ignored: the caller's write access was
+    checked on that category only, so the list must not move another board's projects
+    around (#1187).
+    """
+    siblings = {p["id"] for p in queries.proj_get_by_cat(conn, cat_id=cat_id)}
+    for position, proj_id in enumerate(order):
+        if proj_id in siblings:
+            queries.proj_update_position(conn, id=proj_id, position=position)
 
 
 @bp.route("", methods=["GET"])
@@ -137,10 +154,10 @@ def update_project(proj_id: str) -> ResponseReturnValue:
                 else existing["default_who"]
             ),
         )
-        # Reorder sibling projects if requested
         if data.project_order:
-            for i, pid in enumerate(data.project_order):
-                queries.proj_update_position(conn, id=pid, position=i)
+            reorder_projects(
+                conn, queries, data.cat or existing["cat_id"], data.project_order
+            )
         row = queries.proj_get_by_id(conn, id=proj_id)
         return jsonify(Project(**row).model_dump())
     finally:

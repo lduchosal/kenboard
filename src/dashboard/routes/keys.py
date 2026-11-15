@@ -18,7 +18,7 @@ from pymysql import Connection
 
 from dashboard import db
 from dashboard.auth_api_key import _hash_key
-from dashboard.auth_user import limiter
+from dashboard.auth_user import api_admin_required, limiter
 from dashboard.db import Queries
 from dashboard.logging import get_logger
 from dashboard.models.api_key import (
@@ -33,6 +33,20 @@ bp = Blueprint("keys", __name__, url_prefix="/api/v1/keys")
 log = get_logger("keys")
 
 KEY_PREFIX = "kb_"
+# An onboarding link nobody used expires after this many days (#1193). The token
+# sits in a URL — shell history, proxy logs, the chat it was pasted in — so it
+# must not stay a valid write key forever. First use lifts the deadline.
+ONBOARDING_TOKEN_DAYS = 7
+
+
+@bp.before_request
+def _require_admin() -> None:
+    """Refuse non-admin callers on every ``/api/v1/keys`` route (#1195).
+
+    The API middleware already blocks them by path prefix; this guard keeps the routes
+    admin-only even if that prefix table and the URL map ever drift apart.
+    """
+    api_admin_required()
 
 
 def _generate_key() -> str:
@@ -138,6 +152,7 @@ def _rotate_onboarding_key(conn: Connection, queries: Queries, project_id: str) 
         label=f"onboarding:{project_id[:8]}",
         expires_at=None,
     )
+    queries.key_expire_in_days(conn, id=key_id, days=ONBOARDING_TOKEN_DAYS)
     queries.key_scopes_add(
         conn,
         api_key_id=key_id,

@@ -224,7 +224,7 @@ decide. Quand `--config` est utilise, **un seul** fichier est lu.
 | `sync_dir` / `KEN_SYNC_DIR` | `doc/kenboard` | Dossier cible de `ken sync`. Chemin relatif resolu par rapport au dossier qui contient `ken.ini` (ou `.ken` legacy). |
 | `architecture` / `KEN_ARCHITECTURE` | `ARCHITECTURE.md` | Fichier declarant les sections wiki. |
 | `wiki_dir` / `KEN_WIKI_DIR` | `wiki` | Markdown genere par `ken wiki sync`. |
-| `wiki_html_dir` / `KEN_WIKI_HTML_DIR` | `wiki-html` | HTML rendu par `ken wiki build`, avec la recherche full text cote client (`search.html` + `search.js` + `search-index.js`, #1178). |
+| `wiki_html_dir` / `KEN_WIKI_HTML_DIR` | `wiki-html` | HTML rendu par `ken wiki build`, avec la recherche full text cote client (`search.html` + `search.js` + `search-index.js`, #1178). Le HTML issu des descriptions de taches passe par une liste blanche de balises/attributs (`ken/wiki_sanitize.py`, #1186) : pas de script, pas de gestionnaire d'evenement, liens `http(s)`/`mailto`/relatifs uniquement ; une balise inconnue (`<id>`) est affichee en texte. |
 
 Si apres cette resolution `project_id` est toujours absent et qu'aucun
 `--project` n'est passe, `ken` echoue avec :

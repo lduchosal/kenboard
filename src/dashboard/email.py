@@ -4,6 +4,7 @@ Uses the stdlib ``smtplib`` — no extra dependency. Sends multipart emails (tex
 text/html) rendered from Jinja2 templates. Silent no-op when SMTP is not configured.
 """
 
+import re
 import smtplib
 import uuid
 from contextlib import suppress
@@ -20,6 +21,23 @@ from dashboard.logging import get_logger
 log = get_logger("email")
 
 _app: Flask | None = None
+
+_MAX_ADDRESS_LEN = 254
+# One bare ``local@domain`` address: no display name, comment, angle bracket,
+# separator or whitespace — none of what an RFC 5322 parser would unfold into a
+# *different* recipient than the one we validated (#1188).
+_ADDRESS_RE = re.compile(
+    r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+"
+    r"@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?"
+    r"(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+"
+)
+
+
+def is_valid_address(address: str) -> bool:
+    """Return True when ``address`` is a single bare ``local@domain`` address."""
+    return (
+        len(address) <= _MAX_ADDRESS_LEN and _ADDRESS_RE.fullmatch(address) is not None
+    )
 
 
 def init_email(app: Flask) -> None:
@@ -50,6 +68,16 @@ def _build_message(to: str, subject: str, html: str, text: str | None) -> MIMEMu
     return msg
 
 
+def _deliver(to: str, msg: MIMEMultipart) -> None:
+    """Hand ``msg`` to the configured SMTP server (STARTTLS / login if set)."""
+    with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as srv:
+        if Config.SMTP_USE_TLS:
+            srv.starttls()
+        if Config.SMTP_USER:
+            srv.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
+        srv.sendmail(Config.SMTP_FROM, to, msg.as_string())
+
+
 def send_email(
     to: str,
     subject: str,
@@ -71,6 +99,9 @@ def send_email(
     if _app is None:
         log.error("email_app_not_initialized")
         return False
+    if not is_valid_address(to):
+        log.warning("email_invalid_recipient", to=to, subject=subject)
+        return False
 
     try:
         with _app.app_context():
@@ -83,15 +114,8 @@ def send_email(
         log.exception("email_render_error", template=template)
         return False
 
-    msg = _build_message(to, subject, html, text)
-
     try:
-        with smtplib.SMTP(Config.SMTP_HOST, Config.SMTP_PORT) as srv:
-            if Config.SMTP_USE_TLS:
-                srv.starttls()
-            if Config.SMTP_USER:
-                srv.login(Config.SMTP_USER, Config.SMTP_PASSWORD)
-            srv.sendmail(Config.SMTP_FROM, to, msg.as_string())
+        _deliver(to, _build_message(to, subject, html, text))
     except Exception:
         log.exception("email_send_error", to=to, subject=subject)
         return False

@@ -8,14 +8,21 @@ mirroring the board's full-screen task view, plus the avatar palette shared with
 from __future__ import annotations
 
 import re
+from html import escape
 from typing import Any
+
+from dashboard.ken.wiki_sanitize import sanitize_html
 
 
 def _render_markdown(md_text: str) -> str:
-    """Convert a markdown string to safe HTML via the ``markdown`` library."""
+    """Convert a markdown string to sanitised HTML.
+
+    The ``markdown`` library passes raw HTML through untouched and puts no restriction
+    on link targets, so its output goes through the allowlist sanitizer (#1186).
+    """
     import markdown as md_lib
 
-    return str(md_lib.markdown(md_text, extensions=["fenced_code", "tables"]))
+    return sanitize_html(md_lib.markdown(md_text, extensions=["fenced_code", "tables"]))
 
 
 def _rewrite_md_links_to_html(html: str) -> str:
@@ -25,6 +32,7 @@ def _rewrite_md_links_to_html(html: str) -> str:
 
 # Length of an ISO ``YYYY-MM-DD`` date prefix.
 _ISO_DATE_LEN = 10
+_ISO_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 _AVATAR_PALETTE = (
     "#0969da",
@@ -36,6 +44,17 @@ _AVATAR_PALETTE = (
     "#0a3069",
     "#bc4c00",
 )
+
+
+def _log_day(classified_at: str) -> str:
+    """Journal page of a task (#742): the ISO day it was classified, or ``unknown``."""
+    day = classified_at[:_ISO_DATE_LEN]
+    return day if _ISO_DATE_RE.fullmatch(day) else "unknown"
+
+
+def _text(value: object) -> str:
+    """Render a frontmatter value as an escaped HTML text node (``None`` → empty)."""
+    return escape(str(value or ""), quote=False)
 
 
 def _avatar_color(name: str) -> str:
@@ -52,14 +71,17 @@ def _render_task_detail(meta: dict[str, Any], body_md: str) -> str:
     ``body_md`` is the description body — the H1 / footer-nav written by sync are
     stripped server-side here since the fullscreen template renders its own header.
     """
-    status = str(meta.get("status") or "")
-    who = str(meta.get("who") or "")
-    due = str(meta.get("due_date") or "")
-    classified_at = str(meta.get("classified_at") or "")
-    classified_by = str(meta.get("classified_by") or "")
-    section = str(meta.get("section") or "")
-    avatar_initial = (who[:1] or "?").upper()
-    avatar_color = _avatar_color(who)
+    # Frontmatter values are task data (free text typed by any writer): escape
+    # every one of them before it lands in the page (#1186).
+    status = _text(meta.get("status"))
+    who = _text(meta.get("who"))
+    due = _text(meta.get("due_date"))
+    classified_at = _text(meta.get("classified_at"))
+    classified_by = _text(meta.get("classified_by"))
+    section = _text(meta.get("section"))
+    raw_who = str(meta.get("who") or "")
+    avatar_initial = escape((raw_who[:1] or "?").upper(), quote=False)
+    avatar_color = _avatar_color(raw_who)
     meta_parts = [
         f'<div class="task-avatar" style="background:{avatar_color}">{avatar_initial}</div>',
         f'<span class="fs-who">{who}</span>' if who else "",
@@ -69,22 +91,16 @@ def _render_task_detail(meta: dict[str, Any], body_md: str) -> str:
     ]
     desc_md = _strip_detail_chrome(body_md)
     desc_html = _rewrite_md_links_to_html(_render_markdown(desc_md))
-    # #742 — link to the day-of-classification page in the journal.
-    log_day = (
-        classified_at[:_ISO_DATE_LEN]
-        if len(classified_at) >= _ISO_DATE_LEN
-        else "unknown"
-    )
-    log_href = "../" * (section.count("/") + 1) + f"log/{log_day}.html"
+    log_href = "../" * (section.count("/") + 1) + f"log/{_log_day(classified_at)}.html"
     section_label = section or "section"
-    status_cls = f"status-{status}" if status else ""
+    status_cls = f"status-{status}" if re.fullmatch(r"[a-z]+", status) else ""
     return (
         '<div class="fullscreen-card">'
         '<div class="fullscreen-header">'
-        f'<span class="fullscreen-id">#{meta.get("id")}</span>'
+        f'<span class="fullscreen-id">#{_text(meta.get("id"))}</span>'
         f'<span class="fullscreen-status {status_cls}">{status}</span>'
         "</div>"
-        f'<h2 class="fullscreen-title">{meta.get("title") or ""}</h2>'
+        f'<h2 class="fullscreen-title">{_text(meta.get("title"))}</h2>'
         '<div class="fullscreen-meta">' + "".join(p for p in meta_parts if p) + "</div>"
         f'<div class="fullscreen-desc">{desc_html}</div>'
         '<div class="wiki-nav">'

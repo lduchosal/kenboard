@@ -93,3 +93,28 @@ WHERE akp.project_id = :project_id
 UPDATE api_keys
 SET key_type = :key_type
 WHERE id = :id;
+
+
+-- name: key_revoke_for_user!
+-- Revoke every still-active api_key owned by a user (#1193). Run before the
+-- user row is deleted: the FK is ON DELETE SET NULL, which would otherwise
+-- leave the keys active and ownerless.
+UPDATE api_keys
+SET revoked_at = NOW()
+WHERE user_id = :user_id
+  AND revoked_at IS NULL;
+
+-- name: key_expire_in_days!
+-- Give an api_key a deadline, computed DB-side so the write clock and the
+-- NOW() comparison clock are the same (#785, #1193).
+UPDATE api_keys
+SET expires_at = NOW() + INTERVAL :days DAY
+WHERE id = :id;
+
+-- name: key_promote_onboarding!
+-- First successful use of an onboarding token (#159): it becomes the agent's
+-- regular key, so the "unused link" deadline is lifted (#1193).
+UPDATE api_keys
+SET key_type = 'onboarded', expires_at = NULL
+WHERE id = :id
+  AND key_type = 'onboarding';
