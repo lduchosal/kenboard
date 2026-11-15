@@ -4,7 +4,7 @@ Tests (unit/integration/e2e), lint, typecheck, coverage, Sonarcloud.
 
 Section: `quality`
 
-## Archivé (53)
+## Archivé (54)
 
 - [TEST / AUTH / Tests units & E2E Test](test-auth-tests-units-e2e-test-13.md)
 - [TEST / Tests units && E2E](test-tests-units-e2e-18.md)
@@ -59,3 +59,4 @@ Section: `quality`
 - [QUALITY / PUBLISH / publish.sh : npm ci, DTZ ruff 0.17, pdm update-all, playwright](quality-publish-publish-sh-npm-ci-dtz-ruff-0-17-pdm-update-all-playwright-1160.md)
 - [CI / Python 3.14 et 3.15 : versions supportées + matrice GitHub Actions](ci-python-3-14-et-3-15-versions-supportees-matrice-github-actions-1179.md)
 - [QUALITY / Sonar : clé Flask de secours en dur (S6779) bloque le gate du publish](quality-sonar-cle-flask-de-secours-en-dur-s6779-bloque-le-gate-du-publish-1181.md)
+- [QUALITY / SONARQUBE / 19 code smells](quality-sonarqube-19-code-smells-1182.md)
