@@ -54,10 +54,11 @@ _SCHEME_RE = re.compile(r"^([a-zA-Z][a-zA-Z0-9+.\-]*):")
 # Browsers drop ASCII whitespace and control characters while parsing a URL, so
 # ``java\tscript:`` is a scheme to them — strip the same set before looking.
 _URL_IGNORED_RE = re.compile(r"[\x00-\x20\x7f]")
-_CLASS_RE = re.compile(r"^[A-Za-z0-9_\- ]*$")
+_CLASS_RE = re.compile(r"[A-Za-z0-9_\- ]*")
 # The only inline style python-markdown's ``tables`` extension emits.
-_TEXT_ALIGN_RE = re.compile(r"^text-align: ?(left|right|center);?$")
-_NUMERIC_RE = re.compile(r"^[0-9]{1,4}$")
+_TEXT_ALIGN_RE = re.compile(r"text-align: ?(left|right|center);?")
+# re.ASCII: ``\d`` would otherwise accept any Unicode digit.
+_NUMERIC_RE = re.compile(r"\d{1,4}", re.ASCII)
 
 
 def _safe_url(value: str) -> bool:
@@ -71,11 +72,11 @@ def _attr_ok(name: str, value: str) -> bool:
     if name in _URL_ATTRS:
         return _safe_url(value)
     if name == "class":
-        return _CLASS_RE.match(value) is not None
+        return _CLASS_RE.fullmatch(value) is not None
     if name == "style":
-        return _TEXT_ALIGN_RE.match(value.strip()) is not None
+        return _TEXT_ALIGN_RE.fullmatch(value.strip()) is not None
     if name in {"width", "height", "colspan", "rowspan", "start"}:
-        return _NUMERIC_RE.match(value) is not None
+        return _NUMERIC_RE.fullmatch(value) is not None
     return True
 
 

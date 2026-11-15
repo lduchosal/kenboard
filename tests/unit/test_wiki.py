@@ -406,3 +406,38 @@ class TestWikiDetailEscaping:
         html = _wrap_html("</title><script>alert(1)</script>", "<p>x</p>", "")
         assert "<script>alert(1)" not in html
         assert "&lt;/title&gt;" in html
+
+
+class TestWikiSanitizerAttributeValues:
+    """#1186 — allowlisted attributes only keep exact, ASCII, harmless values."""
+
+    @pytest.mark.parametrize(
+        ("html", "kept"),
+        [
+            ('<img src="a.png" width="120">', True),
+            ('<img src="a.png" width="١٢">', False),
+            ('<img src="a.png" width="12\n">', False),
+            ('<img src="a.png" width="12345">', False),
+        ],
+    )
+    def test_numeric_attributes(self, html, kept):
+        """``width`` is 1-4 ASCII digits, nothing before or after."""
+        from dashboard.ken.wiki_sanitize import sanitize_html
+
+        assert ("width" in _attribute_names(sanitize_html(html))) is kept
+
+    @pytest.mark.parametrize(
+        ("html", "kept"),
+        [
+            ('<code class="language-python">x</code>', True),
+            ('<code class="a\nb">x</code>', False),
+            ('<td style="text-align: center;">x</td>', True),
+            ('<td style="text-align: center; color: red">x</td>', False),
+        ],
+    )
+    def test_class_and_style(self, html, kept):
+        """``class`` is a plain token list; ``style`` only the table alignment."""
+        from dashboard.ken.wiki_sanitize import sanitize_html
+
+        names = _attribute_names(sanitize_html(html))
+        assert bool([n for n in names if n in ("class", "style")]) is kept
