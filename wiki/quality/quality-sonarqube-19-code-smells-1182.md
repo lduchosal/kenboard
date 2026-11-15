@@ -4,7 +4,7 @@ title: "QUALITY / SONARQUBE / 19 code smells"
 status: done
 who: "Claude"
 due_date: 
-updated_at: 2026-11-15T11:05:16
+updated_at: 2026-11-15T11:59:07
 classified_at: 2026-11-15T10:42:24
 classified_by: "key:038c1b37-7879-43bc-82aa-b83f61f6da8a:user:049c2571-0e1a-4e95-b0ad-3943f0f80a7e"
 section: quality
@@ -70,8 +70,18 @@ SonarCloud (`lduchosal_kenboard`) remonte **19 code smells** ouverts (relevé 20
 - `pdm run test-e2e` : 52 passed.
 - **Reste à confirmer côté CI** : 0 issue SonarCloud après le push. Le prochain `publish.sh` le vérifie lui-même : il bloquera tant qu'il reste une issue.
 
-### Hors périmètre (observé)
-- Il reste du CSS `.edit-mode` / `.kanban-task.edit-mode` (~l.1180–1545) qu'aucun template ni JS n'utilise : candidat à une carte de nettoyage.
+- **Confirmé côté CI** : analyse SonarCloud du commit `2dd9e8e` (version `0.5.2`, plus `not provided`) → gate durci `PASSED (0 open issue, 0 hotspot)`.
+
+### Nettoyage `.edit-mode` (demandé à la clôture, même carte)
+- Le mode d'édition inline a été retiré par `7b80781` (« remove inline edit »), mais ses règles CSS étaient restées. La classe `edit-mode` n'apparaît plus dans aucun template, JS (sources + `dist/`), test, extension ni vscode.
+- `style.css` : suppression des blocs `.kanban-task.edit-mode`, `.edit-mode .edit-row`, `.edit-mode .edit-actions` ; retrait des sélecteurs `.edit-mode …` des listes partagées avec `.kanban-task.detail-mode` et `.project-add-card` (qui restent intactes).
+- Rendu : diff de **tous** les styles calculés (Chromium, 1200/700/400 px) sur une carte tâche normale + `detail-mode` et les modales tâche et projet réelles → 65 éléments, **96 330 valeurs, 0 différence**.
+- `pdm run check` vert (716 tests, metrics-gate palier 5 PASS), `pdm run test-e2e` 52 passed.
+
+### Publish 0.5.3 — deux blocages levés par le gate durci
+- **Publish #1** — étape 29 KO : `publish.sh` lançait `python scripts/sonar_gate.py` avec le `python` du PATH (python@3.9 Homebrew) → `TypeError` à l'import sur l'annotation `X | None`. C'était la seule étape hors venv → corrigé en `pdm run python` (`c10bc2c`).
+- **Publish #2** — le gate durci bloque sur **1 issue nouvelle**, `css:S4666` : en retirant `.kanban-task.edit-mode .task-desc` de sa liste, la règle restante devenait un doublon de `.kanban-task.detail-mode .task-desc` (`white-space: normal`). Fusion des deux règles en une seule (aucune propriété partagée → cascade inchangée ; diff de styles calculés toujours à 0 sur 96 330 valeurs). Scanner local de sélecteurs dupliqués : 0 dans l'original, 1 après le nettoyage (celui de Sonar), 0 après la fusion.
+- C'est la preuve que le gate fonctionne : sans #1182, ce smell aurait été publié avec un gate vert.
 ---
 
 [← retour à quality](index.md) · [voir log](../log/2026-11-15.md)
