@@ -2,6 +2,7 @@
 
 Une page par jour, du plus récent au plus ancien. Chaque page liste les tâches classées ce jour-là.
 
+- [2026-11-22](2026-11-22.md) — 1 task(s)
 - [2026-11-15](2026-11-15.md) — 14 task(s)
 - [2026-11-13](2026-11-13.md) — 4 task(s)
 - [2026-11-01](2026-11-01.md) — 3 task(s)
