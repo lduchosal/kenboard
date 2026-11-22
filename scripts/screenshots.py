@@ -66,7 +66,14 @@ def _reset_and_seed() -> tuple[str, str]:
     conn = _connect()
     cur = conn.cursor()
     cur.execute("SET FOREIGN_KEY_CHECKS = 0")
+    # Same list as the ``clean_db`` fixture of tests/conftest.py.
     for table in (
+        "activities",
+        "task_wiki_classifications",
+        "email_verification_tokens",
+        "password_reset_tokens",
+        "burndown_snapshots",
+        "user_category_scopes",
         "api_key_projects",
         "api_keys",
         "tasks",
@@ -129,14 +136,31 @@ def _reset_and_seed() -> tuple[str, str]:
             project_id=kenboard_id,
             title=title,
             description="",
+            attachement=None,
             status=status,
             who=who,
             due_date=None,
             position=i,
         )
 
+    _renumber_tasks(conn)
     conn.close()
     return cat_ids["Tech"], kenboard_id
+
+
+def _renumber_tasks(conn: pymysql.connections.Connection) -> None:
+    """Renumber the seeded tasks 1..n so two runs produce the same image.
+
+    The ids are AUTO_INCREMENT and the test user has no DDL right to reset
+    the counter: without this every run shows different ``#id`` labels and
+    rewrites the PNG even though the UI did not change. Ascending order
+    never collides — the n-th smallest id is always >= n.
+    """
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM tasks ORDER BY id")
+    for new_id, row in enumerate(cur.fetchall(), start=1):
+        cur.execute("UPDATE tasks SET id = %s WHERE id = %s", (new_id, row["id"]))
+    cur.close()
 
 
 def _start_server() -> str:
@@ -150,10 +174,13 @@ def _start_server() -> str:
 
     limiter.enabled = False
 
-    threading.Thread(
-        target=lambda: app.run(port=SERVER_PORT, use_reloader=False),
-        daemon=True,
-    ).start()
+    # make_server rather than app.run: same werkzeug server, without the
+    # "WARNING: This is a development server" banner that publish.sh would
+    # surface as a warning line (its output must stay clean, ken #1130).
+    from werkzeug.serving import make_server
+
+    server = make_server("127.0.0.1", SERVER_PORT, app, threaded=True)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
 
     base = f"http://localhost:{SERVER_PORT}"
     for _ in range(50):

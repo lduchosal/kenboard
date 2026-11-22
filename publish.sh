@@ -61,6 +61,7 @@ done
 #   24 = 23 common steps (clean → pytest, incl. the npm audit gate and the
 #        VS Code extension checks of ken #1127/#1130) + metrics gate
 #   +1 non-CI: E2E tests (need Playwright browsers + running DB)
+#   +1 non-CI: README screenshots (same needs as the E2E tests)
 #   +1 non-CI: wiki sync (needs the board API, unreachable from a runner)
 #   +13 publish-only: wiki build, push, sonar gate, bump, build, PyPI,
 #       git add, commit, tag, extension zip, VS Code .vsix, GitHub Release,
@@ -69,13 +70,13 @@ if [ "$QUALITY_ONLY" = true ]; then
     if [ "$CI_MODE" = true ]; then
         STEPS=24
     else
-        STEPS=25
+        STEPS=26
     fi
 else
     if [ "$CI_MODE" = true ]; then
         STEPS=37
     else
-        STEPS=39
+        STEPS=40
     fi
 fi
 STEP=0
@@ -261,6 +262,14 @@ if [ "$CI_MODE" = false ]; then
     # go missing ("Executable doesn't exist"). firefox: autofill-leak test.
     run_command "pdm run playwright install chromium firefox" "Playwright browsers"
     run_command "pdm run test-e2e" "E2E Tests"
+
+    # README screenshot (doc/images/kanban.png). The capture is reproducible
+    # (fixed seed, tasks renumbered 1..n): this run rewrites the PNG only when
+    # the UI changed, and proves the script still works *before* anything is
+    # pushed or bumped — it once stayed broken for months because nothing ran
+    # it. It is taken again after the bump, to carry the released version.
+    print_step "README Screenshots (playwright)"
+    run_command "pdm run screenshots" "README screenshots" "wrote "
 fi
 
 # Blocking quality-metrics gate (#788): absolute ceilings + best-ever
@@ -334,6 +343,11 @@ if [ -f vscode/package.json ]; then
     sed -i.bak 's/"version": "[^"]*"/"version": "'"${VERSION}"'"/' vscode/package.json && rm vscode/package.json.bak
 fi
 print_ok "Version ${VERSION} synced to __init__.py, extension/ and vscode/"
+# The board header shows the version: retake the README screenshot now that
+# __init__.py carries ${VERSION}, so the release commit ships a matching PNG.
+if [ "$CI_MODE" = false ]; then
+    run_command "pdm run screenshots" "README screenshot at ${VERSION}" "wrote "
+fi
 
 print_step "Building Package (pdm)"
 run_command "pdm build" "Package build"

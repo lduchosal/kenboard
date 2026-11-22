@@ -36,6 +36,7 @@
 </p>
 
 > Regenerate the screenshot after a UI change: `pdm run screenshots`
+> (`publish.sh` also does it on every local run)
 
 ## For BOTs
 
