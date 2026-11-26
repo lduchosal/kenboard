@@ -4,7 +4,7 @@ Cookie sessions, OIDC, API keys, scope checks, CSRF.
 
 Section: `backend/auth`
 
-## Archivé (58)
+## Archivé (59)
 
 - [AUTH / Password authentification](auth-password-authentification-1.md)
 - [AUTH / Gestion des users en DB](auth-gestion-des-users-en-db-4.md)
@@ -64,3 +64,4 @@ Section: `backend/auth`
 - [SEC / Clés API : durée de vie (user supprimé, tokens d'onboarding)](sec-cles-api-duree-de-vie-user-supprime-tokens-d-onboarding-1193.md)
 - [SEC / Inscription : mot de passe choisi avant la preuve d'e-mail](sec-inscription-mot-de-passe-choisi-avant-la-preuve-d-e-mail-1194.md)
 - [SEC / Durcissement post-audit](sec-durcissement-post-audit-1195.md)
+- [QUALITY / Remplacer flask-limiter par un rate-limit MySQL partagé entre workers](quality-remplacer-flask-limiter-par-un-rate-limit-mysql-partage-entre-workers-1250.md)

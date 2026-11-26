@@ -4,7 +4,7 @@ Tests (unit/integration/e2e), lint, typecheck, coverage, Sonarcloud.
 
 Section: `quality`
 
-## Archivé (57)
+## Archivé (58)
 
 - [TEST / AUTH / Tests units & E2E Test](test-auth-tests-units-e2e-test-13.md)
 - [TEST / Tests units && E2E](test-tests-units-e2e-18.md)
@@ -63,3 +63,4 @@ Section: `quality`
 - [QUALITY / Ajoute deptry et pip-audit au publish.sh](quality-ajoute-deptry-et-pip-audit-au-publish-sh-1238.md)
 - [QUALITY / GuardDog bloquant au publish.sh (paquets PyPI malveillants)](quality-guarddog-bloquant-au-publish-sh-paquets-pypi-malveillants-1241.md)
 - [QUALITY / Scorecard des dépendances : état versionné + alerte opérateur au publish](quality-scorecard-des-dependances-etat-versionne-alerte-operateur-au-publish-1242.md)
+- [QUALITY / Scoreboard : retirer les colonnes de checks toujours vides](quality-scoreboard-retirer-les-colonnes-de-checks-toujours-vides-1251.md)
