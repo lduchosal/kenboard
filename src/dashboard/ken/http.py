@@ -25,7 +25,7 @@ def _ssl_context() -> ssl.SSLContext | None:
     Python installed via python.org on macOS ships without a CA bundle (the user must
     run ``Install Certificates.command`` manually). Using ``certifi.where()`` as the CA
     file makes ``ken`` work plug-and-play on any Python installation. ``certifi`` is a
-    transitive dependency (via ``requests``) and updates its CA bundle automatically on
+    declared runtime dependency (ken #1238) and updates its CA bundle automatically on
     ``pip install --upgrade kenboard``.
     """
     import ssl

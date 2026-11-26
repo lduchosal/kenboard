@@ -99,14 +99,27 @@ pdm run typecheck          # mypy (strict: disallow_untyped_defs)
 pdm run interrogate        # docstring coverage (fail-under 95)
 pdm run vulture
 pdm run refurb
+pdm run deptry             # declared vs imported deps of src/ ([tool.deptry])
+pdm run py-audit           # pip-audit: known vulns in the venv (network)
+pdm run py-malware         # GuardDog on kenboard[prod,oidc] closure, blocking (network)
+pdm run dep-scorecard      # OpenSSF Scorecard → doc/dep-scorecard.{csv,md} (network)
 
 pdm run check              # composite: isort, format, docformatter, typecheck,
-                           # flake8, interrogate, refurb, lint, vulture, test-quick
+                           # flake8, interrogate, refurb, lint, vulture,
+                           # deptry, test-quick
 ```
 
 `sh publish.sh --quality` runs the full quality gate. `sh publish.sh
 [--patch|--minor|--major]` bumps the version (via `pdm-bump`, version lives in
 `src/dashboard/__init__.py:__version__`) and publishes to PyPI.
+
+After **any** `publish.sh` run, read `doc/dep-scorecard.md` and the log of the
+*Dependency Scorecard* step: every `⚠` / `warning:` there is a supply-chain
+divergence (ken #1242) to report to the operator verbatim in your summary —
+never silence it or hand-edit `doc/dep-scorecard.{csv,md}`. A *Malicious Package
+Scan* (GuardDog, #1241) failure is either a compromised release (stop, alert) or
+a false positive to allowlist in `[tool.kenboard.guarddog]` only after reading
+the flagged code.
 
 ## Code-quality gates
 

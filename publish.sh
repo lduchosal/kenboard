@@ -58,8 +58,9 @@ done
 # print_step calls (ken #1009): the extension zip + GitHub Release steps
 # (#480/#501) had never been added, so the counters undershot and the
 # banner printed "34/30".
-#   24 = 23 common steps (clean → pytest, incl. the npm audit gate and the
-#        VS Code extension checks of ken #1127/#1130) + metrics gate
+#   28 = 27 common steps (clean → pytest, incl. the npm audit gate, the
+#        VS Code extension checks of ken #1127/#1130, the deptry + pip-audit
+#        gates of ken #1238, guarddog #1241 and the scorecard #1242) + metrics gate
 #   +1 non-CI: E2E tests (need Playwright browsers + running DB)
 #   +1 non-CI: README screenshots (same needs as the E2E tests)
 #   +1 non-CI: wiki sync (needs the board API, unreachable from a runner)
@@ -68,15 +69,15 @@ done
 #       final clean
 if [ "$QUALITY_ONLY" = true ]; then
     if [ "$CI_MODE" = true ]; then
-        STEPS=24
+        STEPS=28
     else
-        STEPS=26
+        STEPS=30
     fi
 else
     if [ "$CI_MODE" = true ]; then
-        STEPS=37
+        STEPS=41
     else
-        STEPS=40
+        STEPS=44
     fi
 fi
 STEP=0
@@ -193,6 +194,39 @@ OUTDATED=$(clean_log "$log" | grep '^│ [a-z]' | awk -F'│' '{gsub(/ /, "", $2
 # pas versionné et la prod résout les dernières transitives : on teste ça.
 print_step "Updating Dependencies (pdm update --update-all)"
 run_command "pdm update --update-all" "Dependencies update"
+
+# ken #1238 — Python dependency hygiene, run on the freshly resolved venv.
+# deptry: every import of src/ must be a declared dependency and every declared
+# dependency must be used (legit exceptions live in [tool.deptry], commented).
+print_step "Dependency Hygiene (deptry)"
+run_command "pdm run deptry" "Dependency hygiene" "Success|issues"
+
+# Python twin of the npm audit gate: any known vulnerability stops the build —
+# bump the dependency; an --ignore-vuln needs a comment and a ken ID.
+print_step "Python Security Audit (pip-audit)"
+run_command "pdm run py-audit" "Python security audit (on failure: bump the flagged dependency)" "known vulnerabilit"
+
+# ken #1241 — malicious-package heuristics (GuardDog) on the runtime closure of
+# kenboard[prod,oidc]. Blocking. A hit is either a compromised release (stop,
+# tell the operator, do not publish) or a false positive: read the flagged code,
+# then allowlist that exact (package, rule, files) in [tool.kenboard.guarddog]
+# with its reason and ken ID. Never allowlist without reading the code. A cold
+# cache costs ~4 min (≈5 s per package version); later runs only scan new versions.
+print_step "Malicious Package Scan (guarddog)"
+run_command "pdm run py-malware" "Malicious package scan" "^GuardDog"
+
+# ken #1242 — OpenSSF Scorecard of the runtime closure. NOT blocking, but:
+#
+#   >>> To the agent running this publish: read doc/dep-scorecard.md (the
+#   >>> scoreboard) and this step's log. Any "warning:" line here (shown as ⚠
+#   >>> below) is a supply-chain divergence vs the last committed snapshot —
+#   >>> score drop, critical check at 0, source repo change, lost PyPI
+#   >>> attestation, new runtime dependency. Report each one to the operator in
+#   >>> your final summary, verbatim. Never silence it, never edit
+#   >>> doc/dep-scorecard.{csv,md} by hand to make it go away: the warning stays
+#   >>> until the release commit records the snapshot.
+print_step "Dependency Scorecard (OpenSSF, non-blocking)"
+run_command "pdm run dep-scorecard" "Dependency scorecard — operator alert on any ⚠" "^Scorecard"
 
 print_step "Converting to Absolute Imports (absolufy-imports)"
 run_command "pdm run absolufy" "Import conversion"

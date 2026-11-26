@@ -28,6 +28,9 @@ classifiers = [
 
 dependencies = [
     "flask>=3.1",
+    # Imported directly (ProxyFix in app.py) — declared rather than relying on
+    # flask's own pin (deptry DEP003, ken #1238).
+    "werkzeug>=3.1",
     "flask-cors>=5.0",
     "flask-login>=0.6",
     "pymysql[rsa]>=1.1",
@@ -41,7 +44,12 @@ dependencies = [
     "argon2-cffi>=25.1.0",
     "flask-limiter>=4.1.1",
     "authlib>=1.6.9",
+    # Never imported here: authlib.integrations.flask_client needs it at runtime
+    # but authlib doesn't declare it (#126). Ignored by deptry DEP002 below.
     "requests>=2.28",
+    # CA bundle for ``ken`` HTTPS (ken/http.py) — imported directly, so declared
+    # instead of riding on requests' pin (deptry DEP003, ken #1238).
+    "certifi>=2024.2.2",
     # ``ken wiki`` parses YAML frontmatter from ARCHITECTURE.md (#376);
     # types-PyYAML is already a dev dep — bring the runtime lib in too.
     "pyyaml>=6.0",
@@ -105,6 +113,11 @@ dev = [
     "gunicorn>=21.0",
     "oidc-provider-mock>=0.3.4",
     "aiosmtpd>=1.4.6",
+    # ken #1238 — hygiène des dépendances Python dans publish.sh : deptry
+    # (déclarées vs importées), pip-audit (vulnérabilités connues, pendant
+    # Python de `npm audit`).
+    "deptry>=0.25.1",
+    "pip-audit>=2.10.1",
 ]
 publish = [
     "twine>=6.2.0",
@@ -153,6 +166,19 @@ interrogate = "interrogate src/"
 vulture = "vulture src/ tests/ vulture_whitelist.py"
 refurb = "refurb src/"
 
+# Python dependency hygiene (ken #1238). deptry: declared vs imported deps of
+# the package (config in [tool.deptry]). py-audit: known vulnerabilities in the
+# resolved venv, runtime + dev — the Python twin of js-audit. Networked (PyPI
+# advisory DB), so publish.sh only, not in the `check` composite.
+deptry = "deptry src"
+py-audit = "pip-audit --skip-editable --progress-spinner off"
+# Supply chain of the runtime closure, kenboard[prod,oidc] (ken #1241, #1242).
+# py-malware: GuardDog, blocking — isolated venv + per-version cache in .cache/
+# (allowlist in [tool.kenboard.guarddog]). dep-scorecard: OpenSSF Scorecard,
+# non-blocking — refreshes doc/dep-scorecard.{csv,md}. Both networked: publish.sh only.
+py-malware = "python scripts/guarddog_gate.py"
+dep-scorecard = "python scripts/dep_scorecard.py"
+
 # Quality metrics snapshot (#783) & blocking gate (#788) — see doc/code-quality.md
 metrics = "python scripts/quality_metrics.py"
 metrics-record = "python scripts/quality_metrics.py --record"
@@ -180,7 +206,7 @@ vscode-package = { shell = "cd vscode && npm run package" }
 build-extension = { shell = "npm run build-extension" }
 
 # Composite checks
-check = { composite = ["isort", "docformatter", "format", "typecheck", "flake8", "interrogate", "refurb", "lint", "vulture", "js-lint", "js-typecheck", "js-test", "js-build", "test-quick", "metrics-gate"] }
+check = { composite = ["isort", "docformatter", "format", "typecheck", "flake8", "interrogate", "refurb", "lint", "vulture", "deptry","js-lint", "js-typecheck", "js-test", "js-build", "test-quick", "metrics-gate"] }
 
 # Build & generation
 screenshots = "python scripts/screenshots.py"
@@ -265,6 +291,86 @@ max-complexity = 10
 "src/dashboard/cli.py" = ["PLC0415"]
 "src/dashboard/cli_burndown.py" = ["PLC0415"]
 "src/dashboard/ken/**" = ["PLC0415"]
+
+# -- deptry (ken #1238) -------------------------------------------------------
+# Scanned on src/ only: the runtime contract of the published package. tests/
+# and scripts/ run on dev deps. Each ignore below is a real runtime need that
+# no ``import`` statement reveals.
+
+[tool.deptry]
+known_first_party = ["dashboard"]
+
+[tool.deptry.per_rule_ignores]
+DEP002 = [
+    "yoyo-migrations",   # invoked as the ``yoyo`` binary by `kenboard migrate` (cli.py)
+    "requests",          # runtime need of authlib.integrations.flask_client (#126)
+    "pip-system-certs",  # [oidc] extra, patches ssl through a .pth file (#344)
+]
+
+[tool.deptry.package_module_name_map]
+# Not installed in dev (opt-in extra, clashes with pdm's truststore): spell
+# out the module so deptry doesn't print its "Assuming…" guess every run.
+pip-system-certs = "pip_system_certs"
+
+# -- GuardDog allowlist (ken #1241) -------------------------------------------
+# False positives of scripts/guarddog_gate.py. One (package, rule, files) per
+# entry, each added only after reading the flagged code; ``reason`` mandatory.
+# A hit in a file not listed blocks again. Entries that stop matching are
+# reported by the gate: remove them.
+
+[[tool.kenboard.guarddog.allow]]
+package = "python-dotenv"
+rule = "threat-filesystem-read"
+files = ["dotenv/cli.py", "dotenv/ipython.py", "dotenv/main.py"]
+reason = "locating and reading .env is the package's purpose (find_dotenv, CLI, IPython magic) — ken #1241"
+
+[[tool.kenboard.guarddog.allow]]
+package = "flask"
+rule = "threat-filesystem-read"
+files = ["flask/cli.py"]
+reason = "`flask run` loads .env/.flaskenv through python-dotenv (load_dotenv) — ken #1241"
+
+[[tool.kenboard.guarddog.allow]]
+package = "authlib"
+rule = "threat-runtime-environment-read"
+files = ["authlib/common/security.py"]
+reason = "is_secure_transport() reads the AUTHLIB_INSECURE_TRANSPORT dev switch — ken #1241"
+
+[[tool.kenboard.guarddog.allow]]
+package = "pyyaml"
+rule = "threat-runtime-dynamic-loader"
+files = ["yaml/constructor.py"]
+reason = "__import__ of !!python/object tags in the unsafe loader; kenboard only calls yaml.safe_load — ken #1241"
+
+[[tool.kenboard.guarddog.allow]]
+package = "werkzeug"
+rule = "threat-runtime-obfuscation-steganography"
+files = ["werkzeug/debug/tbtools.py"]
+reason = "interactive debugger console eval(); debug mode only (`kenboard serve --debug`), never under gunicorn — ken #1241"
+
+[[tool.kenboard.guarddog.allow]]
+package = "idna"
+rule = "threat-runtime-obfuscation-unicode"
+files = ["idna/uts46data.py"]
+reason = "UTS #46 Unicode mapping table: the non-ASCII characters are the data — ken #1241"
+
+[[tool.kenboard.guarddog.allow]]
+package = "pip"
+rule = "threat-runtime-obfuscation-unicode"
+files = ["pip/_vendor/idna/uts46data.py"]
+reason = "pip's vendored copy of idna's UTS #46 table ([oidc] extra pulls pip via pip-system-certs) — ken #1241"
+
+[[tool.kenboard.guarddog.allow]]
+package = "pip"
+rule = "threat-filesystem-read"
+files = ["pip/_vendor/distlib/util.py"]
+reason = "vendored distlib PyPIRCFile reads ~/.pypirc (upload config) — ken #1241"
+
+[[tool.kenboard.guarddog.allow]]
+package = "pip"
+rule = "bundled_binary"
+files = ["t32.exe", "t64.exe", "t64-arm.exe", "w32.exe", "w64.exe", "w64-arm.exe"]
+reason = "distlib's Windows console/GUI script launchers, shipped by every pip release — ken #1241"
 
 # -- Black --------------------------------------------------------------------
 

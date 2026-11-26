@@ -54,3 +54,6 @@ publish.out
 
 # Interpréteur pdm local (chemin machine) — committé par erreur en CI (0.4.7)
 .pdm-python
+
+# Isolated GuardDog venv + per-version scan cache (ken #1241).
+.cache/

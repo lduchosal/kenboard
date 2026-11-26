@@ -213,3 +213,60 @@ avant/après pour matérialiser le delta dans `quality-history.csv`.
   suivie par SonarCloud.
 - **JS** : la qualité frontend a son propre gate (Biome + tsc + Vitest) ;
   cette page ne couvre que le Python.
+
+## Chaîne d'approvisionnement des dépendances (ken #1238, #1241, #1242)
+
+Quatre étapes de `publish.sh`, juste après `pdm update --update-all` (venv
+fraîchement résolu, donc les versions que la prod installe) :
+
+| Étape | Script PDM | Juge | Bloquant |
+|---|---|---|---|
+| deptry | `pdm run deptry` | dépendances déclarées vs importées dans `src/` (exceptions commentées dans `[tool.deptry]`) | oui |
+| pip-audit | `pdm run py-audit` | vulnérabilités **publiées** (PyPA / OSV), venv entier runtime + dev | oui |
+| GuardDog | `pdm run py-malware` | paquets **malveillants** : typosquatting, domaine mail mainteneur compromis, exfiltration, obfuscation, download-and-exec… | oui |
+| Scorecard | `pdm run dep-scorecard` | santé des projets amont (OpenSSF Scorecard), suivie dans le temps | non — alerte opérateur |
+
+GuardDog et Scorecard portent sur la **fermeture runtime** de
+`kenboard[prod,oidc]` (`scripts/runtime_deps.py` : `pdm export --prod` + les
+extras et leurs dépendances, absents du lock) — ce qui part sur un hôte de prod.
+
+### GuardDog (`scripts/guarddog_gate.py`)
+
+- Venv isolé `.cache/guarddog/venv`, mis à jour à chaque run (pas de pin) : en
+  dev-dep, ses bornes hautes (`click<9`, `pygit2<1.19`…) retiendraient les
+  dépendances runtime de kenboard dans la venv de test.
+- Cache des résultats bruts par `(version guarddog, paquet==version)` : un scan
+  coûte ~5 s CPU par paquet (~4 min à froid pour ~50 paquets), seules les
+  nouvelles versions sont scannées ensuite. En CI le cache est froid à chaque run.
+- Règles bloquantes : `threat-*` + détecteurs de métadonnées. Les
+  `capability-*` (réseau, fichiers, sous-processus — ce qu'un paquet *peut*
+  faire) se déclenchent sur la moitié d'un arbre sain : informatives, ignorées.
+- Faux positifs : `[[tool.kenboard.guarddog.allow]]` dans `pyproject.toml`,
+  un triplet (paquet, règle, fichiers) + `reason` obligatoire, posé **après
+  lecture du code signalé**. Un hit dans un autre fichier du même paquet
+  rebloque. Une entrée qui ne matche plus rien sort en `warning:` → la retirer.
+- Les vérifications whois des domaines mail des mainteneurs échouent parfois
+  (timeouts) sans que GuardDog le signale comme erreur : stderr conservé dans
+  `.cache/guarddog/last-stderr.log`.
+
+### Scorecard (`scripts/dep_scorecard.py`)
+
+- Repo source + attestation PyPI (Trusted Publishing) via **deps.dev**, score
+  via l'**API OpenSSF** (hebdomadaire) ; la copie deps.dev du scorecard, en
+  retard de plusieurs mois, ne sert que de repli (`scorecard_source`).
+- État versionné : [`dep-scorecard.csv`](dep-scorecard.csv) (historique — un
+  snapshot complet à chaque changement d'état observé ; la seule date de
+  rafraîchissement du scorecard ne compte pas) et
+  [`dep-scorecard.md`](dep-scorecard.md) (scoreboard généré : dernier
+  snapshot + divergences vs le précédent).
+- Comparaison contre le dernier snapshot **committé** (`git show HEAD:`) : le
+  CSV de travail = historique committé + au plus un snapshot en attente. Les
+  runs `--quality` répétés ne gonflent pas l'historique, et une divergence est
+  ré-annoncée à chaque run jusqu'au commit de release.
+- Divergences (`warning:` → ⚠ dans le log publish) : nouvelle dépendance
+  runtime, score en baisse ≥ 1, `Maintained` / `Dangerous-Workflow` /
+  `Code-Review` qui tombe à 0, repo source qui change, attestation PyPI perdue,
+  scorecard disparu. Le commentaire de l'étape dans `publish.sh` impose à
+  l'agent qui lance le publish de les rapporter à l'opérateur.
+- deps.dev / OpenSSF injoignable : `warning:`, fichiers d'état inchangés,
+  exit 0.
