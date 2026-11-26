@@ -270,3 +270,14 @@ extras et leurs dépendances, absents du lock) — ce qui part sur un hôte de p
   l'agent qui lance le publish de les rapporter à l'opérateur.
 - deps.dev / OpenSSF injoignable : `warning:`, fichiers d'état inchangés,
   exit 0.
+- Lecture du board (ken #1251) :
+  - colonne *Scorecard du* : `(deps.dev)` = repo hors du scan hebdomadaire
+    OpenSSF, on affiche la copie deps.dev (vieille de mois) ; `(ancien)` =
+    plus de 90 jours, quelle que soit la source ;
+  - section *Angles morts* : paquets sans aucun scorecard (ex.
+    authlib et joserfc, la pile OIDC) — non mesurés, pas sains par défaut ;
+  - `Vulnerabilities`, `CI-Tests`, `Contributors`, `Dependency-Update-Tool`
+    (CSV) : le scan hebdomadaire OpenSSF les saute ; ils ne sont remplis que
+    pour les projets qui publient leur propre scorecard (`scorecard-action`,
+    ex. urllib3, idna). Vide = non mesuré, pas 0. Les vulnérabilités connues
+    des versions pinnées sont couvertes par pip-audit.

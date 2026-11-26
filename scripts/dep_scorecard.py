@@ -12,6 +12,12 @@ OpenSSF Scorecard (overall score + per-check scores) from the OpenSSF API
 lags by months (2026-08 data in 2026-11): it is only a fallback for repositories
 the OpenSSF weekly scan doesn't cover; ``scorecard_source`` records which one answered.
 
+Checks: the weekly OpenSSF cron scan skips the expensive ``Vulnerabilities``,
+``CI-Tests``, ``Contributors`` and ``Dependency-Update-Tool`` checks; they are only
+filled for projects that publish their own full scorecard (``scorecard-action``,
+e.g. urllib3, idna). Empty there means "not measured", not 0. Known vulnerabilities
+of our pinned versions are pip-audit's job anyway (ken #1238, #1251).
+
 State, both versioned:
 - ``doc/dep-scorecard.csv`` — history: one full snapshot (one row per package) each
   time the observed state changes. Scorecard refresh dates alone don't count.
@@ -326,13 +332,59 @@ def render_board(history: list[tuple[str, list[Row]]], today: datetime.date) -> 
         "|---|---|---|---|---|---|---|---|---|---|",
     ]
     for r in sorted(rows, key=_sort_key):
-        date = r["scorecard_date"] + (" (ancien)" if _stale(r, today) else "")
         lines.append(
             f"| {r['package']} | {r['version']} | {r['score'] or '—'} | {r['Maintained']}"
             f" | {r['Code-Review']} | {r['Dangerous-Workflow']} | {r['Signed-Releases']}"
-            f" | {r['attested']} | {date} | {r['repo'] or '—'} |"
+            f" | {r['attested']} | {_date_cell(r, today)} | {r['repo'] or '—'} |"
         )
+    lines += _blind_spots(rows)
     return "\n".join(lines) + "\n"
+
+
+def _date_cell(row: Row, today: datetime.date) -> str:
+    """Scorecard date, flagged when it comes from deps.dev's copy or is stale.
+
+    ``deps.dev`` = the OpenSSF weekly scan doesn't cover the repo, we show deps.dev's
+    months-old copy (ken #1251); ``ancien`` = older than ``STALE_DAYS`` whatever the
+    source (e.g. a repo OpenSSF stopped scanning).
+    """
+    flags = [
+        f
+        for f, on in (
+            ("deps.dev", row["scorecard_source"] == "deps.dev"),
+            ("ancien", _stale(row, today)),
+        )
+        if on
+    ]
+    return row["scorecard_date"] + (f" ({', '.join(flags)})" if flags else "")
+
+
+def _blind_spots(rows: list[Row]) -> list[str]:
+    """Section listing the packages no scorecard covers (ken #1251)."""
+    blind = sorted((r for r in rows if not r["score"]), key=lambda r: r["package"])
+    if not blind:
+        return []
+    lines = [
+        "",
+        "## Angles morts",
+        "",
+        (
+            "Aucun scorecard (ni OpenSSF ni deps.dev) : rien ne mesure ces projets,"
+            " à surveiller d'autant plus s'ils sont sensibles."
+        ),
+        "",
+    ]
+    lines.extend(
+        f"- {r['package']} {r['version']} — "
+        + (r["repo"] or "dépôt source inconnu de deps.dev")
+        + (
+            ", attestation PyPI"
+            if r["attested"] == "yes"
+            else ", sans attestation PyPI"
+        )
+        for r in blind
+    )
+    return lines
 
 
 def main() -> int:

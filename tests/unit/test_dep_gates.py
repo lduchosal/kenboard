@@ -235,3 +235,35 @@ def test_board_first_snapshot() -> None:
     )
     assert "Premier snapshot" in board
     assert "aucun scorecard disponible" in board
+
+
+def test_board_flags_deps_dev_fallback_and_stale_separately() -> None:
+    today = datetime.date(2026, 11, 26)
+    fallback = _row("a", scorecard_source="deps.dev", scorecard_date="2026-08-24")
+    old = _row("b", scorecard_date="2023-11-20")
+    fresh_fallback = _row("c", scorecard_source="deps.dev")
+    board = sc.render_board([("t1", [fallback, old, fresh_fallback])], today)
+    assert "| 2026-08-24 (deps.dev, ancien) |" in board
+    assert "| 2023-11-20 (ancien) |" in board
+    assert "| 2026-11-23 (deps.dev) |" in board
+
+
+def test_board_lists_blind_spots() -> None:
+    rows = [
+        _row("covered"),
+        _row("authlib", score=""),
+        _row("yoyo", score="", repo="", attested="no"),
+    ]
+    board = sc.render_board([("t1", rows)], datetime.date(2026, 11, 26))
+    section = board.split("## Angles morts", 1)[1]
+    assert "- authlib 1.0 — github.com/x/authlib, attestation PyPI" in section
+    assert (
+        "- yoyo 1.0 — dépôt source inconnu de deps.dev, sans attestation PyPI"
+        in section
+    )
+    assert "covered" not in section
+
+
+def test_board_without_blind_spot_has_no_section() -> None:
+    board = sc.render_board([("t1", [_row("a")])], datetime.date(2026, 11, 26))
+    assert "Angles morts" not in board
