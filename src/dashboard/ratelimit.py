@@ -39,7 +39,7 @@ import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, ParamSpec, TypeVar
+from typing import Any, NoReturn, ParamSpec, TypeVar
 
 import pymysql
 from flask import Flask, Response, current_app, g, make_response, request
@@ -53,6 +53,7 @@ _UNITS = {"second": 1, "minute": 60, "hour": 3600, "day": 86400}
 _LIMIT_RE = re.compile(r"^\s*(\d+)\s+per\s+(second|minute|hour|day)s?\s*$")
 _BUCKET_MAX = 160
 _CLIENT_MAX = 64
+_EXPIRES_MAX = 2**32 - 1  # INT UNSIGNED: no counter expires later
 
 log = get_logger("ratelimit")
 P = ParamSpec("P")
@@ -179,6 +180,26 @@ def _tightest(counters: list[Counter]) -> Counter:
     return min(counters, key=lambda c: (c.remaining, -c.reset))
 
 
+def _reject(
+    counters: list[Counter],
+    tightest: Counter,
+    now: int,
+    on_breach: Callable[[Limit], None] | None,
+) -> NoReturn:
+    """Give the request back, report the breach and answer 429.
+
+    Raises:
+        TooManyRequests: always, with ``Retry-After`` set to the window's end.
+    """
+    _refund(counters)
+    if on_breach is not None:
+        on_breach(tightest.limit)
+    raise TooManyRequests(
+        description=f"Rate limit exceeded: {tightest.limit}",
+        retry_after=tightest.reset - now,
+    )
+
+
 def rate_limit(
     spec: str,
     *,
@@ -194,11 +215,7 @@ def rate_limit(
 
         @functools.wraps(view)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> Response:
-            """Count, reject with 429 or run the view, then maybe give back.
-
-            Raises:
-                TooManyRequests: a limit of ``spec`` is exceeded for this IP.
-            """
+            """Count, reject (429) or run the view, then maybe give back."""
             if not current_app.config.get(ENABLED_KEY, True):
                 return make_response(view(*args, **kwargs))
             now = _now()
@@ -208,13 +225,7 @@ def rate_limit(
             tightest = _tightest(counters)
             g.rate_limit = (tightest, now)
             if tightest.breached:
-                _refund(counters)
-                if on_breach is not None:
-                    on_breach(tightest.limit)
-                raise TooManyRequests(
-                    description=f"Rate limit exceeded: {tightest.limit}",
-                    retry_after=tightest.reset - now,
-                )
+                _reject(counters, tightest, now, on_breach)
             response = make_response(view(*args, **kwargs))
             if deduct_when is not None and not deduct_when(response):
                 _refund(counters)
@@ -248,6 +259,6 @@ def reset() -> None:
     """Forget every counter (tests; or clearing a lock-out by hand)."""
     conn = db.get_connection()
     try:
-        db.load_queries().rl_reset(conn)
+        db.load_queries().rl_reset(conn, until=_EXPIRES_MAX)
     finally:
         conn.close()

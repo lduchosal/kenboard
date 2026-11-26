@@ -21,5 +21,6 @@ WHERE bucket = :bucket AND client = :client AND window_start = :window_start;
 DELETE FROM rate_limit_hits WHERE expires_at <= :now LIMIT 1000;
 
 -- name: rl_reset!
--- Forget every counter (tests, or an admin clearing a lock-out).
-DELETE FROM rate_limit_hits;
+-- Forget every counter expiring up to ``:until`` (tests, or an admin clearing a
+-- lock-out). ratelimit.reset() passes the INT UNSIGNED maximum: every row.
+DELETE FROM rate_limit_hits WHERE expires_at <= :until;

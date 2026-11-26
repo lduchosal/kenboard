@@ -4,6 +4,8 @@ The pure parts (limit parsing, counter arithmetic) run without a database; the r
 the test DB (``rate_limit_hits``), like the code in production.
 """
 
+import time
+
 import pymysql
 import pytest
 from flask import Flask, Response, jsonify
@@ -29,6 +31,10 @@ def test_parse_limits() -> None:
 def test_parse_limits_rejects_garbage(spec: str) -> None:
     with pytest.raises(ValueError, match="invalid rate limit"):
         ratelimit.parse_limits(spec)
+
+
+def test_now_is_the_epoch_second() -> None:
+    assert abs(ratelimit._now() - time.time()) < 2
 
 
 def _counter(amount: int, period: int, hits: int) -> ratelimit.Counter:
