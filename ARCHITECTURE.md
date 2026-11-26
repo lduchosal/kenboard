@@ -13,7 +13,7 @@ wiki:
           description: Cookie sessions, OIDC, API keys, scope checks, CSRF.
         - id: db
           title: Database (SQL + migrations)
-          description: aiosql queries, yoyo migrations, schema, PyMySQL connection.
+          description: aiosql queries, SQL migrations (dashboard.migrate), schema, PyMySQL connection.
         - id: perf
           title: Performance & observability
           description: Request perf budget, structlog setup, monitoring hooks.

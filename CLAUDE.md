@@ -19,7 +19,8 @@ Two console entry points (`pyproject.toml`):
 See `doc/architecture.md` for the full picture. Hard rules from that doc:
 
 - **No ORM.** SQL files in `src/dashboard/queries/*.sql` (loaded by `aiosql`)
-  and `src/dashboard/migrations/*.sql` (run by `yoyo`) are the source of truth.
+  and `src/dashboard/migrations/*.sql` (run by `dashboard.migrate`, an in-house
+  forward-only runner — ken #1249) are the source of truth.
 - **Pydantic v2** validates inputs/outputs only — it does *not* generate SQL.
 - **PyMySQL** is the driver. `db.get_connection()` returns a dict-cursor
   connection with autocommit.
@@ -48,7 +49,8 @@ src/dashboard/
   logging.py      # structlog setup
   models/         # Pydantic v2 models (category, project, task, user, api_key)
   queries/        # *.sql consumed by aiosql
-  migrations/     # *.sql consumed by yoyo (numbered, with `-- rollback`)
+  migrate.py      # forward-only migration runner (`kenboard migrate`, #1249)
+  migrations/     # *.sql applied by migrate.py (numbered, forward only)
   routes/         # Flask blueprints
   templates/      # Jinja2
   static/
@@ -227,10 +229,16 @@ Do **not** mark a task `done` yourself; that's the user's call after review.
 
 ## Writing migrations (read before adding any `migrations/*.sql`)
 
-We've been burned twice (0008 → 0009 for `session_nonce`, 0010 → 0011 for
-`api_key.user_id`) by yoyo recording a migration as applied while the DDL
-silently never persisted. To stop the bleeding, **all** new migrations
-must follow these rules:
+We've been burned three times (0008 → 0009 for `session_nonce`, 0010 → 0011
+for `api_key.user_id`, 0012 → 0013 for `users.email`): the migration was
+recorded as applied while the column was missing. Root cause, found when
+yoyo was replaced (ken #1249): yoyo knows no in-file `-- rollback` marker —
+its rollback lives in a separate `.rollback.sql` — so the destructive
+"rollback" below the marker ran on every *forward* apply. The in-house
+runner (`src/dashboard/migrate.py`) stops at that marker, records each file
+in `_yoyo_migration` (table name kept for compatibility) only after all its
+statements succeeded, and replays a failed file from its first statement.
+**All** new migrations must follow these rules:
 
 1. **Idempotent by construction.** Each DDL step must check
    `INFORMATION_SCHEMA.COLUMNS` / `TABLE_CONSTRAINTS` before running, and
@@ -248,22 +256,19 @@ must follow these rules:
    covering index for the FK automatically and the redundancy is the
    kind of thing that bit us.
 4. **Never edit a migration file after it has been applied anywhere.**
-   yoyo hashes the `migration_id` (filename), not the file contents, so
+   The runner keys on the `migration_id` (filename), not the contents, so
    editing an applied migration changes *nothing* on a DB that already
    recorded it. If a previously-applied migration is broken on prod,
    add a recovery migration `00NN.readd_<thing>.sql` that `depends:` on
    the broken one and idempotently re-applies the change.
-5. **Every migration needs a `-- rollback` block**, but it **MUST be a
-   no-op** (`SELECT 1`). yoyo's SQL parser may fail to split at the
-   `-- rollback` marker and execute the **entire file** in one pass.
-   A destructive rollback (`DROP COLUMN`) after an `ADD COLUMN` in the
-   same file = the column is added then immediately dropped, while yoyo
-   records the migration as "applied". This is exactly what broke 0012
-   (the `DROP COLUMN email` rollback fired during forward apply).
-   If you need a real rollback, write it as a **separate forward
-   migration** (`00NN.drop_<thing>.sql`).
+5. **Forward only.** Migrations are never rolled back. A line that is
+   exactly `-- rollback` ends the forward section and nothing below it is
+   ever executed — keep it a no-op (`SELECT 1`) anyway, for consistency
+   with the history. If you need to undo a change, write a **separate
+   forward migration** (`00NN.drop_<thing>.sql`). `-- depends: <id>` must
+   name an earlier file; the runner applies files in lexical order.
 6. **Mirror schema changes in `tests/conftest.py`.** The test DB is
-   hand-rolled, not migrated by yoyo. Add the column to the
+   hand-rolled, not migrated by the runner. Add the column to the
    `CREATE TABLE` block *and* add a back-fill `ALTER TABLE` (split into
    atomic steps) for legacy carried-over test schemas.
 

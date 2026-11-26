@@ -1,7 +1,6 @@
 """CLI entry point."""
 
 import sys
-from pathlib import Path
 
 import click
 
@@ -103,28 +102,32 @@ def prod(bind: str, workers: int) -> None:
     WSGIApplication().run()
 
 
+def _run_migrations(user: str, password: str, database: str) -> None:
+    """Apply pending migrations with the in-house runner (#1249); exit 1 on error."""
+    from dashboard.config import Config
+    from dashboard.migrate import MigrationError
+    from dashboard.migrate import migrate as run_migrate
+
+    try:
+        run_migrate(
+            host=Config.DB_HOST,
+            port=Config.DB_PORT,
+            user=user,
+            password=password,
+            database=database,
+            echo=click.echo,
+        )
+    except MigrationError as exc:
+        click.echo(f"migration failed: {exc}", err=True)
+        sys.exit(1)
+
+
 @cli.command()
 def migrate() -> None:
     """Run database migrations on the production database."""
-    import subprocess
-
     from dashboard.config import Config
 
-    db_url = (
-        f"mysql://{Config.DB_MIGRATE_USER}:{Config.DB_MIGRATE_PASSWORD}"
-        f"@{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB_NAME}"
-    )
-    subprocess.run(
-        [
-            "yoyo",
-            "apply",
-            "--batch",
-            "--database",
-            db_url,
-            str(Path(__file__).parent / "migrations"),
-        ],
-        check=True,
-    )
+    _run_migrations(Config.DB_MIGRATE_USER, Config.DB_MIGRATE_PASSWORD, Config.DB_NAME)
 
 
 @cli.command()
@@ -200,24 +203,12 @@ def grant_legacy_read(*, yes: bool) -> None:
 @cli.command()
 def migrate_test() -> None:
     """Run database migrations on the test database."""
-    import subprocess
-
     from dashboard.config import Config
 
-    db_url = (
-        f"mysql://{Config.DB_TEST_MIGRATE_USER}:{Config.DB_TEST_MIGRATE_PASSWORD}"
-        f"@{Config.DB_HOST}:{Config.DB_PORT}/{Config.DB_TEST_NAME}"
-    )
-    subprocess.run(
-        [
-            "yoyo",
-            "apply",
-            "--batch",
-            "--database",
-            db_url,
-            str(Path(__file__).parent / "migrations"),
-        ],
-        check=True,
+    _run_migrations(
+        Config.DB_TEST_MIGRATE_USER,
+        Config.DB_TEST_MIGRATE_PASSWORD,
+        Config.DB_TEST_NAME,
     )
 
 

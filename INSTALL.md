@@ -349,11 +349,10 @@ Deux façons de gérer la transition :
 
 ### Rollback
 
-```sh
-yoyo rollback --batch \
-  --database "mysql://dashboard_admin:mot_de_passe@localhost/dashboard" \
-  migrations/
-```
+Il n'y en a pas : les migrations sont **forward only** (ken #1249). Pour
+défaire un changement, on livre une nouvelle migration qui l'annule
+(`00NN.drop_<truc>.sql`), appliquée par `kenboard migrate` comme les autres.
+Le bloc `-- rollback` des fichiers n'est jamais exécuté.
 
 ## 5b. Burndown chart (cron quotidien)
 

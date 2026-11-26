@@ -66,7 +66,7 @@
       {% if database and database.migrations and database.migrations.applied %}
       <tr><th>Migrations</th><td>{{ database.migrations.applied }} appliqu&eacute;es &mdash; derni&egrave;re <code>{{ database.migrations.last_id }}</code> ({{ database.migrations.last_applied_at }} UTC)</td></tr>
       {% else %}
-      <tr><th>Migrations</th><td class="about-missing">aucune trace yoyo</td></tr>
+      <tr><th>Migrations</th><td class="about-missing">aucune migration enregistr&eacute;e</td></tr>
       {% endif %}
     </table>
 

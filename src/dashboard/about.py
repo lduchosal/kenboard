@@ -96,10 +96,11 @@ def runtime_info() -> dict[str, str]:
 
 
 def database_info(conn: pymysql.Connection, queries: Queries) -> dict[str, Any]:
-    """Return the database server version and the yoyo migration state.
+    """Return the database server version and the migration state.
 
     Each probe degrades to ``None`` on a database error (e.g. a schema that was never
-    migrated by yoyo has no ``_yoyo_migration`` table), so the page always renders.
+    migrated has no ``_yoyo_migration`` table — name kept from yoyo by the in-house
+    runner, #1249), so the page always renders.
     """
     info: dict[str, Any] = {"server": None, "migrations": None}
     try:

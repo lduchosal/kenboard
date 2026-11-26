@@ -1,5 +1,5 @@
 -- Test database schema. Loaded by tests/conftest.py and tests/e2e/conftest.py
--- via tests._schema.load_schema(). Hand-rolled (not run through yoyo) and must
+-- via tests._schema.load_schema(). Hand-rolled (not run through dashboard.migrate) and must
 -- mirror the production schema produced by src/dashboard/migrations/.
 --
 -- Extracted from inline cur.execute("""...""") blocks because docformatter

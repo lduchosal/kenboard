@@ -17,7 +17,7 @@
 | API HTTP | Flask | Routes, blueprints, middleware |
 | Validation | Pydantic v2 | Modeles de donnees, serialisation JSON |
 | Queries | aiosql | Fichiers `.sql` mappes en fonctions Python |
-| Migrations | yoyo-migrations | Fichiers `.sql` numerotes avec rollback |
+| Migrations | `dashboard.migrate` (interne, #1249) | Fichiers `.sql` numerotes, forward only |
 | Connexion DB | PyMySQL | Driver MySQL, dict-cursor + autocommit |
 | Templates | Jinja2 | Rendu HTML server-side |
 | Auth web | Flask-Login | Cookie session, `@login_required` |
@@ -129,7 +129,8 @@ src/dashboard/
     keys.py
     pages.py             # Routes HTML (login, /, /cat/<id>.html, /admin/*)
     onboard.py           # Endpoint d'onboarding (runbook + token initial)
-  migrations/            # *.sql consommes par yoyo (numerote, avec rollback)
+  migrate.py             # runner de migrations forward-only (#1249)
+  migrations/            # *.sql appliques par migrate.py (numerote, forward only)
   templates/             # Jinja2
     base.html
     index.html
@@ -176,26 +177,32 @@ migrations/
   0019.create_email_verification_tokens.sql      # #232 self-register
 ```
 
-Chaque fichier contient le SQL `CREATE/ALTER` et un bloc `-- rollback`.
-**Le rollback doit toujours etre un no-op** (`SELECT 1`) — cf. la
-section regles ci-dessous.
+Chaque fichier contient le SQL `CREATE/ALTER`, puis un bloc `-- rollback`
+historique : le runner s'arrete a cette ligne et **n'execute jamais** ce qui
+suit (forward only). On le garde en no-op (`SELECT 1`) — cf. la section
+regles ci-dessous.
 
 ### Regles obligatoires pour ecrire une migration
 
 On s'est fait avoir trois fois (0008 -> 0009 pour `users.session_nonce`,
 0010 -> 0011 pour `api_keys.user_id`, 0012 -> 0013 pour `users.email`)
-par yoyo qui enregistre une migration comme appliquee alors que le DDL
+par une migration enregistree comme appliquee alors que le DDL
 n'a jamais persiste sur le schema. Symptome typique : `_yoyo_migration`
 contient le hash de la migration, mais `INFORMATION_SCHEMA.COLUMNS` ne
 voit pas la nouvelle colonne, et l'API plante en boucle avec
 `Unknown column`.
 
-Cause racine : yoyo ne hash que le `migration_id` (le nom du fichier),
-**pas le contenu**. Une fois enregistree, la migration ne sera plus
-jamais rejouee. Combine au fait que les statements DDL MySQL font un
-implicit commit qui invalide les savepoints de yoyo, un `ALTER TABLE`
-multi-clause qui echoue partiellement peut laisser la base dans un
-etat ou yoyo croit avoir reussi mais ou rien n'a vraiment ete applique.
+Cause racine (identifiee en remplacant yoyo, ken #1249) : yoyo ne
+connait pas de marqueur `-- rollback` dans le fichier — son rollback vit
+dans un `<id>.rollback.sql` separe. Pour lui `-- rollback` etait un simple
+commentaire, et le `DROP COLUMN` qui suivait s'executait **a chaque apply
+forward**, juste apres le `ADD COLUMN`. Comme seul le `migration_id` (le
+nom du fichier) est enregistre, **pas le contenu**, la migration n'etait
+plus jamais rejouee. Le runner interne (`src/dashboard/migrate.py`)
+s'arrete au marqueur et n'enregistre une migration qu'apres le succes de
+tous ses statements ; il garde la table `_yoyo_migration` (meme nom, meme
+schema, meme hash sha256 de l'id) pour que les bases existantes ne
+rejouent rien.
 
 Du coup, **toutes les nouvelles migrations** doivent suivre ces
 regles :
@@ -215,20 +222,17 @@ regles :
    ajouter un second en parallele est un des trucs qui a contribue
    au stuck state de 0010.
 4. **Ne jamais editer une migration deja appliquee quelque part.**
-   yoyo ne rejouera pas le fichier modifie. Si une migration deja
+   le runner ne rejouera pas le fichier modifie. Si une migration deja
    appliquee est cassee sur prod, on ajoute une migration de
    recuperation `00NN.readd_<truc>.sql` qui `depends:` sur la cassee
    et re-applique la modification de maniere idempotente.
-5. **Le `-- rollback` doit etre un no-op (`SELECT 1`).** yoyo peut
-   echouer a parser le marqueur `-- rollback` et executer le fichier
-   complet d'un trait. Un rollback destructif (`DROP COLUMN`) qui
-   suit un `ADD COLUMN` dans le meme fichier = la colonne est ajoutee
-   puis immediatement droppee, alors que yoyo enregistre la migration
-   comme "appliquee". C'est exactement ce qui a casse 0012. Si un
-   vrai rollback est necessaire, l'ecrire comme une **migration
-   forward separee** (`00NN.drop_<truc>.sql`).
+5. **Forward only.** Rien sous la ligne `-- rollback` n'est execute ;
+   on y laisse un no-op (`SELECT 1`). Si un vrai rollback est
+   necessaire, l'ecrire comme une **migration forward separee**
+   (`00NN.drop_<truc>.sql`). `-- depends: <id>` doit nommer un fichier
+   anterieur (ordre lexical).
 6. **Mirroir dans `tests/conftest.py`.** La base de test est creee
-   a la main (sans yoyo), donc toute nouvelle colonne doit etre
+   a la main (sans le runner), donc toute nouvelle colonne doit etre
    ajoutee dans le `CREATE TABLE` *et* dans le bloc de back-fill
    (en etapes atomiques) pour les schemas de test heritages d'une
    session precedente.
@@ -366,7 +370,9 @@ Voir [`api.md`](api.md) pour la liste des endpoints et
   pas de TS rewrite.
 - **Pydantic pour la validation, pas pour le SQL** : il valide les
   inputs/outputs, pas les queries.
-- **yoyo pour les migrations** : fichiers SQL purs, pas de Python.
+- **Migrations en SQL pur, runner interne** (`dashboard.migrate`, #1249) :
+  ~200 lignes PyMySQL, forward only, au lieu de yoyo-migrations (angle mort
+  supply-chain, rollback-en-aller, mot de passe DDL en argv).
 - **aiosql** : organise les queries SQL en fichiers, ne genere rien.
 - **Auth split** : Flask-Login pour la web UI (cookie session), bearer
   tokens pour l'API (api_keys par projet + cle admin statique pour

@@ -154,28 +154,46 @@ class TestUtf8Encoding:
 
 
 class TestMigrateCommands:
-    """``kenboard migrate`` / ``migrate-test`` wrap yoyo (mocked here)."""
+    """``kenboard migrate`` / ``migrate-test`` call the in-house runner (#1249)."""
 
-    def test_migrate_invokes_yoyo_batch_on_prod_db(self):
-        runner = CliRunner()
-        with patch("subprocess.run") as run:
-            result = runner.invoke(cli, ["migrate"])
+    def test_migrate_targets_prod_db_with_ddl_account(self):
+        from dashboard.config import Config
+
+        with patch("dashboard.migrate.migrate") as run:
+            result = CliRunner().invoke(cli, ["migrate"])
         assert result.exit_code == 0, result.output
-        argv = run.call_args[0][0]
-        assert argv[0] == "yoyo"
-        assert "--batch" in argv
-        assert argv[-1].endswith("migrations")
+        kwargs = run.call_args.kwargs
+        assert kwargs["database"] == Config.DB_NAME
+        assert kwargs["user"] == Config.DB_MIGRATE_USER
 
     def test_migrate_test_targets_the_test_db(self):
         from dashboard.config import Config
 
-        runner = CliRunner()
-        with patch("subprocess.run") as run:
-            result = runner.invoke(cli, ["migrate-test"])
+        with patch("dashboard.migrate.migrate") as run:
+            result = CliRunner().invoke(cli, ["migrate-test"])
         assert result.exit_code == 0, result.output
-        argv = run.call_args[0][0]
-        db_url = argv[argv.index("--database") + 1]
-        assert Config.DB_TEST_NAME in db_url
+        kwargs = run.call_args.kwargs
+        assert kwargs["database"] == Config.DB_TEST_NAME
+        assert kwargs["user"] == Config.DB_TEST_MIGRATE_USER
+
+    def test_migration_error_exits_1(self):
+        from dashboard.migrate import MigrationError
+
+        with patch(
+            "dashboard.migrate.migrate", side_effect=MigrationError("0042: boom")
+        ):
+            result = CliRunner().invoke(cli, ["migrate"])
+        assert result.exit_code == 1
+        assert "migration failed: 0042: boom" in result.output
+
+    def test_no_subprocess_no_password_in_argv(self):
+        """The DDL password used to reach ``yoyo`` through argv (visible in ps)."""
+        with (
+            patch("dashboard.migrate.migrate"),
+            patch("subprocess.run") as sub,
+        ):
+            CliRunner().invoke(cli, ["migrate"])
+        sub.assert_not_called()
 
 
 class TestSetPassword:
