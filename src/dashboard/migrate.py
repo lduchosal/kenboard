@@ -226,7 +226,7 @@ def apply_migrations(
             cur.execute("SELECT RELEASE_LOCK(CONCAT('kenboard_migrate.', DATABASE()))")
 
 
-def migrate(  # noqa: PLR0913 — connection parameters, passed by keyword
+def migrate(  # noqa: PLR0913
     *,
     host: str,
     port: int,

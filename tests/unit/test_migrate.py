@@ -169,16 +169,18 @@ def test_applies_only_pending_and_records_them() -> None:
 
 def test_failed_statement_is_not_recorded_and_releases_the_lock() -> None:
     cur = FakeCursor(set(), fail_on="ADD b")
+    conn, migrations = FakeConn(cur), _migs()
     with pytest.raises(m.MigrationError, match=r"0002\.b, statement 1"):
-        m.apply_migrations(FakeConn(cur), _migs(), echo=lambda _: None)  # type: ignore[arg-type]
+        m.apply_migrations(conn, migrations, echo=lambda _: None)  # type: ignore[arg-type]
     assert len(cur.applied) == 1  # 0001.a only
     assert cur.executed[-1].startswith("SELECT RELEASE_LOCK")
 
 
 def test_lock_held_elsewhere_aborts_before_any_ddl() -> None:
     cur = FakeCursor(set(), lock=0)
+    conn, migrations = FakeConn(cur), _migs()
     with pytest.raises(m.MigrationError, match="holds the migration lock"):
-        m.apply_migrations(FakeConn(cur), _migs(), echo=lambda _: None)  # type: ignore[arg-type]
+        m.apply_migrations(conn, migrations, echo=lambda _: None)  # type: ignore[arg-type]
     assert len(cur.executed) == 1
 
 
