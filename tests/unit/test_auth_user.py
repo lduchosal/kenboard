@@ -582,10 +582,16 @@ class TestApiAcceptsSession:
 
 
 @pytest.fixture
-def rate_limited_client(auth_app):
-    """Re-enable the rate limits for one test and reset the counters."""
+def rate_limited_client(auth_app, monkeypatch):
+    """Re-enable the rate limits for one test, reset the counters, freeze the clock.
+
+    The clock is frozen mid-hour: with a real clock, a burst straddling a minute
+    boundary lands in two fixed windows and the 6th attempt is not rejected
+    (flaky in CI, 2026-11-26).
+    """
     from dashboard import ratelimit
 
+    monkeypatch.setattr(ratelimit, "_now", lambda: 1_800_000_000 + 1800)
     prev = auth_app.config.get("RATELIMIT_ENABLED", True)
     auth_app.config["RATELIMIT_ENABLED"] = True
     ratelimit.reset()
