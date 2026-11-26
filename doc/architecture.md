@@ -23,7 +23,7 @@
 | Auth web | Flask-Login | Cookie session, `@login_required` |
 | Auth OIDC | Authlib | OAuth2 + OIDC (Google/Authentik/ADFS) |
 | Auth API | Custom middleware | Bearer tokens (api_keys) + cle admin statique |
-| Rate limit | flask-limiter | `/login`, `/register`, etc. |
+| Rate limit | `dashboard.ratelimit` (interne, #1250) | Par IP, compteurs MySQL partagés par les workers — `/login`, `/register`, etc. |
 | Mailer | smtplib (stdlib) | Reset password, email verification |
 | Frontend | Vanilla JS + SortableJS | Interactions, drag & drop |
 | JS bundler | Vite | Bundle ES modules → `static/dist/app.js` |

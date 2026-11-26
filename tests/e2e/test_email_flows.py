@@ -125,9 +125,6 @@ def email_server(_setup_test_db):
     app.config["LOGIN_DISABLED"] = False
     app.config["REGISTER_ALLOWED_DOMAIN"] = "test.com"
     app.config["RATELIMIT_ENABLED"] = False
-    from dashboard.auth_user import limiter
-
-    limiter.enabled = False
 
     server = threading.Thread(
         target=lambda: app.run(port=EMAIL_PORT, use_reloader=False),

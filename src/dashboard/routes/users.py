@@ -12,7 +12,7 @@ from pymysql import Connection
 
 from dashboard import db
 from dashboard.auth_session import revoke_sessions
-from dashboard.auth_user import _is_login_disabled, api_admin_required, limiter
+from dashboard.auth_user import _is_login_disabled, api_admin_required
 from dashboard.db import Queries
 from dashboard.logging import get_logger
 from dashboard.models.user import (
@@ -23,6 +23,7 @@ from dashboard.models.user import (
     UserScopeUpdate,
     UserUpdate,
 )
+from dashboard.ratelimit import rate_limit
 
 bp = Blueprint("users", __name__, url_prefix="/api/v1/users")
 
@@ -71,7 +72,7 @@ def list_users() -> ResponseReturnValue:
 
 
 @bp.route("", methods=["POST"])
-@limiter.limit("10 per hour")
+@rate_limit("10 per hour")
 def create_user() -> ResponseReturnValue:
     """Create a new user."""
     data = UserCreate(**request.get_json())
@@ -187,7 +188,7 @@ def change_password(user_id: str) -> ResponseReturnValue:
 
 
 @bp.route("/<user_id>/reset-password", methods=["POST"])
-@limiter.limit("5 per hour")
+@rate_limit("5 per hour")
 def reset_password(user_id: str) -> ResponseReturnValue:
     """Admin reset of another user's password (#53).
 

@@ -28,8 +28,6 @@ from flask import (
     g,
     request,
 )
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask_login import (
     LoginManager,
     current_user,
@@ -37,6 +35,7 @@ from flask_login import (
 
 from dashboard.config import Config
 from dashboard.logging import get_logger
+from dashboard.ratelimit import init_rate_limit
 
 REMEMBER_DAYS = 30
 # Per-IP brute-force budget on /login. The two limits are AND-combined,
@@ -79,18 +78,6 @@ login_manager._session_identifier_generator = (  # noqa: SLF001
 )
 
 bp = Blueprint("auth_user", __name__)
-
-# Module-level limiter; bound to the app inside ``init_login_manager``.
-# Default storage is in-memory (one bucket per worker process). For prod
-# behind multiple Gunicorn workers this is approximate but still useful;
-# upgrade to Redis (``RATELIMIT_STORAGE_URI``) when single-IP slip-through
-# becomes a concern.
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=[],  # no global limit; opt-in per route
-    headers_enabled=True,
-    storage_uri="memory://",
-)
 
 _hasher = PasswordHasher()
 
@@ -211,7 +198,7 @@ def init_login_manager(app: Flask) -> None:
         app.config["REGISTER_ALLOWED_DOMAIN"] = Config.REGISTER_ALLOWED_DOMAIN
 
     login_manager.init_app(app)
-    limiter.init_app(app)
+    init_rate_limit(app)  # per-IP limits shared by all workers (#1250)
 
     # Import-for-side-effect: the password-reset (#798) and registration
     # (#232) modules attach their routes to ``bp``. Local import — they

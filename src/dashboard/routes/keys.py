@@ -18,7 +18,7 @@ from pymysql import Connection
 
 from dashboard import db
 from dashboard.auth_api_key import _hash_key
-from dashboard.auth_user import api_admin_required, limiter
+from dashboard.auth_user import api_admin_required
 from dashboard.db import Queries
 from dashboard.logging import get_logger
 from dashboard.models.api_key import (
@@ -27,6 +27,7 @@ from dashboard.models.api_key import (
     ApiKeyCreated,
     ApiKeyUpdate,
 )
+from dashboard.ratelimit import rate_limit
 
 bp = Blueprint("keys", __name__, url_prefix="/api/v1/keys")
 
@@ -84,7 +85,7 @@ def list_keys() -> ResponseReturnValue:
 
 
 @bp.route("", methods=["POST"])
-@limiter.limit("10 per hour")
+@rate_limit("10 per hour")
 def create_key() -> ResponseReturnValue:
     """Create a new api_key.
 

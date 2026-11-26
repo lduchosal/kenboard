@@ -41,7 +41,6 @@ dependencies = [
     "python-dotenv>=1.0",
     "jinja2>=3.1",
     "argon2-cffi>=25.1.0",
-    "flask-limiter>=4.1.1",
     "authlib>=1.6.9",
     # Never imported here: authlib.integrations.flask_client needs it at runtime
     # but authlib doesn't declare it (#126). Ignored by deptry DEP002 below.
@@ -89,7 +88,11 @@ dev = [
     "pytest>=8.4",
     "pytest-cov>=7.0",
     "pytest-asyncio>=1.2.0",
-    "pytest-playwright>=0.6",
+    # [base-url] : depuis 0.10, pytest-base-url est optionnel ; sans lui la
+    # fixture de repli ``base_url`` de pytest-playwright (méthode d'instance
+    # en scope session) lève PytestRemovedIn10Warning sous pytest 9.2, et
+    # filterwarnings=error met chaque test e2e en erreur (ken #1250).
+    "pytest-playwright[base-url]>=0.6",
     "httpx>=0.24.0",
     "black>=25.0",
     "isort>=6.0",

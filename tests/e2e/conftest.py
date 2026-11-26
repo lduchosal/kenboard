@@ -87,14 +87,9 @@ def live_server(_setup_test_db):
     # Bypass @login_required for the e2e suite by default. Tests that
     # cover the auth flow run their own dedicated server or login.
     app.config["LOGIN_DISABLED"] = True
-    # Disable flask-limiter so the brute-force unit tests don't bleed
-    # into e2e runs sharing the same module-level storage bucket.
-    # flask-limiter 4.x caches ``enabled`` at init time — set it on the
-    # instance directly.
+    # Rate limits off (#1250): counters live in the shared test DB, the
+    # e2e suite logs in many times from the same IP.
     app.config["RATELIMIT_ENABLED"] = False
-    from dashboard.auth_user import limiter
-
-    limiter.enabled = False
 
     server = threading.Thread(
         target=lambda: app.run(port=SERVER_PORT, use_reloader=False),

@@ -16,6 +16,7 @@ from typing import Any
 from flask import Flask, Request, jsonify, make_response, render_template, request
 from flask.typing import ResponseReturnValue
 from pydantic import ValidationError
+from werkzeug.exceptions import TooManyRequests
 
 from dashboard import db
 from dashboard.config import Config
@@ -235,7 +236,25 @@ def _register_fatal_handler(app: Flask) -> None:
         return _fatal_response(error_id, error_class)
 
 
+def _register_rate_limit_handler(app: Flask) -> None:
+    """Register the 429 handler: JSON ``{"error": …}`` for API callers (#1250).
+
+    Matches ``RateLimited`` in doc/openapi.yaml. Browser pages keep werkzeug's default
+    page, and the auth blueprint re-renders its own form (auth_login.py).
+    """
+
+    @app.errorhandler(TooManyRequests)
+    def handle_too_many_requests(e: TooManyRequests) -> ResponseReturnValue:
+        """Return the 429 as JSON to API/XHR callers."""
+        if _wants_json(request):
+            return make_response(
+                jsonify({"error": e.description}), TooManyRequests.code
+            )
+        return e
+
+
 def register_error_handlers(app: Flask, *, debug: bool) -> None:
-    """Register Pydantic validation and generic error handlers."""
+    """Register Pydantic validation, rate-limit and generic error handlers."""
     _register_validation_handler(app, debug=debug)
+    _register_rate_limit_handler(app)
     _register_fatal_handler(app)

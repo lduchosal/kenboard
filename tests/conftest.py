@@ -201,14 +201,9 @@ def app(setup_test_db):
     # default. Tests that exercise auth (login flow, middleware enforcement)
     # flip this back to False.
     app.config["LOGIN_DISABLED"] = True
-    # Disable flask-limiter by default. The rate-limit tests re-enable it
-    # explicitly via a fixture and reset state between subtests.
-    # flask-limiter 4.x caches ``enabled`` as an instance attribute during
-    # ``init_app``, so we must also set it on the limiter object directly.
+    # Rate limits off by default (#1250): the rate-limit tests re-enable them
+    # explicitly via a fixture and reset the counters between subtests.
     app.config["RATELIMIT_ENABLED"] = False
-    from dashboard.auth_user import limiter
-
-    limiter.enabled = False
     return app
 
 

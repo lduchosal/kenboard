@@ -151,3 +151,14 @@ CREATE TABLE IF NOT EXISTS task_wiki_classifications (
     INDEX idx_section (section_path),
     FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- rate_limit_hits — migration 0023 (#1250, shared per-IP rate limits).
+CREATE TABLE IF NOT EXISTS rate_limit_hits (
+    bucket VARCHAR(160) NOT NULL,
+    client VARCHAR(64) NOT NULL,
+    window_start INT UNSIGNED NOT NULL,
+    expires_at INT UNSIGNED NOT NULL,
+    hits INT UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (bucket, client, window_start),
+    INDEX idx_rate_limit_expires (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

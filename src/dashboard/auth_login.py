@@ -17,7 +17,6 @@ from urllib.parse import urlsplit
 from argon2.exceptions import VerifyMismatchError
 from flask import make_response, redirect, render_template, request, url_for
 from flask.typing import ResponseReturnValue
-from flask_limiter.util import get_remote_address
 from flask_login import current_user, login_user, logout_user
 
 from dashboard import db
@@ -29,9 +28,9 @@ from dashboard.auth_user import (
     REMEMBER_DAYS,
     _hasher,
     bp,
-    limiter,
 )
 from dashboard.logging import get_logger
+from dashboard.ratelimit import client_ip, rate_limit
 
 log = get_logger("auth_user")
 
@@ -55,23 +54,23 @@ def login() -> ResponseReturnValue:
 
 
 @bp.route("/login", methods=["POST"])
-@limiter.limit(
+@rate_limit(
     LOGIN_RATE_LIMITS,
     deduct_when=lambda response: response.status_code != HTTPStatus.FOUND,
     on_breach=lambda limit: log.warning(
         "auth.brute_force_attempt",
-        ip=get_remote_address(),
-        limit=str(limit.limit),
+        ip=client_ip(),
+        limit=str(limit),
         path="/login",
     ),
 )
 def login_post() -> ResponseReturnValue:
     """Validate credentials submitted by the login form (POST only).
 
-    Rate-limited per IP via flask-limiter (cf. ``LOGIN_RATE_LIMITS``). Successful logins
-    (302 redirect) do not count against the budget so a user who fat-fingers their
-    password 4 times can still log in on the 5th try without burning through their hour
-    quota.
+    Rate-limited per IP, across all workers (cf. ``LOGIN_RATE_LIMITS``, #1250).
+    Successful logins (302 redirect) do not count against the budget so a user who fat-
+    fingers their password 4 times can still log in on the 5th try without burning
+    through their hour quota.
     """
     next_url = request.form.get("next") or ""
     name = (request.form.get("name") or "").strip()
@@ -89,7 +88,7 @@ def login_post() -> ResponseReturnValue:
             "auth.login_success",
             user_id=user.id,
             user_name=user.name,
-            ip=get_remote_address(),
+            ip=client_ip(),
         )
         if _is_safe_url(next_url):
             return redirect(next_url)
@@ -97,7 +96,7 @@ def login_post() -> ResponseReturnValue:
     log.warning(
         "auth.login_failed",
         user_name=name,
-        ip=get_remote_address(),
+        ip=client_ip(),
     )
     return render_template(
         _LOGIN_TEMPLATE, error="Identifiants invalides", next_url=next_url
@@ -117,7 +116,7 @@ def logout() -> ResponseReturnValue:
             "auth.logout",
             user_id=current_user.id,
             user_name=current_user.name,
-            ip=get_remote_address(),
+            ip=client_ip(),
         )
         _rotate_session_nonce(current_user.id)
     logout_user()

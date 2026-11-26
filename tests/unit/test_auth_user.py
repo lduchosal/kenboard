@@ -583,24 +583,19 @@ class TestApiAcceptsSession:
 
 @pytest.fixture
 def rate_limited_client(auth_app):
-    """Re-enable flask-limiter for one test and reset its storage."""
-    from dashboard.auth_user import limiter
+    """Re-enable the rate limits for one test and reset the counters."""
+    from dashboard import ratelimit
 
     prev = auth_app.config.get("RATELIMIT_ENABLED", True)
     auth_app.config["RATELIMIT_ENABLED"] = True
-    limiter.enabled = True
-    limiter.reset()
+    ratelimit.reset()
     yield auth_app.test_client()
     auth_app.config["RATELIMIT_ENABLED"] = prev
-    limiter.enabled = prev
-    limiter.reset()
+    ratelimit.reset()
 
 
 class TestLoginRateLimit:
-    """Flask-limiter caps brute-force on /login (cf.
-
-    #44).
-    """
+    """The per-IP limit caps brute-force on /login (#44, #1250)."""
 
     def test_burst_blocked_after_5(self, rate_limited_client, db, admin_user):
         # 5 wrong attempts in a row → all 200 (form re-rendered with error)
@@ -658,8 +653,26 @@ class TestLoginRateLimit:
             follow_redirects=False,
         )
         assert r.status_code == 429
-        # flask-limiter sets these headers when headers_enabled=True
-        assert "X-RateLimit-Limit" in r.headers
+        assert r.headers["X-RateLimit-Limit"] == "5"
+        assert r.headers["X-RateLimit-Remaining"] == "0"
+        assert 1 <= int(r.headers["Retry-After"]) <= 60
+
+    def test_budget_is_shared_between_workers(
+        self, rate_limited_client, db, admin_user
+    ):
+        """#1250: with memory:// storage each gunicorn worker had its own budget."""
+        from dashboard.app import create_app
+
+        second = create_app()
+        second.config.update(TESTING=True, LOGIN_DISABLED=False, RATELIMIT_ENABLED=True)
+        workers = [rate_limited_client, second.test_client()]
+        statuses = [
+            workers[i % 2]
+            .post("/login", data={"name": "Q", "password": "wrong"})
+            .status_code
+            for i in range(6)
+        ]
+        assert statuses == [200] * 5 + [429]
 
 
 class TestResolveSecretKey:

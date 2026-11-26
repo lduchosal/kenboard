@@ -17,11 +17,12 @@ from flask.typing import ResponseReturnValue
 from dashboard import db
 from dashboard import email as email_mod
 from dashboard.auth_session import _rotate_session_nonce
-from dashboard.auth_user import _LOGIN_TEMPLATE, _hasher, bp, limiter
+from dashboard.auth_user import _LOGIN_TEMPLATE, _hasher, bp
 from dashboard.config import Config
 from dashboard.logging import get_logger
 from dashboard.onboarding import derive_base_url
 from dashboard.password_strength import validate_password_strength
+from dashboard.ratelimit import rate_limit
 
 log = get_logger("auth_user")
 
@@ -39,7 +40,7 @@ def forgot_password() -> ResponseReturnValue:
 
 
 @bp.route("/forgot-password", methods=["POST"])
-@limiter.limit(_FORGOT_RATE_LIMITS)
+@rate_limit(_FORGOT_RATE_LIMITS)
 def forgot_password_post() -> ResponseReturnValue:
     """Generate a reset token and send the email.
 

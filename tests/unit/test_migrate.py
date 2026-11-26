@@ -92,7 +92,8 @@ def test_depends_must_name_an_earlier_migration(tmp_path: Path) -> None:
 def test_shipped_migrations_parse_and_skip_their_rollback() -> None:
     """The real files: linear chain, and 0008/0010/0012 lose their DROP."""
     migrations = m.load_migrations()
-    assert [mig.id[:4] for mig in migrations] == [f"{n:04d}" for n in range(1, 23)]
+    ids = [mig.id[:4] for mig in migrations]
+    assert ids == [f"{n:04d}" for n in range(1, len(migrations) + 1)]
     by_id = {mig.id[:4]: mig for mig in migrations}
     for key in ("0008", "0010", "0012"):
         assert not any("DROP" in s for s in by_id[key].statements), key

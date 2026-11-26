@@ -24,12 +24,13 @@ from pymysql import Connection
 from dashboard import db
 from dashboard import email as email_mod
 from dashboard.auth_reset import _INVALID_LINK_MSG
-from dashboard.auth_user import _LOGIN_TEMPLATE, _hasher, bp, limiter
+from dashboard.auth_user import _LOGIN_TEMPLATE, _hasher, bp
 from dashboard.config import Config
 from dashboard.db import Queries
 from dashboard.logging import get_logger
 from dashboard.onboarding import derive_base_url
 from dashboard.password_strength import validate_password_strength
+from dashboard.ratelimit import rate_limit
 
 log = get_logger("auth_user")
 
@@ -121,7 +122,7 @@ def _create_verification_token(email: str) -> None:
 
 
 @bp.route("/register", methods=["POST"])
-@limiter.limit(_REGISTER_RATE_LIMITS)
+@rate_limit(_REGISTER_RATE_LIMITS)
 def register_post() -> ResponseReturnValue:
     """Validate the address and send the verification email."""
     domain = Config.REGISTER_ALLOWED_DOMAIN

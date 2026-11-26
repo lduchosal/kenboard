@@ -205,7 +205,7 @@ def set_password(name: str) -> None:
 
 ## Rate limiting (#44)
 
-`POST /login` est rate-limité par IP via `flask-limiter` :
+`POST /login` est rate-limité par IP via `dashboard.ratelimit` (ken #1250) :
 
 - **5 requêtes / minute** (burst)
 - **20 requêtes / heure** (long terme)
@@ -221,15 +221,31 @@ Quand la limite est dépassée :
   `"Trop de tentatives. Réessaye dans une minute."` et un statut HTTP 429.
 - Un événement `auth.brute_force_attempt` est loggé via structlog avec
   l'IP et la limite touchée.
-- Les headers `X-RateLimit-*` et `Retry-After` sont émis (côté script).
+- Les headers `X-RateLimit-Limit` / `-Remaining` / `-Reset` sont émis sur
+  chaque réponse limitée, plus `Retry-After` sur le 429.
 
-Stockage par défaut : in-memory (`memory://`). Une instance par worker
-Gunicorn — c'est volontairement approximatif. Pour passer à une vraie
-limite globale, définir `RATELIMIT_STORAGE_URI=redis://...` côté env
-(flask-limiter le lit automatiquement).
+Les autres routes limitées : `POST /forgot-password` (3/h), `POST /register`
+(5/h), `POST /api/v1/users` (10/h), `POST /api/v1/users/<id>/reset-password`
+(5/h), `POST /api/v1/keys` (10/h). Côté API, le 429 est un JSON
+`{"error": "Rate limit exceeded: …"}` (`errors.py`, `RateLimited` d'openapi).
 
-Tests : `tests/unit/test_auth_user.py::TestLoginRateLimit`. Les autres
-tests désactivent le limiter via `app.config["RATELIMIT_ENABLED"] = False`
+**Stockage : MySQL**, table `rate_limit_hits` (migration 0023), partagée par
+tous les workers Gunicorn. Jusqu'à #1250, flask-limiter gardait ses compteurs
+en mémoire (`memory://`) : un compteur par worker, donc jusqu'à 4× la limite
+avec `--workers 4`. Fenêtres fixes (comme la stratégie par défaut de
+flask-limiter) : `5 per minute` = 5 requêtes par minute calendaire. Chaque
+requête est comptée **avant** la vue (incrément atomique), donc des requêtes
+parallèles ne passent pas entre un test et un hit ; une requête rejetée ou non
+décomptée (`deduct_when`) est rendue. Les fenêtres échues sont purgées à
+l'ouverture d'une nouvelle fenêtre. En cas d'erreur MySQL, la limite **laisse
+passer** (log `ratelimit.storage_error`) : c'est une défense en profondeur,
+elle ne doit pas casser le login.
+
+Débloquer une IP à la main : `DELETE FROM rate_limit_hits WHERE client = '<ip>';`.
+
+Tests : `tests/unit/test_ratelimit.py` (module, partage entre workers,
+fail-open) et `tests/unit/test_auth_user.py::TestLoginRateLimit`. Les autres
+tests désactivent les limites via `app.config["RATELIMIT_ENABLED"] = False`
 (set par défaut dans `tests/conftest.py`).
 
 ## Tests

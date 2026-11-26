@@ -46,6 +46,7 @@ src/dashboard/
   db.py           # PyMySQL connection + aiosql loader
   auth.py         # API key middleware
   auth_user.py    # Flask-Login session auth
+  ratelimit.py    # per-IP rate limits, counters in MySQL (#1250)
   logging.py      # structlog setup
   models/         # Pydantic v2 models (category, project, task, user, api_key)
   queries/        # *.sql consumed by aiosql

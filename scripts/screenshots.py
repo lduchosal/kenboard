@@ -170,9 +170,6 @@ def _start_server() -> str:
     app.config["TESTING"] = True
     app.config["LOGIN_DISABLED"] = True
     app.config["RATELIMIT_ENABLED"] = False
-    from dashboard.auth_user import limiter
-
-    limiter.enabled = False
 
     # make_server rather than app.run: same werkzeug server, without the
     # "WARNING: This is a development server" banner that publish.sh would
